@@ -1,0 +1,119 @@
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #1E1E2E; /* body の背景色を #1E1E2E に */
+    color: white;
+  }
+  .app-container {
+    max-width: 414px;
+    margin: 0 auto;
+    height: 100vh;
+    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* グラデーションを適用 */
+    position: relative;
+    overflow: hidden;
+  }
+  .content {
+    margin-top: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* 上部に寄せる */
+    padding-top: 50px; /* 上部に余白を追加 */
+    position: relative;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px; /* menu-grid に padding を追加 */
+  }
+  .menu-item-wrapper {
+    background-color: rgba(41, 45, 53, 0.7); /* 背景色を少し透明に */
+    border-radius: 30px;
+    padding: 15px;
+  }
+  .menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+  }
+  .icon-wrapper {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影を追加して立体感を出す */
+    /* グラデーション色の設定 (icon-wrapper に適用) */
+    font-size: 20px;
+  }
+
+  .menu-item span {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0;
+    background-color: #2D2D44;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+  .nav-button {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    cursor: pointer;
+  }
+  .nav-button.active {
+    color: #f1eaed83;
+  }
+  .app-container::after {
+    content: '';
+    position: absolute;
+    bottom: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background-color: rgba(74, 144, 226, 0.2);
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: 0;
+  }
+  /* ボタンのホバーエフェクトを強化 */
+  .menu-item:hover .icon-wrapper {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+  }
+  
+  /* それぞれ異なるグラデーション色を指定 (icon-wrapper に適用) */
+  .schedule-icon {
+    background: linear-gradient(145deg, #506cff, #7589ff);
+  }
+  .prompt-icon {
+    background: linear-gradient(145deg, #8c50ff, #ac78ff);
+  }
+  .earning-icon {
+    background: linear-gradient(145deg, #ff506c, #ff7589);
+  }
+  .target-icon {
+    background: linear-gradient(145deg, #ffaa50, #ffbf75);
+  }
+  .control-icon {
+    background: linear-gradient(145deg, #50c2ff, #75d9ff);
+  }
+  .trending-icon {
+    background: linear-gradient(145deg, #50ff8c, #75ffac);
+  }
+  .bi{
+    font-size: 20px;
+  }
