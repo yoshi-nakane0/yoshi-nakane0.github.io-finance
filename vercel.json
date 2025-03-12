@@ -1,26 +1,26 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "myproject/wsgi.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
+    "version": 2,
+    "builds": [
+      {
+        "src": "myproject/wsgi.py",
+        "use": "@vercel/python@3.9.4"
+      },
+      {
+        "src": "build_files.sh",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "staticfiles"
+        }
       }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "myproject/wsgi.py"
-    }
-  ]
-}
+    ],
+    "routes": [
+      {
+        "src": "/static/(.*)",
+        "dest": "/static/$1"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "myproject/wsgi.py"
+      }
+    ]
+  }
