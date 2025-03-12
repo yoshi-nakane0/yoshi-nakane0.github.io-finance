@@ -9,11 +9,11 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = True
-ALLOWED_HOSTS = ['*'] # 一時的にすべてのホストを許可 (デバッグ後には必ず元に戻すこと!)
+#DEBUG = True
+#ALLOWED_HOSTS = ['*'] # 一時的にすべてのホストを許可 (デバッグ後には必ず元に戻すこと!)
 
-#DEBUG = False
-#ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', '.vercel.app']
+DEBUG = False
+ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', '.vercel.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,13 +90,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# STATIC_ROOT は collectstatic コマンドで静的ファイルを集める場所 (Vercel ではあまり使わない)
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Vercel では STATICFILES_DIRS を設定する
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Whitenoise の設定 (静的ファイルを圧縮)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
