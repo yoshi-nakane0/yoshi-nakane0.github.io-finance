@@ -1,12 +1,10 @@
-from pathlib import Path
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
-
-
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 #DEBUG = True
@@ -23,6 +21,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashboard',
+    'schedule',
+    'prompt',
+    'earning',
+    'target',
+    'control',
+    'trending',
 ]
 
 MIDDLEWARE = [
