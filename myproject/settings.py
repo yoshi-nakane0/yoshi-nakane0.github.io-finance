@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# .env ファイルを読み込む
 load_dotenv()
 
 
@@ -13,7 +12,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = False
 
 ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', '.vercel.app']
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,6 +20,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dashboard',
+    'schedule',
+    'prompt',
+    'earning',
+    'target',
+    'control',
+    'trending',
 ]
 
 MIDDLEWARE = [
