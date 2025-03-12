@@ -10,7 +10,6 @@ echo "PATH=$PATH"
 echo "Finding Python..."
 which python3 || which python || echo "Python not found"
 
-# 静的ファイルを収集（複数の可能性を試す）
 python3 manage.py collectstatic --noinput || \
 /opt/vercel/python3/bin/python3 manage.py collectstatic --noinput || \
 /vercel/path0/.pythonpath/bin/python manage.py collectstatic --noinput
