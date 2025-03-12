@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
 def index(request):
-    return HttpResponse("Hello, this is the dashboard index.")
+    return render(request, 'dashboard/index.html')
