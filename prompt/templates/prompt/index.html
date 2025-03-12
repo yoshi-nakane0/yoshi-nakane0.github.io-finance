@@ -1,0 +1,126 @@
+{# index.html #}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI プロンプト ライブラリ</title>
+    <!-- CSS フレームワークとアイコン -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- カスタムCSS -->
+    <link rel="stylesheet" href="{% static 'prompt/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark">
+    <!-- アプリコンテナ -->
+    <div class="app-container">
+        <div class="prompt-container">
+            <div class="status-bar">
+                <div class="status-left">
+                    <i class="bi bi-collection-fill text-success me-2"></i>
+                    <span class="status-title">AI Prompt Hub</span>
+                </div>
+                <button class="status-bar-item" onclick="location.href='/'">
+                    <i class="bi bi-house-fill me-1"></i>ホーム
+                </button>
+            </div>
+
+            <!-- メインコンテンツ -->
+            <div class="container-fluid mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="text-light title-main">
+                        <i class="bi bi-lightning-charge-fill text-warning me-2"></i>プロンプトライブラリ
+                    </h2>
+                </div>
+
+                 <!-- 検索ボックス -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div class="search-container">
+                    <input type="text" class="form-control form-control-sm search-input" placeholder="検索...">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+                </div>
+
+                <!-- フィルターバー -->
+                <div class="filter-bar mb-4">
+                    <button class="filter-btn active" data-filter="all">すべて</button>
+                    <button class="filter-btn" data-filter="ChatGPT">ChatGPT</button>
+                    <button class="filter-btn" data-filter="Google AI Studio">Google AI Studio</button>
+                    <button class="filter-btn" data-filter="Genspark">Genspark</button>
+                </div>
+
+                <!-- プロンプトカード -->
+                <div class="prompt-cards">
+                    {% for prompt in prompt_data %}
+                    <div class="card mb-3 bg-dark text-light prompt-card" data-category="{{ prompt.category }}" data-usage="{{ prompt.usage }}" data-model="{{ prompt.target_ai }}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="prompt-icon">
+                                    {% if prompt.target_ai == 'ChatGPT' %}
+                                        <i class="bi bi-chat-dots"></i>
+                                    {% elif prompt.target_ai == 'Google AI Studio' %}
+                                        <i class="bi bi-google"></i>
+                                    {% elif prompt.target_ai == 'Genspark' %}
+                                        <i class="bi bi-lightbulb"></i>
+                                    {% else %}
+                                        <i class="bi bi-box"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="text-primary mb-0 me-2">{{ prompt.summary }}</h5>
+                                 <!-- category_badgeは削除 -->
+                            </div>
+                            <div class="card-actions">
+                                 <!-- 絵文字をここに追加 -->
+                                <span class="category-emoji me-2">{{ prompt.category_emoji }}</span>
+                                <button class="btn btn-icon translate-btn" data-jp-prompt="{{ prompt.jp_prompt }}" data-en-prompt="{{ prompt.en_prompt }}">
+                                    <i class="bi bi-translate"></i>
+                                </button>
+                                <button class="btn btn-icon copy-btn" data-prompt="{{ prompt.truncated_jp_prompt }}">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="prompt-content" data-lang="jp">{{ prompt.truncated_jp_prompt }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-search me-2"></i>プロンプトデータがありません。
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- ページネーション -->
+                <nav class="mt-4">
+                    <ul class="pagination pagination-sm justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">前へ</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">次へ</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- フッター -->
+            <div class="footer mt-4 text-center">
+                <p class="text-muted small">© 2025 AI Prompt Hub - All Rights Reserved</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'prompt/js/script.js' %}"></script>
+</body>
+</html>
