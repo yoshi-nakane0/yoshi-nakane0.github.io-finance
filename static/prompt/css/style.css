@@ -1,0 +1,353 @@
+/* style.css */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #1E1E2E;
+    color: white;
+    font-family: 'Noto Sans JP', sans-serif;
+}
+
+.app-container {
+    max-width: 450px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+    position: relative;
+    overflow: hidden;
+  }
+
+.prompt-container {
+    background-color: #161B22;
+    border-radius: 12px;
+    padding: 18px;
+    margin: 0 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border: 1px solid #30363D;
+}
+
+/* ステータスバー */
+.status-bar {
+    background-color: #0D1117;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #30363D;
+}
+
+.status-left {
+    display: flex;
+    align-items: center;
+}
+
+.status-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #E6EDF3;
+}
+
+.status-bar-item {
+    background-color: #238636;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #ffffff;
+    border: none !important;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.status-bar-item:hover {
+    background-color: #2EA043;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* タイトルとフィルター */
+.title-main {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.search-container {
+    position: relative;
+    width: 200px;
+}
+
+.search-input {
+    background-color: #0D1117;
+    border: 1px solid #30363D;
+    color: #E6EDF3;
+    padding-right: 30px;
+    border-radius: 6px;
+    /* 検索ボックスの高さ */
+    height: 30px;
+}
+
+.search-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8B949E;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    white-space: nowrap; /* これを追加 */
+}
+.filter-btn {
+    background-color: #21262D;
+    color: #C9D1D9;
+    border: 1px solid #30363D;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    /*white-space: nowrap;  filter-barで指定*/
+    transition: all 0.2s ease;
+    cursor: pointer; /* ボタンにカーソルを合わせた時に指の形にする */
+}
+
+.filter-btn:hover {
+    background-color: #30363D;
+}
+
+.filter-btn.active {
+    background-color: #238636;
+    color: white;
+    border-color: #238636;
+}
+
+/* カードスタイル */
+.prompt-card {
+    border: 1px solid #30363D;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background-color: #1A1E29 !important;
+    overflow: hidden;
+    /* グリッドレイアウトの場合、高さを揃えるために必要 */
+    display: flex;
+    flex-direction: column;
+}
+
+.prompt-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border-color: #58A6FF;
+}
+
+.card-header {
+    background-color: #161B22;
+    border-bottom: 1px solid #30363D;
+    padding: 12px 15px;
+    /* フレックスアイテム間のスペースを均等に */
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* 垂直方向に中央揃え */
+
+}
+
+.prompt-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin-right: 10px;
+}
+.text-primary{
+    font-size: 12px;
+}
+
+.card-body {
+    padding: 5px;
+    /* カードボディ内のコンテンツが伸びるように */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.prompt-content {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #C9D1D9;
+    margin-bottom: 0; /* 段落の下マージンをなくす */
+    /* 必要に応じて最大高さを設定 */
+    /*max-height: 100px;  必要に応じてコメントアウト/調整 */
+    overflow: hidden; /* 内容がはみ出さないように */
+    /*text-overflow: ellipsis;  必要に応じてコメントアウト*/
+    /*white-space: nowrap;  必要に応じてコメントアウト*/
+
+}
+
+.badge-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center; /* 垂直方向に中央揃え */
+}
+
+.model-badge, .category-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.gpt4o-badge {
+    background-color: #8250DF;
+    color: white;
+}
+
+.category-badge {
+    background-color: #30363D;
+    color: #C9D1D9;
+}
+
+/* カードアクション */
+.card-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center; /* 垂直方向に中央揃え */
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #21262D;
+    border: 1px solid #30363D;
+    border-radius: 6px;
+    color: #C9D1D9;
+    transition: all 0.2s ease;
+    cursor: pointer; /* ボタンにカーソルを合わせた時に指の形にする */
+}
+
+.btn-icon:hover {
+    background-color: #30363D;
+    color: #E6EDF3;
+}
+
+.translate-btn:hover {
+    background-color: #1F6FEB;
+    border-color: #1F6FEB;
+    color: white;
+}
+
+.copy-btn:hover {
+    background-color: #238636;
+    border-color: #238636;
+    color: white;
+}
+
+/* 使用頻度インジケーター */
+.usage-indicator {
+    /*width: 40px;  削除 */
+    height: 16px; /* 高さを少し増やす */
+    border-radius: 3px;
+    margin-top: 0;
+    /*display: flex;  追加 */
+    align-items: center; /* 追加 */
+
+}
+/*
+.high-usage {
+    background: linear-gradient(90deg, #238636 70%, #21262D 30%);
+}
+
+.medium-usage {
+    background: linear-gradient(90deg, #F7D354 50%, #21262D 50%);
+}
+
+.low-usage {
+    background: linear-gradient(90deg, #F85149 30%, #21262D 70%);
+}
+削除 */
+
+/* ページネーション */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    background-color: #21262D;
+    border-color: #30363D;
+    color: #C9D1D9;
+    /* ページネーションのフォントサイズ */
+    font-size: 12px;
+}
+
+.page-item.active .page-link {
+    background-color: #1F6FEB;
+    border-color: #1F6FEB;
+}
+
+.page-item.disabled .page-link {
+    background-color: #161B22;
+    color: #8B949E;
+}
+
+/* フッター */
+.footer {
+    padding-top: 15px;
+    border-top: 1px solid #30363D;
+}
+
+/* レスポンシブデザイン */
+@media (min-width: 768px) {
+    .prompt-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    /* 検索ボックスの幅を広げる */
+    .search-container {
+        width: 250px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .prompt-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    /* 検索ボックスの幅をさらに広げる */
+        .search-container {
+        width: 300px;
+    }
+}
+
+@media (max-width: 767px) {
+    .prompt-container {
+        padding: 12px;
+        margin: 0 10px;
+    }
+    
+    .title-main {
+        font-size: 1.25rem;
+    }
+    
+    .search-container {
+        width: 100%; /* モバイルでは全幅 */
+    }
+
+    /* フィルターバーを縦並びにする */
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch; /* ボタンを幅いっぱいに広げる */
+    }
+    .filter-btn {
+        width: 100%; /* 各ボタンを幅いっぱいに */
+        margin-bottom: 5px; /* ボタン間のスペース */
+        justify-content: center; /* テキストを中央揃え */
+    }
+}

@@ -1,0 +1,198 @@
+/* style.css */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1E1E2E;
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.app-container {
+  max-width: 450px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+  position: relative;
+  overflow: hidden;
+}
+
+.earning-container {
+  font-family: sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  padding: 10px;
+}
+
+/* ステータスバー */
+.status-bar {
+  background-color: #1c1c1c;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 10px 10px;
+  border-bottom: 1px solid #45423a;
+}
+
+.status-bar-item {
+  background-color: #536c52;
+  padding: 3px 5px;
+  font-size: 13px;
+  color: #ffffff;
+  border: none !important;
+  margin-left: 5px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.status-bar-item:hover {
+  background-color: #6d8a6b;
+}
+
+/* 企業決算情報コンテンツ */
+.earning-content {
+  background-color: #1a1a2e;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 1px;
+}
+
+.earning-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.earning-header h1 {
+  font-size: 18px;
+  margin-bottom: 5px;
+  color: #ffffff;
+}
+
+.earning-header .description { /* セレクタ修正 */
+  color: #aaaaaa;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* テーブルラッパー */
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 5px;
+}
+
+/* テーブルスタイル */
+.earning-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  min-width: 600px; /* 横スクロールを保証 */
+}
+
+.earning-table th,
+.earning-table td {
+  padding: 8px 6px;
+  text-align: center;
+  border-right: 1px solid #333344;
+  white-space: nowrap;
+}
+
+.earning-table th:last-child,
+.earning-table td:last-child {
+  border-right: none;
+}
+
+.earning-table th {
+  background-color: #282850;
+  color: #ffffff;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 2px solid #3d3d5c;
+}
+
+.earning-table tbody tr:nth-child(odd) {
+  background-color: rgba(70, 70, 120, 0.2);
+}
+
+.earning-table tbody tr:nth-child(even) {
+  background-color: rgba(30, 30, 46, 0.6);
+}
+
+.earning-table tbody tr:hover {
+  background-color: rgba(80, 80, 130, 0.3);
+}
+
+/* バッジスタイル */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-left: 3px;
+}
+
+.badge.positive {
+  background-color: #4b8b3b;
+  color: #ffffff;
+}
+
+.badge.negative {
+  background-color: #b83c3c;
+  color: #ffffff;
+}
+
+.badge.neutral {
+  background-color: #a17c27;
+  color: #ffffff;
+}
+
+/* モバイル最適化のための追加調整 */
+@media screen and (max-width: 450px) {
+  .app-container {
+      width: 100%;
+  }
+
+  .earning-table {
+      font-size: 11px;
+  }
+
+  .earning-table th,
+  .earning-table td {
+      padding: 6px 4px;
+  }
+
+  .badge {
+      font-size: 9px;
+      padding: 1px 3px;
+  }
+}
+
+/* テーブルスクロールバーのスタイル調整 */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #3d3d5c;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #4d4d7c;
+}
+
+/* × を赤色にする */
+.negative-mark {
+    color: red;
+}
+
+/* 下方修正の文字を緑にする (詳細度を上げたセレクタ) */
+.earning-table td.modified {
+    color: rgb(145, 240, 145);
+}
