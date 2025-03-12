@@ -1,0 +1,88 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Market Analysis</title>
+
+  <!-- Bootstrap CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <!-- style.cssの読み込み -->
+  <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+</head>
+
+<body class="bg-dark">
+  <!-- コンテンツ -->
+  <div class="app-container"> <!-- container から app-container に変更 -->
+    <div class="content"> <!-- content を追加 -->
+      <div class="menu-grid"> <!-- icon-container から menu-grid に変更 -->
+
+        <!-- Scheduleボタン -->
+        <div class="menu-item-wrapper schedule"> <!-- icon-button から menu-item-wrapper に変更 -->
+          <a href="{% url 'schedule:index' %}" class="menu-item"> <!-- icon-button から menu-item に変更 -->
+            <div class="icon-wrapper schedule-icon"><i class="bi bi-calendar-week"></i></div> <!-- icon-circle から icon-wrapper に変更 -->
+            <span>Schedule</span> <!-- div を span に変更 -->
+          </a>
+        </div>
+
+        <!-- Earningボタン -->
+        <div class="menu-item-wrapper earning">
+          <a href="{% url 'earning:index' %}" class="menu-item">
+            <div class="icon-wrapper earning-icon"><i class="bi bi-bank"></i></div>
+            <span>Earning</span>
+          </a>
+        </div>
+
+        <!-- Promptボタン -->
+        <div class="menu-item-wrapper prompt">
+          <a href="{% url 'prompt:index' %}" class="menu-item">
+            <div class="icon-wrapper prompt-icon"><i class="bi bi-newspaper"></i></div>
+            <span>Prompt</span>
+          </a>
+        </div>
+
+        <!-- Targetボタン -->
+        <div class="menu-item-wrapper target">
+          <a href="{% url 'target:index' %}" class="menu-item">
+            <div class="icon-wrapper target-icon"><i class="bi bi-bullseye"></i></div>
+            <span>Target</span>
+          </a>
+        </div>
+
+        <!-- Controlボタン -->
+        <div class="menu-item-wrapper control">
+          <a href="{% url 'control:index' %}" class="menu-item">
+            <div class="icon-wrapper control-icon"><i class="bi bi-sliders"></i></div>
+            <span>Control</span>
+          </a>
+        </div>
+
+        <!-- Trendingボタン -->
+        <div class="menu-item-wrapper trending">
+          <a href="{% url 'trending:index' %}" class="menu-item">
+            <div class="icon-wrapper trending-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <span>Trending</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ナビゲーションバー (下部固定) -->
+    <div class="bottom-nav">  <!-- nav タグを div に変更、navbar を bottom-nav に変更 -->
+        <a class="nav-button" href="{% url 'schedule:index' %}"><i class="bi bi-calendar-week"></i></a>  <!-- navbar-brand を nav-button に変更 -->
+        <a class="nav-button" href="{% url 'prompt:index' %}"><i class="bi bi-newspaper"></i></a>
+        <a class="nav-button" href="{% url 'trending:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
