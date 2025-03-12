@@ -9,9 +9,11 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = False
+DEBUG = True
+ALLOWED_HOSTS = ['*'] # 一時的にすべてのホストを許可 (デバッグ後には必ず元に戻すこと!)
 
-ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', '.vercel.app']
+#DEBUG = False
+#ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', '.vercel.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
