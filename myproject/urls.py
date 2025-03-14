@@ -8,7 +8,7 @@ urlpatterns = [
     path('schedule/', include('schedule.urls')),
     path('earning/', include('earning.urls')),
     path('prompt/', include('prompt.urls')),
-    path('target/', include('target.urls')),
+    path('technical/', include('technical.urls')),
     path('control/', include('control.urls')),
     path('trending/', include('trending.urls')),
 ]
