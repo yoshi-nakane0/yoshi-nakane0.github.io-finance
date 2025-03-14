@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'schedule',
     'prompt',
     'earning',
-    'target',
     'control',
     'trending',
 ]
