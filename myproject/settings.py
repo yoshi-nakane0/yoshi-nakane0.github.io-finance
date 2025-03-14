@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'dashboard',
     'schedule',
     'prompt',
+    'technical',
     'earning',
     'control',
     'trending',
