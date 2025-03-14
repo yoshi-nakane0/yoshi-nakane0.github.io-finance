@@ -12,6 +12,15 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', 'yoshi-nakane0-github-io-finance-4rm6k1mok-yns-projects-de0414f8.vercel.app'] # デプロイURLを正確に
 
+
+# 非推奨: ワイルドカードを使う場合 (セキュリティリスクあり)
+ ALLOWED_HOSTS = ['.vercel.app']
+
+#ALLOWED_HOSTS = [
+#    'yoshi-nakane0-github-io-finance.vercel.app',  # 以前から設定されていたホスト
+#    'yoshi-nakane0-github-io-finance-bhczxq6om-yns-projects-de0414f8.vercel.app',  # 新しく追加するホスト
+#]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
