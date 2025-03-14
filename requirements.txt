@@ -6,7 +6,6 @@ gunicorn==23.0.0
 whitenoise
 python-dotenv==1.0.1
 django-tailwind
-psycopg2-binary==2.9.9
 requests
 numpy==1.26.4
 pandas==2.2.3
