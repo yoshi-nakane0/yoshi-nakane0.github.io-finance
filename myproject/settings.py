@@ -14,14 +14,10 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'false'
 ALLOWED_HOSTS = [
     'yoshi-nakane0-github-io-finance.vercel.app',
     'yoshi-nakane0-github-io-finance-4rm6k1mok-yns-projects-de0414f8.vercel.app',
-    '.vercel.app',  # Wildcards all Vercel domains
-    'localhost',    # For local development
-    '127.0.0.1'     # For local development
+    '.vercel.app',
+    'localhost',
+    '127.0.0.1'
 ]
-#ALLOWED_HOSTS = [
-#    'yoshi-nakane0-github-io-finance.vercel.app',  # 以前から設定されていたホスト
-#    'yoshi-nakane0-github-io-finance-bhczxq6om-yns-projects-de0414f8.vercel.app',  # 新しく追加するホスト
-#]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
