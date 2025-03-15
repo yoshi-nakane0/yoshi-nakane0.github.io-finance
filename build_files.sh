@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Install dependencies
-pip install -r requirements.txt
+# 静的ファイル用のディレクトリを作成
+mkdir -p staticfiles/dashboard/css
 
-# Run collectstatic with DJANGO_SETTINGS_MODULE
-export DJANGO_SETTINGS_MODULE=myproject.settings  # settings.pyの場所を適切に指定
-python manage.py collectstatic --noinput
+# CSS ファイルを直接コピー
+cp -r dashboard/static/dashboard/css/* staticfiles/dashboard/css/

@@ -8,7 +8,7 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-development')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'true'
 
 # Clean up the ALLOWED_HOSTS section
 ALLOWED_HOSTS = [
@@ -98,7 +98,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'  # 正しい形式
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
