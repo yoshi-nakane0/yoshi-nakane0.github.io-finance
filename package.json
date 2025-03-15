@@ -1,0 +1,11 @@
+{
+    "name": "finance-dashboard",
+    "version": "1.0.0",
+    "description": "Finance dashboard application",
+    "scripts": {
+      "build": "bash ./build_files.sh"
+    },
+    "dependencies": {
+      "tailwindcss": "^3.3.5"
+    }
+  }

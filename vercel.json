@@ -6,7 +6,7 @@
       "use": "@vercel/python"
     },
     {
-      "src": "./build_files.sh",
+      "src": "build_files.sh",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "staticfiles"
@@ -22,5 +22,6 @@
       "src": "/(.*)",
       "dest": "myproject/wsgi.py"
     }
-  ]
+  ],
+  "installCommand": "pip install -r requirements.txt"
 }
