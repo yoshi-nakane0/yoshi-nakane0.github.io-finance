@@ -106,13 +106,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-# STATICFILES_DIRS = [
-#     BASE_DIR / "static",
-# ]
-
-# Vercel デプロイでは一旦コメントアウト推奨
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 # Whitenoise の設定 (静的ファイルを圧縮)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
