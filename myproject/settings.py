@@ -8,7 +8,7 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-development')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'false'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Clean up the ALLOWED_HOSTS section
 ALLOWED_HOSTS = [
