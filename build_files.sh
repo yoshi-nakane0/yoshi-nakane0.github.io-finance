@@ -1,14 +1,8 @@
 #!/bin/bash
 
-# Use Vercel's Python path
-export PATH="/vercel/path0/python3/bin:$PATH"
+# Install dependencies
+pip install -r requirements.txt
 
-# Create staticfiles directory if it doesn't exist
-mkdir -p staticfiles/dashboard/css
-
-# Copy CSS directly instead of using Tailwind (workaround)
-mkdir -p staticfiles/dashboard/css
-cp -r dashboard/static/dashboard/css/* staticfiles/dashboard/css/
-
-# Run collectstatic
-python3 manage.py collectstatic --noinput
+# Run collectstatic with DJANGO_SETTINGS_MODULE
+export DJANGO_SETTINGS_MODULE=myproject.settings  # settings.pyの場所を適切に指定
+python manage.py collectstatic --noinput
