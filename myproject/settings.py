@@ -8,14 +8,16 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-development')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'false'
 
-ALLOWED_HOSTS = ['yoshi-nakane0-github-io-finance.vercel.app', 'yoshi-nakane0-github-io-finance-4rm6k1mok-yns-projects-de0414f8.vercel.app'] # デプロイURLを正確に
-
-
-# 非推奨: ワイルドカードを使う場合 (セキュリティリスクあり)
- ALLOWED_HOSTS = ['.vercel.app']
-
+# Clean up the ALLOWED_HOSTS section
+ALLOWED_HOSTS = [
+    'yoshi-nakane0-github-io-finance.vercel.app',
+    'yoshi-nakane0-github-io-finance-4rm6k1mok-yns-projects-de0414f8.vercel.app',
+    '.vercel.app',  # Wildcards all Vercel domains
+    'localhost',    # For local development
+    '127.0.0.1'     # For local development
+]
 #ALLOWED_HOSTS = [
 #    'yoshi-nakane0-github-io-finance.vercel.app',  # 以前から設定されていたホスト
 #    'yoshi-nakane0-github-io-finance-bhczxq6om-yns-projects-de0414f8.vercel.app',  # 新しく追加するホスト
@@ -100,8 +102,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'  # 正しい形式
-
-# STATICFILES_DIRS は不要なのでコメントアウト
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",
 # ]
