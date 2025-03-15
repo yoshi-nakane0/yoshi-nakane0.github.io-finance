@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Install required packages
-pip install -r requirements.txt
+# Use Vercel's Python path
+export PATH="/vercel/path0/python3/bin:$PATH"
 
 # Create staticfiles directory if it doesn't exist
 mkdir -p staticfiles/dashboard/css
 
-# Build Tailwind CSS
-npx tailwindcss -i ./dashboard/static/dashboard/css/style.css -o ./staticfiles/dashboard/css/style.css
+# Copy CSS directly instead of using Tailwind (workaround)
+mkdir -p staticfiles/dashboard/css
+cp -r dashboard/static/dashboard/css/* staticfiles/dashboard/css/
 
 # Run collectstatic
-python manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput

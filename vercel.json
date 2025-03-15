@@ -3,7 +3,11 @@
   "builds": [
     {
       "src": "myproject/wsgi.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3"
+      }
     },
     {
       "src": "build_files.sh",
@@ -22,6 +26,5 @@
       "src": "/(.*)",
       "dest": "myproject/wsgi.py"
     }
-  ],
-  "installCommand": "pip install -r requirements.txt"
+  ]
 }
