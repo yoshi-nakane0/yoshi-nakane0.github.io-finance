@@ -1,0 +1,156 @@
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #1E1E2E;
+    color: white;
+  }
+/* 全体コンテナ */
+.app-container {
+    max-width: 450px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+    position: relative;
+    overflow: hidden;
+  }
+.schedule-container {
+    font-family: sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    padding: 10px;
+}
+
+/* ステータスバー */
+.status-bar {
+    background-color: #1c1c1c;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 2px 5px;
+    border-bottom: 1px solid #45423a;
+}
+
+.status-bar-item {
+    background-color: #536c52;
+    padding: 3px 5px;
+    font-size: 13px;
+    color: #ffffff;
+    border: none !important;
+    margin-left: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.status-bar-item:hover {
+    background-color: #6d8a6b;
+}
+
+/* 日付ごとのセクション */
+.schedule-date {
+    margin-bottom: 20px;
+}
+
+.schedule-date-title {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 0px;
+    padding-left: 5px;
+}
+
+/* テーブルコンテナ (スクロール用) */
+.schedule-table-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
+/* テーブル本体 */
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    background-color: #212121;
+}
+
+/* テーブルヘッダー */
+.schedule-table th {
+    background-color: #212121;
+    border: 1px solid #717170;
+    padding: 3px;
+    text-align: center;
+    font-size: 13px;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+/* テーブルセル */
+.schedule-table td {
+    border: 1px solid #717170;
+    padding: 3px;
+    font-size: 13px;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 列幅の調整 */
+.schedule-table th:nth-child(1),
+.schedule-table td:nth-child(1) { /* 時間 */
+    width: 50px;
+    font-size: 13px;
+    padding: 2px;
+    white-space: nowrap;
+}
+
+.schedule-table th:nth-child(2),
+.schedule-table td:nth-child(2) { /* 国 */
+    width: 50px;
+}
+
+.schedule-table th:nth-child(3),
+.schedule-table td:nth-child(3) { /* 指標 */
+    width: 250px;
+}
+
+.schedule-table th:nth-child(4),
+.schedule-table td:nth-child(4) { /* ★ */
+    width: 50px;
+}
+
+/* 重要イベントのスタイル */
+table.schedule-table td.event-cell.important-event {
+    color: #f99393 !important; /* 指標の文字色 */
+}
+
+table.schedule-table td.impact-cell.important-impact {
+    color: #f99393 !important; /* 重要度の文字色 */
+}
+
+/* 中央揃えにするセル */
+.schedule-table td:nth-child(1),
+.schedule-table td:nth-child(2),
+.schedule-table td:nth-child(4)
+{
+    text-align: center;
+}
+
+/* Back to top button styles */
+#back-to-top {
+    display: none; /* Hidden by default */
+    position: fixed; /* Fixed/sticky position */
+    bottom: 50px; /* Place the button at the bottom of the page */
+    right: 30px; /* Place the button 30px from the right */
+    z-index: 99; /* Make sure it does not overlap */
+    border: none; /* Remove borders */
+    outline: none; /* Remove outline */
+    background-color: #555; /* Set a background color */
+    color: white; /* Text color */
+    cursor: pointer; /* Add a mouse pointer on hover */
+    padding: 10px 15px; /* Some padding */
+    border-radius: 10px; /* Rounded corners */
+    font-size: 18px; /* Increase font size */
+}
+
+#back-to-top:hover {
+    background-color: #777; /* Add a dark-grey background on hover */
+}
