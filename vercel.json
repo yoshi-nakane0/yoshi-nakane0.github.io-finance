@@ -10,7 +10,7 @@
         "buildCommand": "bash build_files.sh",
         "environment": {
           "SECRET_KEY": "${SECRET_KEY}",
-          "DEBUG": "${DEBUG}"
+          "DEBUG": "False"
         }
       }
     }

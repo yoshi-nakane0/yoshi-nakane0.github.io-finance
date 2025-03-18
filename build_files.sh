@@ -8,8 +8,8 @@ python3.9 -m pip install --upgrade pip --no-warn-script-location
 python3.9 -m pip install -r requirements.txt --no-warn-script-location
 
 # 静的ファイルの収集
-python3.9 manage.py collectstatic --noinput
+python3.9 manage.py collectstatic --noinput --clear
 
-# 静的ファイルを staticfiles にコピー（冗長だが一貫性を保つ）
-mkdir -p staticfiles
-cp -r static/* staticfiles/
+# デバッグ用ログ
+echo "Static files collected, checking staticfiles directory"
+ls -la staticfiles/
