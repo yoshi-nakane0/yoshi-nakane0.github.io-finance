@@ -1,0 +1,171 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- style.cssの読み込み -->
+    <link rel="stylesheet" href="{% static 'schedule/css/style.css' %}">
+</head>
+
+<body class="bg-dark">
+    <!-- コンテンツ -->
+    <div class="app-container">
+        <div class="schedule-container">
+            <div class="status-bar">
+                <button class="status-bar-item" onclick="location.href='/'">ホーム</button>
+                <button class="status-bar-item" id="toggle-past-events">切替</button>
+                <button class="status-bar-item" onclick="window.open('https://www.forexfactory.com/calendar', '_blank')">リンク</button>
+            </div>
+            <div class="schedule-content">
+                <!-- JavaScriptでここにデータを挿入 -->
+            </div>
+        </div>
+
+        <!-- トップに戻るボタン -->
+        <button id="back-to-top" title="Go to top">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+
+        <script>
+            let data = [];
+
+            function fetchAndParseCSV() {
+                return fetch("{% static 'schedule/data.csv' %}")
+                  .then(response => response.text())
+                  .then(csvText => parseCSV(csvText));
+            }
+
+            function parseCSV(csvText) {
+                const lines = csvText.split('\n').map(line => line.trim()).filter(line => line !== '');
+                const headers = lines.shift().split(',');
+                return lines.map(line => {
+                    const cols = line.split(',');
+                    return {
+                        date: cols[0] || '',
+                        time: cols[1] || '',
+                        currency: cols[2] || '',
+                        event: cols[3] || '',
+                        impact: cols[4] || ''
+                    };
+                });
+            }
+
+            let showPastEvents = false;
+            const scheduleContent = document.querySelector('.schedule-content');
+            const toggleButton = document.getElementById('toggle-past-events');
+
+            function renderSchedule() {
+                const today = new Date().toISOString().slice(0, 10);
+
+                const groupedEvents = data.reduce((acc, item) => {
+                    acc[item.date] = acc[item.date] || [];
+                    acc[item.date].push(item);
+                    return acc;
+                }, {});
+
+                scheduleContent.innerHTML = '';
+
+                Object.entries(groupedEvents)
+                    .filter(([date]) => showPastEvents || date >= today)
+                    .forEach(([date, events]) => {
+                        const dateDiv = document.createElement('div');
+                        dateDiv.className = 'schedule-date';
+
+                        const dateTitle = document.createElement('h2');
+                        dateTitle.className = 'schedule-date-title';
+                        dateTitle.textContent = date;
+                        dateDiv.appendChild(dateTitle);
+
+                        const tableContainer = document.createElement('div');
+                        tableContainer.className = 'schedule-table-container';
+
+                        const table = document.createElement('table');
+                        table.className = 'schedule-table';
+                        table.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th>時間</th>
+                                    <th>国</th>
+                                    <th>指標</th>
+                                    <th>重要度</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            ${events.map(item => `
+                                <tr data-impact="${item.impact}">
+                                    <td>${item.time || '-'}</td>
+                                    <td>${item.currency || '-'}</td>
+                                    <td class="event-cell">
+                                        ${item.event.length > 30 ? item.event.substring(0, 30) + "..." : item.event}
+                                    </td>
+                                    <td class="impact-cell">
+                                        ${item.impact || '-'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            </tbody>
+                        `;
+                        tableContainer.appendChild(table);
+                        dateDiv.appendChild(tableContainer);
+                        scheduleContent.appendChild(dateDiv);
+                    });
+
+                // 重要度に基づいてスタイルを適用 (修正)
+                const rows = document.querySelectorAll('tr[data-impact="★★★"]'); // data-impact 属性で直接選択
+                rows.forEach(row => {
+                    const impactCell = row.querySelector('.impact-cell');
+                    const eventCell = row.querySelector('.event-cell');
+
+                    if (impactCell) {
+                        impactCell.classList.add('important-impact');
+                    }
+                    if (eventCell) {
+                        eventCell.classList.add('important-event');
+                    }
+                });
+            }
+
+
+            toggleButton.addEventListener('click', () => {
+                showPastEvents = !showPastEvents;
+                renderSchedule();
+            });
+
+            fetchAndParseCSV()
+              .then(parsedData => {
+                  data = parsedData;
+                  renderSchedule();
+              })
+              .catch(error => {
+                  console.error("CSVの読み込みでエラー:", error);
+              });
+
+            // Back to top button script
+            const backToTopButton = document.getElementById("back-to-top");
+
+            window.onscroll = function() {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    backToTopButton.style.display = "block";
+                } else {
+                    backToTopButton.style.display = "none";
+                }
+            };
+
+            backToTopButton.addEventListener("click", () => {
+                document.body.scrollTop = 0; // For Safari
+                document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+            });
+
+        </script>
+    </div>
+</body>
+</html>

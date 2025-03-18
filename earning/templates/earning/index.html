@@ -1,0 +1,85 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    <!-- Bootstrap, Icons, style.css の読み込み (変更なし)-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'earning/css/style.css' %}">
+</head>
+<body class="bg-dark">
+    <!-- コンテンツ -->
+    <div class="app-container">
+        <div class="schedule-container">
+            <div class="status-bar">
+                <button class="status-bar-item" onclick="location.href='/'">ホーム</button>
+            </div>
+
+            <div class="earning-content">
+                <header class="earning-header">
+                    <h1>企業決算情報</h1>
+                    <p class="description">企業の決算日、決算結果の一覧</p>
+                </header>
+
+                <main>
+                    <div class="table-wrapper">
+                        <table class="earning-table">
+                            <thead>
+                                <tr>
+                                    <th>決算日</th>
+                                    <th>企業</th>
+                                    <th>業種</th>
+                                    <th>EPS</th>
+                                    <th>次回</th>
+                                    <th>売上</th>
+                                    <th>次回</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in earnings_data %}
+                                <tr>
+                                    <td>{{ item.date }}</td>
+                                    <td>{{ item.company }}</td>
+                                    <td>{{ item.industry }}</td>
+                                    <td>
+                                        {% if item.eps == '✕' %}
+                                        <span class="negative-mark">{{ item.eps }}</span>
+                                        {% else %}
+                                        {{ item.eps }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="{{ item.eps_class }}">{{ item.eps_forecast }}</td>
+                                    <td>
+                                        {% if item.revenue == '✕' %}
+                                            <span class="negative-mark">{{ item.revenue }}</span>
+                                        {% else %}
+                                            {{ item.revenue }}
+                                        {% endif %}
+                                    </td>
+                                     <td class="{{ item.revenue_class }}">{{ item.revenue_forecast }}</td>
+
+                                </tr>
+                                {% endfor %}
+                                <!-- フォールバック (変更なし) -->
+                                {% if not earnings_data %}
+                                <tr>
+                                    <td colspan="7">データがありません</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, カスタムJS (変更なし) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    {# <script src="{% static 'earning/js/script.js' %}"></script> #}
+</body>
+</html>
