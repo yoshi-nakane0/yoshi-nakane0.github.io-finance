@@ -1,0 +1,24 @@
+date,market,symbol,company,industry,eps1,eps2,near1,sales1,sales2,near2
+2025-03-10,NYSE,ORCL,Oracle,ソフトウェア、テクノロジー,✕,変わらず,EPS下落,✕,変わらず,売上下落
+2025-03-05,NASDAQ,AVGO,Broadcom (AVGO),半導体、テクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-03-06,NASDAQ,COST,Costco Wholesale,小売り,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-01-30,NASDAQ,AAPL,Apple,テクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-02-04,NYSE,MRK,Merck,医薬品,〇,下方修正,EPS下落,〇,下方修正,売上上昇
+2025-02-06,NYSE,LLY,Eli Lilly,医薬品、バイオテクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-01-30,NYSE,MA,Mastercard,金融サービス,〇,下方修正,EPS上昇,〇,下方修正,売上上昇
+2025-02-06,NASDAQ,AMZN,Amazon,小売り,〇,上方修正,EPS上昇,✕,下方修正,売上上昇
+2025-01-29,NASDAQ,META,Meta Platforms,テクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-01-29,NASDAQ,MSFT,Microsoft,ソフトウェア、テクノロジー,〇,下方修正,EPS上昇,〇,下方修正,売上上昇
+2025-02-04,NASDAQ,GOOG,Alphabet (Google),ソフトウェア、テクノロジー,〇,上方修正,EPS下落,〇,上方修正,売上上昇
+2025-01-30,NYSE,V,Visa,金融サービス,〇,下方修正,EPS上昇,✕,下方修正,売上上昇
+2025-01-29,NASDAQ,TSLA,Tesla,自動車、テクノロジー,✕,下方修正,EPS上昇,〇,下方修正,売上上昇
+2025-04-17,NYSE,PG,Procter & Gamble,消費財,〇,上方修正,EPS上昇,✕,下方修正,売上上昇
+2025-04-16,NYSE,TSM,TSMC,半導体、テクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-04-16,NASDAQ,NFLX,Netflix,インターネット、テクノロジー,〇,上方修正,EPS上昇,〇,下方修正,売上上昇
+2025-04-15,NYSE,JNJ,Johnson & Johnson,医薬品,〇,下方修正,EPS下落,✕,上方修正,売上下落
+2025-04-15,NYSE,BAC,Bank of America,銀行、金融サービス,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-04-11,NYSE,JPM,JPMorgan Chase,銀行、金融サービス,〇,上方修正,EPS下落,〇,上方修正,売上下落
+2025-04-14,NYSE,UNH,UnitedHealth,ヘルスケアサービス,〇,下方修正,EPS上昇,〇,上方修正,売上上昇
+2025-02-24,NYSE,BRK-B,Berkshire Hathaway,保険、製造業、小売り、金融、投資,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
+2025-02-20,NYSE,WMT,Walmart,小売り、食品、ドラッグ,〇,下方修正,EPS下落,〇,上方修正,売上下落
+2025-02-26,NASDAQ,NVDA,NVIDIA,半導体、テクノロジー,〇,上方修正,EPS上昇,〇,上方修正,売上上昇
