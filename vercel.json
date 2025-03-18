@@ -4,20 +4,14 @@
     {
       "src": "myproject/wsgi.py",
       "use": "@vercel/python",
-       "config": {
+      "config": {
         "maxLambdaSize": "15mb",
         "runtime": "python3.9",
+        "buildCommand": "bash build_files.sh",
         "environment": {
-        "SECRET_KEY": "${SECRET_KEY}",
-        "DEBUG": "${DEBUG}"
-       }
-      }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
+          "SECRET_KEY": "${SECRET_KEY}",
+          "DEBUG": "${DEBUG}"
+        }
       }
     }
   ],
