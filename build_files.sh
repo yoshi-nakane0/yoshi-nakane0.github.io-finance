@@ -19,6 +19,7 @@ python3.9 manage.py collectstatic --noinput --clear
 
 # 収集後のデバッグ用ログ
 echo "Static files collected, checking staticfiles directory"
-ls -la staticfiles/
-ls -la staticfiles/dashboard/css/ || echo "Warning: staticfiles/dashboard/css/ directory not found"
-ls -la staticfiles/images/ico/ || echo "Warning: staticfiles/images/ico/ directory not found"
+find staticfiles -type f | grep "\.css$"
+
+# 重要: staticディレクトリを保持
+cp -r static/* staticfiles/ 2>/dev/null || echo "No additional files to copy"

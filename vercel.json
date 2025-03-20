@@ -15,20 +15,24 @@
           "DJANGO_SETTINGS_MODULE": "myproject.settings"
         }
       }
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/favicon.ico",
-      "dest": "/staticfiles/images/ico/favicon.ico"
+      "dest": "/static/images/ico/favicon.ico"
     },
     {
       "src": "/favicon.png",
-      "dest": "/staticfiles/images/ico/favicon.png"
+      "dest": "/static/images/ico/favicon.png"
     },
     {
       "src": "/(.*)",
