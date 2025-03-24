@@ -109,7 +109,7 @@ body {
 
 .schedule-table th:nth-child(3),
 .schedule-table td:nth-child(3) { /* 指標 */
-    width: 250px;
+    width: 200px;
 }
 
 .schedule-table th:nth-child(4),

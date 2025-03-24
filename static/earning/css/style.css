@@ -55,23 +55,6 @@ body {
   margin-top: 1px;
 }
 
-.earning-header {
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-.earning-header h1 {
-  font-size: 18px;
-  margin-bottom: 5px;
-  color: #ffffff;
-}
-
-.earning-header .description { /* セレクタ修正 */
-  color: #aaaaaa;
-  font-size: 12px;
-  margin: 0;
-}
-
 /* テーブルラッパー */
 .table-wrapper {
   overflow-x: auto;
@@ -84,17 +67,42 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12px;
+  font-size: 13px;
   min-width: 600px; /* 横スクロールを保証 */
 }
 
 .earning-table th,
 .earning-table td {
   padding: 8px 6px;
-  text-align: center;
+  /* text-align: center;  <-- デフォルトは削除 */
   border-right: 1px solid #333344;
   white-space: nowrap;
 }
+
+/* <th> を中央揃え */
+.earning-table th {
+    text-align: center;
+}
+
+/* 「企業」と「業種」の <td> を左揃え */
+.earning-table td.text-left {
+    text-align: left;
+    padding-left: 10px;
+}
+
+/* その他の <td> は中央揃え (必要に応じて) */
+.earning-table td.text-center {
+    text-align: center;
+}
+
+/* 業種のセルに適用するスタイル */
+.earning-table td.industry-cell {
+  max-width: 200px; /* 適切な最大幅を設定 */
+  overflow: hidden;       /* はみ出る内容を隠す */
+  text-overflow: ellipsis; /* 省略記号 (...) を表示 */
+  white-space: nowrap;     /* 改行を禁止 */
+}
+
 
 .earning-table th:last-child,
 .earning-table td:last-child {
@@ -153,18 +161,13 @@ body {
   .app-container {
       width: 100%;
   }
-
-  .earning-table {
-      font-size: 11px;
-  }
-
   .earning-table th,
   .earning-table td {
       padding: 6px 4px;
   }
 
   .badge {
-      font-size: 9px;
+      font-size: 12px;
       padding: 1px 3px;
   }
 }

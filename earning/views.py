@@ -53,6 +53,8 @@ def index(request):
                     'revenue_change': revenue_change,
                     'revenue_forecast': revenue_forecast,
                     'revenue_class': revenue_class,  # クラス名をテンプレートに渡す
+                    'market': row['market'],# 追加
+                    'symbol': row['symbol'],  # 追加
                 })
 
         earnings_data.sort(key=lambda item: datetime.strptime(item['date'], '%Y-%m-%d'), reverse=False)
