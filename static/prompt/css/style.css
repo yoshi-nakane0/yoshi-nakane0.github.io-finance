@@ -217,9 +217,11 @@ body {
     color: #58A6FF !important; /* Bootstrap上書き */
     font-size: 12px;
     font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* --- ↓↓↓ 修正箇所 ↓↓↓ --- */
+    white-space: nowrap;      /* テキストを折り返さない */
+    overflow: hidden;         /* はみ出した部分を隠す */
+    text-overflow: ellipsis;  /* はみ出した部分を...で表示 */
+    /* --- ↑↑↑ 修正箇所 ↑↑↑ --- */
 }
 
 .card-body {
