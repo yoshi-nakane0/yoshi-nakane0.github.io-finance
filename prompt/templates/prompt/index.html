@@ -52,15 +52,38 @@
                     <button class="filter-btn" data-filter="ChatGPT">ChatGPT</button>
                     <button class="filter-btn" data-filter="Google AI Studio">Google AI Studio</button>
                     <button class="filter-btn" data-filter="Genspark">Genspark</button>
+                    <!-- 他のフィルターボタンもここに追加可能 -->
                 </div>
+
+                <!-- 上部ページネーションと表示件数選択 -->
+                <nav class="mt-0 mb-4 pagination-controls d-flex justify-content-center align-items-center flex-wrap" aria-label="Page navigation top">
+                    <div class="pagination-container d-flex align-items-center">
+                        <ul class="pagination pagination-sm mb-0 me-3" id="pagination-list-top">
+                            <!-- ここはJavaScriptで動的に生成されます -->
+                        </ul>
+                        <div class="items-per-page-selector">
+                            <select class="form-select form-select-sm" id="items-per-page-top">
+                                <option value="5">5件</option>
+                                <option value="10">10件</option>
+                                <option value="20">20件</option>
+                                <option value="50">50件</option>
+                            </select>
+                        </div>
+                    </div>
+                </nav>
 
                 <!-- プロンプトカード -->
                 <div class="prompt-cards">
                     {% for prompt in prompt_data %}
-                    <div class="card mb-3 bg-dark text-light prompt-card" data-category="{{ prompt.category }}" data-usage="{{ prompt.usage }}" data-model="{{ prompt.target_ai }}">
+                    <div class="card mb-3 bg-dark text-light prompt-card"
+                         id="prompt-{{ forloop.counter }}"
+                         data-category="{{ prompt.category }}"
+                         data-usage="{{ prompt.usage }}"
+                         data-model="{{ prompt.target_ai }}"
+                         draggable="false">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center flex-grow-1">
-                                <div class="prompt-icon">
+                                <div class="prompt-icon" data-drag-handle>
                                     {% if prompt.target_ai == 'ChatGPT' %}
                                         <i class="bi bi-chat-dots"></i>
                                     {% elif prompt.target_ai == 'Google AI Studio' %}
@@ -72,43 +95,59 @@
                                     {% endif %}
                                 </div>
                                 <h5 class="text-primary mb-0 me-2">{{ prompt.summary }}</h5>
-                                 <!-- category_badgeは削除 -->
                             </div>
                             <div class="card-actions">
-                                 <!-- 絵文字をここに追加 -->
                                 <span class="category-emoji me-2">{{ prompt.category_emoji }}</span>
-                                <button class="btn btn-icon translate-btn" data-jp-prompt="{{ prompt.jp_prompt }}" data-en-prompt="{{ prompt.en_prompt }}">
+                                <button class="btn btn-icon toggle-btn"
+                                        data-full-prompt="{{ prompt.jp_prompt }}"
+                                        data-truncated-prompt="{{ prompt.truncated_jp_prompt }}"
+                                        title="全文表示">
+                                    <i class="bi bi-arrows-expand"></i>
+                                </button>
+                                <button class="btn btn-icon translate-btn"
+                                        data-jp-prompt="{{ prompt.jp_prompt }}"
+                                        data-en-prompt="{{ prompt.en_prompt }}"
+                                        title="英語に翻訳">
                                     <i class="bi bi-translate"></i>
                                 </button>
-                                <button class="btn btn-icon copy-btn" data-prompt="{{ prompt.truncated_jp_prompt }}">
+                                <button class="btn btn-icon copy-btn"
+                                        data-prompt="{{ prompt.truncated_jp_prompt }}"
+                                        title="コピー">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="card-body">
-                            <p class="prompt-content" data-lang="jp">{{ prompt.truncated_jp_prompt }}</p>
+                            <p class="prompt-content"
+                               data-lang="jp"
+                               data-full-jp="{{ prompt.jp_prompt }}"
+                               data-truncated-jp="{{ prompt.truncated_jp_prompt }}"
+                               data-full-en="{{ prompt.en_prompt }}"
+                               >{{ prompt.truncated_jp_prompt }}</p>
                         </div>
                     </div>
                     {% empty %}
-                    <div class="text-center py-4 text-muted">
+                    <div class="text-center py-4 text-muted no-results-placeholder">
                         <i class="bi bi-search me-2"></i>プロンプトデータがありません。
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- ページネーション -->
-                <nav class="mt-4">
-                    <ul class="pagination pagination-sm justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">前へ</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">次へ</a>
-                        </li>
-                    </ul>
+                <!-- 下部ページネーションと表示件数選択 -->
+                <nav class="mt-4 pagination-controls d-flex justify-content-center align-items-center flex-wrap" aria-label="Page navigation bottom">
+                     <div class="pagination-container d-flex align-items-center">
+                        <ul class="pagination pagination-sm mb-0 me-3" id="pagination-list-bottom">
+                            <!-- ここはJavaScriptで動的に生成されます -->
+                        </ul>
+                        <div class="items-per-page-selector">
+                            <select class="form-select form-select-sm" id="items-per-page-bottom">
+                                <option value="5">5件</option>
+                                <option value="10">10件</option>
+                                <option value="20">20件</option>
+                                <option value="50">50件</option>
+                            </select>
+                        </div>
+                    </div>
                 </nav>
             </div>
 
