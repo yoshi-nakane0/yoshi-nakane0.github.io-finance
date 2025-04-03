@@ -1,16 +1,96 @@
 category,summary,jp,en,ai
-検索,日本語サイトを検索から除外する,"1.質問を英語に翻訳する。翻訳した英語は出力しない。
-2.情報を検索する。『日本語』の情報は検索しない。
-- 常に最新情報を取得し、情報の日付けとリンク元を提示すること。
-3.日本語に翻訳し回答を出力する。
----------
-最新の株式市場の注目ニュースと、その動きの主な要因を教えてください。ただし、日本語以外の情報源から回答してください。","1. Translate the question into English. The translated English is not output.
-2. Search for information. Do not search for information in “Japanese.
-- Always retrieve the latest information and provide the date of the information and the source of the link.
-3. Translate the information into Japanese and output the answer.
----------
-What is the latest noteworthy news on the stock market and what are the main factors behind the movement? However, please answer from a source other than Japanese.",ALL
-検索,ポストとwebサイトをリサーチ,この質問は回答せず、私の言うことを理解して。ポストとwebサイトをリサーチするのは英語圏を主要とした海外情報。日本語は除外すること。作成した回答は日本語訳し出力する。,"Do not answer this question and understand what I am saying. Researching posts and websites is overseas information, primarily in English-speaking countries. Japanese is to be excluded. The answers you create will be translated into Japanese and output.",grok3
+検索,ニュース検索(海外の情報を取得する),"# 指示
+あなたは、ユーザーからの質問に対して、指定されたプロセスを経て日本語で回答を生成するAIアシスタントです。以下の手順に従って処理を実行して。
+
+## 処理フロー
+1.  **入力の受け取りと英語への翻訳:**
+    *   ユーザーからの質問を受け取ります。
+    *   質問の言語に関わらず、**質問全体を英語に機械翻訳**します。（元の質問が英語の場合も、内容の標準化のためにこの翻訳プロセスを経るか、そのまま英語として扱います。）
+2.  **質問の分析と情報収集戦略 (英語で実行):**
+    *   英語に翻訳された質問を理解・分析します。
+    *   質問のトピックに関連する重要な**キーワードやフレーズを英語で明確に定義**します。
+    *   **情報源の選定:**
+        *   信頼できる**英語圏の情報源**（例：学術雑誌、評価の高いニュースサイト、政府刊行物など）を主に使用して情報を検索します。
+        *   **重要：日本語のウェブサイトは情報源から除外してください。**
+    *   **情報の収集と検証:**
+        *   選定した情報源から関連情報を収集します。
+        *   収集した情報が正確で信頼できるか、**複数の情報源と照合して検証**します。
+3.  **回答の内部生成 (英語で実行):**
+    *   検証済みの情報に基づき、質問に対する包括的で簡潔な回答を**英語で**内部的に作成・要約します。
+4.  **最終出力 (日本語):**
+    *   ステップ3で内部的に作成した英語の回答を、自然で正確な**日本語に機械翻訳**します。
+    *   翻訳された**日本語の回答のみ**を出力します。
+
+## 出力に関する制約
+*   **最終的な回答は必ず日本語で出力してください。**
+*   上記「処理フロー」に記載されている**ステップ1から3の途中経過（英語への翻訳、キーワード定義、情報源リスト、検証プロセス、内部的な英語での回答など）は、最終的な出力に一切含めないでください。** ユーザーには最終的な日本語の回答だけが見えるようにします。","# Steps
+
+1. translate all questions into English
+2. clearly define key words and phrases related to the topic translated into English
+3. locate reliable sources of information, primarily from English-speaking countries, such as academic journals, reputable news sites, and government publications
+4. Verify the information: Check the information against multiple sources to ensure its accuracy and reliability.
+5. summarize findings: Briefly summarize the information gathered.
+
+# Output format 
+- Translate responses into Japanese.
+- Steps 1 through 5 are not output.",ALL
+検索,ポストとwebサイトをリサーチ,"この質問は回答せず、私の言うことを理解して。
+ポストとwebサイトをリサーチするのは英語圏を主要とした海外情報。日本語は除外すること。作成した回答は日本語訳し出力する。","Do not answer this question and understand what I am saying. Researching posts and websites is overseas information, primarily in English-speaking countries. Japanese is to be excluded. The answers you create will be translated into Japanese and output.",grok3
+経済,過去の経済歴史からみた株価予測,"# 指示
+過去の株式市場データ（特にアノマリーや季節性要因を含む）を分析し、4月における週ごとの市場動向の一般的な傾向について深く考察してください。
+
+# 分析対象期間
+可能であれば、過去10〜20年程度のデータに基づいた一般的な傾向を分析してください。
+
+# 回答形式
+以下の構成で、各週の詳細な分析をお願いします。
+
+第1週:
+典型的な動向・推移: この週によく見られる市場の方向性（上昇/下落/レンジ相場など）や値動きのパターンを説明してください。
+考えられる背景・要因: 月初効果、特定の経済指標発表、新年度入りに伴う資金流入など、この週の動きに影響を与えやすいと考えられる要因を挙げ、解説してください。
+市場参加者の思惑: この時期の投資家がどのような心理状態にあり、どのような投資行動を取りやすいか考察してください。
+
+第2週:
+典型的な動向・推移: 同上
+考えられる背景・要因: 中旬特有の需給バランスの変化、注目されやすいイベントなど、この週特有の要因を挙げ、解説してください。
+市場参加者の思惑: 同上
+
+第3週:
+典型的な動向・推移: 同上
+考えられる背景・要因: オプションSQ（特別清算指数算出）、決算発表シーズンへの期待感や警戒感など、この週に影響しやすい要因を挙げ、解説してください。
+市場参加者の思惑: 同上
+
+第4週:
+典型的な動向・推移: 同上
+考えられる背景・要因: 月末効果（ドレッシング買い、手仕舞い売りなど）、大型連休（ゴールデンウィークなど）前のポジション調整といった要因を挙げ、解説してください。
+市場参加者の思惑: 同上","# Instructions.
+Analyze historical stock market data, especially including anomalies and seasonality factors, and discuss in depth the general trend of weekly market developments in April.
+
+# Period to be analyzed
+If possible, please analyze general trends based on data from the past 10-20 years.
+
+# Response format
+Please provide a detailed analysis for each week using the following structure.
+
+Week 1:.
+Typical trends/transitions: Describe the market direction (e.g., up/down/range market) and price movement patterns that are typical for this week.
+Possible Background/Factors: Please list and explain any factors that you believe are likely to influence the week's movement, such as early-month effects, the release of specific economic indicators, or inflows of capital with the start of the new fiscal year.
+Market Participants' Perceptions: Describe the psychology of investors at this time of year and the types of investment behavior that they are likely to engage in.
+
+Week 2: Typical Trends
+Typical trends: Same as above
+Possible Background/Factors: Please list and explain factors specific to this week, such as changes in the supply-demand balance unique to the middle of the week, events that tend to attract attention, etc.
+Market participants' expectations: Same as above
+
+Week 3: Typical Trends
+Typical trends: Same as above
+Possible background/factors: Please list and explain factors that are likely to affect this week, such as SQ (Special Settlement Quotations) for options, expectations and caution for the earnings announcement season, etc.
+Market participants' expectations: Same as above
+
+Week 4: Typical trends/transitions
+Typical trends/transitions: Same as above
+Possible background/factors: Please list and explain factors such as the effect of the end of the month (dressing buying, stock selling, etc.) and position adjustments before major holidays (Golden Week, etc.).
+Market participants' expectations: Same as above",ALL
 デザイン,スライド作成,以下の内容を、超一流デザイナーが作成したような、日本語で完璧なグラフィックレコーディング風のパワポ用スライドをSVGインフォグラフィックに変換してください。情報設計とビジュアルデザインの両面で最高水準を目指します。図形やアイコンを活用して内容を視覚的に表現します。,"Please convert the following content into SVG infographics with slides for PowerPoint in a perfect graphic recording style in Japanese, as if created by a top-notch designer. We aim for the highest standards in both information design and visual design. Utilize graphics and icons to visually represent the content.",claude
 文章作成,日本語に翻訳する,"- 質問する言語を日本語に翻訳して。
 - 日本語に翻訳する際に、すべての表現が正しい日本語になるよう適切に修正すること。","- Translate the language in question into Japanese.
@@ -26,6 +106,7 @@ GDP成長率の予測
 ゴールドマン・サックス (Goldman Sachs) の公式ウェブサイト（レポート、記事など）
 ブルームバーグ (Bloomberg)
 ロイター (Reuters)
+CNBC
 出力:
 該当する記事やレポートのタイトルとURL
 見つかった情報から、上記のインフレ、金利、GDPに関するHatzius氏の具体的な見解や予測値を要約してください。","Search for information on the latest economic forecasts by Jan Hatzius (Goldman Sachs) based on the following criteria
@@ -75,7 +156,8 @@ From the information found, please summarize Hatzius' specific views and project
 Provides a detailed analysis based on Western Astrology.
 
 Translated with DeepL.com (free version)",Google AI Studio
-経済,株価が変動した原因の長期化,この出来事は株式市場にとって長期に渡るマイナスな出来事になるのか？一時的なことになるのか？株の売買を継続するのに、何に注意すれば良いのか？,Will this event be a long-term negative event for the stock market? Will it be temporary? What should I be aware of to continue buying and selling stocks?,ALL
+経済,株価が変動した原因の長期化,"この出来事は株式市場にとって長期に渡るマイナスな出来事になるのか？
+一時的なことになるのか？株の売買を継続するのに、何に注意すれば良いのか？",Will this event be a long-term negative event for the stock market? Will it be temporary? What should I be aware of to continue buying and selling stocks?,ALL
 文章作成,日本語に特化した高度なAIアシスタント,"あなたは日本語に特化した高度なAIアシスタントです。ユーザーのリクエストに対して、自然で正確、そして適切な日本語で応答します。
 #########
 以下の原則を遵守してください。
@@ -385,187 +467,3 @@ To mitigate the risk of liver damage, it is crucial to avoid exceeding the recom
 -  Information may become outdated; therefore, providing information based on the latest guidelines is essential.
 - When answering specifically about a questioner's health concerns, strongly recommend seeking medical advice.
 - Including references to appropriate sources (e.g., the latest pharmaceutical literature, WHO or FDA websites) will enhance credibility.",ALL
-経済,経済ニュース検索,"# ステップ
-1. プロンプトで入力した全ての質問を英語に翻訳する。
-2. トピックに関連するキーワードやフレーズを明確に定義する。
-3. 情報源は英語圏を主とし、学術雑誌、評判の高いニュースサイト、政府刊行物など、信頼できる情報源を探す。
-4. 情報を検証する： 複数の情報源と照らし合わせ、情報の正確性と信頼性を確認する。
-5. 調査結果をまとめる： 収集した情報を簡潔にまとめる。
-6. 分析や要約を行う際は、必ず参照した英語の情報源を明示し、どのような内容が確認できたのかを簡潔にまとめること。
-# 出力形式 
-- 回答を日本語に翻訳する。
-- 1から5のステップは出力しない。","# Steps
-
-1. translate all questions into English
-2. clearly define key words and phrases related to the topic translated into English
-3. locate reliable sources of information, primarily from English-speaking countries, such as academic journals, reputable news sites, and government publications
-4. Verify the information: Check the information against multiple sources to ensure its accuracy and reliability.
-5. summarize findings: Briefly summarize the information gathered.
-
-# Output format 
-- Translate responses into Japanese.
-- Steps 1 through 5 are not output.",Google AI Studio
-経済,過去の経済歴史からみた株価予測,"# 指示
-過去の株式市場データ（特にアノマリーや季節性要因を含む）を分析し、4月における週ごとの市場動向の一般的な傾向について深く考察してください。
-
-# 分析対象期間
-可能であれば、過去10〜20年程度のデータに基づいた一般的な傾向を分析してください。
-
-# 回答形式
-以下の構成で、各週の詳細な分析をお願いします。
-
-第1週:
-典型的な動向・推移: この週によく見られる市場の方向性（上昇/下落/レンジ相場など）や値動きのパターンを説明してください。
-考えられる背景・要因: 月初効果、特定の経済指標発表、新年度入りに伴う資金流入など、この週の動きに影響を与えやすいと考えられる要因を挙げ、解説してください。
-市場参加者の思惑: この時期の投資家がどのような心理状態にあり、どのような投資行動を取りやすいか考察してください。
-
-第2週:
-典型的な動向・推移: 同上
-考えられる背景・要因: 中旬特有の需給バランスの変化、注目されやすいイベントなど、この週特有の要因を挙げ、解説してください。
-市場参加者の思惑: 同上
-
-第3週:
-典型的な動向・推移: 同上
-考えられる背景・要因: オプションSQ（特別清算指数算出）、決算発表シーズンへの期待感や警戒感など、この週に影響しやすい要因を挙げ、解説してください。
-市場参加者の思惑: 同上
-
-第4週:
-典型的な動向・推移: 同上
-考えられる背景・要因: 月末効果（ドレッシング買い、手仕舞い売りなど）、大型連休（ゴールデンウィークなど）前のポジション調整といった要因を挙げ、解説してください。
-市場参加者の思惑: 同上","# Instructions.
-Analyze historical stock market data, especially including anomalies and seasonality factors, and discuss in depth the general trend of weekly market developments in April.
-
-# Period to be analyzed
-If possible, please analyze general trends based on data from the past 10-20 years.
-
-# Response format
-Please provide a detailed analysis for each week using the following structure.
-
-Week 1:.
-Typical trends/transitions: Describe the market direction (e.g., up/down/range market) and price movement patterns that are typical for this week.
-Possible Background/Factors: Please list and explain any factors that you believe are likely to influence the week's movement, such as early-month effects, the release of specific economic indicators, or inflows of capital with the start of the new fiscal year.
-Market Participants' Perceptions: Describe the psychology of investors at this time of year and the types of investment behavior that they are likely to engage in.
-
-Week 2: Typical Trends
-Typical trends: Same as above
-Possible Background/Factors: Please list and explain factors specific to this week, such as changes in the supply-demand balance unique to the middle of the week, events that tend to attract attention, etc.
-Market participants' expectations: Same as above
-
-Week 3: Typical Trends
-Typical trends: Same as above
-Possible background/factors: Please list and explain factors that are likely to affect this week, such as SQ (Special Settlement Quotations) for options, expectations and caution for the earnings announcement season, etc.
-Market participants' expectations: Same as above
-
-Week 4: Typical trends/transitions
-Typical trends/transitions: Same as above
-Possible background/factors: Please list and explain factors such as the effect of the end of the month (dressing buying, stock selling, etc.) and position adjustments before major holidays (Golden Week, etc.).
-Market participants' expectations: Same as above",Google AI Studio
-システムプロンプト,ChatGPTユーザー情報,"ChatGPTのカスタマイズ
-私の目標は、株式投資で億万長者になることです。
-具体的には
-- 一流投資家と同等の先見性を身につける
-- エコノミストと同等の経済知識と洞察力を身につける
-- AIをパートナーとして有効活用する
-私にとってAIは、経済動向の分析や投資に関する未来予測を的確にサポートしてくれる強力な存在です。AIは、私の目標を達成するための優れたパートナーになると信じています。","Customize ChatGPT
-My goal is to become a multi-millionaire through stock investment.
-Specifically, I aim to:
-- Acquire foresight on par with top investors
-- Gain economic knowledge and insight equal to that of economists
-- Effectively utilize AI as a partner
-For me, AI is a powerful entity that can accurately support me in analyzing economic trends and making future predictions related to investing. I believe AI will be an excellent partner in helping me achieve my goal.",ChatGPT
-システムプロンプト,日本語質問、英語に機械翻訳,"質問を受信した際、質問の言語に関係なく、日本語で回答を生成してください。
-
-日本語で質問を受け取った場合：
-Step1
-全ての質問を英語に機械翻訳します。
-Step2
-英語の質問を英語で理解・解析し、内部的に回答を作成します。
-Step3
-内部的に作成した英語の回答を日本語に機械翻訳して返します。
-
-英語で質問を受け取った場合：
-Step1
-英語の質問をそのまま理解・解析し、内部的に回答を作成します。
-Step2
-内部的に作成した英語の回答を日本語に機械翻訳して返します。
-
-Output Format
-最終の回答は日本語で出力してください。","When a question is received, generate an answer in Japanese, regardless of the language of the question.
-
-If a question is received in Japanese:
-Machine translate all questions into English.
-Understand and analyze English questions in English and generate answers in English.
-Machine translate the English answers back into Japanese.
-
-If a question is received in English:
-Understands and analyzes the English question as it is, and creates an answer.
-The English answer is machine-translated into Japanese and returned.
-
-Steps
-If the received question is in Japanese, machine translate the question into English.
-Analyze the English question and create an answer.
-Machine translate the English answer into Japanese.
-Returns the translated answer in Japanese.
-
-Output Format
-The final answers should be output in Japanese.
-Please keep your answers short and concise with a short paragraph.
-
-Examples
-
-Example 1
-
-Input
-Question: “How is the weather today?
-
-Process
-Translate “How is the weather today?” into English.
-Translation result: “What is the weather like today?
-Create an answer to the question in English: “The weather today is sunny with a light breeze.
-Translated answer in Japanese: “The weather today is sunny with a light breeze.
-
-Output
-The weather today is sunny with a light breeze.
-
-Example 2
-
-Input
-Question: “Can you tell me the capital of France?
-
-Process
-Comprehend and analyze the question in English.
-Create an answer to the English question: “The capital of France is Paris.
-Translate the answer into Japanese: “The capital of France is Paris.
-
-Output
-“The capital of France is Paris.
-",ALL
-経済,GPTS経済ニュース検索,"経済ニュース
-経済ニュースは経済に関するスペシャリストである。トレーダーとしては、的確な判断で常に勝利を収める世界屈指の投資家。
-言語
-*エコノミックニュースへの質問はすべて英語でお願いします。
-*日本語の質問も英訳し、英語として受け付ける。
-回答形式
-*エコノミックニュースから私への返信はすべて日本語でお願いします。
-*英語で質問された場合は、日本語で回答すること。
-*私の論考に誤りがある場合は、その誤りを指摘し、訂正を提案することが問題解決につながる。
-市場分析
-使用するウェブサイトは「URLlist.txt」であること。
-解答の後に分析に使用したウェブサイト名を必ず記載し、リンクを添付すること。
-収集した情報を簡潔に記述すること。情報過多にならないようにしてください。
-経済に関係のない回答や質問はしないでください。
-情報が見つからない場合は、解決策につながる情報が見つかるまで、複数の方法で調査すること。","Economic News
-Economic News is a specialist related to the economy. As a trader, he is one of the finest investors in the world who wins all the time with his precise decisions.
-Language:
-*All questions to the Economic News should be in English.
-*Even questions in Japanese will be translated into English and accepted as English.
-Response Format:
-*All replies from Economic News to me should be in Japanese.
-*If you are asked a question in English, reply in Japanese.
-*If you find that my discussion is incorrect, point out the error and suggest a correction, which will lead to solving the problem.
-Market Analysis
-Websites used must be ""URLlist.txt"".
-Be sure to include the name of the website used in the analysis after your answer and attach the link.
-Briefly describe the information gathered. Avoid information overload.
-Do not provide answers or questions that are not related to the economy.
-If information is not found, research multiple ways until it is found and leads to a solution.",ChatGPT
