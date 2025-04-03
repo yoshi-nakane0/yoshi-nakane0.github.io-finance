@@ -1,37 +1,39 @@
-/* style.css */
+/* --- style.css (整理版) --- */
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #1E1E2E;
     color: white;
     font-family: 'Noto Sans JP', sans-serif;
-    margin: 0; /* bodyのデフォルトマージンをリセット */
+    margin: 0;
 }
 
 .app-container {
-    max-width: 414px; /* ここは変更しない */
+    max-width: 414px;
+    min-height: 100vh;
     margin: 0 auto;
     background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
     position: relative;
     overflow: hidden;
-    /*width: 100%;  全体の幅は100%にしておく */
-    box-sizing: border-box; /* paddingとborderをwidth, heightに含める */
+    box-sizing: border-box;
 }
 
 .prompt-container {
     background-color: #000000;
+    box-sizing: border-box;
 }
 
-/* ステータスバー */
+/* --- ステータスバー --- */
 .status-bar {
-    background-color: #0D1117;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: #0D1117;
     padding: 10px 15px;
-    border-radius: 8px;
     margin-bottom: 15px;
     border: 1px solid #30363D;
+    border-radius: 8px;
 }
 
 .status-left {
@@ -46,24 +48,24 @@ body {
 }
 
 .status-bar-item {
+    display: flex;
+    align-items: center;
     background-color: #238636;
     padding: 6px 12px;
     font-size: 13px;
     color: #ffffff;
-    border: none !important;
+    border: none !important; /* Bootstrap対策 */
     border-radius: 6px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .status-bar-item:hover {
     background-color: #2EA043;
     transform: translateY(-1px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* タイトルとフィルター */
+/* --- タイトル・検索・フィルター --- */
 .title-main {
     font-size: 14px;
     font-weight: 700;
@@ -71,22 +73,28 @@ body {
 
 .search-container {
     position: relative;
-    width: 100%; /* 常に親要素の幅に合わせる */
-    max-width: 200px; /* 最大幅は200pxに */
-    margin-right: 0; /* 右側の余白をなくす */
+    max-width: 200px;
 }
 
 .search-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 30px 0 10px; /* 上下 左右 */
     background-color: #0D1117;
     border: 1px solid #30363D;
-    color: #E6EDF3;
-    padding-right: 30px;
     border-radius: 6px;
-    /* 検索ボックスの高さ */
-    height: 30px;
-    width: 100%; /* 親要素の幅に合わせる */
-    box-sizing: border-box; /* パディングとボーダーを幅に含める */
-
+    color: #E6EDF3;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.search-input::placeholder {
+    color: #8B949E;
+}
+.search-input:focus {
+    border-color: #1F6FEB;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.3);
+    /* background-color, color は継承されるので不要 */
 }
 
 .search-icon {
@@ -95,6 +103,7 @@ body {
     top: 50%;
     transform: translateY(-50%);
     color: #8B949E;
+    pointer-events: none;
 }
 
 .filter-bar {
@@ -103,163 +112,339 @@ body {
     overflow-x: auto;
     padding-bottom: 8px;
     white-space: nowrap;
-    width: 100%; /* 親要素の幅に合わせる */
+    position: relative;
+    /* スクロールバー非表示 */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
+.filter-bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+/* スクロール可能インジケータ */
+.filter-bar.scrollable::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 8px;
+    width: 30px;
+    background: linear-gradient(to left, #000000, transparent);
+    pointer-events: none;
+    z-index: 1;
+}
+
 .filter-btn {
+    padding: 4px 12px;
     background-color: #21262D;
-    color: #C9D1D9;
     border: 1px solid #30363D;
     border-radius: 20px;
-    padding: 4px 12px;
+    color: #C9D1D9;
     font-size: 12px;
-    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
     cursor: pointer;
-    white-space: nowrap; /* ボタン内のテキスト折り返しを防ぐ */
-    flex-shrink: 0; /* 縮まないように */
-
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-
 .filter-btn:hover {
     background-color: #30363D;
 }
-
 .filter-btn.active {
     background-color: #238636;
-    color: white;
     border-color: #238636;
+    color: white;
+    font-weight: 500;
 }
 
-/* カードスタイル */
+/* --- プロンプトカード --- */
 .prompt-card {
-    border: 1px solid #30363D;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    background-color: #1A1E29 !important;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-    width: 100%; /* カードの幅を100%に */
-    box-sizing: border-box; /* paddingとborderをwidth, heightに含める */
-
+    width: 100%;
+    background-color: #1A1E29 !important; /* Bootstrap対策 */
+    border: 1px solid #30363D;
+    border-radius: 8px;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* アニメーション初期状態 */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: opacity, transform, box-shadow, border-color;
 }
-
-.prompt-card:hover {
+/* 表示状態 (JSで付与) */
+.prompt-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* ホバー状態 (ドラッグ中除く) */
+.prompt-card:not(.dragging):hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     border-color: #58A6FF;
 }
 
 .card-header {
-    background-color: #161B22;
-    border-bottom: 1px solid #30363D;
-    padding: 12px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 42px;
+    padding: 6px 10px;
+    background-color: #161B22;
+    border-bottom: 1px solid #30363D;
 }
 
 .prompt-icon {
-    width: 28px;
-    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 28px; height: 28px;
+    margin-right: 10px;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    margin-right: 10px;
+    flex-shrink: 0;
+    cursor: grab;
+}
+.prompt-icon:active {
+    cursor: grabbing;
 }
 .prompt-icon i {
     font-size: 18px;
     color: #C9D1D9;
+    pointer-events: none;
 }
 
-.text-primary{
+.text-primary { /* カードタイトル用 */
+    flex-grow: 1;
+    margin-right: 5px;
+    color: #58A6FF !important; /* Bootstrap上書き */
     font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-body {
-    padding: 5px;
     flex-grow: 1;
+    padding: 5px;
+    /* display: flex; flex-direction: column; はデフォルトで良い場合が多いが、
+       コンテンツが少ない場合のレイアウト維持のため残す */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
+
 .prompt-content {
+    margin-bottom: 0;
     font-size: 12px;
     line-height: 1.6;
     color: #C9D1D9;
-    margin-bottom: 0;
-    /* max-height, text-overflow, white-space は必要に応じてコメントアウト/調整 */
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow: hidden;
+    /* 複数行省略 (初期状態) */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    max-height: 4.8em; /* line-height * 3 */
+    transition: max-height 0.3s ease-out;
+}
+/* 全文表示状態 (JSで付与) */
+.prompt-content.expanded {
+    display: block;
+    max-height: 1000px; /* 十分な高さ */
+    -webkit-line-clamp: unset;
+    overflow: visible;
 }
 
 /* カードアクション */
 .card-actions {
     display: flex;
+    align-items: center;
     gap: 5px;
-    align-items: center;
-}
-
-.btn-icon {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #21262D;
-    border: 1px solid #30363D;
-    border-radius: 6px;
-    color: #C9D1D9;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.btn-icon:hover {
-    background-color: #30363D;
-    color: #E6EDF3;
-}
-
-.translate-btn:hover {
-    background-color: #1F6FEB;
-    border-color: #1F6FEB;
-    color: white;
-}
-
-.copy-btn:hover {
-    background-color: #238636;
-    border-color: #238636;
-    color: white;
+    flex-shrink: 0;
 }
 
 .category-emoji {
     font-size: 1.2em;
+    line-height: 1;
 }
 
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    padding: 0;
+    background-color: #21262D;
+    border: 1px solid #30363D;
+    border-radius: 6px;
+    color: #C9D1D9;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+.btn-icon i {
+    line-height: 1;
+}
+.btn-icon:hover {
+    background-color: #30363D;
+    color: #E6EDF3;
+}
+.btn-icon:active {
+    transform: scale(0.95);
+}
+/* 個別ボタンのホバー */
+.toggle-btn:hover { background-color: #007bff; border-color: #007bff; color: white; }
+.translate-btn:hover { background-color: #1F6FEB; border-color: #1F6FEB; color: white; }
+.copy-btn:hover { background-color: #238636; border-color: #238636; color: white; }
 
-/* ページネーション */
+/* コピー成功時 */
+.copy-btn.copied {
+    background-color: #238636 !important;
+    border-color: #238636 !important;
+    color: white !important;
+}
+.copy-btn.copied i::before {
+    content: "\f26a"; /* Bootstrap Icons チェックマーク */
+    font-family: 'bootstrap-icons';
+}
+/* カードフラッシュアニメーション */
+.copy-flash { animation: flash 0.5s ease-out; }
+@keyframes flash {
+    50% { background-color: rgba(35, 134, 54, 0.3); }
+}
+/* 翻訳済みマーク */
+.translated { border-left: 4px solid #1F6FEB !important; transition: border-left 0.3s ease; }
+
+/* --- ページネーション & 表示件数 --- */
+.pagination-controls {
+    /* display, justify-content, align-items はHTML側で指定 */
+    gap: 10px;
+    margin-bottom: 0.75rem;
+}
+.pagination-controls:first-of-type { margin-top: -0.25rem; margin-bottom: 1rem; }
+.pagination-controls:last-of-type { margin-top: 1rem; }
+
 .pagination {
     margin-bottom: 0;
+    flex-shrink: 0;
 }
+
+.page-item { /* display: flex は ul に任せる */ }
 
 .page-link {
+    padding: 0.25rem 0.5rem;
     background-color: #21262D;
-    border-color: #30363D;
+    border: 1px solid #30363D; /* border-color は継承される */
     color: #C9D1D9;
     font-size: 12px;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
+.page-item:first-child .page-link { border-radius: .2rem 0 0 .2rem; }
+.page-item:last-child .page-link { border-radius: 0 .2rem .2rem 0; }
 
+.page-link:hover {
+    background-color: #30363D;
+    border-color: #38404a;
+    color: #E6EDF3;
+}
 .page-item.active .page-link {
     background-color: #1F6FEB;
     border-color: #1F6FEB;
+    color: white;
+    z-index: 3; /* 隣接要素のボーダーの上に表示 */
 }
-
+.page-item.active .page-link:hover {
+    background-color: #1a5db3;
+    border-color: #1a5db3;
+}
 .page-item.disabled .page-link {
     background-color: #161B22;
+    border-color: #30363D;
     color: #8B949E;
+    pointer-events: none;
 }
 
-/* フッター */
+.items-per-page-selector {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.items-per-page-selector .form-select-sm {
+    width: auto;
+    min-width: 70px;
+    padding: 0.25rem 1.5rem 0.25rem 0.5rem; /* 上 右 下 左 */
+    background-color: #21262D;
+    border: 1px solid #30363D;
+    border-radius: .2rem; /* Bootstrapに合わせる */
+    color: #C9D1D9;
+    font-size: 12px;
+    cursor: pointer;
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 16px 12px;
+}
+.items-per-page-selector .form-select-sm:focus {
+    border-color: #1F6FEB;
+    outline: none;
+    box-shadow: none; /* デフォルトのフォーカススタイルを無効化 */
+}
+
+/* --- レスポンシブ --- */
+@media (max-width: 390px) {
+    .pagination-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    /* .pagination { margin-right: 0; } は不要に */
+}
+
+/* --- フッター --- */
 .footer {
-    padding-top: 15px;
+    padding: 15px 15px 20px;
+    margin-top: 20px;
     border-top: 1px solid #30363D;
+    text-align: center; /* 中央揃えを追加 */
+}
+.footer p {
+    margin-bottom: 0;
+    font-size: 0.75rem; /* small相当 */
+    color: #8B949E; /* text-muted相当 */
+}
+
+/* --- ドラッグ＆ドロップ --- */
+.prompt-card.dragging {
+    opacity: 0.5;
+    border: 1px dashed #58A6FF !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    transform: none !important;
+    cursor: grabbing;
+}
+
+.drag-placeholder {
+    background-color: rgba(88, 166, 255, 0.1);
+    border: 2px dashed #30363D;
+    border-radius: 8px;
+    margin-bottom: 0.75rem; /* .prompt-card の mb-3 と合わせる */
+    box-sizing: border-box;
+    transition: height 0.1s ease-out;
+    /* height はJSで設定 */
+}
+
+/* --- 結果なしメッセージ --- */
+.no-results-placeholder, .no-results-message {
+    padding: 20px;
+    margin-top: 15px;
+    border: 1px dashed #30363D;
+    border-radius: 8px;
+    text-align: center;
+    color: #8B949E;
+    /* フェードインアニメーション */
+    animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
