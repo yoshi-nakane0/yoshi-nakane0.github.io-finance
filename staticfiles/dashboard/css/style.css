@@ -85,7 +85,6 @@ body {
     height: 300px;
     background-color: rgba(74, 144, 226, 0.2);
     border-radius: 50%;
-    filter: blur(100px);
     z-index: 0;
   }
   /* ボタンのホバーエフェクトを強化 */
