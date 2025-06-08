@@ -1,14 +1,16 @@
 /* style.css */
+
+/* Base */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #1E1E2E;
-  color: white;
+  color: #FFFFFF;
   font-family: 'Noto Sans JP', sans-serif;
 }
 
 .app-container {
-  max-width: 450px;
+  max-width: 500px;
   margin: 0 auto;
   background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
   position: relative;
@@ -16,38 +18,38 @@ body {
 }
 
 .earning-container {
-  font-family: sans-serif;
   background-color: #121212;
-  color: #ffffff;
+  color: #FFFFFF;
   padding: 10px;
+  font-family: sans-serif;
 }
 
-/* ステータスバー */
+/* Status Bar */
 .status-bar {
   background-color: #1c1c1c;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 10px 10px;
+  padding: 10px;
   border-bottom: 1px solid #45423a;
 }
 
 .status-bar-item {
   background-color: #536c52;
+  color: #FFFFFF;
   padding: 3px 5px;
-  font-size: 13px;
-  color: #ffffff;
+  font-size: 14px;
   border: none !important;
+  border-radius: 3px;
   margin-left: 5px;
   cursor: pointer;
-  border-radius: 3px;
 }
 
 .status-bar-item:hover {
   background-color: #6d8a6b;
 }
 
-/* 企業決算情報コンテンツ */
+/* Earning Content */
 .earning-content {
   background-color: #1a1a2e;
   border-radius: 10px;
@@ -55,63 +57,43 @@ body {
   margin-top: 1px;
 }
 
-/* テーブルラッパー */
+/* Table Wrapper & Scrollbar */
 .table-wrapper {
   overflow-x: auto;
   width: 100%;
-  padding-bottom: 5px;
+  padding-bottom: 3px;
 }
 
-/* テーブルスタイル */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.table-wrapper::-webkit-scrollbar-track { background: #1a1a2e; }
+.table-wrapper::-webkit-scrollbar-thumb { background: #3d3d5c; border-radius: 4px; }
+.table-wrapper::-webkit-scrollbar-thumb:hover { background: #4d4d7c; }
+
+/* Earning Table */
 .earning-table {
-  width: 100%;
+  width: auto;
+  min-width: 500px;  /* intentional horizontal scroll */
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
-  min-width: 600px; /* 横スクロールを保証 */
+  font-size: 14px;
+  table-layout: fixed;
 }
 
+/* Default cell style */
 .earning-table th,
 .earning-table td {
-  padding: 8px 6px;
-  /* text-align: center;  <-- デフォルトは削除 */
-  border-right: 1px solid #333344;
+  padding: 5px;
+  border-right: 1px solid #4c4c52;
   white-space: nowrap;
+  text-align: center;
 }
 
-/* <th> を中央揃え */
-.earning-table th {
-    text-align: center;
-}
-
-/* 「企業」と「業種」の <td> を左揃え */
-.earning-table td.text-left {
-    text-align: left;
-    padding-left: 10px;
-}
-
-/* その他の <td> は中央揃え (必要に応じて) */
-.earning-table td.text-center {
-    text-align: center;
-}
-
-/* 業種のセルに適用するスタイル */
-.earning-table td.industry-cell {
-  max-width: 200px; /* 適切な最大幅を設定 */
-  overflow: hidden;       /* はみ出る内容を隠す */
-  text-overflow: ellipsis; /* 省略記号 (...) を表示 */
-  white-space: nowrap;     /* 改行を禁止 */
-}
-
-
-.earning-table th:last-child,
-.earning-table td:last-child {
-  border-right: none;
-}
-
+/* Header */
 .earning-table th {
   background-color: #282850;
-  color: #ffffff;
+  color: #FFFFFF;
   font-weight: 600;
   position: sticky;
   top: 0;
@@ -119,83 +101,69 @@ body {
   border-bottom: 2px solid #3d3d5c;
 }
 
-.earning-table tbody tr:nth-child(odd) {
-  background-color: rgba(70, 70, 120, 0.2);
+/* First Column (決算日) width */
+.earning-table th:nth-child(1),
+.earning-table td:nth-child(1) {
+  width: 80px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
-.earning-table tbody tr:nth-child(even) {
-  background-color: rgba(30, 30, 46, 0.6);
+/* Second Column (企業) width */
+.earning-table th:nth-child(2),
+.earning-table td:nth-child(2) {
+  width: 120px;
+  padding-left: 4px;
+  padding-right: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.earning-table tbody tr:hover {
-  background-color: rgba(80, 80, 130, 0.3);
+/* Third Column (業種) width */
+.earning-table th:nth-child(3),
+.earning-table td:nth-child(3) {
+  width: 100px;
+  padding-left: 4px;
+  padding-right: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* バッジスタイル */
+/* Column Alignments */
+.earning-table td.text-left { text-align: left; padding-left: 10px; }
+.earning-table td.text-center { text-align: center; }
+
+/* Remove border on last column */
+.earning-table th:last-child,
+.earning-table td:last-child { border-right: none; }
+
+/* Row Striping & Hover */
+.earning-table tbody tr:nth-child(odd)  { background-color: rgba(70, 70, 120, 0.2); }
+.earning-table tbody tr:nth-child(even) { background-color: rgba(30, 30, 46, 0.6); }
+.earning-table tbody tr:hover         { background-color: rgba(80, 80, 130, 0.3); }
+
+/* Badge Styles */
 .badge {
   display: inline-block;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   padding: 2px 4px;
   border-radius: 3px;
   margin-left: 3px;
 }
+.badge.positive { background-color: #4b8b3b; color: #FFFFFF; }
+.badge.negative { background-color: #b83c3c; color: #FFFFFF; }
+.badge.neutral  { background-color: #a17c27; color: #FFFFFF; }
 
-.badge.positive {
-  background-color: #4b8b3b;
-  color: #ffffff;
-}
+/* Marks */
+.negative-mark             { color: red; }
+.earning-table td.modified { color: rgb(145, 240, 145); }
 
-.badge.negative {
-  background-color: #b83c3c;
-  color: #ffffff;
-}
-
-.badge.neutral {
-  background-color: #a17c27;
-  color: #ffffff;
-}
-
-/* モバイル最適化のための追加調整 */
+/* Responsive */
 @media screen and (max-width: 450px) {
-  .app-container {
-      width: 100%;
-  }
   .earning-table th,
-  .earning-table td {
-      padding: 6px 4px;
-  }
-
-  .badge {
-      font-size: 12px;
-      padding: 1px 3px;
-  }
-}
-
-/* テーブルスクロールバーのスタイル調整 */
-.table-wrapper::-webkit-scrollbar {
-  height: 8px;
-}
-
-.table-wrapper::-webkit-scrollbar-track {
-  background: #1a1a2e;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb {
-  background: #3d3d5c;
-  border-radius: 4px;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #4d4d7c;
-}
-
-/* × を赤色にする */
-.negative-mark {
-    color: red;
-}
-
-/* 下方修正の文字を緑にする (詳細度を上げたセレクタ) */
-.earning-table td.modified {
-    color: rgb(145, 240, 145);
+  .earning-table td { padding: 6px 4px; }
+  .badge { font-size: 12px; padding: 1px 3px; }
 }

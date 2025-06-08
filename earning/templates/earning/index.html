@@ -6,22 +6,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earning</title>
-    <!-- Bootstrap, Icons, style.css の読み込み (変更なし)-->
+    <!-- Bootstrap, Icons, style.css の読み込み -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'earning/css/style.css' %}">
 </head>
 <body class="bg-dark">
-    <!-- コンテンツ -->
     <div class="app-container">
         <div class="earning-container">
             <div class="status-bar">
                 <button class="status-bar-item" onclick="location.href='/'">ホーム</button>
             </div>
-
             <div class="earning-content">
-                <header class="earning-header">
-                </header>
                 <main>
                     <div class="table-wrapper">
                         <table class="earning-table">
@@ -30,43 +26,26 @@
                                     <th>決算日</th>
                                     <th>企業</th>
                                     <th>業種</th>
-                                    <th>EPS</th>
-                                    <th>次回</th>
-                                    <th>売上</th>
-                                    <th>次回</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in earnings_data %}
                                 <tr>
+                                    <!-- 決算日 -->
                                     <td class="text-center">{{ item.date }}</td>
+                                    <!-- 企業（リンク）-->
                                     <td class="text-left">
-                                        <a href="https://jp.tradingview.com/symbols/{{ item.market }}-{{ item.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" target="_blank">{{ item.company }}</a>
+                                        <a href="https://jp.tradingview.com/symbols/{{ item.market }}-{{ item.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" target="_blank">
+                                            {{ item.company }}
+                                        </a>
                                     </td>
+                                    <!-- 業種 -->
                                     <td class="text-left industry-cell">{{ item.industry }}</td>
-                                    <td class="text-center">
-                                        {% if item.eps == '✕' %}
-                                        <span class="negative-mark">{{ item.eps }}</span>
-                                        {% else %}
-                                        {{ item.eps }}
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center {{ item.eps_class }}">{{ item.eps_forecast }}</td>
-                                    <td class="text-center">
-                                        {% if item.revenue == '✕' %}
-                                            <span class="negative-mark">{{ item.revenue }}</span>
-                                        {% else %}
-                                            {{ item.revenue }}
-                                        {% endif %}
-                                    </td>
-                                     <td class="text-center {{ item.revenue_class }}">{{ item.revenue_forecast }}</td>
-
                                 </tr>
                                 {% endfor %}
-                                <!-- フォールバック (変更なし)-->
                                 {% if not earnings_data %}
                                 <tr>
-                                    <td colspan="7">データがありません</td>
+                                    <td colspan="3">データがありません</td>
                                 </tr>
                                 {% endif %}
                             </tbody>
@@ -77,7 +56,7 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS, カスタムJS (変更なし) -->
+    <!-- Bootstrap JS, カスタムJS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     {# <script src="{% static 'earning/js/script.js' %}"></script> #}
 </body>
