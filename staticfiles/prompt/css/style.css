@@ -20,7 +20,7 @@ body {
 }
 
 .prompt-container {
-    background-color: #000000;
+    background-color: #1E1E2E;
     box-sizing: border-box;
 }
 
@@ -29,10 +29,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #0D1117;
+    background-color: rgba(41, 45, 53, 0.7);
     padding: 10px 15px;
     margin-bottom: 15px;
-    border: 1px solid #30363D;
+    border: 1px solid #464678;
     border-radius: 8px;
 }
 
@@ -80,8 +80,8 @@ body {
     width: 100%;
     height: 30px;
     padding: 0 30px 0 10px; /* 上下 左右 */
-    background-color: #0D1117;
-    border: 1px solid #30363D;
+    background-color: rgba(41, 45, 53, 0.7);
+    border: 1px solid #464678;
     border-radius: 6px;
     color: #E6EDF3;
     font-size: 13px;
@@ -126,15 +126,15 @@ body {
     position: absolute;
     right: 0; top: 0; bottom: 8px;
     width: 30px;
-    background: linear-gradient(to left, #000000, transparent);
+    background: linear-gradient(to left, #1E1E2E, transparent);
     pointer-events: none;
     z-index: 1;
 }
 
 .filter-btn {
     padding: 4px 12px;
-    background-color: #21262D;
-    border: 1px solid #30363D;
+    background-color: rgba(41, 45, 53, 0.7);
+    border: 1px solid #464678;
     border-radius: 20px;
     color: #C9D1D9;
     font-size: 12px;
@@ -144,7 +144,7 @@ body {
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .filter-btn:hover {
-    background-color: #30363D;
+    background-color: #464678;
 }
 .filter-btn.active {
     background-color: #238636;
@@ -158,8 +158,8 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    background-color: #1A1E29 !important; /* Bootstrap対策 */
-    border: 1px solid #30363D;
+    background-color: rgba(41, 45, 53, 0.7) !important; /* Bootstrap対策 */
+    border: 1px solid #464678;
     border-radius: 8px;
     box-sizing: border-box;
     overflow: hidden;
@@ -187,8 +187,8 @@ body {
     align-items: center;
     min-height: 42px;
     padding: 6px 10px;
-    background-color: #161B22;
-    border-bottom: 1px solid #30363D;
+    background-color: rgba(30, 30, 46, 0.8);
+    border-bottom: 1px solid #464678;
 }
 
 .prompt-icon {
@@ -245,6 +245,7 @@ body {
     /* 複数行省略 (初期状態) */
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3; /* 標準プロパティ */
     -webkit-box-orient: vertical;
     text-overflow: ellipsis;
     max-height: 4.8em; /* line-height * 3 */
@@ -255,6 +256,7 @@ body {
     display: block;
     max-height: 1000px; /* 十分な高さ */
     -webkit-line-clamp: unset;
+    line-clamp: unset; /* 標準プロパティ */
     overflow: visible;
 }
 
@@ -277,8 +279,8 @@ body {
     justify-content: center;
     width: 28px; height: 28px;
     padding: 0;
-    background-color: #21262D;
-    border: 1px solid #30363D;
+    background-color: rgba(41, 45, 53, 0.7);
+    border: 1px solid #464678;
     border-radius: 6px;
     color: #C9D1D9;
     font-size: 14px;
@@ -289,7 +291,7 @@ body {
     line-height: 1;
 }
 .btn-icon:hover {
-    background-color: #30363D;
+    background-color: #464678;
     color: #E6EDF3;
 }
 .btn-icon:active {
@@ -332,12 +334,16 @@ body {
     flex-shrink: 0;
 }
 
-.page-item { /* display: flex は ul に任せる */ }
+.page-item {
+    /* ページネーション項目の基本スタイル */
+    margin: 0;
+    padding: 0;
+}
 
 .page-link {
     padding: 0.25rem 0.5rem;
-    background-color: #21262D;
-    border: 1px solid #30363D; /* border-color は継承される */
+    background-color: rgba(41, 45, 53, 0.7);
+    border: 1px solid #464678; /* border-color は継承される */
     color: #C9D1D9;
     font-size: 12px;
     transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
@@ -346,8 +352,8 @@ body {
 .page-item:last-child .page-link { border-radius: 0 .2rem .2rem 0; }
 
 .page-link:hover {
-    background-color: #30363D;
-    border-color: #38404a;
+    background-color: #464678;
+    border-color: #6c7684;
     color: #E6EDF3;
 }
 .page-item.active .page-link {
@@ -361,8 +367,8 @@ body {
     border-color: #1a5db3;
 }
 .page-item.disabled .page-link {
-    background-color: #161B22;
-    border-color: #30363D;
+    background-color: rgba(30, 30, 46, 0.8);
+    border-color: #464678;
     color: #8B949E;
     pointer-events: none;
 }
@@ -372,12 +378,14 @@ body {
     align-items: center;
     flex-shrink: 0;
 }
+/* フォームセレクトのドロップダウン矢印 */
 .items-per-page-selector .form-select-sm {
     width: auto;
     min-width: 70px;
     padding: 0.25rem 1.5rem 0.25rem 0.5rem; /* 上 右 下 左 */
-    background-color: #21262D;
-    border: 1px solid #30363D;
+    background-color: rgba(41, 45, 53, 0.7);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23C9D1D9' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+    border: 1px solid #464678;
     border-radius: .2rem; /* Bootstrapに合わせる */
     color: #C9D1D9;
     font-size: 12px;
@@ -407,7 +415,7 @@ body {
 .footer {
     padding: 15px 15px 20px;
     margin-top: 20px;
-    border-top: 1px solid #30363D;
+    border-top: 1px solid #464678;
     text-align: center; /* 中央揃えを追加 */
 }
 .footer p {
@@ -427,7 +435,7 @@ body {
 
 .drag-placeholder {
     background-color: rgba(88, 166, 255, 0.1);
-    border: 2px dashed #30363D;
+    border: 2px dashed #464678;
     border-radius: 8px;
     margin-bottom: 0.75rem; /* .prompt-card の mb-3 と合わせる */
     box-sizing: border-box;
@@ -439,7 +447,7 @@ body {
 .no-results-placeholder, .no-results-message {
     padding: 20px;
     margin-top: 15px;
-    border: 1px dashed #30363D;
+    border: 1px dashed #464678;
     border-radius: 8px;
     text-align: center;
     color: #8B949E;

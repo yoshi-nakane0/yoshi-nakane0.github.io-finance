@@ -4,7 +4,7 @@
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1E1E2E;
+  background-color: #1E1E2E; /* style1と統一 */
   color: #FFFFFF;
   font-family: 'Noto Sans JP', sans-serif;
 }
@@ -12,13 +12,13 @@ body {
 .app-container {
   max-width: 500px;
   margin: 0 auto;
-  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* style1と同じグラデーション */
   position: relative;
   overflow: hidden;
 }
 
 .earning-container {
-  background-color: #121212;
+  background-color: #1E1E2E; /* style1のbody背景色と統一 */
   color: #FFFFFF;
   padding: 10px;
   font-family: sans-serif;
@@ -26,16 +26,16 @@ body {
 
 /* Status Bar */
 .status-bar {
-  background-color: #1c1c1c;
+  background-color: #2D2D44; /* style1のbottom-navと同じ色に */
   display: flex;
   justify-content: flex-end;
   align-items: center;
   padding: 10px;
-  border-bottom: 1px solid #45423a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* 境界線を薄く */
 }
 
 .status-bar-item {
-  background-color: #536c52;
+  background-color: rgba(41, 45, 53, 0.7); /* style1のmenu-item-wrapperと同じ */
   color: #FFFFFF;
   padding: 3px 5px;
   font-size: 14px;
@@ -46,12 +46,12 @@ body {
 }
 
 .status-bar-item:hover {
-  background-color: #6d8a6b;
+  background-color: rgba(41, 45, 53, 0.9); /* ホバー時に少し濃く */
 }
 
 /* Earning Content */
 .earning-content {
-  background-color: #1a1a2e;
+  background-color: rgba(41, 45, 53, 0.3); /* style1の色合いを薄くして適用 */
   border-radius: 10px;
   padding: 10px;
   margin-top: 1px;
@@ -67,9 +67,9 @@ body {
 .table-wrapper::-webkit-scrollbar {
   height: 8px;
 }
-.table-wrapper::-webkit-scrollbar-track { background: #1a1a2e; }
-.table-wrapper::-webkit-scrollbar-thumb { background: #3d3d5c; border-radius: 4px; }
-.table-wrapper::-webkit-scrollbar-thumb:hover { background: #4d4d7c; }
+.table-wrapper::-webkit-scrollbar-track { background: rgba(41, 45, 53, 0.3); } /* style1の色合いに */
+.table-wrapper::-webkit-scrollbar-thumb { background: rgba(41, 45, 53, 0.7); border-radius: 4px; } /* style1の色合いに */
+.table-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(41, 45, 53, 0.9); } /* ホバー時に濃く */
 
 /* Earning Table */
 .earning-table {
@@ -85,20 +85,20 @@ body {
 .earning-table th,
 .earning-table td {
   padding: 5px;
-  border-right: 1px solid #4c4c52;
+  border-right: 1px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
   white-space: nowrap;
   text-align: center;
 }
 
 /* Header */
 .earning-table th {
-  background-color: #282850;
+  background-color: #2D2D44; /* style1のbottom-navと同じ色 */
   color: #FFFFFF;
   font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 2px solid #3d3d5c;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
 }
 
 /* First Column (決算日) width */
@@ -140,11 +140,11 @@ body {
 .earning-table td:last-child { border-right: none; }
 
 /* Row Striping & Hover */
-.earning-table tbody tr:nth-child(odd)  { background-color: rgba(70, 70, 120, 0.2); }
-.earning-table tbody tr:nth-child(even) { background-color: rgba(30, 30, 46, 0.6); }
-.earning-table tbody tr:hover         { background-color: rgba(80, 80, 130, 0.3); }
+.earning-table tbody tr:nth-child(odd)  { background-color: rgba(41, 45, 53, 0.3); } /* style1の色合いに */
+.earning-table tbody tr:nth-child(even) { background-color: rgba(30, 30, 46, 0.6); } /* 元の色を維持 */
+.earning-table tbody tr:hover         { background-color: rgba(41, 45, 53, 0.5); } /* style1の色合いでホバー */
 
-/* Badge Styles */
+/* Badge Styles - 変更しない */
 .badge {
   display: inline-block;
   font-size: 12px;
@@ -157,7 +157,7 @@ body {
 .badge.negative { background-color: #b83c3c; color: #FFFFFF; }
 .badge.neutral  { background-color: #a17c27; color: #FFFFFF; }
 
-/* Marks */
+/* Marks - 変更しない */
 .negative-mark             { color: red; }
 .earning-table td.modified { color: rgb(145, 240, 145); }
 
