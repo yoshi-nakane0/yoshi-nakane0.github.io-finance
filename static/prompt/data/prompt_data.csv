@@ -1,27 +1,26 @@
 category,summary,jp,en,ai
-検索,ニュース検索(海外の情報を取得する),"AIアシスタント指示書:
-役割
+検索,海外情報の取得,"# 役割
 ユーザーの質問に正確で信頼性の高い日本語回答を提供するAIアシスタント
-処理手順
-質問受付: ユーザーの質問を受け取る
-情報収集: 信頼できる英語圏の情報源から正確な情報を収集・検証
-回答生成: 自然で正確な日本語で回答
-制約事項
-最終出力は日本語のみ
-処理過程は表示しない
-信頼できる情報源のみ使用
-簡潔で包括的な回答を心がける","AI Assistant Instructions:
-Role:
-An AI assistant that provides accurate and reliable Japanese answers to user questions.
-Processing Steps:
-Receive Question: Receive the user's question.
-Information Gathering: Gather and verify accurate information from reliable English-speaking sources.
-Answer Generation: Generate answers in natural and accurate Japanese.
-Constraints:
-Final output must be in Japanese only.
-Processing steps must not be displayed.
-Only reliable information sources must be used.
-Answers should aim to be concise and comprehensive.",ALL
+# 処理手順
+- 質問受付: ユーザーの質問を受け取る
+- 情報収集: 信頼できる英語圏の情報源から正確な情報を収集・検証
+- 回答生成: 自然で正確な日本語で回答
+# 制約事項
+- 最終出力は日本語のみ
+- 処理過程は表示しない
+- 信頼できる情報源のみ使用
+- 簡潔で包括的な回答を心がける","AI Assistant Instructions: # Role
+# Role: 
+AI Assistant to provide accurate and reliable Japanese answers to user questions
+# Processing steps
+- Question Reception: Receive user's question
+- Information Gathering: Gather and verify accurate information from reliable English-speaking sources
+- Answer Generation: Provide natural and accurate answers in Japanese
+# Limitations
+- Final output is in Japanese only.
+- No display of the processing process
+- Use only reliable sources
+- Keep answers concise and comprehensive",ALL
 検索,選択式プロンプト（市場調査用）,"## 使用方法
 次回の質問で以下の番号を組み合わせて入力してください：
 **「1.2.3」** のような形式で入力するだけで調査を開始します。
@@ -54,41 +53,110 @@ Answers should aim to be concise and comprehensive.",ALL
 - 日本語の情報源は除外
 - ファンダメンタル分析に基づく分析
 - テクニカル分析は使用しない
-- 結果は日本語で報告","## How to Use
-For your next question, please combine the following numbers and input them in the format:
-**e.g., ""1.2.3""**. Inputting in this format will start the research.
----
-## List of Options
-### 1. Country / Time Standard
-1. United States (US Time Standard)
-2. Japan (Japan Time Standard)
-3. United Kingdom (UK Time Standard)
-### 2. Research Period
-1. Within 24 hours
-2. Within 48 hours
-3. Within 72 hours
-4. Within 1 week
-### 3. Target Market for Research
-1. General US Stock Market,
-   - Major stock indices (e.g., NASDAQ, S&P500, Dow Jones, etc.)
-2. Nikkei Average (Nikkei)
-3. Foreign Exchange Market (FX)
-4. Gold & Precious Metals Market
-5. Crude Oil & Energy Market
----
-## Examples of Use
-- **""2.2.4""** = Nikkei Average for the past 48 hours, based on Japan time
-- **""1.1.2""** = NASDAQ for the past 24 hours, based on US time
-- **""1.3.1""** = General US Stock Market for the past 72 hours, based on US time
----
-## Automatically Applied Research Conditions
-- Only English-speaking international sources will be used.
-- Japanese sources will be excluded.
-- Analysis will be based on fundamental analysis.
-- Technical analysis will not be used.
-- Results will be reported in Japanese.",ALL
+- 結果は日本語で報告","## Instructions for use 
+Enter a combination of the following numbers in your next question:
+** Simply enter in the format: **“1.2.3”** to start the survey.
+---.
+## List of choices
+### 1. country/time standard
+1. the United States (based on U.S. time)
+2. Japan (Japan time standard) 3.
+United Kingdom (UK time)
+### 2. survey period
+1. within 24 hours
+2. 48 hours or less
+3. within 72 hours
+4. within 1 week
+### 3. Markets surveyed 
+1. All U.S. stock markets,
+   - Major stock indices (e.g., NASDAQ, S&P 500, Dow Jones, etc.) 2.
+Nikkei 225 (Nikkei)
+3. foreign exchange market (FX) 4. gold and precious metals market
+Gold and precious metals markets
+Crude oil and energy markets
+--- ## Example of use: ## Example of use: ## Example of use
+## Examples of use.
+- **“2.2.4”** = Nikkei 225 for the last 48 hours Japan time
+- **“1.1.2”** = NASDAQ for the last 24 hours in US time
+- **“1.3.1”** = General US Stock Market for the last 72 hours in US time.
+--- ""1.3.1
+## Automatic Applied Survey Conditions
+- Only English-speaking foreign sources used.
+- Japanese language sources are excluded
+- Analysis based on fundamental analysis
+- No technical analysis used
+- Results reported in Japanese",Google AI Studio
+知識,英語会話の知識回答,"# 役割
+日本語回答を提供するAIアシスタント
+# 処理手順
+- 質問受付: ユーザーの質問全てを英語に翻訳して受け付ける
+- 情報処理: 英語の状態で検証、情報整理、解析処理
+- 回答生成: 自然で正確な日本語で回答
+# 制約事項
+- 最終出力は日本語のみ
+- 処理過程は表示しない
+- 簡潔で包括的な回答を心がける","AI Assistant Instructions: # Role
+# Role: 
+AI Assistant providing Japanese answers
+# Processing steps
+- Receive questions: Translate all user questions into English and accept them
+- Information processing: Verify, organize, and analyze information in English
+- Answer generation: Answer in natural and accurate Japanese
+# Limitations
+- Final output is in Japanese only.
+- No display of the processing process
+- Keep answers concise and comprehensive",ALL
+デザイン,スライド作成,"高品質なグラフィックレコーディング風のインフォグラフィックスライドを作成してください。図やアイコンを多用して情報を視覚的に分かりやすく表現し、プロのデザイナーが作ったような見た目にします。
+【重要】
+スライドの生成を始める前に、まず私に質問をしてください。
+以下の2つの項目について、私が番号で回答できる形式で選択肢を提示してください。
+デザイン:
+    1.  ダークモード
+    2.  ライトモード
+出力形式:
+    1.  HTML
+    2.  SVG
+（例：「デザインと出力形式の番号を`1.2`」といった形で回答してください。）","Create a high-quality graphic recording-style infographic slide. Make extensive use of diagrams and icons to present information in a visually clear manner and make it look like it was created by a professional designer.
+[IMPORTANT] 
+Before you start generating slides, please ask me questions first.
+Please provide me with options for the following two items in a format that I can answer by number.
+Design: 1.
+    1. dark mode
+    2. light mode 
+Output format:.
+    1. HTML
+    2. SVG 
+(e.g., please answer in a format that allows me to number the design and output format as `1.2`)",claude
+経済,Jan Hatzius氏による最新の経済予測,"以下の条件で、Jan Hatzius氏（Goldman Sachs）の最新の経済見通しをまとめてください。
+* 対象期間:過去2週間
+* 調査項目:インフレ率、金利政策、GDP成長率
+* 情報源:
+ - 日本語の情報を含まない英語圏を中心とした海外情報
+ - Goldman Sachs公式サイト, Bloomberg, Reuters, CNBCなど信頼性の高い経済メディア
+* 形式:
+ - 情報源（記事名・日付）を明記
+ - 各項目について、具体的な数値や時期を含めて記述
+ - 情報がない場合は「特になし」と記載","Please summarize the latest economic outlook of Jan Hatzius (Goldman Sachs) under the following conditions
+* Period covered: past two weeks
+* Survey items: inflation, interest rate policy, GDP growth
+* Sources:.
+ - Overseas information mainly from English-speaking countries, not including information in Japanese
+ - Goldman Sachs official website, Bloomberg, Reuters, CNBC, and other reliable economic media
+* Format: English
+ - Indicate the source of the information (article name and date).
+ - For each item, include specific figures and timing.
+ - If there is no information, write “nothing in particular”.",grok3
+経済,市場の動向調査,"現在の[都市]時刻を特定し、その時刻から遡って過去[時間範囲]以内に、[調査対象市場]で何が起きているかについて、英語圏を中心とした海外の情報源のみ（日本語の情報源は除く）を調査し、その結果を日本語に翻訳して報告してください。
+------------
+[都市]:日本
+[時間範囲]:24時間
+[調査対象市場]:nikkei","Please identify the current [city] time, research only English-speaking and other foreign sources (excluding Japanese sources) about what is happening in [market being researched] within the past [time range] backward from that time, and report the results translated into Japanese.
+------------ 
+[city]:Japan 
+[time range]:24 hours 
+[market surveyed]:nikkei",grok3
 経済,過去の経済歴史からみた株価予測,"# 指示
-過去の株式市場データ（特にアノマリーや季節性要因を含む）を分析し、4月における週ごとの市場動向の一般的な傾向について深く考察してください。
+過去の株式市場データ（特にアノマリーや季節性要因を含む）を分析し、7月における週ごとの市場動向の一般的な傾向について深く考察してください。
 # 分析対象期間
 可能であれば、過去10〜20年程度のデータに基づいた一般的な傾向を分析してください。
 # 回答形式
@@ -136,57 +204,9 @@ Week 4: Typical trends/transitions
 Typical trends/transitions: Same as above
 Possible background/factors: Please list and explain factors such as the effect of the end of the month (dressing buying, stock selling, etc.) and position adjustments before major holidays (Golden Week, etc.).
 Market participants' expectations: Same as above",ALL
-デザイン,スライド作成,以下の内容を、超一流デザイナーが作成したような、日本語で完璧なグラフィックレコーディング風のパワポ用スライドをSVGインフォグラフィックに変換してください。情報設計とビジュアルデザインの両面で最高水準を目指します。図形やアイコンを活用して内容を視覚的に表現します。,"Please convert the following content into SVG infographics with slides for PowerPoint in a perfect graphic recording style in Japanese, as if created by a top-notch designer. We aim for the highest standards in both information design and visual design. Utilize graphics and icons to visually represent the content.",claude
 文章作成,日本語に翻訳する,"- 質問する言語を日本語に翻訳して。
 - 日本語に翻訳する際に、すべての表現が正しい日本語になるよう適切に修正すること。","- Translate the language in question into Japanese.
 - When translating into Japanese, please make appropriate corrections to ensure that all expressions are correct.",Google AI Studio
-経済,Jan Hatzius氏による最新の経済予測,"調査対象
-人物: Jan Hatzius氏（ゴールドマン・サックス チーフエコノミスト）
-期間: 過去2週間以内の最新情報
-調査内容
-以下の経済指標に関するHatzius氏の最新見解・予測を調査してください：
-インフレ率見通し
-金利政策見通し（利上げ/利下げ予測）
-GDP成長率予測
-優先情報源
-Goldman Sachs公式サイト
-Bloomberg
-Reuters
-CNBC
-求める回答形式
-発見した情報源：記事タイトルと発表日
-Hatzius氏の具体的見解：
-インフレ率：具体的数値と時期
-金利政策：予想される政策変更と時期
-GDP成長率：予測値と期間
-情報の信頼性：情報源の確認
-注意事項
-最新性を重視（直近の発言）
-具体的数値がある場合は必ず記載
-情報が見つからない場合はその旨を明記","Research Subject
-Person: Mr. Jan Hatzius (Chief Economist, Goldman Sachs)
-Period: Latest information within the last 2 weeks.
-Research Content
-Please investigate Mr. Hatzius's latest views and forecasts regarding the following economic indicators:
-Inflation rate outlook
-Interest rate policy outlook (rate hike/cut predictions)
-GDP growth rate forecast
-Preferred Information Sources
-Goldman Sachs official website
-Bloomberg
-Reuters
-CNBC
-Desired Answer Format
-Found Information Sources: Article title and publication date
-Mr. Hatzius's Specific Views:
-Inflation Rate: Specific figures and timeline
-Interest Rate Policy: Expected policy changes and timeline
-GDP Growth Rate: Forecast value and period
-Information Reliability: Confirmation of information source
-Notes
-Prioritize recency (most recent statements).
-Always include specific figures if available.
-If information is not found, clearly state that.",grok3
 その他,西洋占星術,"西洋占星術に基づき、私の日常生活における行動指針や注意点を分析し答えなさい。
 ### 占星術チャート作成に必要な基本情報
 - 生年月日（1984年9月12日）
