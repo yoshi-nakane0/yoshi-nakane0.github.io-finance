@@ -5,20 +5,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Target</title>
+    <title>セクター強弱モニター</title>
+    
+    <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{% static 'Target/css/style.css' %}">
+    
+    <!-- style.cssの読み込み -->
+    <link rel="stylesheet" href="{% static 'target/css/style.css' %}">
+    
 </head>
-<body class="bg-dark">
-    <div class="container mt-5">
-        <h1 class="text-white">Target</h1>
-        <p class="text-white">This is the Target page.</p>
 
-       <!-- 戻るボタン (例) -->
-        <a href="/" class="btn btn-primary">Back to Dashboard</a>
+<body class="bg-dark">
+    <!-- コンテンツ -->
+    <div class="app-container">
+        <div class="schedule-container">
+            <!-- ステータスバー -->
+            <div class="status-bar">
+                <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
+                <button class="status-bar-item" id="refresh-btn">🔄 更新</button>
+                <button class="status-bar-item" onclick="window.open('https://finance.yahoo.com/sectors', '_blank')">リンク</button>
+            </div>
+
+            <!-- 更新時間 -->
+            <div class="update-time">
+                ⏰ 最終更新: <span id="update-time">{{ update_time }}</span> (JST)
+            </div>
+
+            <!-- USサマリー -->
+            <div class="schedule-date">
+                <h2 class="schedule-date-title">🇺🇸 US 市場サマリー</h2>
+                <div class="schedule-table-container">
+                    <div class="summary-metrics" id="us-summary-metrics">
+                        <div class="metric-card positive">
+                            <div class="metric-icon">📈</div>
+                            <h2 id="us-positive-count">{{ us_summary.positive_count }}</h2>
+                            <p>上昇セクター</p>
+                        </div>
+                        <div class="metric-card negative">
+                            <div class="metric-icon">📉</div>
+                            <h2 id="us-negative-count">{{ us_summary.negative_count }}</h2>
+                            <p>下落セクター</p>
+                        </div>
+                        <div class="metric-card neutral">
+                            <div class="metric-icon">📊</div>
+                            <h2 id="us-total-count">{{ us_summary.total_count }}</h2>
+                            <p>総セクター数</p>
+                        </div>
+                        <div class="metric-card average">
+                            <div class="metric-icon" id="us-avg-icon">{% if us_summary.avg_change > 0 %}📈{% else %}📉{% endif %}</div>
+                            <h2 id="us-avg-change">{{ us_summary.avg_change|floatformat:2 }}%</h2>
+                            <p>平均変化率</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JPサマリー -->
+            <div class="schedule-date">
+                <h2 class="schedule-date-title">🇯🇵 JP 市場サマリー</h2>
+                <div class="schedule-table-container">
+                    <div class="summary-metrics" id="jp-summary-metrics">
+                        <div class="metric-card positive">
+                            <div class="metric-icon">📈</div>
+                            <h2 id="jp-positive-count">{{ jp_summary.positive_count }}</h2>
+                            <p>上昇セクター</p>
+                        </div>
+                        <div class="metric-card negative">
+                            <div class="metric-icon">📉</div>
+                            <h2 id="jp-negative-count">{{ jp_summary.negative_count }}</h2>
+                            <p>下落セクター</p>
+                        </div>
+                        <div class="metric-card neutral">
+                            <div class="metric-icon">📊</div>
+                            <h2 id="jp-total-count">{{ jp_summary.total_count }}</h2>
+                            <p>総セクター数</p>
+                        </div>
+                        <div class="metric-card average">
+                            <div class="metric-icon" id="jp-avg-icon">{% if jp_summary.avg_change > 0 %}📈{% else %}📉{% endif %}</div>
+                            <h2 id="jp-avg-change">{{ jp_summary.avg_change|floatformat:2 }}%</h2>
+                            <p>平均変化率</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- US セクター -->
+            <div class="schedule-date">
+                <h2 class="schedule-date-title">🇺🇸 US セクター (GICS 11)</h2>
+                <div class="schedule-table-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>セクター</th>
+                                <th>変化率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="us-sectors">
+                            {% for sector in us_sectors %}
+                            <tr class="{% if sector.change > 0 %}positive-row{% else %}negative-row{% endif %}">
+                                <td class="sector-icon-cell">{{ sector.icon }}</td>
+                                <td class="sector-name-cell">{{ sector.sector }}</td>
+                                <td class="sector-change-cell {% if sector.change > 0 %}positive-text{% else %}negative-text{% endif %}">
+                                    {{ sector.change_pct|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- JP セクター -->
+            <div class="schedule-date">
+                <h2 class="schedule-date-title">🇯🇵 JP セクター (TOPIX-17)</h2>
+                <div class="schedule-table-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>セクター</th>
+                                <th>変化率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jp-sectors">
+                            {% for sector in jp_sectors %}
+                            <tr class="{% if sector.change > 0 %}positive-row{% else %}negative-row{% endif %}">
+                                <td class="sector-icon-cell">{{ sector.icon }}</td>
+                                <td class="sector-name-cell">{{ sector.sector }}</td>
+                                <td class="sector-change-cell {% if sector.change > 0 %}positive-text{% else %}negative-text{% endif %}">
+                                    {{ sector.change_pct|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- トップに戻るボタン -->
+        <button id="back-to-top" title="Go to top">
+            <i class="bi bi-arrow-up"></i>
+        </button>
     </div>
 
+    <!-- Bootstrap Script -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Refresh button functionality
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            location.reload();
+        });
+        
+        // Back to top button script
+        const backToTopButton = document.getElementById("back-to-top");
+
+        window.onscroll = function() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.style.display = "block";
+            } else {
+                backToTopButton.style.display = "none";
+            }
+        };
+
+        backToTopButton.addEventListener("click", () => {
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        });
+    </script>
 </body>
 </html>

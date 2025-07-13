@@ -1,5 +1,736 @@
 /* target/static/target/css/style.css */
+/* target/static/target/css/style.css – unified with schedule styles */
 
-body {
-    font-family: sans-serif;
+/************************************************************
+ * 1. Global base styles – background, typography, wrapper  *
+ ************************************************************/
+html, body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1E1E2E !important; /* dark canvas identical to schedule */
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Gradient panel identical to schedule.  We keep it on a narrow central column so that the left / right margins remain solid dark */
+.app-container {
+  max-width: 450px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh; /* full‑height to push footer */
+}
+
+/* Generic‑container alias – target used plain .container, schedule used .app-container */
+.container, .target-container {
+  max-width: 450px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px;
+  background-color: transparent; /* let gradient show through */
+}
+
+/*******************************************************
+ * 2. Header & section shells (colours copied verbatim) *
+ *******************************************************/
+.main-header,
+.section-header {
+  background-color: #2D2D44; /* identical to schedule status‑bar */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.main-header h1 {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.main-header p {
+  margin: 5px 0 0 0;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+/*******************************************************
+ * 3. Cards & widgets (metric / sector / charts)        *
+ *******************************************************/
+.metric-card,
+.sector-card {
+  background-color: rgba(41, 45, 53, 0.5); /* schedule tint */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  padding: 10px;
+  transition: transform 0.2s ease;
+  height: 100%;
+  margin-bottom: 10px;
+}
+
+.metric-card:hover,
+.sector-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Positive / negative accents */
+.metric-card.positive, .sector-card.positive  { border-left: 3px solid #4CAF50; }
+.metric-card.negative, .sector-card.negative  { border-left: 3px solid #F44336; }
+.metric-card.neutral                    { border-left: 3px solid #2196F3; }
+.metric-card.average                    { border-left: 3px solid #FF9800; }
+
+.metric-card h2 {
+  margin: 5px 0;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/*******************************************************
+ * 4. Update‑time pill                                 *
+ *******************************************************/
+.update-time {
+  background-color: rgba(41, 45, 53, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-size: 0.8em;
+  padding: 5px 10px;
+  text-align: center;
+  margin: 5px 0;
+}
+
+/*******************************************************
+ * 5. Tabs / accordion / buttons – exactly schedule    *
+ *******************************************************/
+/* Bootstrap nav tabs */
+.nav-tabs .nav-link {
+  color: #666;
+  font-weight: 500;
+}
+.nav-tabs .nav-link.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+}
+
+/* Bootstrap accordion */
+.accordion-button {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #ffffff;
+  font-weight: bold;
+}
+.accordion-button:not(.collapsed) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.accordion-button:focus { box-shadow: none; }
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 10px 30px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/*******************************************************
+ * 6. Mobile first tweaks (≤450 px identical rules)    *
+ *******************************************************/
+@media (max-width: 450px) {
+  .main-header h1   { font-size: 1.3em; }
+  .main-header p    { font-size: 0.8em; }
+  .metric-card,
+  .sector-card      { padding: 8px; margin-bottom: 5px; }
+}
+
+/*******************************************************
+ * 7. Utility – spinner & loading                      *
+ *******************************************************/
+.loading { opacity: 0.6; pointer-events: none; }
+.spinner  {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+html {
+    background-color: #1E1E2E !important; /* 枠外の白を防ぐ */
+    min-height: 100vh;
+}
+
+/* 全体の背景を確実にダーク色にする */
+* {
+    box-sizing: border-box;
+}
+
+/* 全体を包むラッパー（scheduleと同じ構造に） */
+.page-wrapper {
+    background-color: #1E1E2E;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* 全体コンテナ - scheduleと同じサイズとスタイル */
+.app-container {
+    max-width: 450px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* scheduleと同じグラデーション */
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh; /* 全画面の高さを確保 */
+}
+
+.container {
+    max-width: 450px;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: transparent; /* app-containerのグラデーションを活かす */
+}
+
+/* Main Header - 幅を制限 */
+.main-header {
+    background-color: #2D2D44; /* scheduleのstatus-barと同じ色 */
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 100%; /* コンテナ内に収める */
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.main-header p {
+    margin: 5px 0 0 0;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/* Section Header */
+.section-header {
+    background-color: #2D2D44; /* scheduleと同じ色 */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Update Time */
+.update-time {
+    background-color: rgba(41, 45, 53, 0.7); /* scheduleと同じ */
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+    text-align: center;
+    font-size: 0.8em;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Metric Cards */
+.metric-card {
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    background-color: rgba(41, 45, 53, 0.5); /* scheduleと同じ */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s ease;
+    height: 100%;
+    margin-bottom: 10px;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.metric-card.positive {
+    background-color: rgba(41, 45, 53, 0.5);
+    border-left: 3px solid #4CAF50;
+}
+
+.metric-card.negative {
+    background-color: rgba(41, 45, 53, 0.5);
+    border-left: 3px solid #F44336;
+}
+
+.metric-card.neutral {
+    background-color: rgba(41, 45, 53, 0.5);
+    border-left: 3px solid #2196F3;
+}
+
+.metric-card.average {
+    background-color: rgba(41, 45, 53, 0.5);
+    border-left: 3px solid #FF9800;
+}
+
+.metric-icon {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+.metric-card h2 {
+    margin: 5px 0;
+    font-weight: bold;
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.metric-card.positive h2 {
+    color: #4CAF50;
+}
+
+.metric-card.negative h2 {
+    color: #F44336;
+}
+
+.metric-card.neutral h2 {
+    color: #2196F3;
+}
+
+.metric-card p {
+    margin: 0;
+    color: #cccccc;
+    font-size: 0.8em;
+}
+
+/* Sector Cards */
+.sector-card {
+    background-color: rgba(41, 45, 53, 0.3); /* scheduleと同じ */
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    margin-bottom: 8px;
+}
+
+.sector-card:hover {
+    transform: translateY(-2px);
+}
+
+.sector-card.positive {
+    background-color: rgba(41, 45, 53, 0.3);
+    border-left: 3px solid #4CAF50;
+}
+
+.sector-card.negative {
+    background-color: rgba(41, 45, 53, 0.3);
+    border-left: 3px solid #F44336;
+}
+
+.sector-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.sector-icon-large {
+    font-size: 2em;
+    text-align: center;
+}
+
+.sector-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-item {
+    font-size: 0.7em;
+    color: #cccccc;
+}
+
+.sector-info {
+    flex-grow: 1;
+}
+
+.sector-info h3 {
+    margin: 0;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.sector-info p {
+    margin: 2px 0 0 0;
+    color: #cccccc;
+    font-size: 0.7em;
+}
+
+.sector-data {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.change-percent {
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.sector-card.positive .change-percent {
+    color: #4CAF50;
+}
+
+.sector-card.negative .change-percent {
+    color: #F44336;
+}
+
+.current-price {
+    font-size: 0.8em;
+    color: #ffffff;
+    margin-bottom: 1px;
+}
+
+.change-abs {
+    font-size: 0.7em;
+}
+
+.sector-card.positive .change-abs {
+    color: #4CAF50;
+}
+
+.sector-card.negative .change-abs {
+    color: #F44336;
+}
+
+/* Charts */
+#bar-plot, #heatmap-plot {
+    background-color: rgba(41, 45, 53, 0.5);
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+/* Tab Styling */
+.nav-tabs .nav-link {
+    color: #666;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+/* Accordion Styling */
+.accordion-button {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    font-weight: bold;
+}
+
+.accordion-button:not(.collapsed) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+/* Responsive Design - モバイル専用（450px以下） */
+@media (max-width: 450px) {
+    .container {
+        padding: 5px;
+    }
+    
+    .main-header h1 {
+        font-size: 1.3em;
+    }
+    
+    .main-header p {
+        font-size: 0.8em;
+    }
+    
+    .sector-card {
+        padding: 8px;
+        margin-bottom: 5px;
+    }
+    
+    .sector-icon {
+        font-size: 1em;
+        margin-right: 5px;
+    }
+    
+    .sector-info h3 {
+        font-size: 0.8em;
+    }
+    
+    .sector-info p {
+        font-size: 0.6em;
+    }
+    
+    .change-percent {
+        font-size: 0.9em;
+    }
+    
+    .current-price {
+        font-size: 0.7em;
+    }
+    
+    .change-abs {
+        font-size: 0.6em;
+    }
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Table Styling for Schedule-like appearance */
+.schedule-table-container {
+    background-color: rgba(41, 45, 53, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ffffff;
+}
+
+.schedule-table thead th {
+    background-color: #2D2D44;
+    color: #ffffff;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.schedule-table tbody td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Column width adjustments */
+.schedule-table th:nth-child(1),
+.schedule-table td:nth-child(1) {
+    width: 6%; /* アイコン列 - 最小限 */
+}
+
+.schedule-table th:nth-child(2),
+.schedule-table td:nth-child(2) {
+    width: 64%; /* セクター列 - 大幅に広く */
+    text-align: left;
+}
+
+.schedule-table th:nth-child(3),
+.schedule-table td:nth-child(3) {
+    width: 15%; /* 変化率列 - 少し狭く */
+}
+
+.schedule-table th:nth-child(4),
+.schedule-table td:nth-child(4) {
+    width: 15%; /* 状態列 - 少し狭く */
+}
+
+/* Row styling based on positive/negative */
+.positive-row {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.negative-row {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.positive-text {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.negative-text {
+    color: #F44336;
+    font-weight: bold;
+}
+
+/* Cell specific styling */
+.sector-icon-cell {
+    font-size: 1.2em;
+    padding: 8px;
+}
+
+.sector-name-cell {
+    font-weight: 500;
+    text-align: left;
+}
+
+.sector-change-cell {
+    font-weight: bold;
+}
+
+.sector-status-cell {
+    font-size: 1.1em;
+}
+
+/* Schedule date styling */
+.schedule-date {
+    margin-bottom: 20px;
+}
+
+.schedule-date-title {
+    background-color: #2D2D44;
+    color: #ffffff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Summary metrics grid */
+.summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 450px) {
+    .summary-metrics {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .schedule-table {
+        font-size: 0.85em;
+    }
+    
+    .schedule-table th,
+    .schedule-table td {
+        padding: 6px;
+    }
+    
+    .sector-icon-cell {
+        font-size: 1em;
+        padding: 4px;
+    }
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    background-color: #2D2D44;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.status-bar-item {
+    background: none;
+    border: none;
+    color: #ffffff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.status-bar-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Back to top button */
+#back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: none;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+#back-to-top:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Button Styling */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 30px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline-primary {
+    border-color: #667eea;
+    color: #667eea;
+    border-radius: 25px;
+    padding: 10px 30px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    transform: translateY(-2px);
 }
