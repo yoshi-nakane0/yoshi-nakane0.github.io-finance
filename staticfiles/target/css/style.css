@@ -99,7 +99,7 @@ html, body {
 }
 
 .schedule-date-title {
-  font-size: 14px;
+  font-size: 16px;
   margin: 0 0 5px 5px;
 }
 
@@ -130,13 +130,13 @@ html, body {
 }
 
 .metric-card h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   margin: 3px 0;
 }
 
 .metric-card p {
-  font-size: 10px;
+  font-size: 12px;
   margin: 0;
   color: var(--text-muted);
 }
@@ -200,14 +200,14 @@ html, body {
 .schedule-table td:nth-child(2) {
   width: 220px; /* 180px → 220px */
   text-align: left;
-  font-size: 13px;
+  font-size: 15px;
 }
 /* 3列目：変化率 */
 .schedule-table th:nth-child(3),
 .schedule-table td:nth-child(3) {
   width: 60px;
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: bold;
 }
 /* 4列目：状態アイコン */
@@ -255,14 +255,14 @@ html, body {
 @media (max-width: 768px) {
   .app-container { max-width: 100%; }
 
-  .summary-metrics { gap: 3px; }
-  .metric-card { padding: 5px 3px; }
-  .metric-card h2 { font-size: 14px; }
-  .metric-card p  { font-size: 9px;  }
+  .summary-metrics { gap: 5px; }
+  .metric-card { padding: 8px 5px; }
+  .metric-card h2 { font-size: 16px; }
+  .metric-card p  { font-size: 11px;  }
 
   /* セクターテーブル幅調整 */
   .schedule-table th:nth-child(2),
-  .schedule-table td:nth-child(2) { width: 160px; /* 140px → 160px */ }
+  .schedule-table td:nth-child(2) { width: 160px; font-size: 14px; }
 
   .schedule-table th:nth-child(1),
   .schedule-table td:nth-child(1),
@@ -270,7 +270,7 @@ html, body {
   .schedule-table td:nth-child(4) { width: 18px; font-size: 14px; }
 
   .schedule-table th:nth-child(3),
-  .schedule-table td:nth-child(3) { width: 50px; font-size: 10px; }
+  .schedule-table td:nth-child(3) { width: 50px; font-size: 14px; }
 
   #bar-plot { height: 200px; }
 }
@@ -279,13 +279,13 @@ html, body {
 @media (max-width: 480px) {
   .main-header h1 { font-size: 14px; }
   .main-header p  { font-size: 10px; }
-  .schedule-date-title { font-size: 12px; }
+  .schedule-date-title { font-size: 14px; }
 
-  .summary-metrics { grid-template-columns: 1fr; gap: 2px; }
+  .summary-metrics { grid-template-columns: repeat(2, 1fr); gap: 3px; }
 
   /* セクターテーブル幅調整 */
   .schedule-table th:nth-child(2),
-  .schedule-table td:nth-child(2) { width: 140px; font-size: 9px; }
+  .schedule-table td:nth-child(2) { width: 140px; font-size: 13px; }
 
   .schedule-table th:nth-child(1),
   .schedule-table td:nth-child(1),
@@ -293,7 +293,7 @@ html, body {
   .schedule-table td:nth-child(4) { width: 16px; font-size: 12px; }
 
   .schedule-table th:nth-child(3),
-  .schedule-table td:nth-child(3) { width: 45px; font-size: 9px; }
+  .schedule-table td:nth-child(3) { width: 45px; font-size: 13px; }
 
   #bar-plot { height: 180px; }
 }
