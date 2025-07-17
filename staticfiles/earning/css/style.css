@@ -1,169 +1,348 @@
-/* style.css */
+/* earning/static/earning/css/style.css */
+/* Target page unified design with professional styling */
 
-/* Base */
-body {
+/************************************************************
+ * 1. Global base styles – background, typography, wrapper  *
+ ************************************************************/
+html, body {
+  margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1E1E2E; /* style1と統一 */
-  color: #FFFFFF;
-  font-family: 'Noto Sans JP', sans-serif;
+  background-color: #1E1E2E !important; /* dark canvas identical to target */
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Gradient panel identical to target */
 .app-container {
-  max-width: 500px;
+  max-width: 450px;
   margin: 0 auto;
-  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* style1と同じグラデーション */
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
   position: relative;
   overflow: hidden;
+  min-height: 100vh;
 }
 
-.earning-container {
-  background-color: #1E1E2E; /* style1のbody背景色と統一 */
-  color: #FFFFFF;
+/* Container alias – unified with target */
+.schedule-container {
+  max-width: 450px;
+  width: 100%;
+  margin: 0 auto;
   padding: 10px;
-  font-family: sans-serif;
+  background-color: transparent;
 }
 
-/* Status Bar */
+/*******************************************************
+ * 2. Header & status bar (right-aligned)              *
+ *******************************************************/
 .status-bar {
-  background-color: #2D2D44; /* style1のbottom-navと同じ色に */
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  background-color: #2D2D44;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* 境界線を薄く */
+  margin-bottom: 15px;
+}
+
+.status-bar-right {
+  display: flex;
+  gap: 10px;
 }
 
 .status-bar-item {
-  background-color: rgba(41, 45, 53, 0.7); /* style1のmenu-item-wrapperと同じ */
-  color: #FFFFFF;
-  padding: 3px 5px;
-  font-size: 14px;
-  border: none !important;
-  border-radius: 3px;
-  margin-left: 5px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.9em;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .status-bar-item:hover {
-  background-color: rgba(41, 45, 53, 0.9); /* ホバー時に少し濃く */
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Earning Content */
-.earning-content {
-  background-color: rgba(41, 45, 53, 0.3); /* style1の色合いを薄くして適用 */
+.update-time {
+  background-color: rgba(41, 45, 53, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-size: 0.8em;
+  padding: 5px 10px;
+  text-align: center;
+  margin: 5px 0;
+}
+
+/*******************************************************
+ * 3. Schedule date styling (identical to target)       *
+ *******************************************************/
+.schedule-date {
+  margin-bottom: 20px;
+}
+
+.schedule-date-title {
+  background-color: #2D2D44;
+  color: #ffffff;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/*******************************************************
+ * 4. Earnings container styling (date group format)   *
+ *******************************************************/
+.earnings-container {
+  background-color: rgba(41, 45, 53, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  padding: 10px;
-  margin-top: 1px;
+  padding: 15px;
+  margin-bottom: 15px;
 }
 
-/* Table Wrapper & Scrollbar */
-.table-wrapper {
-  overflow-x: auto;
-  width: 100%;
-  padding-bottom: 3px;
+.date-group {
+  margin-bottom: 20px;
 }
 
-.table-wrapper::-webkit-scrollbar {
-  height: 8px;
-}
-.table-wrapper::-webkit-scrollbar-track { background: rgba(41, 45, 53, 0.3); } /* style1の色合いに */
-.table-wrapper::-webkit-scrollbar-thumb { background: rgba(41, 45, 53, 0.7); border-radius: 4px; } /* style1の色合いに */
-.table-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(41, 45, 53, 0.9); } /* ホバー時に濃く */
-
-/* Earning Table */
-.earning-table {
-  width: auto;
-  min-width: 500px;  /* intentional horizontal scroll */
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 14px;
-  table-layout: fixed;
+.date-group:last-child {
+  margin-bottom: 0;
 }
 
-/* Default cell style */
-.earning-table th,
-.earning-table td {
-  padding: 5px;
-  border-right: 1px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
-  white-space: nowrap;
+.date-header {
+  margin-bottom: 10px;
+}
+
+.date-title {
+  background-color: #2D2D44;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 0;
+  font-size: 0.95em;
+  font-weight: bold;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.companies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.company-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(30, 30, 46, 0.6);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.company-row:hover {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+/*******************************************************
+ * 5. Company row styling                               *
+ *******************************************************/
+.company-info {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.company-symbol {
+  background-color: rgba(76, 175, 80, 0.8);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.company-name {
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 0.9em;
+}
+
+.industry-info {
+  flex: 0 0 auto;
+  margin: 0 15px;
+}
+
+.industry-badge {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  display: inline-block;
+}
+
+.link-info {
+  flex: 0 0 auto;
+}
+
+.external-link {
+  color: #4CAF50;
+  text-decoration: none;
+  font-size: 1.1em;
+  transition: color 0.3s ease;
+}
+
+.external-link:hover {
+  color: #66BB6A;
+}
+
+/*******************************************************
+ * 6. No data message styling                          *
+ *******************************************************/
+.no-data-message {
+  color: #cccccc;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 30px;
   text-align: center;
 }
 
-/* Header */
-.earning-table th {
-  background-color: #2D2D44; /* style1のbottom-navと同じ色 */
-  color: #FFFFFF;
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
+/*******************************************************
+ * 7. Back to top button (identical to target)         *
+ *******************************************************/
+#back-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.2em;
+  cursor: pointer;
+  display: none;
+  z-index: 1000;
+  transition: all 0.3s ease;
 }
 
-/* First Column (決算日) width */
-.earning-table th:nth-child(1),
-.earning-table td:nth-child(1) {
-  width: 80px;
-  padding-left: 4px;
-  padding-right: 4px;
+#back-to-top:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-/* Second Column (企業) width */
-.earning-table th:nth-child(2),
-.earning-table td:nth-child(2) {
-  width: 120px;
-  padding-left: 4px;
-  padding-right: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/*******************************************************
+ * 8. Responsive design for mobile                     *
+ *******************************************************/
+@media (max-width: 450px) {
+  .schedule-container {
+    padding: 5px;
+  }
+  
+  .earnings-container {
+    padding: 10px;
+  }
+  
+  .date-title {
+    font-size: 0.85em;
+    padding: 6px 10px;
+  }
+  
+  .company-row {
+    padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .company-info {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .company-symbol {
+    font-size: 0.7em;
+    padding: 1px 4px;
+  }
+  
+  .company-name {
+    font-size: 0.85em;
+  }
+  
+  .industry-info {
+    margin: 0;
+    width: 100%;
+  }
+  
+  .industry-badge {
+    font-size: 0.7em;
+    padding: 3px 6px;
+  }
+  
+  .link-info {
+    width: 100%;
+    text-align: right;
+  }
+  
+  .external-link {
+    font-size: 1em;
+  }
 }
 
-/* Third Column (業種) width */
-.earning-table th:nth-child(3),
-.earning-table td:nth-child(3) {
-  width: 100px;
-  padding-left: 4px;
-  padding-right: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/*******************************************************
+ * 9. Loading and transition effects                   *
+ *******************************************************/
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
-/* Column Alignments */
-.earning-table td.text-left { text-align: left; padding-left: 10px; }
-.earning-table td.text-center { text-align: center; }
-
-/* Remove border on last column */
-.earning-table th:last-child,
-.earning-table td:last-child { border-right: none; }
-
-/* Row Striping & Hover */
-.earning-table tbody tr:nth-child(odd)  { background-color: rgba(41, 45, 53, 0.3); } /* style1の色合いに */
-.earning-table tbody tr:nth-child(even) { background-color: rgba(30, 30, 46, 0.6); } /* 元の色を維持 */
-.earning-table tbody tr:hover         { background-color: rgba(41, 45, 53, 0.5); } /* style1の色合いでホバー */
-
-/* Badge Styles - 変更しない */
-.badge {
+.spinner {
   display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 4px;
-  border-radius: 3px;
-  margin-left: 3px;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
 }
-.badge.positive { background-color: #4b8b3b; color: #FFFFFF; }
-.badge.negative { background-color: #b83c3c; color: #FFFFFF; }
-.badge.neutral  { background-color: #a17c27; color: #FFFFFF; }
 
-/* Marks - 変更しない */
-.negative-mark             { color: red; }
-.earning-table td.modified { color: rgb(145, 240, 145); }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-/* Responsive */
-@media screen and (max-width: 450px) {
-  .earning-table th,
-  .earning-table td { padding: 6px 4px; }
-  .badge { font-size: 12px; padding: 1px 3px; }
+/*******************************************************
+ * 10. Button styling (unified with target)            *
+ *******************************************************/
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 10px 30px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }

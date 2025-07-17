@@ -553,23 +553,18 @@ html {
 /* Column width adjustments */
 .schedule-table th:nth-child(1),
 .schedule-table td:nth-child(1) {
-    width: 6%; /* アイコン列 - 最小限 */
+    width: 10%; /* アイコン列 */
 }
 
 .schedule-table th:nth-child(2),
 .schedule-table td:nth-child(2) {
-    width: 64%; /* セクター列 - 大幅に広く */
+    width: 65%; /* セクター列 - より広く */
     text-align: left;
 }
 
 .schedule-table th:nth-child(3),
 .schedule-table td:nth-child(3) {
-    width: 15%; /* 変化率列 - 少し狭く */
-}
-
-.schedule-table th:nth-child(4),
-.schedule-table td:nth-child(4) {
-    width: 15%; /* 状態列 - 少し狭く */
+    width: 25%; /* 変化率列 - 適度な幅 */
 }
 
 /* Row styling based on positive/negative */
@@ -604,6 +599,12 @@ html {
 
 .sector-change-cell {
     font-weight: bold;
+    background-color: rgba(41, 45, 53, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin: 2px;
+    font-family: 'Courier New', monospace; /* 等幅フォントで数値を見やすく */
 }
 
 .sector-status-cell {

@@ -110,7 +110,7 @@
                                 <td class="sector-icon-cell">{{ sector.icon }}</td>
                                 <td class="sector-name-cell">{{ sector.sector }}</td>
                                 <td class="sector-change-cell {% if sector.change > 0 %}positive-text{% else %}negative-text{% endif %}">
-                                    {{ sector.change_pct|floatformat:2 }}%
+                                    {% if sector.change_pct > 0 %}+{% endif %}{{ sector.change_pct|floatformat:2 }}%
                                 </td>
                             </tr>
                             {% endfor %}
@@ -137,7 +137,7 @@
                                 <td class="sector-icon-cell">{{ sector.icon }}</td>
                                 <td class="sector-name-cell">{{ sector.sector }}</td>
                                 <td class="sector-change-cell {% if sector.change > 0 %}positive-text{% else %}negative-text{% endif %}">
-                                    {{ sector.change_pct|floatformat:2 }}%
+                                    {% if sector.change_pct > 0 %}+{% endif %}{{ sector.change_pct|floatformat:2 }}%
                                 </td>
                             </tr>
                             {% endfor %}
@@ -160,8 +160,93 @@
     <script>
         // Refresh button functionality
         document.getElementById('refresh-btn').addEventListener('click', function() {
-            location.reload();
+            refreshData();
         });
+
+        function refreshData() {
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '🔄 更新中...';
+
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ action: 'refresh' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update time
+                    document.getElementById('update-time').textContent = data.update_time;
+                    
+                    // Update US summary
+                    document.getElementById('us-positive-count').textContent = data.us_summary.positive_count;
+                    document.getElementById('us-negative-count').textContent = data.us_summary.negative_count;
+                    document.getElementById('us-total-count').textContent = data.us_summary.total_count;
+                    document.getElementById('us-avg-change').textContent = data.us_summary.avg_change.toFixed(2) + '%';
+                    document.getElementById('us-avg-icon').textContent = data.us_summary.avg_change > 0 ? '📈' : '📉';
+                    
+                    // Update JP summary
+                    document.getElementById('jp-positive-count').textContent = data.jp_summary.positive_count;
+                    document.getElementById('jp-negative-count').textContent = data.jp_summary.negative_count;
+                    document.getElementById('jp-total-count').textContent = data.jp_summary.total_count;
+                    document.getElementById('jp-avg-change').textContent = data.jp_summary.avg_change.toFixed(2) + '%';
+                    document.getElementById('jp-avg-icon').textContent = data.jp_summary.avg_change > 0 ? '📈' : '📉';
+                    
+                    // Update sector tables with sorting
+                    const usSectors = data.sectors.filter(s => s.group === 'US').sort((a, b) => b.change_pct - a.change_pct);
+                    const jpSectors = data.sectors.filter(s => s.group === 'JP').sort((a, b) => b.change_pct - a.change_pct);
+                    updateSectorTable('us-sectors', usSectors, '$');
+                    updateSectorTable('jp-sectors', jpSectors, '¥');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '🔄 更新';
+            });
+        }
+
+        function updateSectorTable(tableId, sectors, currency) {
+            const tbody = document.getElementById(tableId);
+            tbody.innerHTML = '';
+            
+            sectors.forEach(sector => {
+                const row = document.createElement('tr');
+                row.className = sector.change > 0 ? 'positive-row' : 'negative-row';
+                
+                const changeSign = sector.change_pct > 0 ? '+' : '';
+                
+                row.innerHTML = `
+                    <td class="sector-icon-cell">${sector.icon}</td>
+                    <td class="sector-name-cell">${sector.sector}</td>
+                    <td class="sector-change-cell ${sector.change > 0 ? 'positive-text' : 'negative-text'}">
+                        ${changeSign}${sector.change_pct.toFixed(2)}%
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
         
         // Back to top button script
         const backToTopButton = document.getElementById("back-to-top");
