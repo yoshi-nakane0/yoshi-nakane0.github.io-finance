@@ -76,43 +76,72 @@ def fetch_yahoo_finance_earnings():
         print(f"Yahoo Finance earnings fetch error: {e}")
         return []
 
-def get_industry_by_symbol(symbol):
+# 対象企業のリスト
+TARGET_COMPANIES = {
+    'ORCL': {'market': 'NYSE', 'company': 'Oracle', 'industry': 'ソフトウェア、テクノロジー'},
+    'JPM': {'market': 'NYSE', 'company': 'JPMorgan Chase', 'industry': '銀行、金融サービス'},
+    'JNJ': {'market': 'NYSE', 'company': 'Johnson & Johnson', 'industry': '医薬品'},
+    'BAC': {'market': 'NYSE', 'company': 'Bank of America', 'industry': '銀行、金融サービス'},
+    'NFLX': {'market': 'NASDAQ', 'company': 'Netflix', 'industry': 'インターネット、テクノロジー'},
+    'TSM': {'market': 'NYSE', 'company': 'TSMC', 'industry': '半導体、テクノロジー'},
+    'META': {'market': 'NASDAQ', 'company': 'Meta Platforms', 'industry': 'テクノロジー'},
+    'AAPL': {'market': 'NASDAQ', 'company': 'Apple', 'industry': 'テクノロジー'},
+    'MA': {'market': 'NYSE', 'company': 'Mastercard', 'industry': '金融サービス'},
+    'V': {'market': 'NYSE', 'company': 'Visa', 'industry': '金融サービス'},
+    'TSLA': {'market': 'NASDAQ', 'company': 'Tesla', 'industry': '自動車、テクノロジー'},
+    'UNH': {'market': 'NYSE', 'company': 'UnitedHealth', 'industry': 'ヘルスケアサービス'},
+    'MRK': {'market': 'NYSE', 'company': 'Merck', 'industry': '医薬品'},
+    'MSFT': {'market': 'NASDAQ', 'company': 'Microsoft', 'industry': 'ソフトウェア、テクノロジー'},
+    'GOOG': {'market': 'NASDAQ', 'company': 'Alphabet (Google)', 'industry': 'ソフトウェア、テクノロジー'},
+    'AMZN': {'market': 'NASDAQ', 'company': 'Amazon', 'industry': '小売り'},
+    'BRK.B': {'market': 'NYSE', 'company': 'Berkshire Hathaway', 'industry': '保険、製造業、小売り、金融、投資'},
+    'PG': {'market': 'NYSE', 'company': 'Procter & Gamble', 'industry': '消費財'},
+    'LLY': {'market': 'NYSE', 'company': 'Eli Lilly', 'industry': '医薬品、バイオテクノロジー'},
+    'WMT': {'market': 'NYSE', 'company': 'Walmart', 'industry': '小売り、食品、ドラッグ'},
+    'NVDA': {'market': 'NASDAQ', 'company': 'NVIDIA', 'industry': '半導体、テクノロジー'},
+    'AVGO': {'market': 'NASDAQ', 'company': 'Broadcom (AVGO)', 'industry': '半導体、テクノロジー'},
+    'COST': {'market': 'NASDAQ', 'company': 'Costco Wholesale', 'industry': '小売り'},
+}
+
+def get_company_info(symbol):
     """
-    シンボルから業種を推定する
+    シンボルから企業情報を取得する
     """
     # Remove exchange prefix if present
     clean_symbol = symbol.split(':')[-1] if ':' in symbol else symbol
+    return TARGET_COMPANIES.get(clean_symbol)
+
+def generate_sample_data():
+    """
+    対象企業のサンプルデータを生成する
+    """
+    today = datetime.now().date()
+    sample_companies = [
+        ('ORCL', 0),
+        ('JPM', 1),
+        ('JNJ', 1),
+        ('META', 1),
+        ('TSM', 1),
+        ('NFLX', 2),
+        ('AAPL', 2),
+        ('MA', 2),
+        ('V', 2),
+        ('TSLA', 2),
+        ('UNH', 2),
+    ]
     
-    industry_map = {
-        'AAPL': 'テクノロジー',
-        'MSFT': 'ソフトウェア、テクノロジー',
-        'GOOGL': 'ソフトウェア、テクノロジー',
-        'GOOG': 'ソフトウェア、テクノロジー',
-        'AMZN': '小売り',
-        'TSLA': '自動車、テクノロジー',
-        'META': 'テクノロジー',
-        'NVDA': '半導体、テクノロジー',
-        'JPM': '銀行、金融サービス',
-        'JNJ': '医薬品',
-        'UNH': 'ヘルスケアサービス',
-        'V': '金融サービス',
-        'MA': '金融サービス',
-        'PG': '消費財',
-        'NFLX': 'インターネット、テクノロジー',
-        'ORCL': 'ソフトウェア、テクノロジー',
-        'TSM': '半導体、テクノロジー',
-        'GE': '工業、航空宇宙',
-        'ABT': '医薬品、医療機器',
-        'BAC': '銀行、金融サービス',
-        'WFC': '銀行、金融サービス',
-        'XOM': 'エネルギー、石油',
-        'CVX': 'エネルギー、石油',
-        'HD': '小売り、建設',
-        'PFE': '医薬品',
-        'KO': '飲料、消費財',
-        'DIS': 'エンターテイメント、メディア',
-    }
-    return industry_map.get(clean_symbol, 'その他')
+    earnings_data = []
+    for symbol, day_offset in sample_companies:
+        company_info = TARGET_COMPANIES[symbol]
+        earnings_data.append({
+            'date': (today + timedelta(days=day_offset)).strftime('%Y-%m-%d'),
+            'company': company_info['company'],
+            'industry': company_info['industry'],
+            'market': company_info['market'],
+            'symbol': symbol
+        })
+    
+    return earnings_data
 
 def get_market_by_symbol(symbol):
     """
