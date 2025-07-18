@@ -24,18 +24,12 @@
             <div class="status-bar">
                 <div class="status-bar-right">
                     <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-                    <button class="status-bar-item" id="refresh-btn">🔄 更新</button>
                 </div>
             </div>
 
-            <!-- 更新時間 -->
-            <div class="update-time">
-                ⏰ 最終更新: <span id="update-time">{{ update_time|default:"読み込み中..." }}</span> (JST)
-            </div>
 
             <!-- 決算発表予定 -->
             <div class="schedule-date">
-                <h2 class="schedule-date-title">📈 決算発表予定 (Earnings Calendar)</h2>
                 <div class="earnings-container">
                     {% for date_group in earnings_data %}
                     <div class="date-group">
@@ -45,31 +39,29 @@
                         <div class="companies-list">
                             {% for company in date_group.companies %}
                             <div class="company-row">
-                                <div class="company-info">
-                                    <span class="company-symbol">{{ company.symbol }}</span>
-                                    <span class="company-name">{{ company.company }}</span>
-                                    <span class="industry-badge">{{ company.industry }}</span>
+                                <div class="company-top-row">
+                                    <div class="company-main-info">
+                                        <span class="company-symbol">{{ company.symbol }}</span>
+                                        <span class="company-name">{{ company.company }}</span>
+                                    </div>
+                                    <div class="link-info">
+                                        {% if company.market and company.symbol %}
+                                        <a href="https://jp.tradingview.com/symbols/{{ company.market }}-{{ company.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" 
+                                           target="_blank" 
+                                           class="external-link">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <div class="link-info">
-                                    {% if company.market and company.symbol %}
-                                    <a href="https://jp.tradingview.com/symbols/{{ company.market }}-{{ company.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" 
-                                       target="_blank" 
-                                       class="external-link">
-                                        <i class="bi bi-box-arrow-up-right"></i>
-                                    </a>
-                                    {% endif %}
+                                <div class="company-bottom-row">
+                                    <span class="industry-badge">{{ company.industry }}</span>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                     {% endfor %}
-                    {% if not earnings_data %}
-                    <div class="no-data-message">
-                        <i class="bi bi-info-circle"></i>
-                        決算発表予定データがありません
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -84,104 +76,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Refresh button functionality
-        document.getElementById('refresh-btn').addEventListener('click', function() {
-            refreshEarningsData();
-        });
-
-        function refreshEarningsData() {
-            const refreshBtn = document.getElementById('refresh-btn');
-            refreshBtn.disabled = true;
-            refreshBtn.innerHTML = '🔄 更新中...';
-
-            fetch('', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ action: 'refresh' })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update time
-                    document.getElementById('update-time').textContent = data.update_time;
-                    
-                    // Update earnings data
-                    updateEarningsContainer(data.earnings_data);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            })
-            .finally(() => {
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '🔄 更新';
-            });
-        }
-
-        function updateEarningsContainer(earningsData) {
-            const container = document.querySelector('.earnings-container');
-            container.innerHTML = '';
-            
-            if (earningsData && earningsData.length > 0) {
-                earningsData.forEach(dateGroup => {
-                    const dateGroupDiv = document.createElement('div');
-                    dateGroupDiv.className = 'date-group';
-                    
-                    dateGroupDiv.innerHTML = `
-                        <div class="date-header">
-                            <h3 class="date-title">📅 ${dateGroup.date}</h3>
-                        </div>
-                        <div class="companies-list">
-                            ${dateGroup.companies.map(company => `
-                                <div class="company-row">
-                                    <div class="company-info">
-                                        <span class="company-symbol">${company.symbol}</span>
-                                        <span class="company-name">${company.company}</span>
-                                        <span class="industry-badge">${company.industry}</span>
-                                    </div>
-                                    <div class="link-info">
-                                        ${company.market && company.symbol ? `
-                                            <a href="https://jp.tradingview.com/symbols/${company.market}-${company.symbol}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" 
-                                               target="_blank" 
-                                               class="external-link">
-                                                <i class="bi bi-box-arrow-up-right"></i>
-                                            </a>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                    
-                    container.appendChild(dateGroupDiv);
-                });
-            } else {
-                container.innerHTML = `
-                    <div class="no-data-message">
-                        <i class="bi bi-info-circle"></i>
-                        決算発表予定データがありません
-                    </div>
-                `;
-            }
-        }
-
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
         
         // Back to top button script
         const backToTopButton = document.getElementById("back-to-top");

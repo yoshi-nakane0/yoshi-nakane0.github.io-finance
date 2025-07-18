@@ -1,5 +1,5 @@
 /* earning/static/earning/css/style.css */
-/* Target page unified design with professional styling */
+/* Design unified with schedule page */
 
 /************************************************************
  * 1. Global base styles – background, typography, wrapper  *
@@ -8,100 +8,83 @@ html, body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1E1E2E !important; /* dark canvas identical to target */
+  background-color: #1E1E2E !important; /* Same as schedule */
   color: #ffffff;
   min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: sans-serif; /* Same as schedule */
 }
 
-/* Gradient panel identical to target */
+/* Container identical to schedule */
 .app-container {
   max-width: 450px;
   margin: 0 auto;
-  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* Same gradient as schedule */
   position: relative;
   overflow: hidden;
   min-height: 100vh;
 }
 
-/* Container alias – unified with target */
+/* Container alias – unified with schedule */
 .schedule-container {
+  font-family: sans-serif; /* Same as schedule */
+  background-color: #1E1E2E; /* Same as schedule */
+  color: #ffffff;
+  padding: 10px;
   max-width: 450px;
   width: 100%;
   margin: 0 auto;
-  padding: 10px;
-  background-color: transparent;
 }
 
 /*******************************************************
- * 2. Header & status bar (right-aligned)              *
+ * 2. Header & status bar (identical to schedule)      *
  *******************************************************/
 .status-bar {
+  background-color: #2D2D44; /* Same as schedule */
   display: flex;
   justify-content: flex-end;
-  background-color: #2D2D44;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px;
+  align-items: center;
+  padding: 2px 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Same as schedule */
   margin-bottom: 15px;
 }
 
 .status-bar-right {
   display: flex;
-  gap: 10px;
+  gap: 5px;
 }
 
 .status-bar-item {
-  background: none;
-  border: none;
+  background-color: rgba(41, 45, 53, 0.7); /* Same as schedule */
+  padding: 3px 5px;
+  font-size: 13px;
   color: #ffffff;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.9em;
+  border: none !important;
+  margin-left: 5px;
   cursor: pointer;
+  border-radius: 3px;
   transition: background-color 0.3s ease;
 }
 
 .status-bar-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(41, 45, 53, 0.9); /* Same as schedule */
 }
 
-.update-time {
-  background-color: rgba(41, 45, 53, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  font-size: 0.8em;
-  padding: 5px 10px;
-  text-align: center;
-  margin: 5px 0;
-}
 
 /*******************************************************
- * 3. Schedule date styling (identical to target)       *
+ * 3. Schedule date styling (unified with schedule)    *
  *******************************************************/
 .schedule-date {
   margin-bottom: 20px;
 }
 
-.schedule-date-title {
-  background-color: #2D2D44;
-  color: #ffffff;
-  padding: 10px 15px;
-  border-radius: 8px;
-  margin: 0 0 10px 0;
-  font-size: 1.1em;
-  font-weight: bold;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
 
 /*******************************************************
- * 4. Earnings container styling (date group format)   *
+ * 4. Earnings container styling (unified with schedule) *
  *******************************************************/
 .earnings-container {
-  background-color: rgba(41, 45, 53, 0.5);
+  background-color: rgba(41, 45, 53, 0.5); /* Same as schedule table */
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 15px;
   margin-bottom: 15px;
 }
@@ -119,14 +102,15 @@ html, body {
 }
 
 .date-title {
-  background-color: #2D2D44;
+  background-color: #2D2D44; /* Same as schedule table header */
   color: #ffffff;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 3px; /* Same as schedule th */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Same as schedule */
   margin: 0;
-  font-size: 0.95em;
-  font-weight: bold;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px; /* Same as schedule th */
+  font-weight: normal;
+  text-align: left; /* Left-aligned instead of center */
+  white-space: nowrap; /* Same as schedule th */
 }
 
 .companies-list {
@@ -136,66 +120,77 @@ html, body {
 }
 
 .company-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: rgba(30, 30, 46, 0.6);
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(41, 45, 53, 0.3); /* Same as schedule table cells */
+  padding: 3px; /* Same as schedule td */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Same as schedule */
   transition: background-color 0.2s ease;
+  white-space: nowrap; /* Same as schedule td */
+  overflow: hidden; /* Same as schedule td */
+  text-overflow: ellipsis; /* Same as schedule td */
 }
 
 .company-row:hover {
-  background-color: rgba(76, 175, 80, 0.1);
+  background-color: rgba(41, 45, 53, 0.5);
 }
 
 /*******************************************************
- * 5. Company row styling                               *
+ * 5. Company row styling - unified with schedule      *
  *******************************************************/
-.company-info {
-  flex: 1;
-  text-align: left;
+.company-top-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 6px;
+}
+
+.company-main-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0; /* Allows text to shrink */
 }
 
 .company-symbol {
   background-color: rgba(76, 175, 80, 0.8);
   color: #ffffff;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.75em;
-  font-weight: bold;
-  font-family: monospace;
+  padding: 2px;
+  font-size: 13px; /* Same as schedule td */
+  font-weight: normal;
+  font-family: sans-serif; /* Same as schedule */
+  flex-shrink: 0;
 }
 
 .company-name {
-  font-weight: bold;
+  font-weight: normal;
   color: #ffffff;
-  font-size: 0.9em;
+  font-size: 13px; /* Same as schedule td */
+  line-height: 1.3;
+  /* Remove any text truncation */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
 }
 
-.industry-info {
-  flex: 0 0 auto;
-  margin: 0 15px;
+.company-bottom-row {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .industry-badge {
   background-color: rgba(76, 175, 80, 0.2);
   color: #4CAF50;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8em;
-  font-weight: 500;
+  padding: 2px;
+  font-size: 13px; /* Same as schedule td */
+  font-weight: normal;
   border: 1px solid rgba(76, 175, 80, 0.3);
   display: inline-block;
 }
 
 .link-info {
-  flex: 0 0 auto;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .external-link {
@@ -209,47 +204,33 @@ html, body {
   color: #66BB6A;
 }
 
-/*******************************************************
- * 6. No data message styling                          *
- *******************************************************/
-.no-data-message {
-  color: #cccccc;
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 30px;
-  text-align: center;
-}
 
 /*******************************************************
- * 7. Back to top button (identical to target)         *
+ * 7. Back to top button (identical to schedule)       *
  *******************************************************/
 #back-to-top {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 1.2em;
-  cursor: pointer;
-  display: none;
-  z-index: 1000;
-  transition: all 0.3s ease;
+  display: none; /* Hidden by default */
+  position: fixed; /* Fixed/sticky position */
+  bottom: 50px; /* Place the button at the bottom of the page */
+  right: 30px; /* Place the button 30px from the right */
+  z-index: 99; /* Make sure it does not overlap */
+  border: none; /* Remove borders */
+  outline: none; /* Remove outline */
+  background-color: rgba(41, 45, 53, 0.7); /* Same as schedule */
+  color: white; /* Text color */
+  cursor: pointer; /* Add a mouse pointer on hover */
+  padding: 10px 15px; /* Some padding */
+  border-radius: 10px; /* Rounded corners */
+  font-size: 18px; /* Increase font size */
+  transition: background-color 0.3s ease;
 }
 
 #back-to-top:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background-color: rgba(41, 45, 53, 0.9); /* Same as schedule */
 }
 
 /*******************************************************
- * 8. Responsive design for mobile                     *
+ * 8. Responsive design for mobile (unified with schedule) *
  *******************************************************/
 @media (max-width: 450px) {
   .schedule-container {
@@ -261,55 +242,54 @@ html, body {
   }
   
   .date-title {
-    font-size: 0.85em;
-    padding: 6px 10px;
+    font-size: 13px; /* Keep same as schedule */
+    padding: 2px;
   }
   
   .company-row {
-    padding: 8px 10px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    padding: 2px;
   }
   
-  .company-info {
-    width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
+  .company-top-row {
+    margin-bottom: 2px;
+  }
+  
+  .company-main-info {
     gap: 4px;
   }
   
   .company-symbol {
-    font-size: 0.7em;
-    padding: 1px 4px;
+    font-size: 13px; /* Keep same as schedule */
+    padding: 1px 2px;
   }
   
   .company-name {
-    font-size: 0.85em;
-  }
-  
-  .industry-info {
-    margin: 0;
-    width: 100%;
+    font-size: 13px; /* Keep same as schedule */
+    /* Ensure no truncation on mobile */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
+    word-break: break-word;
   }
   
   .industry-badge {
-    font-size: 0.7em;
-    padding: 3px 6px;
-  }
-  
-  .link-info {
-    width: 100%;
-    text-align: right;
+    font-size: 13px; /* Keep same as schedule */
+    padding: 1px 2px;
   }
   
   .external-link {
     font-size: 1em;
   }
+  
+  .status-bar-item {
+    padding: 2px 4px;
+    font-size: 13px; /* Keep same as schedule */
+  }
 }
 
 /*******************************************************
- * 9. Loading and transition effects                   *
+ * 9. Loading and transition effects (unified)         *
  *******************************************************/
 .loading {
   opacity: 0.6;
@@ -320,7 +300,7 @@ html, body {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(255,255,255,.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: #fff;
   animation: spin 1s ease-in-out infinite;
@@ -331,18 +311,19 @@ html, body {
 }
 
 /*******************************************************
- * 10. Button styling (unified with target)            *
+ * 10. Button styling (unified with schedule)          *
  *******************************************************/
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: rgba(41, 45, 53, 0.7);
   border: none;
-  border-radius: 25px;
-  padding: 10px 30px;
-  font-weight: bold;
-  transition: all 0.3s ease;
+  border-radius: 3px;
+  padding: 3px 5px;
+  font-size: 13px;
+  color: white;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background-color: rgba(41, 45, 53, 0.9);
 }

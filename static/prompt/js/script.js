@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- 状態変数 ---
     let currentPage = 1;
-    let itemsPerPage = 5; // 初期表示件数
+    let itemsPerPage = 20; // 初期表示件数
     let currentFilteredCards = allCards; // 現在フィルタリング/検索されているカードリスト
     let draggedItem = null; // ドラッグ中の要素
     let placeholder = null; // ドラッグ中のプレースホルダー要素
@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updatePaginationControlsVisibility(totalItems) {
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        // ページが複数あるか、1ページでも表示件数よりアイテムが多い場合に表示
-        const shouldShowControls = totalPages > 1 || totalItems > itemsPerPage;
+        // 20件を超える場合のみページネーションを表示
+        const shouldShowControls = totalItems > 20;
 
         if (paginationControlsTop) {
             paginationControlsTop.style.display = shouldShowControls ? 'flex' : 'none';
@@ -170,9 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (paginationControlsBottom) {
             paginationControlsBottom.style.display = shouldShowControls ? 'flex' : 'none';
         }
-         // ページネーションのul要素自体はページ数が1以下の場合は非表示
-         if (paginationListTop) paginationListTop.style.display = totalPages > 1 ? 'flex' : 'none';
-         if (paginationListBottom) paginationListBottom.style.display = totalPages > 1 ? 'flex' : 'none';
+         // ページネーションのul要素自体は20件を超える場合のみ表示
+         if (paginationListTop) paginationListTop.style.display = shouldShowControls ? 'flex' : 'none';
+         if (paginationListBottom) paginationListBottom.style.display = shouldShowControls ? 'flex' : 'none';
     }
 
     // --- 表示件数変更 ---
@@ -681,6 +681,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- その他ユーティリティ ---
+
+    /**
+     * HTMLエスケープ関数（XSS防止）
+     */
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
     /**
      * ページ上部にスムーズスクロールする

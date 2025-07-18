@@ -1,68 +1,51 @@
 /* --- style.css (整理版) --- */
 
-body {
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    background: #1E1E2E;
+    color: white;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #1E1E2E;
-    color: white;
-    font-family: 'Noto Sans JP', sans-serif;
-    margin: 0;
 }
 
 .app-container {
-    max-width: 414px;
-    min-height: 100vh;
+    max-width: 450px;
     margin: 0 auto;
     background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
     position: relative;
     overflow: hidden;
-    box-sizing: border-box;
 }
 
 .prompt-container {
-    background-color: #1E1E2E;
-    box-sizing: border-box;
+    padding: 10px;
 }
 
 /* --- ステータスバー --- */
 .status-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    background-color: rgba(41, 45, 53, 0.7);
-    padding: 10px 15px;
-    margin-bottom: 15px;
-    border: 1px solid #464678;
-    border-radius: 8px;
-}
-
-.status-left {
-    display: flex;
-    align-items: center;
-}
-
-.status-title {
-    font-weight: 600;
-    font-size: 14px;
-    color: #E6EDF3;
+    gap: 5px;
+    padding: 2px 5px;
+    background: #2D2D44;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .status-bar-item {
-    display: flex;
-    align-items: center;
-    background-color: #238636;
-    padding: 6px 12px;
+    background: rgba(41, 45, 53, 0.7);
+    color: white;
     font-size: 13px;
-    color: #ffffff;
-    border: none !important; /* Bootstrap対策 */
-    border-radius: 6px;
+    padding: 3px 5px;
+    border: none;
+    border-radius: 3px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.15s ease;
 }
+
 .status-bar-item:hover {
-    background-color: #2EA043;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background: rgba(41, 45, 53, 0.9);
 }
 
 /* --- タイトル・検索・フィルター --- */
@@ -137,7 +120,7 @@ body {
     border: 1px solid #464678;
     border-radius: 20px;
     color: #C9D1D9;
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
     flex-shrink: 0;
     cursor: pointer;
@@ -215,7 +198,7 @@ body {
     flex-grow: 1;
     margin-right: 5px;
     color: #58A6FF !important; /* Bootstrap上書き */
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     /* --- ↓↓↓ 修正箇所 ↓↓↓ --- */
     white-space: nowrap;      /* テキストを折り返さない */
@@ -236,7 +219,7 @@ body {
 
 .prompt-content {
     margin-bottom: 0;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.6;
     color: #C9D1D9;
     white-space: pre-wrap;
@@ -329,48 +312,10 @@ body {
 .pagination-controls:first-of-type { margin-top: -0.25rem; margin-bottom: 1rem; }
 .pagination-controls:last-of-type { margin-top: 1rem; }
 
+/* Bootstrapのデフォルトページネーションスタイルを使用 */
 .pagination {
     margin-bottom: 0;
     flex-shrink: 0;
-}
-
-.page-item {
-    /* ページネーション項目の基本スタイル */
-    margin: 0;
-    padding: 0;
-}
-
-.page-link {
-    padding: 0.25rem 0.5rem;
-    background-color: rgba(41, 45, 53, 0.7);
-    border: 1px solid #464678; /* border-color は継承される */
-    color: #C9D1D9;
-    font-size: 12px;
-    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-.page-item:first-child .page-link { border-radius: .2rem 0 0 .2rem; }
-.page-item:last-child .page-link { border-radius: 0 .2rem .2rem 0; }
-
-.page-link:hover {
-    background-color: #464678;
-    border-color: #6c7684;
-    color: #E6EDF3;
-}
-.page-item.active .page-link {
-    background-color: #1F6FEB;
-    border-color: #1F6FEB;
-    color: white;
-    z-index: 3; /* 隣接要素のボーダーの上に表示 */
-}
-.page-item.active .page-link:hover {
-    background-color: #1a5db3;
-    border-color: #1a5db3;
-}
-.page-item.disabled .page-link {
-    background-color: rgba(30, 30, 46, 0.8);
-    border-color: #464678;
-    color: #8B949E;
-    pointer-events: none;
 }
 
 .items-per-page-selector {

@@ -10,7 +10,7 @@ def index(request):
     """
     CSVからプロンプトデータを読み込み、表示する
     """
-    data_file_path = os.path.join(settings.STATIC_ROOT, 'prompt/data/prompt_data.csv')
+    data_file_path = os.path.join(settings.STATICFILES_DIRS[0], 'prompt/data/prompt_data.csv')
 
     prompt_data = []
 
@@ -45,12 +45,20 @@ def index(request):
                 })
     except FileNotFoundError:
         print(f"Error: File not found at {data_file_path}")
+        import traceback
+        traceback.print_exc()
         # 適切なエラーハンドリング。例えば、空のリストを渡す、エラーページを表示するなど。
     except KeyError as e:
         print(f"Error: Missing key in CSV: {e}")
+        import traceback
+        traceback.print_exc()
         # キーが存在しない場合のエラーハンドリング
     except Exception as e:
         print(f"Error reading CSV: {e}")
+        print(f"File path: {data_file_path}")
+        print(f"File exists: {os.path.exists(data_file_path)}")
+        import traceback
+        traceback.print_exc()
         # その他の例外に対するエラーハンドリング
 
     return render(request, 'prompt/index.html', {'prompt_data': prompt_data})

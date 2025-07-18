@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI プロンプト ライブラリ</title>
+    <title>プロンプト</title>
     <!-- CSS フレームワークとアイコン -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -21,29 +21,20 @@
     <div class="app-container">
         <div class="prompt-container">
             <div class="status-bar">
-                <div class="status-left">
-                    <i class="bi bi-collection-fill text-success me-2"></i>
-                    <span class="status-title">AI Prompt Hub</span>
-                </div>
                 <button class="status-bar-item" onclick="location.href='/'">
-                    <i class="bi bi-house-fill me-1"></i>ホーム
+                    <i class="bi bi-house-fill me-1"></i>🏠 ホーム
                 </button>
             </div>
 
             <!-- メインコンテンツ -->
             <div class="container-fluid mt-3 px-1">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="text-light title-main">
-                        <i class="bi bi-lightning-charge-fill text-warning me-2"></i>プロンプトライブラリ
-                    </h2>
-                </div>
 
                  <!-- 検索ボックス -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div class="search-container">
                     <input type="text" class="form-control form-control-sm search-input" placeholder="検索...">
                     <i class="bi bi-search search-icon"></i>
-                </div>
+                  </div>
                 </div>
 
                 <!-- フィルターバー -->
@@ -65,7 +56,7 @@
                             <select class="form-select form-select-sm" id="items-per-page-top">
                                 <option value="5">5件</option>
                                 <option value="10">10件</option>
-                                <option value="20">20件</option>
+                                <option value="20" selected>20件</option>
                                 <option value="50">50件</option>
                             </select>
                         </div>
@@ -143,7 +134,7 @@
                             <select class="form-select form-select-sm" id="items-per-page-bottom">
                                 <option value="5">5件</option>
                                 <option value="10">10件</option>
-                                <option value="20">20件</option>
+                                <option value="20" selected>20件</option>
                                 <option value="50">50件</option>
                             </select>
                         </div>
@@ -151,10 +142,6 @@
                 </nav>
             </div>
 
-            <!-- フッター -->
-            <div class="footer mt-4 text-center">
-                <p class="text-muted small">© 2025 AI Prompt Hub - All Rights Reserved</p>
-            </div>
         </div>
     </div>
 
