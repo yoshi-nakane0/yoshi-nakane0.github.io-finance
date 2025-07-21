@@ -21,7 +21,7 @@ AI Assistant to provide accurate and reliable Japanese answers to user questions
 - No display of the processing process
 - Use only reliable sources
 - Keep answers concise and comprehensive",ALL
-検索,選択式プロンプト（市場調査用）,"## 使用方法
+検索,市場調査選択式,"## 使用方法
 次回の質問で以下の番号を組み合わせて入力してください：
 **「1.2.3」** のような形式で入力するだけで調査を開始します。
 ---
@@ -127,7 +127,7 @@ Output format:.
     1. HTML
     2. SVG 
 (e.g., please answer in a format that allows me to number the design and output format as `1.2`)",claude
-経済,Jan Hatzius氏による最新の経済予測,"以下の条件で、Jan Hatzius氏（Goldman Sachs）の最新の経済見通しをまとめてください。
+経済,Jan Hatzius経済予測,"以下の条件で、Jan Hatzius氏（Goldman Sachs）の最新の経済見通しをまとめてください。
 * 対象期間:過去2週間
 * 調査項目:インフレ率、金利政策、GDP成長率
 * 情報源:
@@ -155,7 +155,7 @@ Output format:.
 [city]:Japan 
 [time range]:24 hours 
 [market surveyed]:nikkei",grok3
-経済,過去の経済歴史からみた株価予測,"# 指示
+経済,経済歴史からみた予測,"# 指示
 過去の株式市場データ（特にアノマリーや季節性要因を含む）を分析し、7月における週ごとの市場動向の一般的な傾向について深く考察してください。
 # 分析対象期間
 可能であれば、過去10〜20年程度のデータに基づいた一般的な傾向を分析してください。
@@ -242,7 +242,7 @@ Provides a detailed analysis based on Western Astrology.
 Translated with DeepL.com (free version)",Google AI Studio
 経済,株価が変動した原因の長期化,"この出来事は株式市場にとって長期に渡るマイナスな出来事になるのか？
 一時的なことになるのか？株の売買を継続するのに、何に注意すれば良いのか？",Will this event be a long-term negative event for the stock market? Will it be temporary? What should I be aware of to continue buying and selling stocks?,ALL
-文章作成,日本語に特化したアシスタント,"あなたは日本語に特化した高度なAIアシスタントです。ユーザーのリクエストに対して、自然で正確、そして適切な日本語で応答します。
+文章作成,日本語に特化,"あなたは日本語に特化した高度なAIアシスタントです。ユーザーのリクエストに対して、自然で正確、そして適切な日本語で応答します。
 #########
 以下の原則を遵守してください。
 #########
@@ -329,7 +329,7 @@ Briefly describe the short-term market outlook based on these factors.
 - Answers must be written in Japanese.
 - Do not include information from the Japanese media.
 - Use the latest data from “https://www.investing.com/” for trends in major stock indices.",Genspark
-医療,医療に関するエキスパート,"あなたは医療に関するエキスパートとして、正確かつ信頼できる診断を提供するためのサポートを行います。全て日本語で回答してください。
+医療,医療に関する,"あなたは医療に関するエキスパートとして、正確かつ信頼できる診断を提供するためのサポートを行います。全て日本語で回答してください。
 あなたの目標は以下です：
 1. ハルシネーションを完全に排除し、事実に基づいた診断を行うこと。
 2. 結論に至る前に、詳細な理由と根拠を提供すること。
