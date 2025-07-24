@@ -19,7 +19,7 @@ html, body {
 }
 
 .prompt-container {
-    padding: 10px;
+    padding: 7px;
 }
 
 /* --- ステータスバー --- */
@@ -52,6 +52,11 @@ html, body {
 .title-main {
     font-size: 14px;
     font-weight: 700;
+}
+
+/* 検索コンテナの親要素の間隔調整 */
+.d-flex.justify-content-between.align-items-center.mb-3 {
+    margin-bottom: 0.5rem !important;
 }
 
 .search-container {
@@ -91,11 +96,18 @@ html, body {
 
 .filter-bar {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 8px;
+    padding: 10px 0;
+    margin-bottom: 8px !important; /* HTMLのmb-4をオーバーライド */
     white-space: nowrap;
     position: relative;
+    background: rgba(41, 45, 53, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(70, 70, 120, 0.25);
+    padding-left: 12px;
+    padding-right: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     /* スクロールバー非表示 */
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
@@ -103,37 +115,60 @@ html, body {
 .filter-bar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
 }
-/* スクロール可能インジケータ */
+/* スクロール可能インジケータ - スクロールが実際に必要な場合のみ表示 */
 .filter-bar.scrollable::after {
     content: '';
     position: absolute;
-    right: 0; top: 0; bottom: 8px;
-    width: 30px;
-    background: linear-gradient(to left, #1E1E2E, transparent);
+    right: 12px; top: 12px; bottom: 12px;
+    width: 12px;
+    background: linear-gradient(to left, rgba(41, 45, 53, 0.6), transparent);
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
+    border-radius: 0 6px 6px 0;
+    opacity: 0.5;
+}
+
+/* デフォルトではインジケーターを非表示 */
+.filter-bar::after {
+    display: none;
 }
 
 .filter-btn {
-    padding: 4px 12px;
-    background-color: rgba(41, 45, 53, 0.7);
-    border: 1px solid #464678;
+    padding: 6px 16px;
+    background: rgba(70, 70, 120, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     color: #C9D1D9;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
     white-space: nowrap;
     flex-shrink: 0;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: all 0.25s ease;
 }
 .filter-btn:hover {
-    background-color: #464678;
+    background: rgba(88, 92, 100, 0.5);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-0.5px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    color: #E6EDF3;
 }
 .filter-btn.active {
-    background-color: #238636;
-    border-color: #238636;
+    background: rgba(35, 134, 54, 0.8);
+    border-color: rgba(35, 134, 54, 0.6);
     color: white;
-    font-weight: 500;
+    font-weight: 600;
+    transform: translateY(-0.5px);
+    box-shadow: 0 2px 8px rgba(35, 134, 54, 0.25);
+}
+
+.filter-btn.active:hover {
+    background: rgba(35, 134, 54, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(35, 134, 54, 0.3);
 }
 
 /* --- プロンプトカード --- */
@@ -146,6 +181,7 @@ html, body {
     border-radius: 8px;
     box-sizing: border-box;
     overflow: hidden;
+    margin-bottom: 0.5rem !important; /* Bootstrapのmb-3をオーバーライド */
     /* アニメーション初期状態 */
     opacity: 0;
     transform: translateY(10px);
@@ -306,11 +342,11 @@ html, body {
 /* --- ページネーション & 表示件数 --- */
 .pagination-controls {
     /* display, justify-content, align-items はHTML側で指定 */
-    gap: 10px;
-    margin-bottom: 0.75rem;
+    gap: 8px;
+    margin-bottom: 8px !important; /* HTMLのmb-4をオーバーライド */
 }
-.pagination-controls:first-of-type { margin-top: -0.25rem; margin-bottom: 1rem; }
-.pagination-controls:last-of-type { margin-top: 1rem; }
+.pagination-controls:first-of-type { margin-top: 0; margin-bottom: 8px !important; }
+.pagination-controls:last-of-type { margin-top: 8px; }
 
 /* Bootstrapのデフォルトページネーションスタイルを使用 */
 .pagination {
@@ -327,7 +363,7 @@ html, body {
 .items-per-page-selector .form-select-sm {
     width: auto;
     min-width: 70px;
-    padding: 0.25rem 1.5rem 0.25rem 0.5rem; /* 上 右 下 左 */
+    padding: 0.15rem 1.5rem 0.15rem 0.4rem; /* 上 右 下 左 */
     background-color: rgba(41, 45, 53, 0.7);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23C9D1D9' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
     border: 1px solid #464678;
@@ -337,8 +373,8 @@ html, body {
     cursor: pointer;
     appearance: none;
     background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 16px 12px;
+    background-position: right 0.4rem center;
+    background-size: 14px 10px;
 }
 .items-per-page-selector .form-select-sm:focus {
     border-color: #1F6FEB;
