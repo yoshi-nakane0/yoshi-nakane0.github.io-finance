@@ -161,9 +161,16 @@ def get_sector_data_real():
         ticker = data["ticker"]
         price, change, pct = fetch_yahoo_finance_data(ticker)
         
-        # Fallback to sample data if real data is unavailable
+        # Fallback: try to get cached data first, then sample data as last resort
         if price is None or change is None or pct is None:
-            price, change, pct = fetch_price_change(ticker)
+            cached_sectors = cache.get('sectors_data', [])
+            cached_sector = next((s for s in cached_sectors if s.get('sector') == f"{sector} - {ticker}"), None)
+            if cached_sector:
+                price = cached_sector['current']
+                change = cached_sector['change']
+                pct = cached_sector['change_pct']
+            else:
+                price, change, pct = fetch_price_change(ticker)
         
         sectors.append({
             "group": "US",
@@ -187,13 +194,27 @@ def get_sector_data_real():
                 change_abs = float(jpx_sector["previousDayComparison"])
                 change_pct = float(jpx_sector["previousDayRatio"])
             except (ValueError, KeyError):
-                # Fallback to sample data if real data is unavailable
+                # Fallback: try to get cached data first, then sample data as last resort
+                cached_sectors = cache.get('sectors_data', [])
+                cached_sector = next((s for s in cached_sectors if s.get('sector') == sector and s.get('group') == 'JP'), None)
+                if cached_sector:
+                    current_price = cached_sector['current']
+                    change_abs = cached_sector['change']
+                    change_pct = cached_sector['change_pct']
+                else:
+                    base_price = random.uniform(1000, 3000)
+                    current_price, change_abs, change_pct = generate_sample_data(base_price)
+        else:
+            # Fallback: try to get cached data first, then sample data as last resort
+            cached_sectors = cache.get('sectors_data', [])
+            cached_sector = next((s for s in cached_sectors if s.get('sector') == sector and s.get('group') == 'JP'), None)
+            if cached_sector:
+                current_price = cached_sector['current']
+                change_abs = cached_sector['change']
+                change_pct = cached_sector['change_pct']
+            else:
                 base_price = random.uniform(1000, 3000)
                 current_price, change_abs, change_pct = generate_sample_data(base_price)
-        else:
-            # Fallback to sample data if sector not found
-            base_price = random.uniform(1000, 3000)
-            current_price, change_abs, change_pct = generate_sample_data(base_price)
         
         sectors.append({
             "group": "JP",
@@ -230,9 +251,16 @@ def get_benchmark_data_real():
         ticker = data["ticker"]
         price, change, pct = fetch_yahoo_finance_data(ticker)
         
-        # Fallback to sample data if real data is unavailable
+        # Fallback: try to get cached data first, then sample data as last resort
         if price is None or change is None or pct is None:
-            price, change, pct = fetch_price_change(ticker)
+            cached_benchmarks = cache.get('benchmarks_data', [])
+            cached_benchmark = next((b for b in cached_benchmarks if b.get('sector') == name), None)
+            if cached_benchmark:
+                price = cached_benchmark['current']
+                change = cached_benchmark['change']
+                pct = cached_benchmark['change_pct']
+            else:
+                price, change, pct = fetch_price_change(ticker)
         
         benchmarks.append({
             "group": "Benchmark",
@@ -268,10 +296,13 @@ def get_cached_data():
     if cached_sectors and cached_benchmarks and cached_time:
         return cached_sectors, cached_benchmarks, cached_time
     
-    # If no cache, return sample data
-    sectors = get_sector_data_sample()
-    benchmarks = get_benchmark_data_sample()
+    # If no cache, get real data instead of sample data
+    sectors = get_sector_data_real()
+    benchmarks = get_benchmark_data_real()
     update_time = datetime.now(TZ_JST).strftime("%Y年%m月%d日 %H:%M:%S")
+    
+    # Cache the new data
+    cache_data(sectors, benchmarks, update_time)
     
     return sectors, benchmarks, update_time
 
