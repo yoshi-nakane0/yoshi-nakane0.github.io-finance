@@ -206,23 +206,76 @@ function refreshData() {
     refreshBtn.disabled = true;
     refreshBtn.innerHTML = '🔄 更新中...';
 
-    // シミュレート: 実際のAPIコールの代わりに更新時間を変更
-    setTimeout(() => {
-        const now = new Date();
-        const timeString = now.toLocaleString('ja-JP', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        }).replace(/\//g, '-');
-        
-        document.getElementById('update-time').textContent = timeString;
+    // 実際のAPIコールでスクレイピングを実行
+    fetch('/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            'action': 'refresh'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // グローバルデータを更新
+            window.fedMonitorData = data.fed_monitor_data;
+            window.fomcData = data.fomc_data;
+            
+            // 更新時間を表示
+            document.getElementById('update-time').textContent = data.update_time;
+            
+            // 現在アクティブな日付のデータを再表示
+            const activeCard = document.querySelector('#fed-monitor-dates .date-card.active');
+            if (activeCard) {
+                const selectedDate = activeCard.getAttribute('data-date');
+                if (window.fedMonitorData[selectedDate]) {
+                    updateFedMonitorTable(window.fedMonitorData[selectedDate].probabilities);
+                }
+            }
+            
+            const activeFomcCard = document.querySelector('#fomc-meeting-dates .date-card.active');
+            if (activeFomcCard) {
+                const selectedDate = activeFomcCard.getAttribute('data-date');
+                if (window.fomcData[selectedDate]) {
+                    updateTable(window.fomcData[selectedDate].probabilities);
+                }
+            }
+            
+            console.log('データ更新完了');
+        } else {
+            console.error('データ更新失敗:', data.error);
+            alert('データ更新に失敗しました: ' + (data.error || '不明なエラー'));
+        }
         
         refreshBtn.disabled = false;
         refreshBtn.innerHTML = '🔄 更新';
-    }, 1500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('データ更新に失敗しました: ' + error.message);
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '🔄 更新';
+    });
+}
+
+
+// Get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 // Back to top button script
@@ -255,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('refresh-btn').addEventListener('click', function() {
         refreshData();
     });
+    
     
     // Back to top button
     initBackToTop();
