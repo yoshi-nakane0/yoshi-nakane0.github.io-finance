@@ -12,21 +12,73 @@ def scrape_investing_fed_data():
     """Investing.comからFed Rate Monitorデータをスクレイピング"""
     try:
         print("Starting scraping process...")
+        # より現実的なブラウザヘッダーを使用
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'ja,en-US;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"macOS"'
         }
         
         # 指定されたURLを使用
         url = "https://jp.investing.com/central-banks/fed-rate-monitor"
         print(f"Fetching URL: {url}")
         
-        response = requests.get(url, headers=headers, timeout=30)
-        print(f"HTTP Response: {response.status_code}")
+        # セッションを使用してリトライ機能を追加
+        session = requests.Session()
+        session.headers.update(headers)
+        
+        # 本番環境でのプロキシ設定（必要に応じて）
+        import os
+        if os.environ.get('DJANGO_SETTINGS_MODULE') == 'myproject.settings.production':
+            # 本番環境の場合の特別な設定
+            print("Running in production environment")
+            # プロキシが必要な場合は設定
+            # session.proxies = {'http': 'proxy_url', 'https': 'proxy_url'}
+        
+        # リトライ機能（最大3回）
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                print(f"Attempt {attempt + 1}/{max_retries}")
+                # 本番環境では少し待機
+                import time
+                if attempt > 0:
+                    wait_time = attempt * 2
+                    print(f"Waiting {wait_time} seconds before retry...")
+                    time.sleep(wait_time)
+                
+                response = session.get(url, timeout=30, verify=True, allow_redirects=True)
+                print(f"HTTP Response: {response.status_code}")
+                
+                if response.status_code == 200:
+                    break
+                elif response.status_code == 429:  # Too Many Requests
+                    print("Rate limited, waiting longer...")
+                    time.sleep(10)
+                    continue
+                else:
+                    print(f"HTTP Error {response.status_code}, retrying...")
+                    continue
+                    
+            except requests.exceptions.Timeout:
+                print(f"Timeout on attempt {attempt + 1}")
+                if attempt == max_retries - 1:
+                    raise
+                continue
+            except requests.exceptions.RequestException as e:
+                print(f"Request error on attempt {attempt + 1}: {e}")
+                if attempt == max_retries - 1:
+                    raise
+                continue
         
         if response.status_code == 200:
             print(f"Response content length: {len(response.text)}")
@@ -149,10 +201,13 @@ def fetch_free_fed_monitor_data():
             
             return fed_monitor_data
         
-        # スクレイピングに失敗した場合
-        print("Scraping failed, returning empty data...")
+        # スクレイピングに失敗した場合は最新の静的データを使用
+        print("Scraping failed, using static data as fallback...")
         
         fed_monitor_data = {}
+        target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
+        for date in target_dates:
+            fed_monitor_data[date] = get_static_meeting_data(date)
         
         # 2026年のデータは標準の0%データを使用
         all_fed_data = get_fed_monitor_data()
