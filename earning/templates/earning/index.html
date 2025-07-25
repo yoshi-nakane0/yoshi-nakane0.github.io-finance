@@ -39,10 +39,10 @@
                         <div class="companies-list">
                             {% for company in date_group.companies %}
                             <div class="company-row">
-                                <div class="company-top-row">
-                                    <div class="company-main-info">
-                                        <span class="company-symbol">{{ company.symbol }}</span>
+                                <div class="company-single-row">
+                                    <div class="company-left-info">
                                         <span class="company-name">{{ company.company }}</span>
+                                        <span class="industry-badge">{{ company.industry }}</span>
                                     </div>
                                     <div class="link-info">
                                         {% if company.market and company.symbol %}
@@ -53,9 +53,6 @@
                                         </a>
                                         {% endif %}
                                     </div>
-                                </div>
-                                <div class="company-bottom-row">
-                                    <span class="industry-badge">{{ company.industry }}</span>
                                 </div>
                             </div>
                             {% endfor %}

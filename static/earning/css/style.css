@@ -1,9 +1,5 @@
 /* earning/static/earning/css/style.css */
-/* Design unified with schedule page */
 
-/************************************************************
- * 1. Global base styles – background, typography, wrapper  *
- ************************************************************/
 html, body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
@@ -134,31 +130,19 @@ html, body {
 }
 
 /*******************************************************
- * 5. Company row styling - unified with schedule      *
+ * 5. Company row styling - single row layout          *
  *******************************************************/
-.company-top-row {
+.company-single-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
 }
 
-.company-main-info {
+.company-left-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 15px;
   flex: 1;
-  min-width: 0; /* Allows text to shrink */
-}
-
-.company-symbol {
-  background-color: rgba(76, 175, 80, 0.8);
-  color: #ffffff;
-  padding: 2px;
-  font-size: 13px; /* Same as schedule td */
-  font-weight: normal;
-  font-family: sans-serif; /* Same as schedule */
-  flex-shrink: 0;
 }
 
 .company-name {
@@ -166,31 +150,25 @@ html, body {
   color: #ffffff;
   font-size: 13px; /* Same as schedule td */
   line-height: 1.3;
-  /* Remove any text truncation */
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-  max-width: none;
-}
-
-.company-bottom-row {
-  display: flex;
-  justify-content: flex-start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
 }
 
 .industry-badge {
   background-color: rgba(76, 175, 80, 0.2);
-  color: #4CAF50;
+  color: #ffffff;
   padding: 2px;
   font-size: 13px; /* Same as schedule td */
   font-weight: normal;
   border: 1px solid rgba(76, 175, 80, 0.3);
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .link-info {
   flex-shrink: 0;
-  margin-left: 8px;
 }
 
 .external-link {
@@ -250,17 +228,8 @@ html, body {
     padding: 2px;
   }
   
-  .company-top-row {
-    margin-bottom: 2px;
-  }
-  
-  .company-main-info {
-    gap: 4px;
-  }
-  
-  .company-symbol {
-    font-size: 13px; /* Keep same as schedule */
-    padding: 1px 2px;
+  .company-left-info {
+    gap: 10px;
   }
   
   .company-name {
