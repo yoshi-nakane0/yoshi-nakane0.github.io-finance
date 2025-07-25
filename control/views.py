@@ -11,103 +11,19 @@ import re
 def scrape_investing_fed_data():
     """Investing.comからFed Rate Monitorデータをスクレイピング"""
     try:
-        print("Starting scraping process...")
-        # より現実的なブラウザヘッダーを使用
+        url = "https://jp.investing.com/central-banks/fed-rate-monitor"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"macOS"'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        # 指定されたURLを使用
-        url = "https://jp.investing.com/central-banks/fed-rate-monitor"
-        print(f"Fetching URL: {url}")
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
         
-        # セッションを使用してリトライ機能を追加
-        session = requests.Session()
-        session.headers.update(headers)
+        scraped_data = parse_cardwrapper_data(response.text)
+        return scraped_data
         
-        # 本番環境でのプロキシ設定（必要に応じて）
-        import os
-        if os.environ.get('DJANGO_SETTINGS_MODULE') == 'myproject.settings.production':
-            # 本番環境の場合の特別な設定
-            print("Running in production environment")
-            # プロキシが必要な場合は設定
-            # session.proxies = {'http': 'proxy_url', 'https': 'proxy_url'}
-        
-        # リトライ機能（最大3回）
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                print(f"Attempt {attempt + 1}/{max_retries}")
-                # 本番環境では少し待機
-                import time
-                if attempt > 0:
-                    wait_time = attempt * 2
-                    print(f"Waiting {wait_time} seconds before retry...")
-                    time.sleep(wait_time)
-                
-                response = session.get(url, timeout=30, verify=True, allow_redirects=True)
-                print(f"HTTP Response: {response.status_code}")
-                
-                if response.status_code == 200:
-                    break
-                elif response.status_code == 429:  # Too Many Requests
-                    print("Rate limited, waiting longer...")
-                    time.sleep(10)
-                    continue
-                else:
-                    print(f"HTTP Error {response.status_code}, retrying...")
-                    continue
-                    
-            except requests.exceptions.Timeout:
-                print(f"Timeout on attempt {attempt + 1}")
-                if attempt == max_retries - 1:
-                    raise
-                continue
-            except requests.exceptions.RequestException as e:
-                print(f"Request error on attempt {attempt + 1}: {e}")
-                if attempt == max_retries - 1:
-                    raise
-                continue
-        
-        if response.status_code == 200:
-            print(f"Response content length: {len(response.text)}")
-            scraped_data = parse_cardwrapper_data(response.text)
-            
-            if scraped_data:
-                print(f"Successfully scraped data for {len(scraped_data)} meetings")
-                print(f"Scraped dates: {list(scraped_data.keys())}")
-                return scraped_data
-            else:
-                print("No data found in scraped content")
-                print("First 1000 chars of response:")
-                print(response.text[:1000])
-                return {}
-        else:
-            print(f"Failed to fetch data: HTTP {response.status_code}")
-            print(f"Response text: {response.text[:500]}")
-            return {}
-            
-    except requests.exceptions.Timeout as e:
-        print(f"Timeout error: {e}")
-        return {}
-    except requests.exceptions.RequestException as e:
-        print(f"Request error: {e}")
-        return {}
     except Exception as e:
-        print(f"Error scraping Investing.com data: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Failed to fetch Investing.com data: {e}")
         return {}
 
 
@@ -168,8 +84,6 @@ def get_static_meeting_data(date):
 def fetch_free_fed_monitor_data():
     """無料ソースから Fed Rate Monitor Tool データを取得"""
     try:
-        print("Fetching free Fed Monitor data...")
-        
         # 実際のスクレイピングを試行
         scraped_data = scrape_investing_fed_data()
         
@@ -188,10 +102,7 @@ def fetch_free_fed_monitor_data():
             target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
             for date in target_dates:
                 if date not in fed_monitor_data:
-                    print(f"Using static data for missing date: {date}")
                     fed_monitor_data[date] = get_static_meeting_data(date)
-                else:
-                    print(f"Using scraped data for date: {date}")
             
             # 2026年のデータは標準の0%データで補完
             all_fed_data = get_fed_monitor_data()
@@ -201,9 +112,7 @@ def fetch_free_fed_monitor_data():
             
             return fed_monitor_data
         
-        # スクレイピングに失敗した場合は最新の静的データを使用
-        print("Scraping failed, using static data as fallback...")
-        
+        # スクレイピングに失敗した場合は静的データを使用
         fed_monitor_data = {}
         target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
         for date in target_dates:
@@ -215,7 +124,6 @@ def fetch_free_fed_monitor_data():
             if date not in fed_monitor_data:
                 fed_monitor_data[date] = all_fed_data[date]
         
-        print(f"Successfully generated Fed Monitor data for {len(fed_monitor_data)} meetings")
         return fed_monitor_data
         
     except Exception as e:
@@ -663,19 +571,14 @@ def index(request):
     if request.method == 'POST':
         # AJAX更新リクエストの処理
         try:
-            print("POST request received")
             data = json.loads(request.body)
-            print(f"Request data: {data}")
             
             if data.get('action') == 'refresh':
-                print("Processing refresh action")
                 # キャッシュをクリアして新しいデータを取得
                 cache.delete('fed_monitor_data')
                 cache.delete('fed_monitor_update_time')
-                print("Cache cleared")
                 
                 fed_monitor_data, update_time = get_cached_fed_monitor_data()
-                print(f"Got fed_monitor_data: {len(fed_monitor_data) if fed_monitor_data else 0} items")
                 
                 return JsonResponse({
                     'success': True,
@@ -683,22 +586,11 @@ def index(request):
                     'fomc_data': get_fomc_data(),
                     'update_time': update_time
                 })
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            return JsonResponse({'success': False, 'error': f'JSON decode error: {str(e)}'})
         except Exception as e:
-            print(f"General error in POST handler: {e}")
-            import traceback
-            traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)})
     
     # GET リクエスト - メインページの表示
     fed_monitor_data, update_time = get_cached_fed_monitor_data()
-    
-    # デバッグ用出力
-    print(f"Fed Monitor Data keys: {list(fed_monitor_data.keys()) if fed_monitor_data else 'None'}")
-    if fed_monitor_data and '2025-07-30' in fed_monitor_data:
-        print(f"Sample data for 2025-07-30: {fed_monitor_data['2025-07-30']}")
     
     context = {
         'fed_monitor_data': json.dumps(fed_monitor_data),
