@@ -276,12 +276,8 @@ function updateTableFromCSV(selectedDate) {
             OneMonth: oneMonth
         });
         
-        // 1Dの値に基づいてクラス設定
-        const currentClass = oneDay > 25 ? 'positive-text' : 'negative-text';
-        
         tr.innerHTML = `
             <td class="sector-name-cell">${row.TargetRate || 'N/A'}</td>
-            <td class="sector-change-cell ${currentClass}">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneWeek.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneMonth.toFixed(2)}%</td>
