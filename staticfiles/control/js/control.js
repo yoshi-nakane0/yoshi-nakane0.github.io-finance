@@ -268,25 +268,23 @@ function updateTableFromCSV(selectedDate) {
         tr.className = 'data-row';
         
         // データの値を取得（%記号は除去）
-        const current = parseFloat(row.Current) || 0;
-        const oneDay = parseFloat(row['1D (30 7 2025)(%)']) || 0;
+        const oneDay = parseFloat(row['1D (31 7 2025)(%)']) || 0;
         const oneWeek = parseFloat(row['1W (25 7 2025)(%)']) || 0;
         const oneMonth = parseFloat(row['1M (1 7 2025)(%)']) || 0;
         
         console.log('Row data:', {
             TargetRate: row.TargetRate,
-            Current: current,
             OneDay: oneDay,
             OneWeek: oneWeek,
             OneMonth: oneMonth
         });
         
-        // 現在の値に基づいてクラス設定
-        const currentClass = current > 25 ? 'positive-text' : 'negative-text';
+        // 1Dの値に基づいてクラス設定
+        const currentClass = oneDay > 25 ? 'positive-text' : 'negative-text';
         
         tr.innerHTML = `
             <td class="sector-name-cell">${row.TargetRate || 'N/A'}</td>
-            <td class="sector-change-cell ${currentClass}">${current.toFixed(2)}%</td>
+            <td class="sector-change-cell ${currentClass}">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneWeek.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneMonth.toFixed(2)}%</td>

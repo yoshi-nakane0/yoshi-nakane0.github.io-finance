@@ -111,59 +111,6 @@ def scrape_investing_fed_data():
         return {}
 
 
-def get_static_meeting_data(date):
-    """特定の会合日程用の静的データを取得"""
-    static_data = {
-        "2025-07-30": {
-            'probabilities': [
-                {'range': '3.25-3.50%', 'current': '8.5%', 'oneDay': '8.3%', 'oneWeek': '8.8%', 'type': 'positive'},
-                {'range': '3.50-3.75%', 'current': '18.2%', 'oneDay': '18.0%', 'oneWeek': '17.5%', 'type': 'positive'},
-                {'range': '3.75-4.00%', 'current': '31.4%', 'oneDay': '31.8%', 'oneWeek': '32.1%', 'type': 'negative'},
-                {'range': '4.00-4.25%', 'current': '25.6%', 'oneDay': '25.4%', 'oneWeek': '24.9%', 'type': 'positive'},
-                {'range': '4.25-4.50%', 'current': '10.8%', 'oneDay': '11.0%', 'oneWeek': '11.5%', 'type': 'negative'},
-            ]
-        },
-        "2025-09-17": {
-            'probabilities': [
-                {'range': '3.25-3.50%', 'current': '14.7%', 'oneDay': '14.5%', 'oneWeek': '15.2%', 'type': 'positive'},
-                {'range': '3.50-3.75%', 'current': '28.9%', 'oneDay': '29.1%', 'oneWeek': '28.5%', 'type': 'positive'},
-                {'range': '3.75-4.00%', 'current': '32.8%', 'oneDay': '32.6%', 'oneWeek': '31.9%', 'type': 'positive'},
-                {'range': '4.00-4.25%', 'current': '15.2%', 'oneDay': '15.4%', 'oneWeek': '16.1%', 'type': 'negative'},
-                {'range': '4.25-4.50%', 'current': '3.0%', 'oneDay': '3.1%', 'oneWeek': '2.7%', 'type': 'positive'},
-            ]
-        },
-        "2025-10-29": {
-            'probabilities': [
-                {'range': '3.25-3.50%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-                {'range': '3.50-3.75%', 'current': '1.3%', 'oneDay': '1.3%', 'oneWeek': '1.2%', 'type': 'positive'},
-                {'range': '3.75-4.00%', 'current': '30.9%', 'oneDay': '30.9%', 'oneWeek': '29.0%', 'type': 'positive'},
-                {'range': '4.00-4.25%', 'current': '48.6%', 'oneDay': '48.6%', 'oneWeek': '48.6%', 'type': 'positive'},
-                {'range': '4.25-4.50%', 'current': '19.2%', 'oneDay': '19.2%', 'oneWeek': '21.1%', 'type': 'negative'},
-            ]
-        },
-        "2025-12-10": {
-            'probabilities': [
-                {'range': '3.25-3.50%', 'current': '0.8%', 'oneDay': '0.8%', 'oneWeek': '0.8%', 'type': 'positive'},
-                {'range': '3.50-3.75%', 'current': '18.9%', 'oneDay': '18.9%', 'oneWeek': '19.1%', 'type': 'negative'},
-                {'range': '3.75-4.00%', 'current': '41.4%', 'oneDay': '41.4%', 'oneWeek': '41.7%', 'type': 'negative'},
-                {'range': '4.00-4.25%', 'current': '31.1%', 'oneDay': '31.1%', 'oneWeek': '30.9%', 'type': 'positive'},
-                {'range': '4.25-4.50%', 'current': '7.8%', 'oneDay': '7.8%', 'oneWeek': '7.5%', 'type': 'positive'},
-            ]
-        }
-    }
-    
-    # データを取得して最高確率フラグを追加
-    data = static_data.get(date, {
-        'probabilities': [
-            {'range': '3.25-3.50%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '3.50-3.75%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '3.75-4.00%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '4.00-4.25%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-        ]
-    })
-    
-    return data
 
 def fetch_free_fed_monitor_data():
     """無料ソースから Fed Rate Monitor Tool データを取得"""
@@ -184,12 +131,12 @@ def fetch_free_fed_monitor_data():
                     'probabilities': probabilities
                 }
             
-            # スクレイピングできなかった対象日程のみ静的データで補完
+            # スクレイピングできなかった対象日程は標準の0%データで補完
             target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
             for date in target_dates:
                 if date not in fed_monitor_data:
-                    print(f"Using static data for missing date: {date}")
-                    fed_monitor_data[date] = get_static_meeting_data(date)
+                    print(f"Using default data for missing date: {date}")
+                    fed_monitor_data[date] = get_fed_monitor_data().get(date, {'probabilities': []})
                 else:
                     print(f"Using scraped data for date: {date}")
             
@@ -201,13 +148,13 @@ def fetch_free_fed_monitor_data():
             
             return fed_monitor_data
         
-        # スクレイピングに失敗した場合は最新の静的データを使用
-        print("Scraping failed, using static data as fallback...")
+        # スクレイピングに失敗した場合は標準の0%データを使用
+        print("Scraping failed, using default data as fallback...")
         
         fed_monitor_data = {}
         target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
         for date in target_dates:
-            fed_monitor_data[date] = get_static_meeting_data(date)
+            fed_monitor_data[date] = get_fed_monitor_data().get(date, {'probabilities': []})
         
         # 2026年のデータは標準の0%データを使用
         all_fed_data = get_fed_monitor_data()
@@ -220,11 +167,11 @@ def fetch_free_fed_monitor_data():
         
     except Exception as e:
         print(f"Failed to fetch free Fed Monitor data: {e}")
-        # 例外時は静的データをフォールバックとして使用
-        static_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
+        # 例外時は標準の0%データをフォールバックとして使用
+        target_dates = ["2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10"]
         fed_monitor_data = {}
-        for date in static_dates:
-            fed_monitor_data[date] = get_static_meeting_data(date)
+        for date in target_dates:
+            fed_monitor_data[date] = get_fed_monitor_data().get(date, {'probabilities': []})
         
         # 2026年のデータは標準の0%データを使用
         all_fed_data = get_fed_monitor_data()
