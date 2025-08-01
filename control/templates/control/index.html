@@ -15,11 +15,6 @@
   <!-- カスタム CSS -->
   <link rel="stylesheet" href="{% static 'control/css/style.css' %}" />
 
-  <!-- Django から渡されたデータを安全に JS へ -->
-  <script>
-    window.fedMonitorData = JSON.parse('{{ fed_monitor_data|escapejs }}');
-    window.fomcData       = JSON.parse('{{ fomc_data|escapejs }}');
-  </script>
 </head>
 <body>
   <div class="app-container">
@@ -40,24 +35,14 @@
       <div class="schedule-date">
         <div class="schedule-table-container">
 
-          <h2 class="fedwatch-title">⚡ Fed Rate Monitor Tool</h2>
-          <div id="fed-monitor-dates" class="meeting-dates"></div>
+          <h2 class="fedwatch-title">📊 CME FedWatch Tool</h2>
+          <div id="fed-meeting-dates" class="meeting-dates"></div>
 
           <table class="schedule-table">
             <thead>
-              <tr><th>金利レンジ</th><th>現在</th><th>1日前</th><th>1週間前</th></tr>
+              <tr><th>金利</th><th>現在</th><th>1日</th><th>1週間</th><th>1ヶ月</th></tr>
             </thead>
-            <tbody id="fed-monitor-probabilities"></tbody>
-          </table>
-
-          <h2 class="fedwatch-title">📊 FedWatch</h2>
-          <div id="fomc-meeting-dates" class="meeting-dates"></div>
-
-          <table class="schedule-table">
-            <thead>
-              <tr><th>金利レンジ</th><th>現在</th><th>1週間前</th><th>1ヶ月前</th></tr>
-            </thead>
-            <tbody id="fomc-probabilities"></tbody>
+            <tbody id="fed-probabilities"></tbody>
           </table>
 
         </div><!-- /.schedule-table-container -->
@@ -71,6 +56,10 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" defer></script>
+  <!-- CSVファイルのパスを JavaScript に渡す -->
+  <script>
+    window.csvPath = "{% static 'control/data/fed.csv' %}";
+  </script>
   <!-- 自作 JS (最後に defer で) -->
   <script src="{% static 'control/js/control.js' %}" defer></script>
 </body>
