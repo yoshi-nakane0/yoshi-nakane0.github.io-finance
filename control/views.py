@@ -95,95 +95,6 @@ def get_fed_monitor_data():
     
     return data
 
-def get_fomc_data():
-    """FOMC会合日程データ"""
-    
-    # 生データを定義
-    raw_data = {
-        '2025-07-30': [
-            {'range': '3.25-3.50%', 'current': '12.8%', 'oneWeek': '14.2%', 'oneMonth': '16.7%'},
-            {'range': '3.50-3.75%', 'current': '25.1%', 'oneWeek': '26.3%', 'oneMonth': '28.9%'},
-            {'range': '3.75-4.00%', 'current': '42.3%', 'oneWeek': '41.1%', 'oneMonth': '37.8%'},
-            {'range': '4.00-4.25%', 'current': '12.1%', 'oneWeek': '10.8%', 'oneMonth': '7.2%'},
-            {'range': '4.25-4.50%', 'current': '2.5%', 'oneWeek': '1.5%', 'oneMonth': '1.1%'}
-        ],
-        '2025-09-17': [
-            {'range': '3.25-3.50%', 'current': '18.4%', 'oneWeek': '20.2%', 'oneMonth': '23.5%'},
-            {'range': '3.50-3.75%', 'current': '35.8%', 'oneWeek': '36.1%', 'oneMonth': '35.2%'},
-            {'range': '3.75-4.00%', 'current': '28.1%', 'oneWeek': '26.8%', 'oneMonth': '24.1%'},
-            {'range': '4.00-4.25%', 'current': '7.9%', 'oneWeek': '6.5%', 'oneMonth': '4.8%'},
-            {'range': '4.25-4.50%', 'current': '1.1%', 'oneWeek': '0.6%', 'oneMonth': '0.3%'}
-        ],
-        '2025-10-29': [
-            {'range': '3.25-3.50%', 'current': '28.9%', 'oneWeek': '30.4%', 'oneMonth': '33.2%'},
-            {'range': '3.50-3.75%', 'current': '41.2%', 'oneWeek': '40.1%', 'oneMonth': '37.9%'},
-            {'range': '3.75-4.00%', 'current': '15.1%', 'oneWeek': '13.8%', 'oneMonth': '10.7%'},
-            {'range': '4.00-4.25%', 'current': '2.3%', 'oneWeek': '1.8%', 'oneMonth': '1.2%'},
-            {'range': '4.25-4.50%', 'current': '0.2%', 'oneWeek': '0.2%', 'oneMonth': '0.2%'}
-        ],
-        '2025-12-10': [
-            {'range': '3.25-3.50%', 'current': '35.7%', 'oneWeek': '37.2%', 'oneMonth': '39.8%'},
-            {'range': '3.50-3.75%', 'current': '32.4%', 'oneWeek': '31.1%', 'oneMonth': '28.9%'},
-            {'range': '3.75-4.00%', 'current': '12.8%', 'oneWeek': '11.2%', 'oneMonth': '8.1%'},
-            {'range': '4.00-4.25%', 'current': '2.1%', 'oneWeek': '1.8%', 'oneMonth': '1.0%'},
-            {'range': '4.25-4.50%', 'current': '0.2%', 'oneWeek': '0.2%', 'oneMonth': '0.1%'}
-        ],
-        '2026-01-28': [
-            {'range': '3.25-3.50%', 'current': '47.8%', 'oneWeek': '46.2%', 'oneMonth': '43.1%'},
-            {'range': '3.50-3.75%', 'current': '25.1%', 'oneWeek': '25.8%', 'oneMonth': '25.2%'},
-            {'range': '3.75-4.00%', 'current': '4.3%', 'oneWeek': '3.6%', 'oneMonth': '3.6%'},
-            {'range': '4.00-4.25%', 'current': '0.4%', 'oneWeek': '0.3%', 'oneMonth': '0.3%'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'}
-        ],
-        '2026-03-18': [
-            {'range': '3.25-3.50%', 'current': '42.1%', 'oneWeek': '40.8%', 'oneMonth': '38.9%'},
-            {'range': '3.50-3.75%', 'current': '17.3%', 'oneWeek': '17.9%', 'oneMonth': '18.1%'},
-            {'range': '3.75-4.00%', 'current': '1.8%', 'oneWeek': '1.8%', 'oneMonth': '1.7%'},
-            {'range': '4.00-4.25%', 'current': '0.1%', 'oneWeek': '0.1%', 'oneMonth': '0.1%'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'}
-        ],
-        '2026-04-29': [
-            {'range': '3.25-3.50%', 'current': '35.4%', 'oneWeek': '36.1%', 'oneMonth': '37.8%'},
-            {'range': '3.50-3.75%', 'current': '12.1%', 'oneWeek': '11.8%', 'oneMonth': '11.9%'},
-            {'range': '3.75-4.00%', 'current': '1.2%', 'oneWeek': '1.2%', 'oneMonth': '1.1%'},
-            {'range': '4.00-4.25%', 'current': '0.1%', 'oneWeek': '0.1%', 'oneMonth': '0.1%'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'}
-        ],
-        '2026-06-17': [
-            {'range': '3.25-3.50%', 'current': '28.7%', 'oneWeek': '29.8%', 'oneMonth': '32.1%'},
-            {'range': '3.50-3.75%', 'current': '6.9%', 'oneWeek': '6.7%', 'oneMonth': '6.9%'},
-            {'range': '3.75-4.00%', 'current': '0.5%', 'oneWeek': '0.5%', 'oneMonth': '0.5%'},
-            {'range': '4.00-4.25%', 'current': '0.1%', 'oneWeek': '0.1%', 'oneMonth': '0.1%'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'}
-        ],
-        '0000-00-00': [
-            {'range': '3.25-3.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'},
-            {'range': '3.50-3.75%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'},
-            {'range': '3.75-4.00%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'},
-            {'range': '4.00-4.25%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneWeek': '0.0%', 'oneMonth': '0.0%'}
-        ]
-    }
-    
-    # 各会合日程のデータを処理
-    processed_data = {}
-    for date, probs in raw_data.items():
-        processed_probs = []
-        for prob in probs:
-            current_val = float(prob['current'].replace('%', ''))
-            week_val = float(prob['oneWeek'].replace('%', ''))
-            
-            processed_probs.append({
-                'range': prob['range'],
-                'current': prob['current'],
-                'oneWeek': prob['oneWeek'],
-                'oneMonth': prob['oneMonth'],
-                'type': 'positive' if current_val > week_val else 'negative'
-            })
-        
-        processed_data[date] = {'probabilities': processed_probs}
-    
-    return processed_data
 
 @csrf_exempt
 def index(request):
@@ -207,7 +118,6 @@ def index(request):
                 return JsonResponse({
                     'success': True,
                     'fed_monitor_data': fed_monitor_data,
-                    'fomc_data': get_fomc_data(),
                     'update_time': update_time
                 })
         except json.JSONDecodeError as e:
@@ -224,12 +134,9 @@ def index(request):
     
     # デバッグ用出力
     print(f"Fed Monitor Data keys: {list(fed_monitor_data.keys()) if fed_monitor_data else 'None'}")
-    if fed_monitor_data and '2025-07-30' in fed_monitor_data:
-        print(f"Sample data for 2025-07-30: {fed_monitor_data['2025-07-30']}")
     
     context = {
         'fed_monitor_data': json.dumps(fed_monitor_data),
-        'fomc_data': json.dumps(get_fomc_data()),
         'update_time': update_time,
     }
     return render(request, 'control/index.html', context)
