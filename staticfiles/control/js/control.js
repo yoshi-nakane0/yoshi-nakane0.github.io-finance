@@ -49,7 +49,7 @@ function updateFomcDatesFromCSV() {
     return false; // 変更なし
 }
 
-// 現在の日付から有効な4つの日付を取得（更新版）
+// CSVから有効な会合日付を取得
 function getActiveDates() {
     // FOMC日程が空の場合はまずCSVから更新を試みる
     if (fomcDates.length === 0) {
@@ -58,30 +58,19 @@ function getActiveDates() {
     
     const activeDates = [];
     
-    // 有効な日付を収集（最大4個）
+    // 有効な日付を収集
     for (let date of fomcDates) {
         if (date && date !== '0000-00-00') {
             activeDates.push(date);
         }
-        
-        // 4つまでに制限
-        if (activeDates.length >= 4) {
-            break;
-        }
     }
     
-    // 4つに満たない場合は"0000-00-00"で埋める
-    while (activeDates.length < 4) {
-        activeDates.push('0000-00-00');
-    }
-    
-    console.log('Active meeting dates:', activeDates);
+    console.log('Active meeting dates from CSV:', activeDates);
     return activeDates;
 }
 
 // 日付から月名を取得
 function getMonthName(dateString) {
-    if (dateString === '0000-00-00') return '終了';
     const date = new Date(dateString);
     const month = date.getMonth() + 1;
     return month + '月会合';
@@ -182,7 +171,7 @@ async function loadCSVData() {
 function generateCalendars() {
     const activeDates = getActiveDates();
     
-    // カレンダー生成（1つのみ）
+    // カレンダー生成
     const fedContainer = document.getElementById('fed-meeting-dates');
     fedContainer.innerHTML = '';
     
@@ -191,30 +180,24 @@ function generateCalendars() {
         card.className = `date-card ${index === 0 ? 'active' : ''}`;
         card.setAttribute('data-date', date);
         
-        if (date === '0000-00-00') {
-            card.innerHTML = `
-                <div class="date-icon">❌</div>
-                <h3>0000-00-00</h3>
-                <p>終了</p>
-            `;
-        } else {
-            card.innerHTML = `
-                <div class="date-icon">📅</div>
-                <h3>${date}</h3>
-                <p>${getMonthName(date)}</p>
-            `;
-        }
+        card.innerHTML = `
+            <div class="date-icon">📅</div>
+            <h3>${date}</h3>
+            <p>${getMonthName(date)}</p>
+        `;
         
         fedContainer.appendChild(card);
     });
     
     // 初期データ表示
-    const firstDate = activeDates[0];
-    console.log('Initial date for table:', firstDate);
-    if (csvData && csvData.length > 0) {
-        updateTableFromCSV(firstDate);
-    } else {
-        console.log('CSV data not ready, will load on page ready');
+    if (activeDates.length > 0) {
+        const firstDate = activeDates[0];
+        console.log('Initial date for table:', firstDate);
+        if (csvData && csvData.length > 0) {
+            updateTableFromCSV(firstDate);
+        } else {
+            console.log('CSV data not ready, will load on page ready');
+        }
     }
 }
 
