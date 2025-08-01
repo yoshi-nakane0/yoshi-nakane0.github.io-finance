@@ -21,16 +21,20 @@ function updateFomcDatesFromCSV() {
     const today = new Date();
     const filteredDates = [];
     
-    // 現在日以降の日付をフィルタリング（過去2日までは表示）
+    // 未来の日付と過去3日以内の日付をフィルタリング
+    console.log('Today:', today.toISOString().split('T')[0]);
     uniqueDates.forEach(dateString => {
         const meetingDate = new Date(dateString);
         const daysPassed = Math.floor((today - meetingDate) / (1000 * 60 * 60 * 24));
         
-        // 会合が終了してから3日までは表示し、それ以外は除外
+        console.log(`Processing date: ${dateString}, meetingDate: ${meetingDate.toISOString().split('T')[0]}, daysPassed: ${daysPassed}`);
+        
+        // 未来の日付(daysPassed < 0)または過去3日以内(daysPassed <= 3)を表示
         if (daysPassed <= 3) {
             filteredDates.push(dateString);
+            console.log(`✓ Including meeting date: ${dateString} (${daysPassed < 0 ? 'future' : daysPassed + ' days ago'})`);
         } else {
-            console.log(`Removing expired meeting date: ${dateString} (${daysPassed} days ago)`);
+            console.log(`✗ Removing expired meeting date: ${dateString} (${daysPassed} days ago)`);
         }
     });
     
@@ -49,7 +53,7 @@ function updateFomcDatesFromCSV() {
     return false; // 変更なし
 }
 
-// 現在の日付から有効な4つの日付を取得（更新版）
+// CSVから有効な会合日付を取得
 function getActiveDates() {
     // FOMC日程が空の場合はまずCSVから更新を試みる
     if (fomcDates.length === 0) {
@@ -58,30 +62,19 @@ function getActiveDates() {
     
     const activeDates = [];
     
-    // 有効な日付を収集（最大4個）
+    // 有効な日付を収集
     for (let date of fomcDates) {
         if (date && date !== '0000-00-00') {
             activeDates.push(date);
         }
-        
-        // 4つまでに制限
-        if (activeDates.length >= 4) {
-            break;
-        }
     }
     
-    // 4つに満たない場合は"0000-00-00"で埋める
-    while (activeDates.length < 4) {
-        activeDates.push('0000-00-00');
-    }
-    
-    console.log('Active meeting dates:', activeDates);
+    console.log('Active meeting dates from CSV:', activeDates);
     return activeDates;
 }
 
 // 日付から月名を取得
 function getMonthName(dateString) {
-    if (dateString === '0000-00-00') return '終了';
     const date = new Date(dateString);
     const month = date.getMonth() + 1;
     return month + '月会合';
@@ -182,7 +175,7 @@ async function loadCSVData() {
 function generateCalendars() {
     const activeDates = getActiveDates();
     
-    // カレンダー生成（1つのみ）
+    // カレンダー生成
     const fedContainer = document.getElementById('fed-meeting-dates');
     fedContainer.innerHTML = '';
     
@@ -191,30 +184,24 @@ function generateCalendars() {
         card.className = `date-card ${index === 0 ? 'active' : ''}`;
         card.setAttribute('data-date', date);
         
-        if (date === '0000-00-00') {
-            card.innerHTML = `
-                <div class="date-icon">❌</div>
-                <h3>0000-00-00</h3>
-                <p>終了</p>
-            `;
-        } else {
-            card.innerHTML = `
-                <div class="date-icon">📅</div>
-                <h3>${date}</h3>
-                <p>${getMonthName(date)}</p>
-            `;
-        }
+        card.innerHTML = `
+            <div class="date-icon">📅</div>
+            <h3>${date}</h3>
+            <p>${getMonthName(date)}</p>
+        `;
         
         fedContainer.appendChild(card);
     });
     
     // 初期データ表示
-    const firstDate = activeDates[0];
-    console.log('Initial date for table:', firstDate);
-    if (csvData && csvData.length > 0) {
-        updateTableFromCSV(firstDate);
-    } else {
-        console.log('CSV data not ready, will load on page ready');
+    if (activeDates.length > 0) {
+        const firstDate = activeDates[0];
+        console.log('Initial date for table:', firstDate);
+        if (csvData && csvData.length > 0) {
+            updateTableFromCSV(firstDate);
+        } else {
+            console.log('CSV data not ready, will load on page ready');
+        }
     }
 }
 
@@ -268,25 +255,23 @@ function updateTableFromCSV(selectedDate) {
         tr.className = 'data-row';
         
         // データの値を取得（%記号は除去）
-        const current = parseFloat(row.Current) || 0;
-        const oneDay = parseFloat(row['1D (30 7 2025)(%)']) || 0;
+        const oneDay = parseFloat(row['1D (31 7 2025)(%)']) || 0;
         const oneWeek = parseFloat(row['1W (25 7 2025)(%)']) || 0;
         const oneMonth = parseFloat(row['1M (1 7 2025)(%)']) || 0;
         
         console.log('Row data:', {
             TargetRate: row.TargetRate,
-            Current: current,
             OneDay: oneDay,
             OneWeek: oneWeek,
             OneMonth: oneMonth
         });
         
-        // 現在の値に基づいてクラス設定
-        const currentClass = current > 25 ? 'positive-text' : 'negative-text';
+        // 1Dの値に基づいてクラス設定
+        const currentClass = oneDay > 25 ? 'positive-text' : 'negative-text';
         
         tr.innerHTML = `
             <td class="sector-name-cell">${row.TargetRate || 'N/A'}</td>
-            <td class="sector-change-cell ${currentClass}">${current.toFixed(2)}%</td>
+            <td class="sector-change-cell ${currentClass}">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneWeek.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneMonth.toFixed(2)}%</td>

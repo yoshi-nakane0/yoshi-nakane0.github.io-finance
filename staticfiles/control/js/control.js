@@ -21,16 +21,20 @@ function updateFomcDatesFromCSV() {
     const today = new Date();
     const filteredDates = [];
     
-    // 現在日以降の日付をフィルタリング（過去2日までは表示）
+    // 未来の日付と過去3日以内の日付をフィルタリング
+    console.log('Today:', today.toISOString().split('T')[0]);
     uniqueDates.forEach(dateString => {
         const meetingDate = new Date(dateString);
         const daysPassed = Math.floor((today - meetingDate) / (1000 * 60 * 60 * 24));
         
-        // 会合が終了してから3日までは表示し、それ以外は除外
+        console.log(`Processing date: ${dateString}, meetingDate: ${meetingDate.toISOString().split('T')[0]}, daysPassed: ${daysPassed}`);
+        
+        // 未来の日付(daysPassed < 0)または過去3日以内(daysPassed <= 3)を表示
         if (daysPassed <= 3) {
             filteredDates.push(dateString);
+            console.log(`✓ Including meeting date: ${dateString} (${daysPassed < 0 ? 'future' : daysPassed + ' days ago'})`);
         } else {
-            console.log(`Removing expired meeting date: ${dateString} (${daysPassed} days ago)`);
+            console.log(`✗ Removing expired meeting date: ${dateString} (${daysPassed} days ago)`);
         }
     });
     
