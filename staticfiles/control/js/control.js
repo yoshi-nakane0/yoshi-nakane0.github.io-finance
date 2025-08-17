@@ -8,7 +8,7 @@ let fomcDates = [];
 function updateFomcDatesFromCSV() {
     if (!csvData || csvData.length === 0) {
         console.warn('CSV data not available for updating FOMC dates');
-        return;
+        return false;
     }
     
     // CSVからユニークな会合日を抽出
@@ -55,9 +55,11 @@ function updateFomcDatesFromCSV() {
 
 // CSVから有効な会合日付を取得
 function getActiveDates() {
-    // FOMC日程が空の場合はまずCSVから更新を試みる
-    if (fomcDates.length === 0) {
+    // CSVデータがある場合は常に最新の日付を更新
+    if (csvData && csvData.length > 0) {
         updateFomcDatesFromCSV();
+    } else {
+        console.warn('CSV data not loaded yet, using cached dates');
     }
     
     const activeDates = [];
@@ -70,6 +72,7 @@ function getActiveDates() {
     }
     
     console.log('Active meeting dates from CSV:', activeDates);
+    console.log('Total fomcDates:', fomcDates);
     return activeDates;
 }
 
@@ -127,10 +130,17 @@ async function loadCSVData() {
         console.log('CSV data loaded successfully:', csvData.length, 'rows');
         console.log('Sample data:', csvData[0]);
         
+        // CSV内のすべてのMeeting値をログ出力
+        const meetingDates = csvData.map(row => row.Meeting);
+        console.log('All Meeting values in CSV:', meetingDates);
+        
         // CSVデータ読み込み後、FOMC日程を自動更新
         const datesUpdated = updateFomcDatesFromCSV();
+        console.log('updateFomcDatesFromCSV returned:', datesUpdated);
         if (datesUpdated) {
             console.log('FOMC meeting dates were automatically updated from CSV data');
+        } else {
+            console.warn('FOMC meeting dates were not updated');
         }
         
         return csvData;
@@ -266,12 +276,8 @@ function updateTableFromCSV(selectedDate) {
             OneMonth: oneMonth
         });
         
-        // 1Dの値に基づいてクラス設定
-        const currentClass = oneDay > 25 ? 'positive-text' : 'negative-text';
-        
         tr.innerHTML = `
             <td class="sector-name-cell">${row.TargetRate || 'N/A'}</td>
-            <td class="sector-change-cell ${currentClass}">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneDay.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneWeek.toFixed(2)}%</td>
             <td class="sector-change-cell">${oneMonth.toFixed(2)}%</td>
@@ -377,9 +383,13 @@ function checkAndUpdateDatesIfNeeded() {
 // 初期化
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, starting initialization...');
+    console.log('CSV path from template:', window.csvPath);
     
     // CSVデータを読み込み
     await loadCSVData();
+    
+    console.log('After CSV load, csvData length:', csvData ? csvData.length : 'null');
+    console.log('fomcDates after CSV load:', fomcDates);
     
     // カレンダー生成
     generateCalendars();
@@ -389,9 +399,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // 初期データ表示（CSV読み込み後）
     const activeDates = getActiveDates();
-    const firstDate = activeDates[0];
-    console.log('Setting initial table data for:', firstDate);
-    updateTableFromCSV(firstDate);
+    console.log('Final activeDates for initialization:', activeDates);
+    
+    if (activeDates.length > 0) {
+        const firstDate = activeDates[0];
+        console.log('Setting initial table data for:', firstDate);
+        updateTableFromCSV(firstDate);
+    } else {
+        console.error('No active dates found - cannot initialize table');
+    }
     
     // 初期チェック日を設定
     lastCheckDate = new Date().toDateString();
