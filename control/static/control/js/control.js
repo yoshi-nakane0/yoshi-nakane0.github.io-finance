@@ -1,144 +1,104 @@
-// control/static/control/js/control.js
-// Fed Rate Monitor Tool用JavaScript（テンプレートベース）
-
-console.log('Control.js loaded');
-
-// ページ読み込み完了時の処理
+// FedWatch Tool用JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing...');
-    
-    // 日付カードのクリックイベントを設定
-    setupDateCardClickEvents();
-    
-    // 更新ボタンのイベント設定
+    console.log('DOM loaded, setting up FedWatch Tool');
+    setupDateCardClicks();
     setupRefreshButton();
     
-    // Back to topボタンの設定
-    setupBackToTopButton();
-    
-    console.log('Initialization complete');
+    // 初期表示：最初のアクティブなカードのデータを表示
+    const activeCard = document.querySelector('.date-card.active');
+    if (activeCard) {
+        const initialDate = activeCard.getAttribute('data-date');
+        console.log('Initial active date:', initialDate);
+        updateTable(initialDate);
+    }
 });
 
-// 日付カードのクリックイベントを設定
-function setupDateCardClickEvents() {
-    const dateCards = document.querySelectorAll('.date-card');
+function setupDateCardClicks() {
+    const cards = document.querySelectorAll('.date-card');
+    console.log('Setting up click listeners for', cards.length, 'cards');
     
-    dateCards.forEach(card => {
+    cards.forEach((card, index) => {
+        const date = card.getAttribute('data-date');
+        console.log(`Card ${index}: ${date}`);
+        
         card.addEventListener('click', function() {
             const selectedDate = this.getAttribute('data-date');
-            console.log('Date card clicked:', selectedDate);
+            console.log('Card clicked:', selectedDate);
             
-            // アクティブ状態を更新
-            dateCards.forEach(c => c.classList.remove('active'));
+            // アクティブ状態更新
+            document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
             this.classList.add('active');
             
-            // テーブルを更新
-            updateTableForDate(selectedDate);
+            // テーブル更新
+            updateTable(selectedDate);
         });
     });
 }
 
-// 指定された日付のテーブルデータを表示
-function updateTableForDate(date) {
-    console.log('Updating table for date:', date);
+function updateTable(date) {
+    console.log('updateTable called for date:', date);
     
     const tbody = document.getElementById('fed-probabilities');
-    if (!tbody) {
-        console.error('Table body not found');
+    const dataElement = document.getElementById('django-data');
+    
+    console.log('tbody found:', !!tbody);
+    console.log('dataElement found:', !!dataElement);
+    
+    if (!tbody || !dataElement) {
+        console.error('Missing required elements');
         return;
     }
     
-    // まずテーブルを空にする
     tbody.innerHTML = '';
     
-    // DjangoからのJSONデータを取得
-    const djangoDataElement = document.getElementById('django-data');
-    if (!djangoDataElement) {
-        console.error('Django data element not found');
-        tbody.innerHTML = `<tr><td colspan="4">データが見つかりません</td></tr>`;
-        return;
-    }
-    
-    let fedData;
     try {
-        fedData = JSON.parse(djangoDataElement.getAttribute('data-fed-data'));
-    } catch (e) {
-        console.error('Failed to parse fed data:', e);
-        tbody.innerHTML = `<tr><td colspan="4">データの解析に失敗しました</td></tr>`;
-        return;
+        const rawData = dataElement.textContent;
+        console.log('Raw data length:', rawData ? rawData.length : 'null');
+        
+        const fedData = JSON.parse(rawData);
+        console.log('Available dates:', Object.keys(fedData));
+        
+        const probabilities = fedData[date];
+        console.log(`Data for ${date}:`, probabilities);
+        
+        if (!probabilities) {
+            console.warn(`No data found for date: ${date}`);
+            tbody.innerHTML = `<tr><td colspan="4">${date}のデータなし</td></tr>`;
+            return;
+        }
+        
+        console.log(`Creating ${probabilities.length} rows for ${date}`);
+        
+        probabilities.forEach((prob, index) => {
+            console.log(`Row ${index}:`, prob);
+            const tr = document.createElement('tr');
+            tr.className = `prob-row ${prob.type}`;
+            
+            tr.innerHTML = `
+                <td class="rate-cell">${prob.range}</td>
+                <td class="prob-cell">${prob.current}</td>
+                <td class="prob-cell">${prob.oneDay}</td>
+                <td class="prob-cell">${prob.oneWeek}</td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+        
+        console.log(`Successfully updated table with ${probabilities.length} rows`);
+    } catch (error) {
+        console.error('JSON parse error:', error);
+        console.error('Error details:', error.message);
+        tbody.innerHTML = `<tr><td colspan="4">データの読み込みエラー: ${error.message}</td></tr>`;
     }
-    
-    // 指定された日付のデータを取得
-    const probabilities = fedData[date];
-    
-    if (!probabilities || probabilities.length === 0) {
-        console.warn('No data found for date:', date);
-        tbody.innerHTML = `<tr><td colspan="4">${date}のデータがありません</td></tr>`;
-        return;
-    }
-    
-    // 各確率データを行として追加
-    probabilities.forEach((prob, index) => {
-        console.log(`Processing row ${index}:`, prob);
-        
-        const tr = document.createElement('tr');
-        tr.className = `prob-row ${prob.type}`;
-        tr.setAttribute('data-date', date);
-        
-        // % 記号を追加（"—"でない場合のみ）
-        const formatPercent = (value) => {
-            if (value === '—' || value.includes('%')) {
-                return value;
-            }
-            return value + '%';
-        };
-        
-        tr.innerHTML = `
-            <td class="rate-cell">${prob.range}</td>
-            <td class="prob-cell ${prob.type}">${formatPercent(prob.current)}</td>
-            <td class="prob-cell ${prob.type}">${formatPercent(prob.oneDay)}</td>
-            <td class="prob-cell ${prob.type}">${formatPercent(prob.oneWeek)}</td>
-        `;
-        
-        tbody.appendChild(tr);
-    });
-    
-    console.log(`Table updated with ${probabilities.length} rows for ${date}`);
 }
 
-// 更新ボタンの設定
 function setupRefreshButton() {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
-            console.log('Refresh button clicked');
             refreshBtn.disabled = true;
-            refreshBtn.innerHTML = '🔄 更新中...';
-            
-            // ページをリロードして最新データを取得
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+            refreshBtn.textContent = '更新中...';
+            setTimeout(() => window.location.reload(), 500);
         });
     }
 }
-
-// Back to topボタンの設定
-function setupBackToTopButton() {
-    const backToTopBtn = document.getElementById('back-to-top');
-    if (backToTopBtn) {
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 100) {
-                backToTopBtn.style.display = 'block';
-            } else {
-                backToTopBtn.style.display = 'none';
-            }
-        });
-        
-        backToTopBtn.addEventListener('click', function() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
-}
-
-console.log('Control.js setup complete');

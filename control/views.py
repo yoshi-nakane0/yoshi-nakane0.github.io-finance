@@ -6,10 +6,12 @@ from django.conf import settings
 import json
 import csv
 import os
+from datetime import datetime
+import pytz
 
 def load_fed_data():
     """fed.csvからデータを読み込む（シンプル版）"""
-    csv_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'control', 'data', 'fed.csv')
+    csv_path = os.path.join(settings.BASE_DIR, 'control', 'static', 'control', 'data', 'fed.csv')
     
     print(f"Looking for CSV at: {csv_path}")
     print(f"File exists: {os.path.exists(csv_path)}")
@@ -68,15 +70,6 @@ def load_fed_data():
     
     return fed_data
 
-def get_fallback_data():
-    """フォールバックデータ"""
-    return {
-        "2025-09-17": [
-            {"range": "4.00 - 4.25", "current": "78.4%", "oneDay": "84.4%", "oneWeek": "96.6%", "type": "positive"},
-            {"range": "4.25 - 4.50", "current": "21.6%", "oneDay": "15.6%", "oneWeek": "—", "type": "neutral"}
-        ]
-    }
-
 @csrf_exempt
 def index(request):
     if request.method == 'POST':
@@ -100,10 +93,15 @@ def index(request):
     for date, probs in fed_data.items():
         print(f"  {date}: {len(probs)} probabilities")
     
+    # 現在の日時を取得（日本時間）
+    japan_tz = pytz.timezone('Asia/Tokyo')
+    now = datetime.now(japan_tz)
+    update_time = now.strftime('%Y-%m-%d %H:%M:%S')
+    
     context = {
         'fed_data': fed_data,
-        'fed_data_json': json.dumps(fed_data),
-        'update_time': '2025年08月21日'
+        'fed_data_json': json.dumps(fed_data, ensure_ascii=False),
+        'update_time': update_time
     }
     
     return render(request, 'control/index.html', context)
