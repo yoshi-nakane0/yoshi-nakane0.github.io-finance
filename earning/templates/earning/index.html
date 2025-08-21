@@ -27,6 +27,13 @@
                 </div>
             </div>
 
+            <!-- フィルターボタン -->
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">ALL</button>
+                <button class="filter-btn" data-filter="en">EN</button>
+                <button class="filter-btn" data-filter="jp">JP</button>
+            </div>
+
 
             <!-- 決算発表予定 -->
             <div class="schedule-date">
@@ -38,20 +45,22 @@
                         </div>
                         <div class="companies-list">
                             {% for company in date_group.companies %}
-                            <div class="company-row">
+                            <div class="company-row" data-market="{{ company.market }}">
                                 <div class="company-single-row">
                                     <div class="company-left-info">
                                         <span class="company-name">{{ company.company }}</span>
-                                        <span class="industry-badge">{{ company.industry }}</span>
                                     </div>
-                                    <div class="link-info">
-                                        {% if company.market and company.symbol %}
-                                        <a href="https://jp.tradingview.com/symbols/{{ company.market }}-{{ company.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" 
-                                           target="_blank" 
-                                           class="external-link">
-                                            <i class="bi bi-box-arrow-up-right"></i>
-                                        </a>
-                                        {% endif %}
+                                    <div class="company-right-info">
+                                        <span class="industry-badge">{{ company.industry }}</span>
+                                        <div class="link-info">
+                                            {% if company.market and company.symbol %}
+                                            <a href="https://jp.tradingview.com/symbols/{{ company.market }}-{{ company.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ" 
+                                               target="_blank" 
+                                               class="external-link">
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -88,6 +97,55 @@
         backToTopButton.addEventListener("click", () => {
             document.body.scrollTop = 0; // For Safari
             document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        });
+
+        // Filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const companyRows = document.querySelectorAll('.company-row');
+            const dateGroups = document.querySelectorAll('.date-group');
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active button
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Filter companies
+                    companyRows.forEach(row => {
+                        const market = row.getAttribute('data-market');
+                        let shouldShow = false;
+
+                        if (filter === 'all') {
+                            shouldShow = true;
+                        } else if (filter === 'jp') {
+                            shouldShow = market === 'TSE';
+                        } else if (filter === 'en') {
+                            shouldShow = market !== 'TSE';
+                        }
+
+                        row.style.display = shouldShow ? 'block' : 'none';
+                    });
+
+                    // Hide date groups that have no visible companies
+                    dateGroups.forEach(dateGroup => {
+                        const visibleCompanies = dateGroup.querySelectorAll('.company-row[style="display: block"], .company-row:not([style*="display: none"])');
+                        const allCompanies = dateGroup.querySelectorAll('.company-row');
+                        
+                        // Check if any companies are visible (not explicitly hidden)
+                        let hasVisibleCompanies = false;
+                        allCompanies.forEach(company => {
+                            if (company.style.display !== 'none') {
+                                hasVisibleCompanies = true;
+                            }
+                        });
+
+                        dateGroup.style.display = hasVisibleCompanies ? 'block' : 'none';
+                    });
+                });
+            });
         });
     </script>
 </body>

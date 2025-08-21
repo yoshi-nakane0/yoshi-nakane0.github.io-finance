@@ -1,4 +1,4 @@
-# target/views.py
+# sector/views.py
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -288,7 +288,7 @@ def calculate_summary(sectors):
     }
 
 def get_cached_data():
-    """Get cached sector and benchmark data"""
+    """Get cached sector and benchmark data or sample data for initial load"""
     cached_sectors = cache.get('sectors_data')
     cached_benchmarks = cache.get('benchmarks_data')
     cached_time = cache.get('data_update_time')
@@ -296,13 +296,16 @@ def get_cached_data():
     if cached_sectors and cached_benchmarks and cached_time:
         return cached_sectors, cached_benchmarks, cached_time
     
-    # If no cache, get real data instead of sample data
-    sectors = get_sector_data_real()
-    benchmarks = get_benchmark_data_real()
-    update_time = datetime.now(TZ_JST).strftime("%Y年%m月%d日 %H:%M:%S")
+    # If no cache, use sample data for fast initial load
+    sectors = get_sector_data_sample()
+    benchmarks = get_benchmark_data_sample()
     
-    # Cache the new data
-    cache_data(sectors, benchmarks, update_time)
+    # Check if there's a previous update time stored
+    last_update = cache.get('last_manual_update_time')
+    if last_update:
+        update_time = f"前回更新: {last_update}"
+    else:
+        update_time = "データを取得するには更新ボタンを押してください"
     
     return sectors, benchmarks, update_time
 
@@ -312,6 +315,8 @@ def cache_data(sectors, benchmarks, update_time):
     cache.set('sectors_data', sectors, 86400)
     cache.set('benchmarks_data', benchmarks, 86400)
     cache.set('data_update_time', update_time, 86400)
+    # Store the last manual update time separately
+    cache.set('last_manual_update_time', update_time, 86400 * 7)  # Keep for 7 days
 
 @csrf_exempt
 def index(request):
@@ -376,4 +381,4 @@ def index(request):
         'jp_sectors': jp_sectors,
     }
     
-    return render(request, 'target/index.html', context)
+    return render(request, 'sector/index.html', context)

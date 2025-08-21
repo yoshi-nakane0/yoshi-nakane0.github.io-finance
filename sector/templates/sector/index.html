@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>セクター強弱モニター</title>
+    <title>セクター分析 - Sector Analysis</title>
     
     <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     <!-- style.cssの読み込み -->
-    <link rel="stylesheet" href="{% static 'target/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'sector/css/style.css' %}">
     
 </head>
 
@@ -24,7 +24,7 @@
             <!-- ステータスバー -->
             <div class="status-bar">
                 <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-                <button class="status-bar-item" id="refresh-btn">🔄 更新</button>
+                <button class="status-bar-item" id="refresh-btn">📊 最新データ取得</button>
                 <button class="status-bar-item" onclick="window.open('https://finance.yahoo.com/sectors', '_blank')">リンク</button>
             </div>
 
@@ -166,7 +166,7 @@
         function refreshData() {
             const refreshBtn = document.getElementById('refresh-btn');
             refreshBtn.disabled = true;
-            refreshBtn.innerHTML = '🔄 更新中...';
+            refreshBtn.innerHTML = '📊 取得中...';
 
             fetch('', {
                 method: 'POST',
@@ -208,7 +208,7 @@
             })
             .finally(() => {
                 refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '🔄 更新';
+                refreshBtn.innerHTML = '📊 最新データ取得';
             });
         }
 

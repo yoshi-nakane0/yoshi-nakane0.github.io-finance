@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 import os
 import csv
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 
 def fetch_earnings_from_csv():
     """
@@ -72,6 +72,23 @@ def index(request):
     # CSVファイルから決算データを読み込み
     earnings_data = fetch_earnings_from_csv()
     
+    # 本日の日付を取得
+    today = date.today()
+    
+    # 今日以降の決算イベントのみをフィルタリング
+    future_earnings = []
+    for item in earnings_data:
+        if item['date'] == '決算日未定':
+            future_earnings.append(item)
+        else:
+            try:
+                earnings_date = datetime.strptime(item['date'], '%Y-%m-%d').date()
+                if earnings_date >= today:
+                    future_earnings.append(item)
+            except ValueError:
+                # 日付形式が正しくない場合はスキップ
+                continue
+    
     # 日付順にソート（決算日未定は最後に配置）
     try:
         def sort_key(x):
@@ -81,18 +98,18 @@ def index(request):
                 return datetime.strptime(x['date'], '%Y-%m-%d')
             except:
                 return datetime.max
-        earnings_data.sort(key=sort_key)
+        future_earnings.sort(key=sort_key)
     except Exception as e:
         print(f"Error sorting data: {e}")
     
     # 日付でグループ化
     grouped_earnings = []
-    if earnings_data:
+    if future_earnings:
         try:
             current_date = None
             current_companies = []
             
-            for item in earnings_data:
+            for item in future_earnings:
                 if current_date != item['date']:
                     if current_date is not None:
                         grouped_earnings.append({
@@ -112,7 +129,7 @@ def index(request):
         except Exception as e:
             print(f"Error grouping data: {e}")
             # グループ化に失敗した場合は、各項目を個別の日付グループとして扱う
-            for item in earnings_data:
+            for item in future_earnings:
                 grouped_earnings.append({
                     'date': item['date'],
                     'companies': [item]

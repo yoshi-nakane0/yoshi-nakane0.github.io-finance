@@ -1,4 +1,4 @@
-/* 金利政策確率ページ用スタイル (Targetページベース) */
+/* 金利政策確率ページ用スタイル */
 
 /************************************************************
  * 1. Global base styles – background, typography, wrapper  *
@@ -10,10 +10,10 @@ html, body {
   background-color: #1E1E2E !important;
   color: #ffffff;
   min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: sans-serif;
 }
 
-/* Gradient panel identical to schedule */
+/* Gradient panel identical to other pages */
 .app-container {
   max-width: 450px;
   margin: 0 auto;
@@ -24,418 +24,270 @@ html, body {
 }
 
 /* Generic container alias */
-.container, .target-container {
+.container, .target-container, .schedule-container {
+  font-family: sans-serif;
+  background-color: #1E1E2E;
+  color: #ffffff;
+  padding: 10px;
   max-width: 450px;
   width: 100%;
   margin: 0 auto;
-  padding: 10px;
-  background-color: transparent;
 }
 
-/*******************************************************
- * 2. Header & section shells                          *
- *******************************************************/
-.main-header,
-.section-header {
-  background-color: #2D2D44;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.main-header h1 {
-  margin: 0;
-  font-size: 1.5em;
-  font-weight: bold;
-}
-
-.main-header p {
-  margin: 5px 0 0 0;
-  font-size: 0.9em;
-  opacity: 0.9;
-}
-
-/*******************************************************
- * 3. Cards & widgets                                  *
- *******************************************************/
-.metric-card,
-.sector-card {
-  background-color: rgba(41, 45, 53, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 5px;
-  padding: 10px;
-  transition: transform 0.2s ease;
-  height: 100%;
-  margin-bottom: 10px;
-}
-
-.metric-card:hover,
-.sector-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Positive / negative accents */
-.metric-card.positive, .sector-card.positive  { border-left: 3px solid #4CAF50; }
-.metric-card.negative, .sector-card.negative  { border-left: 3px solid #F44336; }
-.metric-card.neutral                    { border-left: 3px solid #2196F3; }
-.metric-card.average                    { border-left: 3px solid #FF9800; }
-
-.metric-card h2 {
-  margin: 5px 0;
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.metric-icon {
-  font-size: 1.5em;
-  margin-bottom: 5px;
-}
-
-.metric-card p {
-  margin: 0;
-  color: #cccccc;
-  font-size: 0.8em;
-}
-
-/*******************************************************
- * 4. Update time pill                                 *
- *******************************************************/
-.update-time {
-  background-color: rgba(41, 45, 53, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  font-size: 0.8em;
-  padding: 5px 10px;
-  text-align: center;
-  margin: 5px 0;
-}
-
-/*******************************************************
- * 5. Status Bar & Buttons                             *
- *******************************************************/
+/* Status Bar */
 .status-bar {
+  background-color: #2D2D44;
   display: flex;
   justify-content: flex-end;
-  background-color: #2D2D44;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 5px 10px;
+  align-items: center;
+  padding: 2px 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 15px;
+}
+
+.status-bar-right {
+  display: flex;
+  gap: 5px;
 }
 
 .status-bar-item {
-  background: none;
-  border: none;
+  background-color: rgba(41, 45, 53, 0.7);
+  padding: 3px 5px;
+  font-size: 13px;
   color: #ffffff;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.9em;
+  border: none !important;
+  text-decoration: none !important;
   cursor: pointer;
+  border-radius: 3px;
   transition: background-color 0.3s ease;
 }
 
 .status-bar-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(41, 45, 53, 0.9);
 }
 
-/* Buttons */
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 25px;
-  padding: 10px 30px;
-  font-weight: bold;
+/* Update Time */
+.update-time {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 10px 0;
+  padding: 8px;
+  background: rgba(41, 45, 53, 0.3);
+  border-radius: 8px;
+}
+
+/* Meeting Navigation */
+.meeting-nav-container {
+  margin: 15px 0;
+}
+
+.meeting-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.meeting-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 400;
   transition: all 0.3s ease;
 }
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+
+.meeting-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-/*******************************************************
- * 6. Schedule Container & Date Sections               *
- *******************************************************/
-.schedule-container {
-  padding: 10px;
-  width: 100%;
-  max-width: 450px;
-  margin: 0 auto;
+.meeting-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 }
 
-/*******************************************************
- * 7. Schedule Table & Date Sections                   *
- *******************************************************/
+/* Meeting Date Cards - Simplified */
+.meeting-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.date-card {
+  background: rgba(41, 45, 53, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.date-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.date-card.active {
+  background: rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+}
+
+.date-card .date-icon {
+  display: none;
+}
+
+.date-card h3 {
+  color: #ffffff;
+  font-size: 12px;
+  margin: 2px 0;
+  font-weight: 500;
+}
+
+.date-card p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  margin: 0;
+}
+
+/* Schedule Date Title */
 .schedule-date {
   margin-bottom: 20px;
 }
 
 .schedule-date-title {
-  background-color: #2D2D44;
   color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
   padding: 10px 15px;
-  border-radius: 8px;
-  margin: 0 0 10px 0;
-  font-size: 1.1em;
-  font-weight: bold;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(41, 45, 53, 0.7);
+  border-radius: 10px;
+  border-left: 4px solid #4CAF50;
 }
 
+/* Table Container */
 .schedule-table-container {
-  background-color: rgba(41, 45, 53, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(41, 45, 53, 0.3);
   border-radius: 10px;
   padding: 15px;
-  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .schedule-table {
   width: 100%;
   border-collapse: collapse;
+  background: transparent;
+}
+
+.schedule-table th {
+  background: rgba(41, 45, 53, 0.7);
   color: #ffffff;
-}
-
-.schedule-table thead th {
-  background-color: #2D2D44;
-  color: #ffffff;
-  padding: 10px;
-  text-align: center;
-  font-weight: bold;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.schedule-table tbody td {
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Row styling based on positive/negative/neutral */
-.positive-row {
-  background-color: rgba(76, 175, 80, 0.1);
-}
-
-.negative-row {
-  background-color: rgba(244, 67, 54, 0.1);
-}
-
-.neutral-row {
-  background-color: rgba(33, 150, 243, 0.1);
-}
-
-.positive-text {
-  color: #4CAF50;
-}
-
-
-.negative-text {
-  color: #F44336;
-  font-weight: bold;
-}
-
-.neutral-text {
-  color: #2196F3;
-  font-weight: bold;
-}
-
-/* Cell specific styling */
-.sector-name-cell {
-  font-weight: 500;
+  font-weight: 600;
+  padding: 8px 6px;
   text-align: left;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
 }
 
-.sector-change-cell {
-  font-weight: bold;
-  background-color: rgba(41, 45, 53, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 6px 8px;
-  margin: 2px;
-  font-family: 'Courier New', monospace;
+.schedule-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  vertical-align: middle;
 }
 
-/* Summary metrics grid */
-.summary-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 15px;
+.schedule-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/*******************************************************
- * 9. FedWatch タイトル                                 *
- *******************************************************/
-.fedwatch-title {
-  text-align: center;
+.schedule-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Probability Row Colors */
+.prob-row.positive {
+  background: rgba(76, 175, 80, 0.1) !important;
+}
+
+.prob-row.negative {
+  background: rgba(244, 67, 54, 0.1) !important;
+}
+
+.prob-row.neutral {
+  background: rgba(33, 150, 243, 0.1) !important;
+}
+
+.prob-cell.positive {
+  color: #4CAF50 !important;
+  font-weight: 600;
+}
+
+.prob-cell.negative {
+  color: #f44336 !important;
+  font-weight: 600;
+}
+
+.prob-cell.neutral {
+  color: #2196F3 !important;
+  font-weight: 600;
+}
+
+.rate-cell {
   color: #ffffff;
-  font-size: 1.4em;
-  font-weight: bold;
-  margin: 20px 0 15px 0;
-  padding: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 500;
 }
 
-/*******************************************************
- * 10. FOMC会合日程カード                               *
- *******************************************************/
-.meeting-dates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding: 5px 0;
-}
-
-.date-card {
-  background-color: rgba(41, 45, 53, 0.7);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.date-card:hover {
-  border-color: rgba(102, 126, 234, 0.6);
-  transform: translateY(-2px);
-}
-
-.date-card.active {
-  border-color: #667eea;
-  background-color: rgba(102, 126, 234, 0.2);
-}
-
-.date-card .date-icon {
-  font-size: 1.2em;
-  margin-bottom: 5px;
-}
-
-.date-card h3 {
-  margin: 5px 0;
-  font-size: 0.9em;
-  font-weight: bold;
-  color: #ffffff;
-}
-
-.date-card p {
-  margin: 0;
-  font-size: 0.8em;
-  color: #cccccc;
-}
-
-/*******************************************************
- * 11. 現在の金利情報表示                               *
- *******************************************************/
-.current-info-container {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  padding: 10px;
-  background-color: rgba(41, 45, 53, 0.3);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.info-item {
-  text-align: center;
-}
-
-.info-label {
-  display: block;
-  font-size: 0.8em;
-  color: #cccccc;
-  margin-bottom: 3px;
-}
-
-.info-value {
-  display: block;
-  font-size: 1.1em;
-  font-weight: bold;
-  color: #ffffff;
-}
-
-/*******************************************************
- * 12. Mobile first tweaks                             *
- *******************************************************/
-@media (max-width: 450px) {
-  .main-header h1   { font-size: 1.3em; }
-  .main-header p    { font-size: 0.8em; }
-  .metric-card,
-  .sector-card      { padding: 8px; margin-bottom: 5px; }
-  
-  .summary-metrics {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  
-  .schedule-table {
-    font-size: 0.85em;
-  }
-  
-  .schedule-table th,
-  .schedule-table td {
-    padding: 6px;
-  }
-  
-  .meeting-dates {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  
-  .date-card {
-    padding: 8px;
-  }
-  
-  .fedwatch-title {
-    font-size: 1.2em;
-    margin: 15px 0 10px 0;
-    padding: 8px;
-  }
-  
-  .current-info-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
-/*******************************************************
- * 8. Utility – spinner & loading                      *
- *******************************************************/
-.loading { opacity: 0.6; pointer-events: none; }
-.spinner  {
-  display: inline-block;
-  width: 20px; height: 20px;
-  border: 3px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Back to top button */
+/* Back to Top Button */
 #back-to-top {
+  display: none;
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 99;
+  background: #4CAF50;
   color: white;
   border: none;
   border-radius: 50%;
   width: 50px;
   height: 50px;
-  font-size: 1.2em;
   cursor: pointer;
-  display: none;
-  z-index: 1000;
+  font-size: 18px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
 #back-to-top:hover {
+  background: #45a049;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .meeting-nav {
+    gap: 6px;
+  }
+  
+  .meeting-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .schedule-table th,
+  .schedule-table td {
+    padding: 6px 4px;
+    font-size: 12px;
+  }
 }

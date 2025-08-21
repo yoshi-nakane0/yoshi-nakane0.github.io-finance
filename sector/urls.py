@@ -1,8 +1,8 @@
-# schedule/urls.py
+# sector/urls.py
 from django.urls import path
 from . import views
 
-app_name = 'schedule'
+app_name = 'sector'
 
 urlpatterns = [
     path('', views.index, name='index'),

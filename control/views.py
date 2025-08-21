@@ -2,141 +2,108 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.cache import cache
-from datetime import datetime, timedelta
+from django.conf import settings
 import json
+import csv
+import os
 
-
-
-
-def fetch_free_fed_monitor_data():
-    """Fed Rate Monitor Tool データを取得"""
+def load_fed_data():
+    """fed.csvからデータを読み込む（シンプル版）"""
+    csv_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'control', 'data', 'fed.csv')
+    
+    print(f"Looking for CSV at: {csv_path}")
+    print(f"File exists: {os.path.exists(csv_path)}")
+    
+    if not os.path.exists(csv_path):
+        print("CSV file not found, using fallback data")
+        return get_fallback_data()
+    
+    fed_data = {}
+    
     try:
-        print("Fetching Fed Monitor data...")
-        
-        # 標準の0%データを使用
-        print("Using default data...")
-        
-        # すべてのFOMC会合日程のデータを取得
-        all_fed_data = get_fed_monitor_data()
-        
-        print(f"Successfully generated Fed Monitor data for {len(all_fed_data)} meetings")
-        return all_fed_data
-        
+        with open(csv_path, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            row_count = 0
+            
+            for row in reader:
+                row_count += 1
+                meeting_date = row.get('meeting_date', '').strip()
+                target_rate = row.get('target_rate', '').strip()
+                current_prob = row.get('current_probability_pct', '—').strip()
+                prev_day_prob = row.get('prev_day_probability_pct', '—').strip()
+                prev_week_prob = row.get('prev_week_probability_pct', '—').strip()
+                
+                if not meeting_date or not target_rate:
+                    continue
+                
+                if meeting_date not in fed_data:
+                    fed_data[meeting_date] = []
+                
+                # 確率の種類を判定
+                prob_type = 'negative'
+                if current_prob != '—' and '%' in current_prob:
+                    try:
+                        current_val = float(current_prob.replace('%', ''))
+                        if current_val > 50:
+                            prob_type = 'positive'
+                        elif current_val > 10:
+                            prob_type = 'neutral'
+                    except:
+                        pass
+                
+                fed_data[meeting_date].append({
+                    'range': target_rate,
+                    'current': current_prob,
+                    'oneDay': prev_day_prob,
+                    'oneWeek': prev_week_prob,
+                    'type': prob_type
+                })
+            
+            print(f"Loaded {row_count} rows from CSV")
+            print(f"Processed {len(fed_data)} meeting dates")
+            
     except Exception as e:
-        print(f"Failed to fetch Fed Monitor data: {e}")
-        # 例外時も標準の0%データを使用
-        return get_fed_monitor_data()
+        print(f"Error reading CSV: {e}")
+        return get_fallback_data()
+    
+    return fed_data
 
-
-
-
-def get_fed_monitor_fallback_data(meeting_date):
-    """Fed Rate Monitor Tool用のフォールバックデータ"""
-    fed_data = get_fed_monitor_data()
-    return fed_data.get(meeting_date, {
-        'probabilities': [
-            {'range': '4.00-4.25%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '4.25-4.50%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
-            {'range': '4.50-4.75%', 'current': '0.0%', 'oneDay': '0.0%', 'oneWeek': '0.0%', 'type': 'negative'},
+def get_fallback_data():
+    """フォールバックデータ"""
+    return {
+        "2025-09-17": [
+            {"range": "4.00 - 4.25", "current": "78.4%", "oneDay": "84.4%", "oneWeek": "96.6%", "type": "positive"},
+            {"range": "4.25 - 4.50", "current": "21.6%", "oneDay": "15.6%", "oneWeek": "—", "type": "neutral"}
         ]
-    })
-
-def get_cached_fed_monitor_data():
-    """キャッシュされたFed Monitor データを取得"""
-    cached_data = cache.get('fed_monitor_data')
-    cached_time = cache.get('fed_monitor_update_time')
-    
-    if cached_data and cached_time:
-        return cached_data, cached_time
-    
-    # キャッシュがない場合は実データを取得
-    fed_monitor_data = fetch_free_fed_monitor_data()
-    update_time = datetime.now().strftime("%Y年%m月%d日 %H:%M:%S")
-    
-    # 1時間キャッシュ
-    cache.set('fed_monitor_data', fed_monitor_data, 3600)
-    cache.set('fed_monitor_update_time', update_time, 3600)
-    
-    return fed_monitor_data, update_time
-
-def get_fed_monitor_data_static():
-    """静的なFed Rate Monitor Tool データ（元のデータ）"""
-    return get_fed_monitor_data()
-
-def get_fed_monitor_data():
-    """Fed Rate Monitor Tool データ（デフォルト0.0%データ）"""
-    meeting_dates = [
-        "2025-09-17", "2025-10-29", "2025-12-10", "2026-01-28",
-        "2026-03-18", "2026-04-29", "2026-06-17"
-    ]
-    
-    # 標準的な金利レンジを定義（0.25%刻み）
-    standard_ranges = [
-        "3.25-3.50%", "3.50-3.75%", "3.75-4.00%",
-        "4.00-4.25%", "4.25-4.50%"
-    ]
-    
-    data = {}
-    for meeting_date in meeting_dates:
-        probabilities = []
-        for range_str in standard_ranges:
-            probabilities.append({
-                'range': range_str,
-                'current': '0.0%',
-                'oneDay': '0.0%',
-                'oneWeek': '0.0%',
-                'type': 'negative'
-            })
-        
-        data[meeting_date] = {
-            'probabilities': probabilities
-        }
-    
-    return data
-
+    }
 
 @csrf_exempt
 def index(request):
     if request.method == 'POST':
-        # AJAX更新リクエストの処理
         try:
-            print("POST request received")
             data = json.loads(request.body)
-            print(f"Request data: {data}")
-            
             if data.get('action') == 'refresh':
-                print("Processing refresh action")
-                # キャッシュをクリアして新しいデータを取得
-                cache.delete('fed_monitor_data')
-                cache.delete('fed_monitor_update_time')
-                print("Cache cleared")
-                
-                fed_monitor_data, update_time = get_cached_fed_monitor_data()
-                print(f"Got fed_monitor_data: {len(fed_monitor_data) if fed_monitor_data else 0} items")
-                
+                fed_data = load_fed_data()
                 return JsonResponse({
                     'success': True,
-                    'fed_monitor_data': fed_monitor_data,
-                    'update_time': update_time
+                    'fed_data': fed_data,
+                    'update_time': '更新完了'
                 })
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            return JsonResponse({'success': False, 'error': f'JSON decode error: {str(e)}'})
         except Exception as e:
-            print(f"General error in POST handler: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"POST error: {e}")
             return JsonResponse({'success': False, 'error': str(e)})
     
-    # GET リクエスト - メインページの表示
-    fed_monitor_data, update_time = get_cached_fed_monitor_data()
+    # GET request - ページ表示
+    fed_data = load_fed_data()
     
-    # デバッグ用出力
-    print(f"Fed Monitor Data keys: {list(fed_monitor_data.keys()) if fed_monitor_data else 'None'}")
+    print(f"Sending to template: {len(fed_data)} meetings")
+    for date, probs in fed_data.items():
+        print(f"  {date}: {len(probs)} probabilities")
     
     context = {
-        'fed_monitor_data': json.dumps(fed_monitor_data),
-        'update_time': update_time,
+        'fed_data': fed_data,
+        'fed_data_json': json.dumps(fed_data),
+        'update_time': '2025年08月21日'
     }
+    
     return render(request, 'control/index.html', context)

@@ -23,11 +23,11 @@
     <div class="content"> <!-- content を追加 -->
       <div class="menu-grid"> <!-- icon-container から menu-grid に変更 -->
 
-        <!-- Scheduleボタン -->
+        <!-- Calendarボタン -->
         <div class="menu-item-wrapper schedule"> <!-- icon-button から menu-item-wrapper に変更 -->
-          <a href="{% url 'schedule:index' %}" class="menu-item"> <!-- icon-button から menu-item に変更 -->
+          <a href="/calendar/" class="menu-item"> <!-- icon-button から menu-item に変更 -->
             <div class="icon-wrapper schedule-icon"><i class="bi bi-calendar-week"></i></div> <!-- icon-circle から icon-wrapper に変更 -->
-            <span>Schedule</span> <!-- div を span に変更 -->
+            <span>Calendar</span> <!-- div を span に変更 -->
           </a>
         </div>
 
@@ -39,19 +39,19 @@
           </a>
         </div>
 
+        <!-- Sectorボタン -->
+        <div class="menu-item-wrapper target">
+          <a href="/sector/" class="menu-item">
+            <div class="icon-wrapper target-icon"><i class="bi bi-bullseye"></i></div>
+            <span>Sector</span>
+          </a>
+        </div>
+
         <!-- Promptボタン -->
         <div class="menu-item-wrapper prompt">
           <a href="{% url 'prompt:index' %}" class="menu-item">
             <div class="icon-wrapper prompt-icon"><i class="bi bi-newspaper"></i></div>
             <span>Prompt</span>
-          </a>
-        </div>
-
-        <!-- Targetボタン -->
-        <div class="menu-item-wrapper target">
-          <a href="{% url 'target:index' %}" class="menu-item">
-            <div class="icon-wrapper target-icon"><i class="bi bi-bullseye"></i></div>
-            <span>Target</span>
           </a>
         </div>
 
@@ -76,7 +76,7 @@
 
     <!-- ナビゲーションバー (下部固定) -->
     <div class="bottom-nav">
-        <a class="nav-button" href="{% url 'schedule:index' %}"><i class="bi bi-calendar-week"></i></a>  <!-- navbar-brand を nav-button に変更 -->
+        <a class="nav-button" href="/calendar/"><i class="bi bi-calendar-week"></i></a>  <!-- navbar-brand を nav-button に変更 -->
         <a class="nav-button" href="{% url 'prompt:index' %}"><i class="bi bi-newspaper"></i></a>
         <a class="nav-button" href="{% url 'trending:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
     </div>
