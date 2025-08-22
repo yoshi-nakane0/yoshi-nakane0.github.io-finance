@@ -14,46 +14,13 @@ import random
 # JST timezone
 TZ_JST = timezone(timedelta(hours=9))
 
-def fetch_fed_data_from_multiple_sources():
-    """複数のソースからFedレートデータを取得を試行"""
-    
-    # データソースのリスト（優先順位順）
-    data_sources = [
-        {
-            'name': 'Investing.com',
-            'function': fetch_fed_data_from_investing
-        },
-        {
-            'name': 'Federal Reserve API',
-            'function': fetch_fed_data_from_fred_api
-        },
-        {
-            'name': 'CME FedWatch Tool',
-            'function': fetch_fed_data_from_cme
-        },
-        {
-            'name': 'Sample Data',
-            'function': generate_sample_fed_data
-        }
-    ]
-    
-    for source in data_sources:
-        try:
-            print(f"Trying data source: {source['name']}")
-            data = source['function']()
-            if data and len(data) > 0:
-                print(f"Successfully fetched data from {source['name']}")
-                return data
-        except Exception as e:
-            print(f"Failed to fetch from {source['name']}: {e}")
-            continue
-    
-    print("All data sources failed, returning empty data")
-    return {}
+def fetch_fed_data_from_web():
+    """investing.comから最新のFedレートデータを取得"""
+    return fetch_fed_data_from_investing()
 
 def fetch_fed_data_from_investing():
     """investing.comから最新のFedレートデータを取得"""
-    target_url = "https://www.investing.com/central-banks/fed-rate-monitor"
+    target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
     
     print(f"Fetching data from: {target_url}")
     
@@ -424,143 +391,25 @@ def determine_prob_type(prob_str):
     
     return 'negative'
 
-def fetch_fed_data_from_fred_api():
-    """Federal Reserve Economic Data (FRED) APIからデータを取得"""
-    try:
-        # FRED APIを使用してFederal Fund Rate関連データを取得
-        # 注意: 実際のFRED APIではAPIキーが必要です
-        url = "https://api.stlouisfed.org/fred/series/observations"
-        params = {
-            'series_id': 'FEDFUNDS',
-            'api_key': 'demo',  # デモ用（実際はAPIキーが必要）
-            'file_type': 'json',
-            'limit': '1'
-        }
-        
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            # FREDデータからFedWatch風のデータを生成
-            return convert_fred_to_fedwatch_format(data)
-        else:
-            return None
-            
-    except Exception as e:
-        print(f"FRED API error: {e}")
-        return None
 
-def fetch_fed_data_from_cme():
-    """CME FedWatch ToolからデータをスクレイピングまたはAPI経由で取得"""
-    try:
-        # CMEのFedWatch Tool（代替アプローチ）
-        url = "https://www.cmegroup.com/tools-information/quikstrike/fed-watch-tool.html"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        if response.status_code == 200:
-            # CMEのデータ構造に合わせて解析
-            return parse_cme_data(response.content)
-        else:
-            return None
-            
-    except Exception as e:
-        print(f"CME API error: {e}")
-        return None
 
-def generate_sample_fed_data():
-    """サンプルのFedレートデータを生成（最終フォールバック）"""
-    print("Generating sample Fed data as fallback")
-    
-    # 将来の会議日を生成
-    base_date = datetime.now()
-    meeting_dates = []
-    
-    # 通常FOMCは年8回開催
-    months_ahead = [2, 3, 5, 6, 8, 9, 11, 12, 14]
-    for months in months_ahead[:6]:  # 6回分の会議
-        future_date = base_date + timedelta(days=30*months)
-        formatted_date = future_date.strftime('%Y-%m-%d')
-        meeting_dates.append(formatted_date)
-    
-    fed_data = {}
-    
-    # 金利レンジを定義
-    rate_ranges = [
-        "4.25 - 4.50",
-        "4.50 - 4.75", 
-        "4.75 - 5.00",
-        "5.00 - 5.25",
-        "5.25 - 5.50",
-        "5.50 - 5.75"
-    ]
-    
-    for date in meeting_dates:
-        probabilities = []
-        
-        for i, rate_range in enumerate(rate_ranges):
-            # 確率を生成（現在の金利付近で高い確率）
-            if i == 1:  # 現在の金利レンジ
-                current = random.uniform(65, 85)
-            elif i == 0 or i == 2:  # 隣接するレンジ
-                current = random.uniform(10, 25)
-            else:  # その他
-                current = random.uniform(0, 5)
-            
-            # 1日前と1週間前の確率（若干の変動を追加）
-            one_day = current + random.uniform(-5, 5)
-            one_week = current + random.uniform(-10, 10)
-            
-            # 確率を0-100の範囲に制限
-            current = max(0, min(100, current))
-            one_day = max(0, min(100, one_day))
-            one_week = max(0, min(100, one_week))
-            
-            prob_type = determine_prob_type(f"{current:.1f}%")
-            
-            probabilities.append({
-                'range': rate_range,
-                'current': f"{current:.1f}%",
-                'oneDay': f"{one_day:.1f}%",
-                'oneWeek': f"{one_week:.1f}%",
-                'type': prob_type
-            })
-        
-        fed_data[date] = probabilities
-    
-    return fed_data
-
-def convert_fred_to_fedwatch_format(fred_data):
-    """FREDデータをFedWatch形式に変換"""
-    # 実装は複雑になるため、現時点では簡単なサンプルデータを返す
-    return generate_sample_fed_data()
-
-def parse_cme_data(html_content):
-    """CMEのHTMLデータを解析してFedWatch形式に変換"""
-    # 実装は複雑になるため、現時点では簡単なサンプルデータを返す
-    return generate_sample_fed_data()
 
 def get_cached_fed_data():
-    """Get cached fed data or sample data for initial load"""
+    """Get cached fed data for initial load"""
     cached_data = cache.get('fed_data')
     cached_time = cache.get('fed_data_update_time')
     
     if cached_data and cached_time and len(cached_data) > 0:
         return cached_data, cached_time
     
-    # If no cache, generate sample data for immediate display
-    print("No cached data, generating sample data for initial display")
-    sample_data = generate_sample_fed_data()
-    
-    # Check if there's a previous update time stored
+    # If no cache, return empty data
     last_update = cache.get('last_fed_manual_update_time')
     if last_update:
-        update_time = f"前回更新: {last_update} (サンプルデータ表示中)"
+        update_time = f"前回更新: {last_update}"
     else:
-        update_time = "サンプルデータ表示中 - 更新ボタンで最新データを取得"
+        update_time = "データを取得するには更新ボタンを押してください"
     
-    return sample_data, update_time
+    return {}, update_time
 
 def cache_fed_data(fed_data, update_time):
     """Cache fed data"""
@@ -571,26 +420,23 @@ def cache_fed_data(fed_data, update_time):
     cache.set('last_fed_manual_update_time', update_time, 86400 * 7)  # Keep for 7 days
 
 def load_fed_data():
-    """複数のソースからデータを読み込む（更新時のみ使用）"""
-    print("Fetching data from multiple sources...")
-    
-    # 複数のソースを試行
-    web_data = fetch_fed_data_from_multiple_sources()
+    """Webからデータを読み込む（更新時のみ使用）"""
+    print("Fetching data from web sources...")
+    web_data = fetch_fed_data_from_web()
     
     if web_data and len(web_data) > 0:
-        print(f"Successfully fetched data: {len(web_data)} meetings")
+        print(f"Successfully fetched data from web: {len(web_data)} meetings")
         return web_data
     
-    # 全てのソースで失敗した場合はキャッシュされたデータを返す
-    print("All sources failed, checking cache...")
+    # Webから取得失敗した場合はキャッシュされたデータを返す
+    print("Web fetch failed, checking cache...")
     cached_data = cache.get('fed_data')
     if cached_data and len(cached_data) > 0:
         print("Using cached data")
         return cached_data
     
-    # 最終フォールバック：サンプルデータを生成
-    print("No cached data available, generating sample data")
-    return generate_sample_fed_data()
+    print("No data available")
+    return None
 
 
 @csrf_exempt
