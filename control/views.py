@@ -2,14 +2,17 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.cache import cache
 import json
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone, timedelta
 import requests
 from bs4 import BeautifulSoup
 import re
 import time
 import random
+
+# JST timezone
+TZ_JST = timezone(timedelta(hours=9))
 
 def fetch_fed_data_from_web():
     """investing.comから最新のFedレートデータを取得"""
@@ -384,8 +387,33 @@ def determine_prob_type(prob_str):
     
     return 'negative'
 
+def get_cached_fed_data():
+    """Get cached fed data or fetch fresh data for initial load"""
+    cached_data = cache.get('fed_data')
+    cached_time = cache.get('fed_data_update_time')
+    
+    if cached_data and cached_time:
+        return cached_data, cached_time
+    
+    # If no cache, check if there's a previous update time stored
+    last_update = cache.get('last_fed_manual_update_time')
+    if last_update:
+        update_time = f"前回更新: {last_update}"
+    else:
+        update_time = "データを取得するには更新ボタンを押してください"
+    
+    return {}, update_time
+
+def cache_fed_data(fed_data, update_time):
+    """Cache fed data"""
+    # Cache for 24 hours (86400 seconds)
+    cache.set('fed_data', fed_data, 86400)
+    cache.set('fed_data_update_time', update_time, 86400)
+    # Store the last manual update time separately
+    cache.set('last_fed_manual_update_time', update_time, 86400 * 7)  # Keep for 7 days
+
 def load_fed_data():
-    """Webからデータを読み込む"""
+    """Webからデータを読み込む（更新時のみ使用）"""
     print("Fetching data from web sources...")
     web_data = fetch_fed_data_from_web()
     
@@ -393,87 +421,59 @@ def load_fed_data():
         print(f"Successfully fetched data from web: {len(web_data)} meetings")
         return web_data
     
-    # Webから取得失敗した場合はNoneを返す
-    print("Web fetch failed, no data available")
+    # Webから取得失敗した場合はキャッシュされたデータを返す
+    print("Web fetch failed, checking cache...")
+    cached_data = cache.get('fed_data')
+    if cached_data:
+        print("Using cached data")
+        return cached_data
+    
+    print("No data available")
     return None
 
 
 @csrf_exempt
 def index(request):
     if request.method == 'POST':
+        # Handle AJAX refresh request (similar to sector page)
         try:
             data = json.loads(request.body)
             if data.get('action') == 'refresh':
                 print("Manual refresh requested")
                 fed_data = load_fed_data()
-                
-                # 更新時間を日本時間で取得
-                japan_tz = pytz.timezone('Asia/Tokyo')
-                now = datetime.now(japan_tz)
-                update_time = now.strftime('%Y-%m-%d %H:%M:%S')
+                update_time = datetime.now(TZ_JST).strftime('%Y年%m月%d日 %H:%M:%S')
                 
                 if fed_data:
-                    # セッションにデータを保存
-                    request.session['fed_data'] = fed_data
-                    request.session['update_time'] = update_time
-                    request.session['data_timestamp'] = now.timestamp()
+                    # Cache the new data
+                    cache_fed_data(fed_data, update_time)
                     
                     success_msg = f"データ更新完了 ({len(fed_data)}件の会議)"
                     return JsonResponse({
                         'success': True,
-                        'fed_data': fed_data,
                         'update_time': update_time,
                         'message': success_msg
                     })
                 else:
                     return JsonResponse({
                         'success': False,
-                        'error': 'データの取得に失敗しました',
-                        'update_time': update_time
+                        'error': 'データの取得に失敗しました'
                     })
         except Exception as e:
             print(f"POST error: {e}")
             return JsonResponse({'success': False, 'error': str(e)})
     
-    # GET request - ページ表示
-    print("Page load - checking for saved data")
-    
-    # セッションから保存されたデータを取得
-    fed_data = request.session.get('fed_data', {})
-    saved_update_time = request.session.get('update_time')
-    data_timestamp = request.session.get('data_timestamp')
-    
-    # 現在の日時を取得（日本時間）
-    japan_tz = pytz.timezone('Asia/Tokyo')
-    now = datetime.now(japan_tz)
-    
-    # データが24時間以内のものかチェック
-    if data_timestamp:
-        hours_since_update = (now.timestamp() - data_timestamp) / 3600
-        if hours_since_update > 24:
-            print("Saved data is too old, clearing session")
-            fed_data = {}
-            saved_update_time = None
-            # 古いデータをセッションから削除
-            if 'fed_data' in request.session:
-                del request.session['fed_data']
-            if 'update_time' in request.session:
-                del request.session['update_time']
-            if 'data_timestamp' in request.session:
-                del request.session['data_timestamp']
-    
-    # 表示用の更新時間
-    update_time = saved_update_time if saved_update_time else now.strftime('%Y-%m-%d %H:%M:%S')
+    # GET request - render the main page with cached data (similar to sector page)
+    fed_data, cached_update_time = get_cached_fed_data()
     
     if fed_data:
-        print(f"Using saved data with {len(fed_data)} meetings")
+        print(f"Using cached data with {len(fed_data)} meetings")
     else:
-        print("No saved data available")
+        print("No cached data available")
     
     context = {
         'fed_data': fed_data,
         'fed_data_json': json.dumps(fed_data, ensure_ascii=False),
-        'update_time': update_time
+        'update_time': cached_update_time
     }
     
     return render(request, 'control/index.html', context)

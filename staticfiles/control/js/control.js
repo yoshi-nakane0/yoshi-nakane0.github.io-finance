@@ -110,20 +110,14 @@ function setupRefreshButton() {
 
 function refreshFedData() {
     const refreshBtn = document.getElementById('refresh-btn');
-    const updateTimeElement = document.querySelector('.update-time');
     
     // ボタンの状態を更新中に変更
     if (refreshBtn) {
         refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '🔄 更新中...';
+        refreshBtn.textContent = '更新中...';
     }
     
-    // 更新時間の表示を更新
-    if (updateTimeElement) {
-        updateTimeElement.innerHTML = '⏰ データを更新中...';
-    }
-    
-    // POSTリクエストでデータ更新
+    // POSTリクエストでデータ更新後、ページをリロード（sectorページと同じ方法）
     fetch(window.location.href, {
         method: 'POST',
         headers: {
@@ -139,46 +133,27 @@ function refreshFedData() {
         console.log('Refresh response:', data);
         
         if (data.success) {
-            // データを更新
-            updateAllTables(data.fed_data);
-            
-            // localStorageにもデータを保存
-            saveFedDataToLocalStorage(data.fed_data, data.update_time);
-            
-            // 更新時間を更新
-            if (updateTimeElement && data.update_time) {
-                updateTimeElement.innerHTML = `⏰ 最終更新: <span id="update-time">${data.update_time}</span> (JST)`;
-            }
-            
-            // 成功メッセージを表示
-            if (data.message) {
-                showNotification(data.message, 'success');
-            }
-            
-            // 保存された状態を復元
-            restorePageState();
-            
-            // アクティブなカードのテーブルを再表示
-            const activeCard = document.querySelector('.date-card.active');
-            if (activeCard) {
-                const activeDate = activeCard.getAttribute('data-date');
-                updateTable(activeDate);
-            }
-            
+            // 成功時はページをリロード
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         } else {
             console.error('Refresh failed:', data.error);
             showNotification('データの更新に失敗しました: ' + data.error, 'error');
+            // ボタンの状態を元に戻す
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = '🔄 更新';
+            }
         }
     })
     .catch(error => {
         console.error('Refresh request failed:', error);
         showNotification('ネットワークエラーが発生しました', 'error');
-    })
-    .finally(() => {
         // ボタンの状態を元に戻す
         if (refreshBtn) {
             refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '🔄 更新';
+            refreshBtn.textContent = '🔄 更新';
         }
     });
 }
