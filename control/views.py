@@ -421,7 +421,7 @@ def fetch_via_proxy_chain():
         "https://api.codetabs.com/v1/proxy/?quest="
     ]
     
-    target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+    target_url = "https://www.investing.com/central-banks/fed-rate-monitor"
     
     for proxy_url in proxy_services:
         try:
@@ -453,20 +453,20 @@ def fetch_via_proxy_chain():
 def fetch_with_rate_limiting():
     """レート制限とローテーション機能付きの直接アクセス"""
     try:
-        target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+        target_url = "https://www.investing.com/central-banks/fed-rate-monitor"
         session = requests.Session()
         
         # ユーザーエージェントをローテーション
         headers = get_rotating_headers()
         
         # より自然なアクセスパターン
-        # 1. まず日本版サイトのトップページを訪問
-        print("Visiting jp.investing.com homepage...")
-        session.get("https://jp.investing.com/", headers=headers, timeout=10)
+        # 1. まずInvesting.comのトップページを訪問
+        print("Visiting investing.com homepage...")
+        session.get("https://www.investing.com/", headers=headers, timeout=10)
         time.sleep(random.uniform(2, 5))
         
         # 2. 検索ページを経由
-        search_url = "https://jp.investing.com/search/"
+        search_url = "https://www.investing.com/search/"
         session.get(search_url, headers=headers, timeout=10)
         time.sleep(random.uniform(1, 3))
         
@@ -513,9 +513,6 @@ def get_rotating_headers():
         'Sec-Fetch-Site': 'cross-site',
         'Cache-Control': 'max-age=0'
     }
-
-
-
 
 def get_cached_fed_data():
     """Get cached fed data for initial load"""
@@ -571,7 +568,7 @@ def index(request):
             if data.get('action') == 'refresh':
                 print("Manual refresh requested")
                 fed_data = load_fed_data()
-                update_time = datetime.now(TZ_JST).strftime('%Y年%m月%d日 %H:%M:%S')
+                update_time = datetime.now(TZ_JST).strftime('%Y-%m-%d %H:%M:%S')
                 
                 if fed_data:
                     # Cache the new data
