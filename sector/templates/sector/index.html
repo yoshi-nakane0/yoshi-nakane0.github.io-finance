@@ -24,7 +24,7 @@
             <!-- ステータスバー -->
             <div class="status-bar">
                 <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-                <button class="status-bar-item" id="refresh-btn">📊 最新データ取得</button>
+                <button class="status-bar-item" id="refresh-btn">📊 データ取得</button>
                 <button class="status-bar-item" onclick="window.open('https://finance.yahoo.com/sectors', '_blank')">リンク</button>
             </div>
 
@@ -208,7 +208,7 @@
             })
             .finally(() => {
                 refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '📊 最新データ取得';
+                refreshBtn.innerHTML = '📊 データ取得';
             });
         }
 

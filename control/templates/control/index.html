@@ -33,12 +33,7 @@
 
       <!-- FedWatch Tool -->
       <div class="schedule-date">
-        <h1 class="fedwatch-title">💼📈 Fed Watch Tool - 金利政策確率予測</h1>
-        <div class="subtitle-card">
-          <h3>🎯 FOMC会合別 金利確率の変化を追跡</h3>
-          <p>📊 データは市場の期待値を反映しています</p>
-        </div>
-        
+        <h1 class="fedwatch-title">📈 Fed Rate Monitor Tool</h1>
         <!-- 会合日程選択 -->
         <div class="meeting-section">
           <h3 class="section-title">📅 FOMC会合日程を選択</h3>
@@ -48,7 +43,6 @@
                 <div class="date-card {% if forloop.first %}active{% endif %}" data-date="{{ date }}">
                   <div class="date-icon">📅</div>
                   <h4>{{ date }}</h4>
-                  <p>🏛️ FOMC会合</p>
                 </div>
               {% endif %}
             {% endfor %}
@@ -58,15 +52,10 @@
         <!-- 金利確率テーブル -->
         <div class="table-section">
           <h3 class="section-title">💹 金利確率データ</h3>
-          <div class="legend">
-            <span class="legend-item">🔴 高確率 (>50%)</span>
-            <span class="legend-item">🟡 中確率 (10-50%)</span>
-            <span class="legend-item">⚪ 低確率 (<10%)</span>
-          </div>
           <table class="schedule-table">
             <thead>
               <tr>
-                <th>💰 金利範囲</th>
+                <th>💰 Target Rate</th>
                 <th>📊 Current</th>
                 <th>📈 1D</th>
                 <th>📅 1W</th>

@@ -119,13 +119,13 @@ html, body {
   padding: 8px 6px;
   text-align: left;
   border-bottom: 2px solid var(--border);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .schedule-table td {
   padding: 8px 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 12px;
+  font-size: 15px;
   vertical-align: middle;
 }
 
@@ -164,7 +164,7 @@ html, body {
 .sector-icon-cell {
   width: 35px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .sector-name-cell {
@@ -228,7 +228,7 @@ html, body {
 
 .metric-card p {
   margin: 0;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -249,12 +249,14 @@ html, body {
   font-size: 18px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
+  opacity: 0.5;
 }
 
 #back-to-top:hover {
-  background: #45a049;
+  background: #333333;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  opacity: 0.8;
 }
 
 /* ---------- レスポンシブ ---------- */
@@ -275,7 +277,7 @@ html, body {
   .schedule-table th,
   .schedule-table td {
     padding: 6px 4px;
-    font-size: 11px;
+    font-size: 12px;
   }
   
   .sector-change-cell {
