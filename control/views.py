@@ -15,20 +15,23 @@ import random
 TZ_JST = timezone(timedelta(hours=9))
 
 def fetch_fed_data_from_web():
-    """本番環境対応の複数ソースからFedレートデータを取得"""
+    """ブロック回避対応の複数ソースからFedレートデータを取得"""
     
-    # 本番環境で動作する可能性の高いデータソースを順番に試行
+    # より確実で安全なデータソースを優先順位順で試行
     data_sources = [
-        ('FRED API', fetch_from_fred_api),
-        ('Yahoo Finance API', fetch_from_yahoo_finance),
-        ('CORS Proxy + Investing.com', fetch_via_cors_proxy),
-        ('Investing.com Direct', fetch_fed_data_from_investing),
+        ('Proxy Chain + Investing.com', fetch_via_proxy_chain),
+        ('Scraping API Service', fetch_via_scraping_api),
+        ('Alternative Fed Data API', fetch_from_alternative_api),
+        ('Yahoo Finance Fed Fund', fetch_fed_from_yahoo),
+        ('Direct with Rate Limiting', fetch_with_rate_limiting),
         ('Static Fed Data', fetch_static_fed_data)
     ]
     
     for source_name, fetch_function in data_sources:
         try:
             print(f"Trying {source_name}...")
+            # 各ソース間で少し待機（レート制限対策）
+            time.sleep(random.uniform(1, 2))
             data = fetch_function()
             if data and len(data) > 0:
                 print(f"Successfully fetched from {source_name}")
@@ -42,7 +45,7 @@ def fetch_fed_data_from_web():
 
 def fetch_fed_data_from_investing():
     """investing.comから最新のFedレートデータを取得"""
-    target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+    target_url = "https://www.investing.com/central-banks/fed-rate-monitor"
     
     print(f"Fetching data from: {target_url}")
     
@@ -580,6 +583,193 @@ def create_fed_data_from_rate(current_rate):
     except Exception as e:
         print(f"Fed data creation error: {e}")
         return None
+
+def fetch_via_proxy_chain():
+    """複数のプロキシサーバーチェーンを経由してInvesting.comにアクセス"""
+    proxy_services = [
+        "https://api.allorigins.win/get?url=",
+        "https://cors-anywhere.herokuapp.com/",
+        "https://thingproxy.freeboard.io/fetch/",
+        "https://api.codetabs.com/v1/proxy/?quest="
+    ]
+    
+    target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+    
+    for proxy_url in proxy_services:
+        try:
+            print(f"Trying proxy: {proxy_url[:30]}...")
+            
+            if "allorigins" in proxy_url:
+                # AllOrigins API形式
+                full_url = f"{proxy_url}{requests.utils.quote(target_url, safe='')}"
+                response = requests.get(full_url, timeout=20)
+                if response.status_code == 200:
+                    json_data = response.json()
+                    if json_data.get('contents'):
+                        return parse_investing_data_html(json_data['contents'].encode())
+            else:
+                # 標準プロキシ形式
+                full_url = proxy_url + target_url
+                headers = get_rotating_headers()
+                response = requests.get(full_url, headers=headers, timeout=20)
+                if response.status_code == 200:
+                    return parse_investing_data_html(response.content)
+                    
+        except Exception as e:
+            print(f"Proxy failed: {e}")
+            continue
+    
+    return None
+
+def fetch_via_scraping_api():
+    """専用スクレイピングAPIサービス経由でデータ取得"""
+    try:
+        # ScrapingBee API（無料枠あり）
+        api_url = "https://app.scrapingbee.com/api/v1/"
+        target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+        
+        params = {
+            'api_key': 'demo',  # 実際は環境変数から取得
+            'url': target_url,
+            'render_js': 'false',
+            'premium_proxy': 'true'
+        }
+        
+        response = requests.get(api_url, params=params, timeout=30)
+        if response.status_code == 200:
+            return parse_investing_data_html(response.content)
+        
+        # フォールバック: 別のスクレイピングサービス
+        # ScraperAPI
+        scraper_url = f"http://api.scraperapi.com?api_key=demo&url={target_url}"
+        response = requests.get(scraper_url, timeout=30)
+        if response.status_code == 200:
+            return parse_investing_data_html(response.content)
+            
+    except Exception as e:
+        print(f"Scraping API error: {e}")
+    
+    return None
+
+def fetch_from_alternative_api():
+    """代替のFed金利データAPI"""
+    try:
+        # Alpha Vantage API (Fed Fund Rate)
+        api_key = "demo"  # 実際は環境変数から
+        url = f"https://www.alphavantage.co/query?function=FEDERAL_FUNDS_RATE&interval=monthly&apikey={api_key}"
+        
+        response = requests.get(url, timeout=15)
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data:
+                latest_rate = float(data['data'][0]['value'])
+                return create_fed_data_from_rate(latest_rate)
+                
+        # QUANDL API フォールバック
+        url = "https://www.quandl.com/api/v3/datasets/FRED/FEDFUNDS.json?limit=1"
+        response = requests.get(url, timeout=15)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('dataset', {}).get('data'):
+                latest_rate = data['dataset']['data'][0][1]
+                return create_fed_data_from_rate(latest_rate)
+                
+    except Exception as e:
+        print(f"Alternative API error: {e}")
+    
+    return None
+
+def fetch_fed_from_yahoo():
+    """Yahoo Finance から Fed Fund Rate を取得"""
+    try:
+        # Fed Fund Rate の指標
+        symbols = ["^IRX", "FEDFUNDS=X", "^TNX"]  # 3ヶ月債、Fed Fund Rate、10年債
+        
+        for symbol in symbols:
+            try:
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+                headers = get_rotating_headers()
+                
+                response = requests.get(url, headers=headers, timeout=15)
+                if response.status_code == 200:
+                    data = response.json()
+                    chart_data = data.get('chart', {}).get('result', [])
+                    if chart_data:
+                        meta = chart_data[0].get('meta', {})
+                        current_price = meta.get('regularMarketPrice')
+                        if current_price:
+                            return create_fed_data_from_rate(current_price)
+            except:
+                continue
+                
+    except Exception as e:
+        print(f"Yahoo Fed data error: {e}")
+    
+    return None
+
+def fetch_with_rate_limiting():
+    """レート制限とローテーション機能付きの直接アクセス"""
+    try:
+        target_url = "https://jp.investing.com/central-banks/fed-rate-monitor"
+        session = requests.Session()
+        
+        # ユーザーエージェントをローテーション
+        headers = get_rotating_headers()
+        
+        # より自然なアクセスパターン
+        # 1. まず日本版サイトのトップページを訪問
+        print("Visiting jp.investing.com homepage...")
+        session.get("https://jp.investing.com/", headers=headers, timeout=10)
+        time.sleep(random.uniform(2, 5))
+        
+        # 2. 検索ページを経由
+        search_url = "https://jp.investing.com/search/"
+        session.get(search_url, headers=headers, timeout=10)
+        time.sleep(random.uniform(1, 3))
+        
+        # 3. 最終的にターゲットページへ
+        headers['Referer'] = search_url
+        response = session.get(target_url, headers=headers, timeout=20)
+        
+        if response.status_code == 200:
+            return parse_investing_data_html(response.content)
+        else:
+            print(f"Rate limited access failed: {response.status_code}")
+            
+    except Exception as e:
+        print(f"Rate limited access error: {e}")
+    
+    return None
+
+def get_rotating_headers():
+    """ローテーション用のHTTPヘッダーを生成"""
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0'
+    ]
+    
+    accept_languages = [
+        'ja-JP,ja;q=0.9,en;q=0.8',
+        'ja;q=0.9,en-US;q=0.8,en;q=0.7',
+        'ja-JP,ja;q=0.8,en-US;q=0.5,en;q=0.3'
+    ]
+    
+    return {
+        'User-Agent': random.choice(user_agents),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': random.choice(accept_languages),
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Cache-Control': 'max-age=0'
+    }
 
 
 
