@@ -1,8 +1,8 @@
-# schedule_calendar/urls.py
+# events/urls.py
 from django.urls import path
 from . import views
 
-app_name = 'schedule_calendar'
+app_name = 'events'
 
 urlpatterns = [
     path('', views.index, name='index'),

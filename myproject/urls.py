@@ -6,7 +6,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # トップページ → dashboard.urls
     path('', include('dashboard.urls')),
-    path('calendar/', include('schedule_calendar.urls')),
+    path('calendar/', include('events.urls')),
     path('prompt/', include('prompt.urls')),
     path('earning/', include('earning.urls')),
     path('sector/', include('sector.urls')),

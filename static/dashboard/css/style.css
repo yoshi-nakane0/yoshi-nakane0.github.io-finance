@@ -118,3 +118,8 @@ body {
   .bi{
     font-size: 20px;
   }
+
+/* Bootstrap minimal styles - only what's needed */
+.bg-dark {
+    background-color: #212529 !important;
+}

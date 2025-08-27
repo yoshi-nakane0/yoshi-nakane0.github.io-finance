@@ -13,7 +13,7 @@ body {
     position: relative;
     overflow: hidden;
   }
-.schedule-container {
+.events-container {
     font-family: sans-serif;
     background-color: #1E1E2E; /* style1のbody背景色と統一 */
     color: #ffffff;
@@ -46,11 +46,11 @@ body {
 }
 
 /* 日付ごとのセクション */
-.schedule-date {
+.events-date {
     margin-bottom: 20px;
 }
 
-.schedule-date-title {
+.events-date-title {
     color: #ffffff;
     font-size: 14px;
     margin-bottom: 0px;
@@ -58,13 +58,13 @@ body {
 }
 
 /* テーブルコンテナ (スクロール用) */
-.schedule-table-container {
+.events-table-container {
     overflow-x: auto;
     width: 100%;
 }
 
 /* テーブル本体 */
-.schedule-table {
+.events-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
@@ -72,7 +72,7 @@ body {
 }
 
 /* テーブルヘッダー */
-.schedule-table th {
+.events-table th {
     background-color: #2D2D44; /* style1のbottom-navと同じ色 */
     border: 1px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
     padding: 3px;
@@ -83,7 +83,7 @@ body {
 }
 
 /* テーブルセル */
-.schedule-table td {
+.events-table td {
     border: 1px solid rgba(255, 255, 255, 0.2); /* 境界線を薄く */
     padding: 3px;
     font-size: 13px;
@@ -95,42 +95,42 @@ body {
 }
 
 /* 列幅の調整 */
-.schedule-table th:nth-child(1),
-.schedule-table td:nth-child(1) { /* 時間 */
+.events-table th:nth-child(1),
+.events-table td:nth-child(1) { /* 時間 */
     width: 50px;
     font-size: 13px;
     padding: 2px;
     white-space: nowrap;
 }
 
-.schedule-table th:nth-child(2),
-.schedule-table td:nth-child(2) { /* 国 */
+.events-table th:nth-child(2),
+.events-table td:nth-child(2) { /* 国 */
     width: 50px;
 }
 
-.schedule-table th:nth-child(3),
-.schedule-table td:nth-child(3) { /* 指標 */
+.events-table th:nth-child(3),
+.events-table td:nth-child(3) { /* 指標 */
     width: 200px;
 }
 
-.schedule-table th:nth-child(4),
-.schedule-table td:nth-child(4) { /* ★ */
+.events-table th:nth-child(4),
+.events-table td:nth-child(4) { /* ★ */
     width: 50px;
 }
 
 /* 重要イベントのスタイル - 変更しない */
-table.schedule-table td.event-cell.important-event {
+table.events-table td.event-cell.important-event {
     color: #f99393 !important; /* 指標の文字色 */
 }
 
-table.schedule-table td.impact-cell.important-impact {
+table.events-table td.impact-cell.important-impact {
     color: #f99393 !important; /* 重要度の文字色 */
 }
 
 /* 中央揃えにするセル */
-.schedule-table td:nth-child(1),
-.schedule-table td:nth-child(2),
-.schedule-table td:nth-child(4)
+.events-table td:nth-child(1),
+.events-table td:nth-child(2),
+.events-table td:nth-child(4)
 {
     text-align: center;
 }

@@ -16,7 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',   
     'dashboard',
-    'schedule_calendar',
+    'events',
     'prompt',
     'earning',
     'sector',

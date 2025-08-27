@@ -6,9 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Market Analysis</title>
 
-  <!-- Bootstrap Local -->
-  <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap/css/bootstrap.min.css' %}">
-  <!-- Bootstrap Icons Local -->
+  <!-- Preload critical resources -->
+  <link rel="preload" href="{% static 'dashboard/css/style.css' %}" as="style">
+  <link rel="preload" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.woff2' %}" as="font" type="font/woff2" crossorigin>
+  
+  <!-- Bootstrap Icons Local - only what's needed -->
   <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
 
   <!-- style.cssの読み込み -->
@@ -83,7 +85,6 @@
 
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS removed - not needed for this simple dashboard -->
 </body>
 </html>

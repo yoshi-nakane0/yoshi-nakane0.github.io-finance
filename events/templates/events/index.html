@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule</title>
+    <title>Events</title>
     
     <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
@@ -13,19 +13,19 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     <!-- style.cssの読み込み -->
-    <link rel="stylesheet" href="{% static 'schedule/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'events/css/style.css' %}">
 </head>
 
 <body class="bg-dark">
     <!-- コンテンツ -->
     <div class="app-container">
-        <div class="schedule-container">
+        <div class="events-container">
             <div class="status-bar">
                 <button class="status-bar-item" onclick="location.href='/'">ホーム</button>
                 <button class="status-bar-item" id="toggle-past-events">切替</button>
                 <button class="status-bar-item" onclick="window.open('https://www.forexfactory.com/calendar', '_blank')">リンク</button>
             </div>
-            <div class="schedule-content">
+            <div class="events-content">
                 <!-- JavaScriptでここにデータを挿入 -->
             </div>
         </div>
@@ -39,7 +39,7 @@
             let data = [];
 
             function fetchAndParseCSV() {
-                return fetch("{% static 'schedule/data.csv' %}")
+                return fetch("{% static 'events/data.csv' %}")
                   .then(response => response.text())
                   .then(csvText => parseCSV(csvText));
             }
@@ -60,7 +60,7 @@
             }
 
             let showPastEvents = false;
-            const scheduleContent = document.querySelector('.schedule-content');
+            const eventsContent = document.querySelector('.events-content');
             const toggleButton = document.getElementById('toggle-past-events');
 
             function renderSchedule() {
@@ -72,24 +72,24 @@
                     return acc;
                 }, {});
 
-                scheduleContent.innerHTML = '';
+                eventsContent.innerHTML = '';
 
                 Object.entries(groupedEvents)
                     .filter(([date]) => showPastEvents || date >= today)
                     .forEach(([date, events]) => {
                         const dateDiv = document.createElement('div');
-                        dateDiv.className = 'schedule-date';
+                        dateDiv.className = 'events-date';
 
                         const dateTitle = document.createElement('h2');
-                        dateTitle.className = 'schedule-date-title';
+                        dateTitle.className = 'events-date-title';
                         dateTitle.textContent = date;
                         dateDiv.appendChild(dateTitle);
 
                         const tableContainer = document.createElement('div');
-                        tableContainer.className = 'schedule-table-container';
+                        tableContainer.className = 'events-table-container';
 
                         const table = document.createElement('table');
-                        table.className = 'schedule-table';
+                        table.className = 'events-table';
                         table.innerHTML = `
                             <thead>
                                 <tr>
@@ -116,7 +116,7 @@
                         `;
                         tableContainer.appendChild(table);
                         dateDiv.appendChild(tableContainer);
-                        scheduleContent.appendChild(dateDiv);
+                        eventsContent.appendChild(dateDiv);
                     });
 
                 // 重要度に基づいてスタイルを適用 (修正)
