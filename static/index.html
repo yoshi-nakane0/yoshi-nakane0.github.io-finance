@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Market Analysis</title>
+
+  <!-- Bootstrap Local -->
+  <link rel="stylesheet" href="/static/dashboard/vendor/bootstrap/css/bootstrap.min.css">
+  <!-- Bootstrap Icons Local -->
+  <link rel="stylesheet" href="/static/dashboard/vendor/bootstrap-icons/bootstrap-icons.css">
+
+  <!-- style.cssの読み込み -->
+  <link rel="stylesheet" href="/static/dashboard/css/style.css">
+  <link rel="icon" type="image/x-icon" href="/static/images/ico/favicon.ico">
+  <link rel="icon" type="image/png" href="/static/images/ico/favicon.png">
+</head>
+
+<body class="bg-dark">
+  <!-- コンテンツ -->
+  <div class="app-container">
+    <div class="content">
+      <div class="menu-grid">
+
+        <!-- Calendarボタン -->
+        <div class="menu-item-wrapper schedule">
+          <a href="/calendar/" class="menu-item">
+            <div class="icon-wrapper schedule-icon"><i class="bi bi-calendar-week"></i></div>
+            <span>Calendar</span>
+          </a>
+        </div>
+
+        <!-- Earningボタン -->
+        <div class="menu-item-wrapper earning">
+          <a href="/earning/" class="menu-item">
+            <div class="icon-wrapper earning-icon"><i class="bi bi-bank"></i></div>
+            <span>Earning</span>
+          </a>
+        </div>
+
+        <!-- Sectorボタン -->
+        <div class="menu-item-wrapper target">
+          <a href="/sector/" class="menu-item">
+            <div class="icon-wrapper target-icon"><i class="bi bi-bullseye"></i></div>
+            <span>Sector</span>
+          </a>
+        </div>
+
+        <!-- Promptボタン -->
+        <div class="menu-item-wrapper prompt">
+          <a href="/prompt/" class="menu-item">
+            <div class="icon-wrapper prompt-icon"><i class="bi bi-newspaper"></i></div>
+            <span>Prompt</span>
+          </a>
+        </div>
+
+        <!-- Controlボタン -->
+        <div class="menu-item-wrapper control">
+          <a href="/control/" class="menu-item">
+            <div class="icon-wrapper control-icon"><i class="bi bi-sliders"></i></div>
+            <span>Control</span>
+          </a>
+        </div>
+
+        <!-- Trendingボタン -->
+        <div class="menu-item-wrapper trending">
+          <a href="/trending/" class="menu-item">
+            <div class="icon-wrapper trending-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <span>Trending</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ナビゲーションバー (下部固定) -->
+    <div class="bottom-nav">
+        <a class="nav-button" href="/calendar/"><i class="bi bi-calendar-week"></i></a>
+        <a class="nav-button" href="/prompt/"><i class="bi bi-newspaper"></i></a>
+        <a class="nav-button" href="/trending/"><i class="bi bi-graph-up-arrow"></i></a>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
