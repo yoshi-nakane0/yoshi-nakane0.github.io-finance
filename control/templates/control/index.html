@@ -1,97 +1,24 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>💰 Fed Watch Tool - 金利政策確率</title>
-
-  <!-- Bootstrap -->
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
-
-  <!-- カスタム CSS -->
-  <link rel="stylesheet" href="{% static 'control/css/style.css' %}" />
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'control/css/style.css' %}">
 </head>
-<body>
-  <div class="app-container">
-    <div class="schedule-container">
+<body class="bg-dark">
+    <div class="container mt-5">
+        <h1 class="text-white">Control</h1>
+        <p class="text-white">This is the Control page.</p>
 
-      <!-- ステータスバー -->
-      <div class="status-bar">
-        <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-        <button class="status-bar-item" id="refresh-btn">🔄 更新</button>
-      </div>
+       <!-- 戻るボタン (例) -->
+        <a href="/" class="btn btn-primary">Back to Dashboard</a>
+    </div>
 
-      <!-- 更新時間 -->
-      <div class="update-time">
-        ⏰ 最終更新: <span id="update-time">{{ update_time }}</span> (JST)
-      </div>
-
-      <!-- FedWatch Tool -->
-      <div class="schedule-date">
-        <h1 class="fedwatch-title">📈 Fed Rate Monitor Tool</h1>
-        <!-- 会合日程選択 -->
-        <div class="meeting-section">
-          <h3 class="section-title">📅 FOMC会合日程を選択</h3>
-          <div id="fed-meeting-dates" class="meeting-dates grid-3x3">
-            {% for date, probabilities in fed_data.items %}
-              {% if forloop.counter <= 9 %}
-                <div class="date-card {% if forloop.first %}active{% endif %}" data-date="{{ date }}">
-                  <div class="date-icon">📅</div>
-                  <h4>{{ date }}</h4>
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-
-        <!-- 金利確率テーブル -->
-        <div class="table-section">
-          <h3 class="section-title">💹 金利確率データ</h3>
-          <table class="schedule-table">
-            <thead>
-              <tr>
-                <th>💰 Target Rate</th>
-                <th>📊 Current</th>
-                <th>📈 1D</th>
-                <th>📅 1W</th>
-              </tr>
-            </thead>
-          <tbody id="fed-probabilities">
-            {% for date, probabilities in fed_data.items %}
-              {% if forloop.first %}
-                {% for prob in probabilities %}
-                  <tr class="prob-row {{ prob.type }}">
-                    <td class="rate-cell">{{ prob.range }}</td>
-                    <td class="prob-cell">{{ prob.current }}</td>
-                    <td class="prob-cell">{{ prob.oneDay }}</td>
-                    <td class="prob-cell">{{ prob.oneWeek }}</td>
-                  </tr>
-                {% endfor %}
-              {% endif %}
-            {% endfor %}
-          </tbody>
-          </table>
-        </div>
-
-      </div>
-
-    </div><!-- /.schedule-container -->
-
-    <!-- トップに戻る -->
-    <button id="back-to-top" title="Go to top"><i class="bi bi-arrow-up"></i></button>
-  </div><!-- /.app-container -->
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" defer></script>
-  <!-- サーバーサイドデータを JavaScript に渡す -->
-  <script id="django-data" type="application/json">{{ fed_data_json|safe }}</script>
-  <div id="update-time-data" data-update-time="{{ update_time }}" style="display: none;"></div>
-  <!-- 自作 JS (最後に defer で) -->
-  <script src="{% static 'control/js/control.js' %}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
