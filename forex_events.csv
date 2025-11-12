@@ -1,0 +1,130 @@
+date,time,currency,event,impact
+2025-12-01,08:50,JPY,Capital Spending q/y,★
+2025-12-01,09:30,JPY,Final Manufacturing PMI,★
+2025-12-01,23:45,USD,Final Manufacturing PMI,★
+2025-12-02,00:00,USD,ISM Manufacturing PMI,★★★
+2025-12-02,00:00,USD,ISM Manufacturing Prices,★★
+2025-12-02,00:00,USD,Construction Spending m/m,★
+2025-12-02,00:00,USD,Wards Total Vehicle Sales,★
+2025-12-02,08:50,JPY,Monetary Base y/y,★
+2025-12-02,12:35,JPY,10-y Bond Auction,★
+2025-12-02,14:00,JPY,Consumer Confidence,★
+2025-12-03,00:00,USD,JOLTS Job Openings,★★★
+2025-12-03,00:00,USD,RCM/TIPP Economic Optimism,★
+2025-12-03,06:30,USD,API Weekly Statistical Bulletin,★
+2025-12-03,22:15,USD,ADP Non-Farm Employment Change,★★★
+2025-12-03,23:45,USD,Final Services PMI,★
+2025-12-04,00:00,USD,ISM Services PMI,★★★
+2025-12-04,00:30,USD,Crude Oil Inventories,★
+2025-12-04,21:30,USD,Challenger Job Cuts y/y,★
+2025-12-04,22:30,USD,Unemployment Claims,★★★
+2025-12-04,22:30,USD,Trade Balance,★
+2025-12-05,00:30,USD,Natural Gas Storage,★
+2025-12-05,08:30,JPY,Household Spending y/y,★
+2025-12-05,12:35,JPY,30-y Bond Auction,★
+2025-12-05,14:00,JPY,Leading Indicators,★
+2025-12-05,22:30,USD,Average Hourly Earnings m/m,★★★
+2025-12-05,22:30,USD,Non-Farm Employment Change,★★★
+2025-12-05,22:30,USD,Unemployment Rate,★★★
+2025-12-06,00:00,USD,Prelim UoM Consumer Sentiment,★★★
+2025-12-06,00:00,USD,Prelim UoM Inflation Expectations,★★★
+2025-12-06,00:00,USD,Factory Orders m/m,★
+2025-12-06,05:00,USD,Consumer Credit m/m,★
+2025-12-08,08:30,JPY,Average Cash Earnings y/y,★
+2025-12-08,08:50,JPY,Bank Lending y/y,★
+2025-12-08,08:50,JPY,Current Account,★
+2025-12-08,08:50,JPY,Final GDP Price Index y/y,★
+2025-12-08,08:50,JPY,Final GDP q/q,★
+2025-12-08,14:00,JPY,Economy Watchers Sentiment,★
+2025-12-09,08:50,JPY,M2 Money Stock y/y,★
+2025-12-09,20:00,USD,NFIB Small Business Index,★
+2025-12-09,22:30,USD,Revised Nonfarm Productivity q/q,★
+2025-12-09,22:30,USD,Revised Unit Labor Costs q/q,★
+2025-12-10,03:01,USD,10-y Bond Auction,★
+2025-12-10,06:30,USD,API Weekly Statistical Bulletin,★
+2025-12-10,08:50,JPY,PPI y/y,★
+2025-12-10,15:00,JPY,Prelim Machine Tool Orders y/y,★
+2025-12-10,22:30,USD,Core CPI m/m,★★★
+2025-12-10,22:30,USD,CPI m/m,★★★
+2025-12-10,22:30,USD,CPI y/y,★★★
+2025-12-11,00:00,USD,Final Wholesale Inventories m/m,★
+2025-12-11,00:30,USD,Crude Oil Inventories,★
+2025-12-11,04:00,USD,Federal Funds Rate,★★★
+2025-12-11,04:00,USD,FOMC Economic Projections,★★★
+2025-12-11,04:00,USD,FOMC Statement,★★★
+2025-12-11,04:00,USD,Federal Budget Balance,★
+2025-12-11,04:30,USD,FOMC Press Conference,★★★
+2025-12-11,08:50,JPY,BSI Manufacturing Index,★
+2025-12-11,22:30,USD,Core PPI m/m,★★★
+2025-12-11,22:30,USD,PPI m/m,★★★
+2025-12-11,22:30,USD,Unemployment Claims,★★★
+2025-12-12,00:30,USD,Natural Gas Storage,★
+2025-12-12,03:01,USD,30-y Bond Auction,★
+2025-12-12,13:30,JPY,Revised Industrial Production m/m,★
+2025-12-15,08:50,JPY,Tankan Manufacturing Index,★
+2025-12-15,08:50,JPY,Tankan Non-Manufacturing Index,★
+2025-12-15,13:30,JPY,Tertiary Industry Activity m/m,★
+2025-12-15,22:30,USD,Empire State Manufacturing Index,★★
+2025-12-16,00:00,USD,NAHB Housing Market Index,★
+2025-12-16,09:30,JPY,Flash Manufacturing PMI,★
+2025-12-16,22:30,USD,Building Permits,★
+2025-12-16,22:30,USD,Housing Starts,★
+2025-12-16,22:30,USD,Import Prices m/m,★
+2025-12-16,23:15,USD,Capacity Utilization Rate,★
+2025-12-16,23:15,USD,Industrial Production m/m,★
+2025-12-16,23:45,USD,Flash Manufacturing PMI,★★★
+2025-12-16,23:45,USD,Flash Services PMI,★★★
+2025-12-17,06:30,USD,API Weekly Statistical Bulletin,★
+2025-12-17,08:50,JPY,Core Machinery Orders m/m,★
+2025-12-17,08:50,JPY,Trade Balance,★
+2025-12-17,22:30,USD,Core Retail Sales m/m,★★★
+2025-12-17,22:30,USD,Retail Sales m/m,★★★
+2025-12-18,00:00,USD,Business Inventories m/m,★
+2025-12-18,00:30,USD,Crude Oil Inventories,★
+2025-12-18,22:30,USD,Unemployment Claims,★★★
+2025-12-18,22:30,USD,Philly Fed Manufacturing Index,★★
+2025-12-18,22:30,USD,Current Account,★
+2025-12-19,00:00,USD,CB Leading Index m/m,★
+2025-12-19,00:30,USD,Natural Gas Storage,★
+2025-12-19,06:00,USD,TIC Long-Term Purchases,★
+2025-12-19,08:30,JPY,National Core CPI y/y,★
+2025-12-19,00:00,JPY,BOJ Policy Rate,★★★
+2025-12-19,00:00,JPY,Monetary Policy Statement,★★★
+2025-12-19,00:00,JPY,BOJ Press Conference,★★★
+2025-12-19,22:30,USD,Final GDP q/q,★★★
+2025-12-19,22:30,USD,Final GDP Price Index q/q,★★
+2025-12-20,00:00,USD,Core PCE Price Index m/m,★★★
+2025-12-20,00:00,USD,Existing Home Sales,★★
+2025-12-20,00:00,USD,Revised UoM Consumer Sentiment,★★
+2025-12-20,00:00,USD,Personal Income m/m,★
+2025-12-20,00:00,USD,Personal Spending m/m,★
+2025-12-20,00:00,USD,Revised UoM Inflation Expectations,★
+2025-12-23,14:00,JPY,BOJ Core CPI y/y,★
+2025-12-24,00:00,USD,CB Consumer Confidence,★★
+2025-12-24,00:00,USD,New Home Sales,★★
+2025-12-24,00:00,USD,Richmond Manufacturing Index,★★
+2025-12-24,06:30,USD,API Weekly Statistical Bulletin,★
+2025-12-24,08:50,JPY,Monetary Policy Meeting Minutes,★
+2025-12-24,08:50,JPY,SPPI y/y,★
+2025-12-24,22:30,USD,Unemployment Claims,★★★
+2025-12-24,22:30,USD,Core Durable Goods Orders m/m,★★
+2025-12-24,22:30,USD,Durable Goods Orders m/m,★★
+2025-12-25,00:30,USD,Crude Oil Inventories,★
+2025-12-25,02:00,USD,Natural Gas Storage,★
+2025-12-25,14:00,JPY,Housing Starts y/y,★
+2025-12-25,00:00,USD,Bank Holiday,
+2025-12-26,08:30,JPY,Tokyo Core CPI y/y,★★
+2025-12-26,08:30,JPY,Unemployment Rate,★
+2025-12-26,08:50,JPY,Prelim Industrial Production m/m,★
+2025-12-26,08:50,JPY,Retail Sales y/y,★
+2025-12-28,08:50,JPY,BOJ Summary of Opinions,★
+2025-12-29,22:30,USD,Goods Trade Balance,★
+2025-12-29,22:30,USD,Prelim Wholesale Inventories m/m,★
+2025-12-30,00:00,USD,Pending Home Sales m/m,★★
+2025-12-30,23:00,USD,HPI m/m,★
+2025-12-30,23:00,USD,S&P/CS Composite-20 HPI y/y,★
+2025-12-30,23:45,USD,Chicago PMI,★
+2025-12-31,04:00,USD,FOMC Meeting Minutes,★★★
+2025-12-31,06:30,USD,API Weekly Statistical Bulletin,★
+2025-12-31,00:00,JPY,Bank Holiday,
+2025-12-31,22:30,USD,Unemployment Claims,★★★

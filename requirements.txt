@@ -16,6 +16,6 @@ urllib3==1.26.6
 whitenoise>=5.0
 #selenium==4.27.1 # 必要に応じてコメントアウトを外す
 #chromedriver-binary-auto==0.3.1 # 必要に応じてコメントアウトを外す
-#webdriver-manager==4.0.2 # 必要に応じてコメントアウトを外す
+webdriver-manager==4.0.2
 #yt-dlp==2024.12.6  # 必要に応じてコメントアウトを外す
 #youtube-dl==2021.12.17 # 必要に応じてコメントアウトを外す
