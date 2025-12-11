@@ -6,14 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Market Analysis</title>
 
-  <!-- Preload critical resources -->
-  <link rel="preload" href="{% static 'dashboard/css/style.css' %}" as="style">
-  <link rel="preload" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.woff2' %}" as="font" type="font/woff2" crossorigin>
-  
-  <!-- Bootstrap Icons Local - only what's needed -->
-  <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
-
   <!-- style.cssの読み込み -->
+  <link rel="preload" href="{% static 'dashboard/css/style.css' %}" as="style">
   <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
   <link rel="icon" type="image/x-icon" href="{% static 'images/ico/favicon.ico' %}">
   <link rel="icon" type="image/png" href="{% static 'images/ico/favicon.png' %}">
@@ -28,7 +22,13 @@
         <!-- Calendarボタン -->
         <div class="menu-item-wrapper schedule"> <!-- icon-button から menu-item-wrapper に変更 -->
           <a href="/calendar/" class="menu-item"> <!-- icon-button から menu-item に変更 -->
-            <div class="icon-wrapper schedule-icon"><i class="bi bi-calendar-week"></i></div> <!-- icon-circle から icon-wrapper に変更 -->
+            <div class="icon-wrapper schedule-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="4" y="5.5" width="16" height="15" rx="2"></rect>
+                <path d="M8 3.5v4m8-4v4M4 10.5h16"></path>
+                <path d="M8 14h2m4 0h2m-8 3h2m4 0h2"></path>
+              </svg>
+            </div>
             <span>Events</span> <!-- div を span に変更 -->
           </a>
         </div>
@@ -36,7 +36,13 @@
         <!-- Earningボタン -->
         <div class="menu-item-wrapper earning">
           <a href="{% url 'earning:index' %}" class="menu-item">
-            <div class="icon-wrapper earning-icon"><i class="bi bi-bank"></i></div>
+            <div class="icon-wrapper earning-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 9h16l-8-4z"></path>
+                <path d="M5 10v7m3-7v7m4-7v7m3-7v7m3-7v7"></path>
+                <path d="M3 18h18"></path>
+              </svg>
+            </div>
             <span>Earning</span>
           </a>
         </div>
@@ -44,7 +50,13 @@
         <!-- Sectorボタン -->
         <div class="menu-item-wrapper target">
           <a href="/sector/" class="menu-item">
-            <div class="icon-wrapper target-icon"><i class="bi bi-bullseye"></i></div>
+            <div class="icon-wrapper target-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="8"></circle>
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 4v2m0 12v2m-8-8h2m12 0h2"></path>
+              </svg>
+            </div>
             <span>Sector</span>
           </a>
         </div>
@@ -52,7 +64,12 @@
         <!-- Trendingボタン -->
         <div class="menu-item-wrapper trending">
           <a href="{% url 'trending:index' %}" class="menu-item">
-            <div class="icon-wrapper trending-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="icon-wrapper trending-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 17l6-6 4 4 6-8"></path>
+                <path d="M14 7h6v6"></path>
+              </svg>
+            </div>
             <span>Trending</span>
           </a>
         </div>
@@ -60,7 +77,14 @@
         <!-- Controlボタン -->
         <div class="menu-item-wrapper control">
           <a href="{% url 'control:index' %}" class="menu-item">
-            <div class="icon-wrapper control-icon"><i class="bi bi-sliders"></i></div>
+            <div class="icon-wrapper control-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 5v14"></path>
+                <path d="M6 9h4m-4 6h4"></path>
+                <path d="M14 5v14"></path>
+                <path d="M14 7h4m-4 8h4"></path>
+              </svg>
+            </div>
             <span>Control</span>
           </a>
         </div>
@@ -68,7 +92,12 @@
         <!-- Promptボタン -->
         <div class="menu-item-wrapper prompt">
           <a href="{% url 'prompt:index' %}" class="menu-item">
-            <div class="icon-wrapper prompt-icon"><i class="bi bi-newspaper"></i></div>
+            <div class="icon-wrapper prompt-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="5" y="4" width="14" height="16" rx="2"></rect>
+                <path d="M8 8h8M8 12h8M8 16h4"></path>
+              </svg>
+            </div>
             <span>Prompt</span>
           </a>
         </div>

@@ -53,6 +53,15 @@ body {
     /* グラデーション色の設定 (icon-wrapper に適用) */
     font-size: 20px;
   }
+  .icon-wrapper svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
 
   .menu-item span {
     margin-top: 8px;
@@ -73,6 +82,15 @@ body {
     border: none;
     color: #B3B3B3;
     cursor: pointer;
+  }
+  .nav-button svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
   }
   .nav-button.active {
     color: #f1eaed83;
@@ -114,9 +132,6 @@ body {
   }
   .trending-icon {
     background: linear-gradient(145deg, #50ff8c, #75ffac);
-  }
-  .bi{
-    font-size: 20px;
   }
 
 /* Bootstrap minimal styles - only what's needed */
