@@ -1,24 +1,474 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control</title>
+    <title>Control - Fundamental Analysis</title>
+    <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Style -->
     <link rel="stylesheet" href="{% static 'control/css/style.css' %}">
 </head>
 <body class="bg-dark">
-    <div class="container mt-5">
-        <h1 class="text-white">Control</h1>
-        <p class="text-white">This is the Control page.</p>
+    <div class="app-container">
+        <div class="schedule-container">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-bar-right">
+                    <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
+                </div>
+            </div>
 
-       <!-- 戻るボタン (例) -->
-        <a href="/" class="btn btn-primary">Back to Dashboard</a>
+            <!-- Filter Buttons (JP / US) -->
+            <div class="filter-buttons">
+                <button class="filter-btn active" id="btn-jp">JP (Japan)</button>
+                <button class="filter-btn" id="btn-us">US (America)</button>
+            </div>
+
+            <!-- =========================
+                 JP View 
+                 ========================= -->
+            <div id="jp-view" class="view-section">
+                <!-- Header -->
+                <div class="earnings-container">
+                    <div class="date-header">
+                        <h3 class="date-title">🇯🇵 日経225先物 (Nikkei 225)</h3>
+                    </div>
+                    
+                    <!-- Prediction -->
+                    <div class="prediction-box">
+                        <div class="prediction-label">Long/Short Expectation</div>
+                        <div class="prediction-score">-- %</div>
+                        <div style="margin-top:5px;">
+                            <span class="badge-neutral">Neutral</span>
+                        </div>
+                        <div class="last-updated">Updated: --/--</div>
+                    </div>
+                </div>
+
+                <!-- Macro Indicators -->
+                <div class="earnings-container">
+                    <div class="date-header">
+                        <h3 class="date-title">📊 日本マクロ指標</h3>
+                    </div>
+
+                    <!-- Growth / Business -->
+                    <div class="spec-section-title">成長・景況 (Growth)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Real GDP</div>
+                            <div class="spec-name-jp">実質GDP</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Industrial Production</div>
+                            <div class="spec-name-jp">鉱工業生産</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">BOJ Tankan (Business Conditions DI)</div>
+                            <div class="spec-name-jp">日銀短観［業況DI］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Business Conditions Indices (METI)</div>
+                            <div class="spec-name-jp">経済産業省などの業況指数</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+
+                    <!-- Inflation / Finance -->
+                    <div class="spec-section-title">インフレ・金融 (Inflation/Fin)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">CPI / Core CPI</div>
+                            <div class="spec-name-jp">CPI／コアCPI</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">BOJ Policy Rate / YCC</div>
+                            <div class="spec-name-jp">日銀政策金利・長短金利操作</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">JGB 10-Year Yield</div>
+                            <div class="spec-name-jp">日本国債利回り［10年］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">USD/JPY Exchange Rate</div>
+                            <div class="spec-name-jp">USD/JPY為替レート</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+
+                    <!-- Others -->
+                    <div class="spec-section-title">その他 (Others)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Machinery Orders, Ind. Prod. Index</div>
+                            <div class="spec-name-jp">機械受注、鉱工業生産指数など</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Factors -->
+                <div class="earnings-container">
+                    <div class="date-header">
+                        <h3 class="date-title">🧩 テーマ別ファクター</h3>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">1. Growth Factor</div>
+                            <div class="spec-name-jp">成長ファクター</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">2. Inflation/Fin Factor</div>
+                            <div class="spec-name-jp">インフレ・金融ファクター</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">3. US Linked Factor</div>
+                            <div class="spec-name-jp">米国連動ファクター</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================
+                 US View 
+                 ========================= -->
+            <div id="us-view" class="view-section" style="display: none;">
+                <!-- Header -->
+                <div class="earnings-container">
+                    <div class="date-header">
+                        <h3 class="date-title">🇺🇸 Market Expectations</h3>
+                    </div>
+
+                    <div class="prediction-box">
+                        <div class="prediction-label">Long/Short Expectation</div>
+                        <div class="prediction-score">-- %</div>
+                        <div style="margin-top:5px;">
+                            <span class="badge-neutral">Neutral</span>
+                        </div>
+                        <div class="last-updated">Updated: --/--</div>
+                    </div>
+                </div>
+
+
+                <!-- Macro Indicators -->
+                <div class="earnings-container">
+                    <div class="date-header">
+                        <h3 class="date-title">📊 米国マクロ指標</h3>
+                    </div>
+                    
+                    <!-- Growth -->
+                    <div class="spec-section-title">成長 (Growth)</div>
+                    <div class="spec-item" onclick="location.href='{% url 'control:us_macro_gdp' %}'" style="cursor: pointer;">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Real GDP (Quarterly)</div>
+                            <div class="spec-name-jp">実質GDP［四半期］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item" onclick="location.href='{% url 'control:us_macro_ism' %}'" style="cursor: pointer;">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">ISM Manufacturing / Services</div>
+                            <div class="spec-name-jp">ISM製造業・非製造業</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item" onclick="location.href='{% url 'control:us_macro_pmi' %}'" style="cursor: pointer;">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">S&P Global PMI (Mfg / Svc)</div>
+                            <div class="spec-name-jp">S&P Global PMI［製造・サービス］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Retail Sales</div>
+                            <div class="spec-name-jp">小売売上高</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Industrial Production</div>
+                            <div class="spec-name-jp">鉱工業生産</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Durable Goods Orders</div>
+                            <div class="spec-name-jp">耐久財受注</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Inflation -->
+                    <div class="spec-section-title">インフレ (Inflation)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">CPI / Core CPI</div>
+                            <div class="spec-name-jp">CPI／コアCPI</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">PCE / Core PCE</div>
+                            <div class="spec-name-jp">PCE／コアPCE</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">PPI</div>
+                            <div class="spec-name-jp">PPI</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Employment -->
+                    <div class="spec-section-title">雇用 (Employment)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Nonfarm Payrolls (NFP)</div>
+                            <div class="spec-name-jp">非農業部門雇用者数［NFP］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Unemployment Rate</div>
+                            <div class="spec-name-jp">失業率</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Average Hourly Earnings</div>
+                            <div class="spec-name-jp">平均時給</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Initial Jobless Claims (Weekly)</div>
+                            <div class="spec-name-jp">週次新規失業保険申請件数</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">JOLTS Job Openings</div>
+                            <div class="spec-name-jp">JOLTS求人件数</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+
+                    <!-- Financial Conditions -->
+                    <div class="spec-section-title">金融条件 (Financial Conditions)</div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Policy Rate (FF Rate)</div>
+                            <div class="spec-name-jp">政策金利［FF金利］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">US Treasury Yields (2Y, 10Y)</div>
+                            <div class="spec-name-jp">米国債利回り［2年・10年］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Yield Curve (2s10s Spread)</div>
+                            <div class="spec-name-jp">イールドカーブ［2-10年スプレッド］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">Credit Spreads (IG / HY)</div>
+                            <div class="spec-name-jp">クレジットスプレッド［IG／HY］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-name-group">
+                            <div class="spec-name-en">US Dollar Index (DXY)</div>
+                            <div class="spec-name-jp">ドルインデックス［DXY］</div>
+                        </div>
+                        <div class="spec-value-container">
+                            <span class="spec-value">--</span>
+                            <span class="last-updated">--/--</span>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+            
+        </div>
+        
+        <!-- Top Button -->
+        <button id="back-to-top" title="Go to top"><i class="bi bi-arrow-up"></i></button>
     </div>
 
+    <!-- Bootstrap Script -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Toggle View
+        const btnJp = document.getElementById('btn-jp');
+        const btnUs = document.getElementById('btn-us');
+        const viewJp = document.getElementById('jp-view');
+        const viewUs = document.getElementById('us-view');
+
+        btnJp.addEventListener('click', () => {
+            btnJp.classList.add('active');
+            btnUs.classList.remove('active');
+            viewJp.style.display = 'block';
+            viewUs.style.display = 'none';
+        });
+
+        btnUs.addEventListener('click', () => {
+            btnUs.classList.add('active');
+            btnJp.classList.remove('active');
+            viewUs.style.display = 'block';
+            viewJp.style.display = 'none';
+        });
+
+        // Back to top
+        const backToTopButton = document.getElementById("back-to-top");
+        window.onscroll = function() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.style.display = "block";
+            } else {
+                backToTopButton.style.display = "none";
+            }
+        };
+        backToTopButton.addEventListener("click", () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        });
+    </script>
 </body>
 </html>

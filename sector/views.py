@@ -4,8 +4,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from datetime import datetime, timezone, timedelta
+from .models import SectorSnapshot
 import json
-import random
 import requests
 
 # JST timezone
@@ -53,13 +53,6 @@ TOPIX17_SECTORS = {
     "不動産": {"icon": "🏠", "color": "#82E0AA", "jpx_key": "Topix17RealEstate"},
 }
 
-def generate_sample_data(base_price: float, volatility: float = 0.05) -> tuple:
-    """Generate sample financial data"""
-    change_pct = random.uniform(-volatility * 100, volatility * 100)
-    change_abs = base_price * (change_pct / 100)
-    current_price = base_price + change_abs
-    return current_price, change_abs, change_pct
-
 def fetch_jpx_data():
     """Fetch real TOPIX-17 data from JPX"""
     try:
@@ -106,71 +99,25 @@ def fetch_yahoo_finance_data(ticker: str):
         print(f"Failed to fetch Yahoo Finance data for {ticker}: {e}")
         return None, None, None
 
-def fetch_price_change(ticker: str) -> tuple:
-    """Fetch price change data (using sample data for now)"""
-    if ticker.startswith("^"):
-        base_prices = {"^N225": 32000, "^DJI": 35000, "^GSPC": 4500, "^IXIC": 14000}
-        base_price = base_prices.get(ticker, 1000)
-    else:
-        base_price = random.uniform(80, 200)
-    
-    return generate_sample_data(base_price)
-
-def get_sector_data_sample():
-    """Get sample sector data for initial page load"""
-    sectors = []
-    
-    # US SPDR sectors - use sample data only
-    for sector, data in SPDR_TICKERS.items():
-        ticker = data["ticker"]
-        price, change, pct = fetch_price_change(ticker)
-        
-        sectors.append({
-            "group": "US",
-            "sector": f"{sector} - {ticker}",
-            "current": price,
-            "change": change,
-            "change_pct": pct,
-            "icon": data["icon"],
-            "color": data["color"],
-        })
-    
-    # JP TOPIX-17 sectors - use sample data only
-    for sector, data in TOPIX17_SECTORS.items():
-        base_price = random.uniform(1000, 3000)
-        current_price, change_abs, change_pct = generate_sample_data(base_price)
-        
-        sectors.append({
-            "group": "JP",
-            "sector": sector,
-            "current": current_price,
-            "change": change_abs,
-            "change_pct": change_pct,
-            "icon": data["icon"],
-            "color": data["color"],
-        })
-    
-    return sectors
-
-def get_sector_data_real():
+def get_sector_data_real(fallback_sectors=None):
     """Get real sector data for refresh button"""
     sectors = []
+    fallback_sectors = fallback_sectors or []
     
     # US SPDR sectors - fetch real data from Yahoo Finance
     for sector, data in SPDR_TICKERS.items():
         ticker = data["ticker"]
         price, change, pct = fetch_yahoo_finance_data(ticker)
         
-        # Fallback: try to get cached data first, then sample data as last resort
+        # Fallback: try to get persisted data first
         if price is None or change is None or pct is None:
-            cached_sectors = cache.get('sectors_data', [])
-            cached_sector = next((s for s in cached_sectors if s.get('sector') == f"{sector} - {ticker}"), None)
+            cached_sector = next((s for s in fallback_sectors if s.get('sector') == f"{sector} - {ticker}"), None)
             if cached_sector:
                 price = cached_sector['current']
                 change = cached_sector['change']
                 pct = cached_sector['change_pct']
             else:
-                price, change, pct = fetch_price_change(ticker)
+                continue
         
         sectors.append({
             "group": "US",
@@ -186,7 +133,9 @@ def get_sector_data_real():
     jpx_data = fetch_jpx_data()
     for sector, data in TOPIX17_SECTORS.items():
         jpx_key = data["jpx_key"]
-        
+        current_price = None
+        change_abs = None
+        change_pct = None
         if jpx_key in jpx_data:
             jpx_sector = jpx_data[jpx_key]
             try:
@@ -194,27 +143,17 @@ def get_sector_data_real():
                 change_abs = float(jpx_sector["previousDayComparison"])
                 change_pct = float(jpx_sector["previousDayRatio"])
             except (ValueError, KeyError):
-                # Fallback: try to get cached data first, then sample data as last resort
-                cached_sectors = cache.get('sectors_data', [])
-                cached_sector = next((s for s in cached_sectors if s.get('sector') == sector and s.get('group') == 'JP'), None)
-                if cached_sector:
-                    current_price = cached_sector['current']
-                    change_abs = cached_sector['change']
-                    change_pct = cached_sector['change_pct']
-                else:
-                    base_price = random.uniform(1000, 3000)
-                    current_price, change_abs, change_pct = generate_sample_data(base_price)
-        else:
-            # Fallback: try to get cached data first, then sample data as last resort
-            cached_sectors = cache.get('sectors_data', [])
-            cached_sector = next((s for s in cached_sectors if s.get('sector') == sector and s.get('group') == 'JP'), None)
+                pass
+
+        if current_price is None or change_abs is None or change_pct is None:
+            # Fallback: try to get persisted data first
+            cached_sector = next((s for s in fallback_sectors if s.get('sector') == sector and s.get('group') == 'JP'), None)
             if cached_sector:
                 current_price = cached_sector['current']
                 change_abs = cached_sector['change']
                 change_pct = cached_sector['change_pct']
             else:
-                base_price = random.uniform(1000, 3000)
-                current_price, change_abs, change_pct = generate_sample_data(base_price)
+                continue
         
         sectors.append({
             "group": "JP",
@@ -228,39 +167,23 @@ def get_sector_data_real():
     
     return sectors
 
-def get_benchmark_data_sample():
-    """Get sample benchmark data for initial page load"""
-    benchmarks = []
-    for name, data in BENCHMARKS.items():
-        price, change, pct = fetch_price_change(data["ticker"])
-        benchmarks.append({
-            "group": "Benchmark",
-            "sector": name,
-            "current": price,
-            "change": change,
-            "change_pct": pct,
-            "icon": data["icon"],
-            "color": data["color"],
-        })
-    return benchmarks
-
-def get_benchmark_data_real():
+def get_benchmark_data_real(fallback_benchmarks=None):
     """Get real benchmark data for refresh button"""
     benchmarks = []
+    fallback_benchmarks = fallback_benchmarks or []
     for name, data in BENCHMARKS.items():
         ticker = data["ticker"]
         price, change, pct = fetch_yahoo_finance_data(ticker)
         
-        # Fallback: try to get cached data first, then sample data as last resort
+        # Fallback: try to get persisted data first
         if price is None or change is None or pct is None:
-            cached_benchmarks = cache.get('benchmarks_data', [])
-            cached_benchmark = next((b for b in cached_benchmarks if b.get('sector') == name), None)
+            cached_benchmark = next((b for b in fallback_benchmarks if b.get('sector') == name), None)
             if cached_benchmark:
                 price = cached_benchmark['current']
                 change = cached_benchmark['change']
                 pct = cached_benchmark['change_pct']
             else:
-                price, change, pct = fetch_price_change(ticker)
+                continue
         
         benchmarks.append({
             "group": "Benchmark",
@@ -287,25 +210,45 @@ def calculate_summary(sectors):
         "avg_change": avg_change,
     }
 
+def get_persisted_snapshot():
+    """Get persisted sector and benchmark data"""
+    snapshot = SectorSnapshot.objects.filter(pk=1).first()
+    if snapshot:
+        return snapshot.sectors, snapshot.benchmarks, snapshot.update_time
+    return None, None, None
+
+def get_fallback_data():
+    """Get cached or persisted data for fallback"""
+    cached_sectors = cache.get('sectors_data')
+    cached_benchmarks = cache.get('benchmarks_data')
+    
+    if cached_sectors and cached_benchmarks:
+        return cached_sectors, cached_benchmarks
+    
+    persisted_sectors, persisted_benchmarks, _ = get_persisted_snapshot()
+    if persisted_sectors is not None and persisted_benchmarks is not None:
+        return persisted_sectors, persisted_benchmarks
+    
+    return [], []
+
 def get_cached_data():
-    """Get cached sector and benchmark data or sample data for initial load"""
+    """Get cached or persisted sector and benchmark data for initial load"""
     cached_sectors = cache.get('sectors_data')
     cached_benchmarks = cache.get('benchmarks_data')
     cached_time = cache.get('data_update_time')
     
     if cached_sectors and cached_benchmarks and cached_time:
         return cached_sectors, cached_benchmarks, cached_time
+
+    persisted_sectors, persisted_benchmarks, persisted_time = get_persisted_snapshot()
+    if persisted_sectors is not None and persisted_benchmarks is not None and persisted_time:
+        cache_data(persisted_sectors, persisted_benchmarks, persisted_time)
+        return persisted_sectors, persisted_benchmarks, persisted_time
     
-    # If no cache, use sample data for fast initial load
-    sectors = get_sector_data_sample()
-    benchmarks = get_benchmark_data_sample()
+    sectors = []
+    benchmarks = []
     
-    # Check if there's a previous update time stored
-    last_update = cache.get('last_manual_update_time')
-    if last_update:
-        update_time = f"前回更新: {last_update}"
-    else:
-        update_time = "データを取得するには更新ボタンを押してください"
+    update_time = "データを取得するには更新ボタンを押してください"
     
     return sectors, benchmarks, update_time
 
@@ -315,8 +258,17 @@ def cache_data(sectors, benchmarks, update_time):
     cache.set('sectors_data', sectors, 86400)
     cache.set('benchmarks_data', benchmarks, 86400)
     cache.set('data_update_time', update_time, 86400)
-    # Store the last manual update time separately
-    cache.set('last_manual_update_time', update_time, 86400 * 7)  # Keep for 7 days
+
+def persist_snapshot(sectors, benchmarks, update_time):
+    """Persist sector and benchmark data"""
+    SectorSnapshot.objects.update_or_create(
+        pk=1,
+        defaults={
+            "sectors": sectors,
+            "benchmarks": benchmarks,
+            "update_time": update_time,
+        },
+    )
 
 @csrf_exempt
 def index(request):
@@ -325,12 +277,14 @@ def index(request):
         try:
             data = json.loads(request.body)
             if data.get('action') == 'refresh':
-                sectors = get_sector_data_real()
-                benchmarks = get_benchmark_data_real()
+                fallback_sectors, fallback_benchmarks = get_fallback_data()
+                sectors = get_sector_data_real(fallback_sectors=fallback_sectors)
+                benchmarks = get_benchmark_data_real(fallback_benchmarks=fallback_benchmarks)
                 update_time = datetime.now(TZ_JST).strftime("%Y年%m月%d日 %H:%M:%S")
                 
                 # Cache the new data
                 cache_data(sectors, benchmarks, update_time)
+                persist_snapshot(sectors, benchmarks, update_time)
                 
                 # Separate US and JP sectors
                 us_sectors = [s for s in sectors if s["group"] == "US"]

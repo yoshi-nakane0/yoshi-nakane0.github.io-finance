@@ -102,14 +102,58 @@
           </a>
         </div>
 
-      </div>
-    </div>
+        <!-- Test1ボタン -->
+        <div class="menu-item-wrapper test1">
+          <a href="{% url 'dashboard:test1_index' %}" class="menu-item">
+            <div class="icon-wrapper test1-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 8v8m-4-4h8"></path>
+              </svg>
+            </div>
+            <span>AI Prediction</span>
+          </a>
+        </div>
 
-    <!-- ナビゲーションバー (下部固定) -->
-    <div class="bottom-nav">
-        <a class="nav-button" href="/calendar/"><i class="bi bi-calendar-week"></i></a>  <!-- navbar-brand を nav-button に変更 -->
-        <a class="nav-button" href="{% url 'prompt:index' %}"><i class="bi bi-newspaper"></i></a>
-        <a class="nav-button" href="{% url 'trending:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
+        <!-- Test2ボタン -->
+        <div class="menu-item-wrapper test2">
+          <a href="#" class="menu-item">
+            <div class="icon-wrapper test2-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+            </div>
+            <span>Test2</span>
+          </a>
+        </div>
+
+        <!-- Test3ボタン -->
+        <div class="menu-item-wrapper test3">
+          <a href="#" class="menu-item">
+            <div class="icon-wrapper test3-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <span>Test3</span>
+          </a>
+        </div>
+
+        <!-- Test4ボタン -->
+        <div class="menu-item-wrapper test4">
+          <a href="#" class="menu-item">
+            <div class="icon-wrapper test4-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              </svg>
+            </div>
+            <span>Test4</span>
+          </a>
+        </div>
+
+      </div>
     </div>
 
   </div>

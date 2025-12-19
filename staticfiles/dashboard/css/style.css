@@ -12,15 +12,21 @@ body {
     height: 100vh;
     background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* グラデーションを適用 */
     position: relative;
-    overflow: hidden;
+    overflow-y: auto; /* スクロール可能に変更 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
   }
+  .app-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
   .content {
     margin-top: 10px;
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: flex-start; /* 上部に寄せる */
-    padding-top: 50px; /* 上部に余白を追加 */
+    padding-top: 20px; /* 上部に余白を調整 (50px -> 20px) */
     position: relative;
   }
   .menu-grid {
@@ -67,34 +73,7 @@ body {
     margin-top: 8px;
     font-size: 15px;
   }
-  .bottom-nav {
-    display: flex;
-    justify-content: space-around;
-    padding: 15px 0;
-    background-color: #2D2D44;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
-  .nav-button {
-    background: none;
-    border: none;
-    color: #B3B3B3;
-    cursor: pointer;
-  }
-  .nav-button svg {
-    width: 24px;
-    height: 24px;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-  }
-  .nav-button.active {
-    color: #f1eaed83;
-  }
+
   .app-container::after {
   content: '';
   position: absolute;
@@ -132,6 +111,20 @@ body {
   }
   .trending-icon {
     background: linear-gradient(145deg, #50ff8c, #75ffac);
+  }
+  
+  /* Additional icons for 5x2 layout */
+  .test1-icon {
+    background: linear-gradient(145deg, #ff50f0, #ff75f5); /* Pink */
+  }
+  .test2-icon {
+    background: linear-gradient(145deg, #f0ff50, #f5ff75); /* Yellow */
+  }
+  .test3-icon {
+    background: linear-gradient(145deg, #50fff5, #75fff8); /* Cyan */
+  }
+  .test4-icon {
+    background: linear-gradient(145deg, #b0b0b0, #d0d0d0); /* Silver */
   }
 
 /* Bootstrap minimal styles - only what's needed */

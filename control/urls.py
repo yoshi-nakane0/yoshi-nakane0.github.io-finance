@@ -6,5 +6,7 @@ app_name = 'control'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    # 将来的に必要なページ(例: detail, editなど)を追加
+    path('us-macro/gdp/', views.us_macro_gdp, name='us_macro_gdp'),
+    path('us-macro/ism/', views.us_macro_ism, name='us_macro_ism'),
+    path('us-macro/pmi/', views.us_macro_pmi, name='us_macro_pmi'),
 ]
