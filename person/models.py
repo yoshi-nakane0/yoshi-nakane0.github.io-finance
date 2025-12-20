@@ -1,0 +1,1 @@
+# This app uses CSV files for data, no database models needed

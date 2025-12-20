@@ -14,5 +14,5 @@ urlpatterns = [
     path('earning/', include('earning.urls')),
     path('sector/', include('sector.urls')),
     path('control/', include('control.urls')),
-    path('trending/', include('trending.urls')),
+    path('person/', include('person.urls')),
 ]

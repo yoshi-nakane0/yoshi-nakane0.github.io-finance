@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'person/css/style.css' %}">
+</head>
+<body class="bg-dark">
+    <div class="app-container">
+        
+        <!-- Status Bar / Header (Same as Earning) -->
+        <div class="status-bar">
+            <div class="status-bar-right">
+                <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
+            </div>
+        </div>
+
+        <div class="content scrollable-content">
+            <div class="summary-section">
+                {% for summary in domain_summaries %}
+                <div class="summary-card">
+                    <h5 class="summary-title">{{ summary.domain }}</h5>
+                    <div class="chart-container">
+                        <div class="donut-chart" style="background: {{ summary.gradient }};">
+                            <div class="donut-inner">
+                                <span class="chart-value">{{ summary.total }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        {% for item in summary.evaluations %}
+                        <span class="legend-item legend-{{ item.value }}">{{ item.value }}: {{ item.count }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% for group in domain_groups %}
+            <div class="category-section">
+                <h4 class="category-title">{{ group.domain }}</h4>
+                <div class="analyst-list">
+                    {% for person in group.people %}
+                    <div class="analyst-item">
+                        <div class="analyst-info">
+                            <div class="analyst-name">
+                                <a href="{{ person.link }}" target="_blank" rel="noopener noreferrer">{{ person.name }}</a>
+                            </div>
+                            <div class="analyst-affil">{{ person.title }}</div>
+                            {% if person.date %}
+                            <div class="analyst-date">{{ person.date }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="analyst-score {{ person.evaluation_class }}" title="評価: {{ person.evaluation }}">
+                            {{ person.evaluation }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">表示できるデータがありません</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Padding for bottom nav -->
+            <div style="height: 60px;"></div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="bottom-nav">
+            <a class="nav-button" href="/calendar/"><i class="bi bi-calendar-week"></i></a>
+            <a class="nav-button" href="{% url 'prompt:index' %}"><i class="bi bi-newspaper"></i></a>
+            <a class="nav-button active" href="{% url 'person:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
+        </div>
+    </div>
+</body>
+</html>
