@@ -10,6 +10,9 @@ python3.9 -m pip install --upgrade pip --no-warn-script-location
 # 依存関係のインストール
 python3.9 -m pip install -r requirements.txt --no-warn-script-location
 
+# DBマイグレーション
+python3.9 manage.py migrate --noinput
+
 # 静的ファイルの収集
 python3.9 manage.py collectstatic --noinput --clear
 

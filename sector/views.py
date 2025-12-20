@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
+from django.db.utils import DatabaseError, OperationalError, ProgrammingError
 from datetime import datetime, timezone, timedelta
 from .models import SectorSnapshot
 import json
@@ -212,7 +213,11 @@ def calculate_summary(sectors):
 
 def get_persisted_snapshot():
     """Get persisted sector and benchmark data"""
-    snapshot = SectorSnapshot.objects.filter(pk=1).first()
+    try:
+        snapshot = SectorSnapshot.objects.filter(pk=1).first()
+    except (OperationalError, ProgrammingError, DatabaseError) as e:
+        print(f"[sector] DB unavailable, skip snapshot: {e}")
+        return None, None, None
     if snapshot:
         return snapshot.sectors, snapshot.benchmarks, snapshot.update_time
     return None, None, None
@@ -261,14 +266,17 @@ def cache_data(sectors, benchmarks, update_time):
 
 def persist_snapshot(sectors, benchmarks, update_time):
     """Persist sector and benchmark data"""
-    SectorSnapshot.objects.update_or_create(
-        pk=1,
-        defaults={
-            "sectors": sectors,
-            "benchmarks": benchmarks,
-            "update_time": update_time,
-        },
-    )
+    try:
+        SectorSnapshot.objects.update_or_create(
+            pk=1,
+            defaults={
+                "sectors": sectors,
+                "benchmarks": benchmarks,
+                "update_time": update_time,
+            },
+        )
+    except (OperationalError, ProgrammingError, DatabaseError) as e:
+        print(f"[sector] DB write failed, skip snapshot: {e}")
 
 @csrf_exempt
 def index(request):
