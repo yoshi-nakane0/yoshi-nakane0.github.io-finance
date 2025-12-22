@@ -58,53 +58,141 @@ body.bg-dark {
 }
 
 
-/* Summary Section (2 Columns) */
+/* Summary Section (3 Columns Fixed) */
 .summary-section {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
+    gap: 16px;
+    margin-bottom: 24px;
     margin-top: 10px;
 }
 
-@media (max-width: 1100px) {
-    .summary-section {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+/* Common Legend - Sleek Floating Bar Style */
+.common-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 12px 20px;
+    background: rgba(30, 30, 35, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50px; /* Pill shape */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
+.legend-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.legend-item:hover {
+    transform: scale(1.15);
+}
+
+/* Remove old pseudo-element dots since we are coloring the whole circle */
+.legend-item::before {
+    display: none;
+}
+
+/* Legend Background Colors */
+.legend-1 { background: linear-gradient(135deg, #ff453a, #d63a30); box-shadow: 0 0 10px rgba(255, 69, 58, 0.4); }
+.legend-2 { background: linear-gradient(135deg, #ff9f0a, #d68305); box-shadow: 0 0 10px rgba(255, 159, 10, 0.4); }
+.legend-3 { background: linear-gradient(135deg, #ffd60a, #d6b300); color: #1c1c1e; box-shadow: 0 0 10px rgba(255, 214, 10, 0.4); }
+.legend-4 { background: linear-gradient(135deg, #32d74b, #24a836); box-shadow: 0 0 10px rgba(50, 215, 75, 0.4); }
+.legend-5 { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 0 10px rgba(10, 132, 255, 0.4); }
+
+
+/* Mobile adjustments for 3 columns */
 @media (max-width: 720px) {
     .summary-section {
-        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .summary-card {
+        padding: 12px 6px;
+    }
+    .summary-title {
+        font-size: 0.65rem;
+        margin-bottom: 8px;
+    }
+    /* Adjust chart size slightly for very small screens if needed */
+    .chart-container {
+        width: 70px;
+        height: 70px;
+    }
+    .donut-inner {
+        width: 54px;
+        height: 54px;
+    }
+    .chart-value {
+        font-size: 1rem;
     }
 }
 
+/* Rich Summary Card Design */
 .summary-card {
-    background: rgba(44, 44, 46, 0.6);
-    border-radius: 18px;
-    padding: 15px;
+    background: linear-gradient(160deg, rgba(60, 60, 65, 0.6) 0%, rgba(35, 35, 40, 0.8) 100%);
+    border-radius: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(160deg, rgba(70, 70, 75, 0.7) 0%, rgba(40, 40, 45, 0.85) 100%);
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
 }
 
 .summary-title {
-    font-size: 0.8rem;
-    color: #8E8E93;
+    font-size: 0.75rem;
+    color: #b0b0b8;
     margin-bottom: 12px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* CSS Donut Chart */
+/* Enhanced Donut Chart */
 .chart-container {
     position: relative;
     width: 80px;
     height: 80px;
-    margin-bottom: 10px;
+    margin-bottom: 4px; /* Reduced bottom margin since legend is gone */
 }
 
 .donut-chart {
@@ -115,60 +203,39 @@ body.bg-dark {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Background gradient set inline based on data */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .donut-inner {
-    width: 64px; /* Thickness determined by difference with parent width */
+    width: 64px;
     height: 64px;
-    background-color: #1E1E2E; /* Matches body bg or card bg dark */
+    background-color: #262629;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 2;
+    /* Inner shadow for depth */
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.05);
 }
 
-/* Inside card bg is lighter, so inner circle should probably match card or be slightly darker */
+/* Ensure inner circle background matches the card dark theme properly */
 .summary-card .donut-inner {
-    background-color: #262629; 
+    background: linear-gradient(145deg, #1e1e22, #25252a);
 }
 
 .chart-value {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: white;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #f2f2f7;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Remove old chart-legend styles if they exist to avoid conflict */
 .chart-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 10px;
-    justify-content: center;
-    margin-top: 8px;
+    display: none;
 }
-
-.legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.7rem;
-    color: #c7c7cc;
-}
-
-.legend-item::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #3a3a3c;
-}
-
-.legend-1::before { background: #ff453a; }
-.legend-2::before { background: #ff9f0a; }
-.legend-3::before { background: #ffd60a; }
-.legend-4::before { background: #32d74b; }
-.legend-5::before { background: #64d2ff; }
 
 /* Sentiment Badge */
 .sentiment-badge {
@@ -191,7 +258,7 @@ body.bg-dark {
     border: 1px solid rgba(255, 69, 58, 0.2);
 }
 
-/* List Styles (Kept mostly same, just refined) */
+/* List Styles */
 .category-section {
     margin-bottom: 25px;
 }
@@ -213,21 +280,28 @@ body.bg-dark {
     gap: 10px;
 }
 
-.analyst-item {
+/* Accordion Wrapper */
+.analyst-card_wrapper {
     background-color: rgba(44, 44, 46, 0.75);
     border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.analyst-card_wrapper.active {
+    background-color: rgba(50, 50, 55, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Header (Trigger) */
+.analyst-item {
     padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.analyst-item:hover {
-    transform: scale(1.02);
-    background-color: rgba(58, 58, 60, 0.9);
+    cursor: pointer;
 }
 
 .analyst-info {
@@ -246,15 +320,6 @@ body.bg-dark {
     text-overflow: ellipsis;
 }
 
-.analyst-name a {
-    color: #fff;
-    text-decoration: none;
-}
-
-.analyst-name a:hover {
-    text-decoration: underline;
-}
-
 .analyst-affil {
     font-size: 0.75rem;
     color: #aeaeb2;
@@ -263,27 +328,87 @@ body.bg-dark {
     text-overflow: ellipsis;
 }
 
-.analyst-date {
-    font-size: 0.7rem;
-    color: #8e8e93;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.analyst-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .analyst-score {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #1c1c1e;
     flex-shrink: 0; 
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.accordion-icon {
+    color: #8e8e93;
+    transition: transform 0.3s ease;
+}
+
+.analyst-card_wrapper.active .accordion-icon {
+    transform: rotate(180deg);
+}
+
+/* Accordion Body */
+.analyst-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+    background-color: rgba(30, 30, 35, 0.5);
+}
+
+.analyst-card_wrapper.active .analyst-body {
+    max-height: 500px; /* Arbitrary large height */
+    overflow-y: auto;
+}
+
+/* Article List */
+.article-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.article-item {
+    display: block;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.article-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.article-title {
+    font-size: 0.85rem;
+    color: #e5e5ea;
+    margin-bottom: 6px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #8e8e93;
+}
+
+.article-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.65rem;
 }
 
 /* Score Colors */
@@ -298,7 +423,6 @@ body.bg-dark {
     color: #8e8e93;
     font-size: 0.85rem;
     padding: 12px 16px;
-    background-color: rgba(44, 44, 46, 0.5);
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }

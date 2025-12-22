@@ -20,6 +20,7 @@
         </div>
 
         <div class="content scrollable-content">
+            
             <div class="summary-section">
                 {% for summary in domain_summaries %}
                 <div class="summary-card">
@@ -31,13 +32,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="chart-legend">
-                        {% for item in summary.evaluations %}
-                        <span class="legend-item legend-{{ item.value }}">{{ item.value }}: {{ item.count }}</span>
-                        {% endfor %}
-                    </div>
                 </div>
                 {% endfor %}
+            </div>
+
+            <!-- Common Legend -->
+            <div class="common-legend">
+                <span class="legend-item legend-1">1</span>
+                <span class="legend-item legend-2">2</span>
+                <span class="legend-item legend-3">3</span>
+                <span class="legend-item legend-4">4</span>
+                <span class="legend-item legend-5">5</span>
             </div>
 
             {% for group in domain_groups %}
@@ -45,22 +50,43 @@
                 <h4 class="category-title">{{ group.domain }}</h4>
                 <div class="analyst-list">
                     {% for person in group.people %}
-                    <div class="analyst-item">
-                        <div class="analyst-info">
-                            <div class="analyst-name">
-                                <a href="{{ person.link }}" target="_blank" rel="noopener noreferrer">{{ person.name }}</a>
+                    <div class="analyst-card_wrapper">
+                        <!-- Header (Trigger) -->
+                        <div class="analyst-item" onclick="toggleAccordion(this)">
+                            <div class="analyst-info">
+                                <div class="analyst-name">
+                                    {{ person.name }}
+                                </div>
+                                <div class="analyst-affil">{{ person.affiliation }}</div>
                             </div>
-                            <div class="analyst-affil">{{ person.title }}</div>
-                            {% if person.date %}
-                            <div class="analyst-date">{{ person.date }}</div>
+                            
+                            <div class="analyst-meta">
+                                <div class="analyst-score {{ person.latest_evaluation_class }}">
+                                    {{ person.latest_evaluation }}
+                                </div>
+                                <i class="bi bi-chevron-down accordion-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Body (Content) -->
+                        <div class="analyst-body">
+                            {% if person.articles %}
+                            <div class="article-list">
+                                {% for article in person.articles %}
+                                <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" class="article-item">
+                                    <div class="article-title">{{ article.title }}</div>
+                                    <div class="article-meta">
+                                        <span class="article-date">{{ article.date }}</span>
+                                        <span class="article-badge {{ article.evaluation_class }}">Score: {{ article.evaluation }}</span>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-state">表示できる記事がありません</div>
                             {% endif %}
                         </div>
-                        <div class="analyst-score {{ person.evaluation_class }}" title="評価: {{ person.evaluation }}">
-                            {{ person.evaluation }}
-                        </div>
                     </div>
-                    {% empty %}
-                    <div class="empty-state">表示できるデータがありません</div>
                     {% endfor %}
                 </div>
             </div>
@@ -77,5 +103,12 @@
             <a class="nav-button active" href="{% url 'person:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
         </div>
     </div>
+
+    <script>
+        function toggleAccordion(element) {
+            const wrapper = element.parentElement;
+            wrapper.classList.toggle('active');
+        }
+    </script>
 </body>
 </html>
