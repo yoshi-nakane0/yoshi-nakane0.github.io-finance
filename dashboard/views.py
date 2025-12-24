@@ -6,10 +6,16 @@ from .models import AiAnalysis
 def index(request):
     return render(request, 'dashboard/index.html')
 
-def test1_index(request):
+def prediction_list(request):
     analyses = AiAnalysis.objects.all()
-    return render(request, 'dashboard/test1_list.html', {'analyses': analyses})
+    return render(request, 'list.html', {'analyses': analyses})
+
+def prediction_detail(request, pk):
+    analysis = get_object_or_404(AiAnalysis, pk=pk)
+    return render(request, 'detail.html', {'analysis': analysis})
+
+def test1_index(request):
+    return prediction_list(request)
 
 def test1_detail(request, pk):
-    analysis = get_object_or_404(AiAnalysis, pk=pk)
-    return render(request, 'dashboard/test1_detail.html', {'analysis': analysis})
+    return prediction_detail(request, pk)

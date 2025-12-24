@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ analysis.title }} - Prediction</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+    <style>
+        /* 全体設定 */
+        body, .app-container {
+            background: #1e1e2e !important;
+            color: #e0e0e0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .detail-container {
+            padding: 10px 20px 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* ヘッダーエリア */
+        .detail-header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+        }
+
+        .detail-date {
+            color: #89cff0; /* 水色 */
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.35;
+            background: linear-gradient(90deg, #fff, #d0d0d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 5px;
+        }
+
+        /* コンテンツエリア */
+        .detail-content {
+            line-height: 1.8; /* 行間広め */
+            font-size: 1.05rem;
+            color: #f0f0f0;
+        }
+
+        /* コンテンツ内要素のスタイルオーバーライド */
+        .detail-content h4 {
+            color: #ffdd57; /* ゴールド系 */
+            font-size: 1.2rem;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border-left: 4px solid #ffdd57;
+            padding-left: 15px;
+            background: linear-gradient(90deg, rgba(255, 221, 87, 0.08), transparent);
+            padding-top: 8px;
+            padding-bottom: 8px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .detail-content h5 {
+            color: #64b5f6; /* 明るい青 */
+            font-size: 1.1rem;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-content p {
+            margin-bottom: 1.5em;
+            color: #dddddd;
+            text-align: justify;
+        }
+
+        .detail-content strong {
+            color: #ffffff;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0 6px;
+            border-radius: 4px;
+        }
+
+        /* リスト */
+        .detail-content ul {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px 20px 20px 40px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .detail-content li {
+            margin-bottom: 10px;
+        }
+
+        /* データ生成時のカードスタイル上書き */
+        .card, .alert {
+            background-color: rgba(30, 30, 35, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            color: #e0e0e0 !important;
+            margin-bottom: 25px !important;
+        }
+        .card-body {
+            padding: 20px !important;
+        }
+        .card-title, .alert strong {
+            color: #ffcc80 !important; /* オレンジ系 */
+            font-size: 1.1rem !important;
+            margin-bottom: 15px !important;
+            display: block;
+        }
+        .alert {
+            padding: 15px 20px !important;
+        }
+
+        /* フッター */
+        .footer-note {
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: #888;
+            font-size: 0.85rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        /* ナビゲーション */
+        .status-bar {
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <div class="app-container" style="overflow-y: auto;">
+        <div class="container">
+            <div class="status-bar">
+                <a href="{% url 'dashboard:prediction_list' %}" class="back-btn">⬅️ 戻る</a>
+                <a href="{% url 'dashboard:index' %}" class="back-btn">🏠 ホーム</a>
+            </div>
+            
+            <div class="detail-container">
+                <div class="detail-header">
+                    <div class="detail-date">📅 {{ analysis.analysis_date|date:"Y/m/d" }}</div>
+                    <h1 class="detail-title">{{ analysis.title }}</h1>
+                </div>
+                
+                <div class="detail-content">
+                    {{ analysis.content|safe }}
+                </div>
+                
+                <div class="footer-note">
+                    ✨ Generated by AI Analysis Model 🚀
+                </div>
+                <div style="height: 50px;"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

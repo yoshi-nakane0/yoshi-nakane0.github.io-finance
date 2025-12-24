@@ -76,7 +76,7 @@
 
         <!-- Controlボタン -->
         <div class="menu-item-wrapper control">
-          <a href="{% url 'control:index' %}" class="menu-item">
+          <a href="{% url 'explanation:index' %}" class="menu-item">
             <div class="icon-wrapper control-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M6 5v14"></path>
@@ -85,7 +85,20 @@
                 <path d="M14 7h4m-4 8h4"></path>
               </svg>
             </div>
-            <span>Control</span>
+            <span>Explanation</span>
+          </a>
+        </div>
+
+        <!-- Predictionボタン -->
+        <div class="menu-item-wrapper prediction">
+          <a href="{% url 'dashboard:prediction_list' %}" class="menu-item">
+            <div class="icon-wrapper prediction-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 8v8m-4-4h8"></path>
+              </svg>
+            </div>
+            <span>Prediction</span>
           </a>
         </div>
 
@@ -99,19 +112,6 @@
               </svg>
             </div>
             <span>Prompt</span>
-          </a>
-        </div>
-
-        <!-- Test1ボタン -->
-        <div class="menu-item-wrapper test1">
-          <a href="{% url 'dashboard:test1_index' %}" class="menu-item">
-            <div class="icon-wrapper test1-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 8v8m-4-4h8"></path>
-              </svg>
-            </div>
-            <span>AI Prediction</span>
           </a>
         </div>
 

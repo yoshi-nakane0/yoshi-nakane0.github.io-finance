@@ -15,7 +15,7 @@ body.bg-dark {
     height: 100vh;
     overflow-y: auto;
     /* Top padding reduced because status-bar is now present */
-    padding: 10px 20px 100px 20px; 
+    padding: 3px 5px 0px 3px; 
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
     box-sizing: border-box;
@@ -312,7 +312,7 @@ body.bg-dark {
 
 .analyst-name {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1.2rem;
     color: #fff;
     margin-bottom: 2px;
     white-space: nowrap;

@@ -8,11 +8,11 @@ from django.shortcuts import render
 # Configuration
 DOMAIN_MAPPING = {
     'Macro': 'Macro',
-    'Key Remarks': 'Key figures',
+    'Key Remarks': 'LEADS',
     'Equities': 'Equities',
 }
 
-DOMAIN_ORDER = ['Macro', 'Equities', 'Key figures']
+DOMAIN_ORDER = ['Macro', 'Equities', 'LEADS']
 
 # Affiliation Lookup (Name -> Affiliation)
 NAME_TO_AFFILIATION = {

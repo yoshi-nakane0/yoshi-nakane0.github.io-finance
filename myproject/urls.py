@@ -13,6 +13,6 @@ urlpatterns = [
     path('prompt/', include('prompt.urls')),
     path('earning/', include('earning.urls')),
     path('sector/', include('sector.urls')),
-    path('control/', include('control.urls')),
+    path('explanation/', include('explanation.urls')),
     path('person/', include('person.urls')),
 ]

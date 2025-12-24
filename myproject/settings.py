@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     'prompt',
     'earning',
     'sector',
-    'control',
+    'explanation',
     'person',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,7 +44,7 @@ ROOT_URLCONF = 'myproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'prediction'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

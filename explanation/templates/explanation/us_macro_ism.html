@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISM詳細 - Control</title>
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Style -->
+    <link rel="stylesheet" href="{% static 'explanation/css/style.css' %}">
+    <style>
+        /* Additional styles for detail page */
+        .accordion-item {
+            background-color: transparent;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .accordion-header {
+            margin-bottom: 0;
+        }
+        .accordion-button {
+            background-color: rgba(41, 45, 53, 0.7);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 5px !important;
+            box-shadow: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(70, 70, 120, 0.8);
+            color: #ffffff;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(100, 100, 255, 0.25);
+            border-color: rgba(100, 100, 255, 0.5);
+        }
+        .accordion-button::after {
+            filter: invert(1); /* Make default arrow white */
+        }
+        .accordion-body {
+            background-color: rgba(0, 0, 0, 0.2);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .detail-subtitle {
+            font-weight: bold;
+            color: #a0a0ff;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-left: 3px solid #a0a0ff;
+            padding-left: 10px;
+        }
+        .detail-subtitle:first-child {
+            margin-top: 0;
+        }
+        .detail-list {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        .detail-list li {
+            margin-bottom: 5px;
+        }
+        .highlight-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #FFD700;
+        }
+        .highlight-text {
+            color: #FFD700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <div class="app-container" style="background: #1e1e2e;">
+        <div class="schedule-container">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-bar-right">
+                    <button class="status-bar-item" onclick="location.href='{% url 'explanation:index' %}'">⬅ 戻る</button>
+                    <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
+                </div>
+            </div>
+
+            <!-- Title Header -->
+            <div class="earnings-container">
+                <div class="date-header">
+                    <h3 class="date-title">🇺🇸 ISM Manufacturing / Services</h3>
+                </div>
+                <div style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 5px; padding-left: 5px;">
+                    ISM製造業・非製造業
+                </div>
+            </div>
+
+            <!-- Content Accordion -->
+            <div class="accordion" id="ismAccordion">
+                
+                <!-- Section 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            📊 現状推移と将来予測の「調査期間」
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#ismAccordion">
+                        <div class="accordion-body">
+                            <p>目的別に期間を分けるのが現実的です。</p>
+                            
+                            <div class="detail-subtitle">A. 短期の方向感（“今”の基調）</div>
+                            <div class="highlight-box">
+                                <strong>直近3〜6か月</strong><br>
+                                単月はブレやすいため、3か月・6か月平均で「基調」を見ます。特にServicesはノイズが出やすい傾向があります。
+                            </div>
+
+                            <div class="detail-subtitle">B. 景気局面の把握（転換点）</div>
+                            <ul class="detail-list">
+                                <li><strong>期間：12〜24か月</strong></li>
+                                <li>50（好不況の分岐点）を跨ぐ動きを最低1〜2回含めることで、転換の“クセ”を把握します。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">C. 循環前提の予測</div>
+                            <ul class="detail-list">
+                                <li><strong>期間：5〜10年</strong></li>
+                                <li>特に製造業は循環サイクル（在庫サイクル等）が強いため、長期でのモデル化が推奨されます。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            📈 変動時の「具体的な経済的影響」
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#ismAccordion">
+                        <div class="accordion-body">
+                            <p>ISMは先行指標であるため、以下の経路で実体経済へ波及します。</p>
+
+                            <div class="detail-subtitle">🏭 A. 実体経済への波及</div>
+                            <ul class="detail-list">
+                                <li><strong>Manufacturing PMI上昇：</strong><br>生産・受注改善 → 鉱工業生産・設備投資・在庫積み増しへ。</li>
+                                <li><strong>Manufacturing PMI低下（50割れ）：</strong><br>在庫調整・受注減 → 生産抑制 → 雇用/残業抑制。<br>※50割れが続くと“弱めの地合い”継続。</li>
+                                <li><strong>Services PMI：</strong><br>米国はサービス比率が高く、雇用・賃金・消費（外食/旅行/医療）に直結しやすい。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">💸 B. インフレと金融政策</div>
+                            <p class="small text-muted">※価格指数 (Prices Paid) とセットで見ることが重要</p>
+                            <ul class="detail-list">
+                                <li><strong>PMI↑ ＋ Prices↑：</strong><br>需要強＆コスト増 → <span style="color:#ff6b6b;">金利上昇圧力</span>（タカ派）</li>
+                                <li><strong>PMI↓ ＋ Prices↓：</strong><br>需要＆コスト落ち着く → <span style="color:#4CAF50;">金利低下圧力</span>（ハト派）</li>
+                            </ul>
+
+                            <div class="detail-subtitle">🏢 C. 企業業績 (EPS)</div>
+                            <ul class="detail-list">
+                                <li><strong>製造業：</strong>資本財、素材、半導体、エネルギー</li>
+                                <li><strong>サービス：</strong>一般消費財、金融、人材、旅行/レジャー</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            ⏱ 株価への影響タイミング
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#ismAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">結論：発表瞬間は「即時」、業績・トレンドへは「遅行」</div>
+                            
+                            <div class="detail-subtitle">⚡ 即時（発表直後〜数十分）</div>
+                            <p>注目度が高く、以下が同時に動きます。</p>
+                            <div class="highlight-box">
+                                1. 金利（米国債利回り）<br>
+                                2. ドル<br>
+                                3. 株価指数先物・セクター
+                            </div>
+                            <p class="small text-muted">※株価の反応方向は「景気＞金融政策」（景気良＝株高）か「金融政策＞景気」（景気良＝利上げ＝株安）の相場つきで反転します。</p>
+
+                            <div class="detail-subtitle">⏳ 遅行（数日〜数週間）</div>
+                            <ul class="detail-list">
+                                <li>トレンドと判断されると、アナリスト業績見通しやFRB利下げ予測が更新され、株価（特に景気敏感・グロース）にじわじわ効きます。</li>
+                                <li>実務的には<strong>「3か月平均が転換」</strong>したあたりから反応が持続的になりやすいです。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                            🔍 他に注視すべき指標
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#ismAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">🥇 最優先：ISMの“中身”</div>
+                            <ul class="detail-list">
+                                <li><strong>New Orders（新規受注）：</strong>景気の先行性が高い</li>
+                                <li><strong>Employment（雇用）：</strong>雇用統計との整合性</li>
+                                <li><strong>Prices Paid（価格）：</strong>金利・株の符号を決める鍵</li>
+                            </ul>
+
+                            <div class="detail-subtitle">🥈 次点：ハードデータ（実体の裏取り）</div>
+                            <ul class="detail-list">
+                                <li><strong>雇用統計 (NFP/失業率)：</strong>利下げ観測に直結</li>
+                                <li><strong>物価 (CPI/PCE)：</strong>ISMの結果をどう消化するかを左右</li>
+                                <li><strong>実体経済：</strong>JOLTS、小売売上、鉱工業生産</li>
+                            </ul>
+
+                            <div class="detail-subtitle">🥉 金融環境（増幅装置）</div>
+                            <ul class="detail-list">
+                                <li><strong>FOMC：</strong>ISMショックの解釈（利下げ/利上げ）を決める</li>
+                                <li><strong>信用環境：</strong>クレジットスプレッド、銀行貸出態度</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="height: 50px;"></div> <!-- Bottom spacer -->
+        </div>
+        
+        <!-- Top Button -->
+        <button id="back-to-top" title="Go to top"><i class="bi bi-arrow-up"></i></button>
+    </div>
+
+    <!-- Bootstrap Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Back to top
+        const backToTopButton = document.getElementById("back-to-top");
+        window.onscroll = function() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.style.display = "block";
+            } else {
+                backToTopButton.style.display = "none";
+            }
+        };
+        backToTopButton.addEventListener("click", () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        });
+    </script>
+</body>
+</html>
