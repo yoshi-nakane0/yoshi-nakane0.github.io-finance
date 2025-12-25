@@ -15,4 +15,5 @@ urlpatterns = [
     path('sector/', include('sector.urls')),
     path('explanation/', include('explanation.urls')),
     path('person/', include('person.urls')),
+    path('prediction/', include('prediction.urls')),
 ]

@@ -25,6 +25,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .DS_Store
+chrome_profile/
 node_modules
 # PyInstaller
 #  Usually these files are written by a python script from a template
