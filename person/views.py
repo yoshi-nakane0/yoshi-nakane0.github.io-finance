@@ -10,6 +10,8 @@ DOMAIN_MAPPING = {
     'Macro': 'Macro',
     'Key Remarks': 'LEADS',
     'Equities': 'Equities',
+    'Leads': 'LEADS',
+    'LEADS': 'LEADS',
 }
 
 DOMAIN_ORDER = ['Macro', 'Equities', 'LEADS']
@@ -81,6 +83,15 @@ def _build_conic_gradient(counts, total):
     return "conic-gradient(" + ", ".join(segments) + ")"
 
 
+def _format_average(value):
+    if value is None:
+        return "-"
+    rounded_value = round(value, 1)
+    if rounded_value.is_integer():
+        return str(int(rounded_value))
+    return f"{rounded_value:.1f}"
+
+
 def fetch_and_process_data():
     csv_path = os.path.join(settings.BASE_DIR, 'static', 'person', 'data', 'person_data.csv')
 
@@ -89,6 +100,9 @@ def fetch_and_process_data():
         return {}, [], []
 
     articles_by_name = {}
+    summary_counts = {d: {v: 0 for v in EVALUATION_VALUES} for d in DOMAIN_ORDER}
+    summary_score_totals = {d: 0 for d in DOMAIN_ORDER}
+    summary_score_counts = {d: 0 for d in DOMAIN_ORDER}
 
     try:
         with open(csv_path, 'r', encoding='utf-8') as csvfile:
@@ -100,12 +114,17 @@ def fetch_and_process_data():
                         continue
 
                     raw_domain = row.get('domain', '').strip()
+                    domain = DOMAIN_MAPPING.get(raw_domain)
                     
                     # Parse evaluation
                     evaluation_raw = row.get('evaluation', '')
                     evaluation_label = evaluation_raw.strip() if evaluation_raw.strip() else "-"
                     evaluation_num = _parse_evaluation(evaluation_raw)
                     evaluation_class = f"score-{evaluation_num}" if evaluation_num is not None else "score-na"
+                    if domain in DOMAIN_ORDER and evaluation_num is not None:
+                        summary_counts[domain][evaluation_num] += 1
+                        summary_score_totals[domain] += evaluation_num
+                        summary_score_counts[domain] += 1
 
                     # Parse date
                     date_str = row.get('date', '').strip()
@@ -140,9 +159,6 @@ def fetch_and_process_data():
     # Process each person
     processed_people = []
     
-    # We also need to build summaries
-    summary_counts = {d: {v: 0 for v in EVALUATION_VALUES} for d in DOMAIN_ORDER}
-
     for name, articles in articles_by_name.items():
         # Sort articles by date desc
         articles.sort(key=lambda x: x['date_obj'], reverse=True)
@@ -185,10 +201,6 @@ def fetch_and_process_data():
 
         processed_people.append(person_data)
 
-        # Add to summary counts
-        if person_score_num is not None:
-            summary_counts[domain][person_score_num] += 1
-
     # Build Domain Groups (Ordered)
     domain_groups = []
     for domain in DOMAIN_ORDER:
@@ -204,10 +216,14 @@ def fetch_and_process_data():
     for domain in DOMAIN_ORDER:
         counts = summary_counts[domain]
         total = sum(counts.values())
+        average_value = None
+        if summary_score_counts[domain]:
+            average_value = summary_score_totals[domain] / summary_score_counts[domain]
+        average_label = _format_average(average_value)
         gradient = _build_conic_gradient(counts, total)
         domain_summaries.append({
             'domain': domain,
-            'total': total,
+            'average': average_label,
             'gradient': gradient,
         })
 

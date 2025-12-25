@@ -28,7 +28,7 @@
                     <div class="chart-container">
                         <div class="donut-chart" style="background: {{ summary.gradient }};">
                             <div class="donut-inner">
-                                <span class="chart-value">{{ summary.total }}</span>
+                                <span class="chart-value">{{ summary.average }}</span>
                             </div>
                         </div>
                     </div>
@@ -92,15 +92,6 @@
             </div>
             {% endfor %}
             
-            <!-- Padding for bottom nav -->
-            <div style="height: 60px;"></div>
-        </div>
-
-        <!-- Bottom Nav -->
-        <div class="bottom-nav">
-            <a class="nav-button" href="/calendar/"><i class="bi bi-calendar-week"></i></a>
-            <a class="nav-button" href="{% url 'prompt:index' %}"><i class="bi bi-newspaper"></i></a>
-            <a class="nav-button active" href="{% url 'person:index' %}"><i class="bi bi-graph-up-arrow"></i></a>
         </div>
     </div>
 
