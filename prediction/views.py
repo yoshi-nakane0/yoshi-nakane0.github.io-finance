@@ -1,6 +1,8 @@
+import csv
+import math
+from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
@@ -11,45 +13,90 @@ COLUMN_RENAME = {
 }
 EXPECTED_COLUMNS = ("date", "evaluation", "methods", "article", "plan", "scenario")
 
+def _parse_date(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
 
-def _load_prediction_dataframe():
+
+def _parse_evaluation(value):
+    if value is None:
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    try:
+        number = float(text)
+    except ValueError:
+        return ""
+    if math.isnan(number):
+        return ""
+    return str(int(number))
+
+
+def _string_value(value):
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _load_prediction_records():
     csv_path = settings.BASE_DIR / CSV_RELATIVE_PATH
     if not csv_path.exists():
         print(f"CSV file not found at {csv_path}")
-        return pd.DataFrame(columns=EXPECTED_COLUMNS)
+        return []
 
     try:
-        df = pd.read_csv(csv_path, encoding="utf-8", engine="python")
+        with open(csv_path, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            if reader.fieldnames:
+                reader.fieldnames = [
+                    name.lstrip("\ufeff") if name else name for name in reader.fieldnames
+                ]
+
+            records = []
+            for row in reader:
+                normalized_row = {}
+                for key, value in row.items():
+                    normalized_key = COLUMN_RENAME.get(key, key)
+                    normalized_row[normalized_key] = value
+
+                record = {
+                    "date": _parse_date(normalized_row.get("date")),
+                    "evaluation": _parse_evaluation(normalized_row.get("evaluation")),
+                    "methods": _string_value(normalized_row.get("methods")),
+                    "article": _string_value(normalized_row.get("article")),
+                    "plan": _string_value(normalized_row.get("plan")),
+                    "scenario": _string_value(normalized_row.get("scenario")),
+                }
+                records.append(record)
     except Exception as exc:
         print(f"Error reading CSV file: {exc}")
-        return pd.DataFrame(columns=EXPECTED_COLUMNS)
+        return []
 
-    df = df.rename(columns=COLUMN_RENAME)
-    for column in EXPECTED_COLUMNS:
-        if column not in df.columns:
-            df[column] = pd.NA
+    with_date = [record for record in records if record["date"] is not None]
+    without_date = [record for record in records if record["date"] is None]
+    with_date.sort(key=lambda record: record["date"], reverse=True)
+    ordered = with_date + without_date
+    for idx, record in enumerate(ordered):
+        record["row_id"] = idx
 
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df["evaluation"] = pd.to_numeric(df["evaluation"], errors="coerce")
-    df = df.sort_values("date", ascending=False, na_position="last").reset_index(drop=True)
-    df["row_id"] = df.index
-
-    df["date"] = df["date"].dt.date
-    df["date"] = df["date"].where(df["date"].notna(), None)
-    df["evaluation"] = df["evaluation"].apply(
-        lambda value: "" if pd.isna(value) else str(int(value))
-    )
-    for column in ("methods", "article", "plan", "scenario"):
-        df[column] = df[column].fillna("").astype(str)
-
-    return df
+    return ordered
 
 
 def _get_prediction_records():
-    df = _load_prediction_dataframe()
-    if df.empty:
+    records = _load_prediction_records()
+    if not records:
         return []
-    return df.to_dict(orient="records")
+    return records
 
 
 def index(request):
