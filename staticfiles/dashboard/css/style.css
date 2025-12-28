@@ -1,270 +1,390 @@
 :root {
-  --bg-color: #0F172A;
-  --bg-gradient-start: #0F172A;
-  --bg-gradient-end: #1E293B;
-  --card-bg: rgba(30, 41, 59, 0.6);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --text-primary: #F1F5F9;
+  /* Base Colors */
+  --bg-color: #020617; /* より深い黒に近い青 */
+  --bg-gradient-start: #020617;
+  --bg-gradient-end: #0F172A;
+  
+  /* Card Colors - High Contrast */
+  --card-bg: #1E293B; /* 透過をなくし、背景との差を明確にする */
+  --card-border-width: 2px; /* 境界線を太く */
+  --card-border-opacity: 0.5; /* ボーダーの不透明度を高める */
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
   --text-secondary: #94A3B8;
   
-  /* Accent Colors */
-  --accent-analysis: #10B981; /* Green */
-  --accent-ai: #8B5CF6;       /* Violet */
-  --accent-market: #3B82F6;   /* Blue */
-  --accent-admin: #64748B;    /* Slate */
-  --accent-alert: #EF4444;    /* Red */
+  /* Vivid Accent Palette */
+  --color-events: #F472B6;      /* Pink 400 */
+  --color-earnings: #34D399;    /* Emerald 400 */
+  --color-sector: #38BDF8;      /* Sky 400 */
+  --color-prediction: #A78BFA;  /* Violet 400 */
+  --color-person: #FBBF24;      /* Amber 400 */
+  --color-explanation: #2DD4BF; /* Teal 400 */
+  --color-prompt: #F87171;      /* Red 400 */
+  --color-admin: #94A3B8;       /* Slate 400 */
+  --color-settings: #CBD5E1;    /* Slate 300 */
+  --app-max-width: 450px;
+  --outer-bg: #1E1E2E;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-color);
-  background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+  background-color: var(--outer-bg);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: center; 高さが可変になるため解除 */
 }
 
 .app-container {
   width: 100%;
-  max-width: 1000px;
-  padding: 2rem 1rem;
+  max-width: var(--app-max-width);
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-color) 70%);
+  padding: 2rem 1.5rem;
   box-sizing: border-box;
 }
 
 /* Header */
 .header {
-  text-align: left;
   margin-bottom: 2rem;
 }
 
 .header h1 {
   font-size: 1.5rem;
-  font-weight: 200;
-  letter-spacing: 2px;
-  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary);
   text-transform: uppercase;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 /* Section Styles */
 .dashboard-section {
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
 }
 
 .section-title {
   font-size: 0.9rem;
+  font-weight: 800;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 1rem;
-  padding-left: 0.5rem;
-  border-left: 3px solid var(--accent-market); /* アクセントライン */
-  opacity: 0.9;
+  letter-spacing: 2px;
+  margin-bottom: 1.25rem;
+  padding-left: 1rem;
+  border-left: 6px solid var(--text-secondary); /* ボーダーを太く */
+  opacity: 1; /* 不透明度を最大に */
 }
 
 /* Grid Layouts */
 .grid-container {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem; /* ギャップを広げて独立性を高める */
   width: 100%;
 }
 
 .grid-cols-2 {
   grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: minmax(180px, auto); /* 高さを確保 */
+  grid-auto-rows: minmax(180px, auto);
 }
 
 .grid-cols-1 {
   grid-template-columns: 1fr;
-  grid-auto-rows: minmax(120px, auto);
+  grid-auto-rows: minmax(130px, auto);
 }
 
 .grid-cols-4 {
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: minmax(120px, auto); /* Relatedは少し低めでOK */
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-auto-rows: minmax(140px, auto);
 }
 
-
-/* Card Style */
+/* Card Style - High Contrast & Bold Borders */
 .dashboard-card {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--card-border);
-  border-radius: 20px;
-  padding: 1.5rem;
+  /* ボーダーの設定: 太く、はっきりと */
+  border-width: var(--card-border-width);
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.15); /* デフォルトのボーダー色 */
+  
+  border-radius: 24px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   color: var(--text-primary);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.dashboard-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  
+  /* 影を濃くして浮き出し効果を強調 */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 .dashboard-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  /* ホバー時はさらに影を濃く */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
   z-index: 10;
-}
-
-.dashboard-card:hover::before {
-  opacity: 1;
 }
 
 /* Icons */
 .icon-wrapper {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.25rem;
   transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.2); /* アイコン背景を少し暗くしてコントラスト確保 */
+  border: 2px solid transparent; /* アイコン枠も太く */
 }
 
 .dashboard-card:hover .icon-wrapper {
   transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .icon-wrapper svg {
-  width: 28px;
-  height: 28px;
-  stroke-width: 1.5;
+  width: 36px;
+  height: 36px;
+  stroke-width: 2.5; /* アイコンの線も太く */
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
-  transition: stroke 0.3s ease;
+  transition: all 0.3s ease;
+  stroke: var(--text-primary);
 }
 
 /* Typography */
 .text-wrapper {
   text-align: center;
+  z-index: 1;
 }
 
 .card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 1.35rem; /* タイトルサイズアップ */
+  font-weight: 800; /* 太字強調 */
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   margin: 0;
+  transition: color 0.3s ease;
 }
 
 .card-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-top: 0.25rem;
-  font-weight: 300;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  display: block;
 }
 
-/* Category Accents */
-.category-analysis:hover .icon-wrapper { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.3); }
-.category-analysis svg { stroke: var(--accent-analysis); }
 
-.category-ai:hover .icon-wrapper { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); border-color: rgba(139, 92, 246, 0.3); }
-.category-ai svg { stroke: var(--accent-ai); }
+/* --- Category Specific Styling (Bold Borders & Accents) --- */
 
-.category-market:hover .icon-wrapper { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); border-color: rgba(59, 130, 246, 0.3); }
-.category-market svg { stroke: var(--accent-market); }
+/* Events */
+.type-events {
+  border-color: rgba(244, 114, 182, var(--card-border-opacity));
+}
+.type-events .icon-wrapper {
+  background: rgba(244, 114, 182, 0.1);
+  border-color: rgba(244, 114, 182, 0.5);
+  color: var(--color-events); /* For SVG stroke inheritance if needed */
+}
+.type-events svg { stroke: var(--color-events); }
+.type-events:hover {
+  border-color: var(--color-events);
+  background: rgba(244, 114, 182, 0.05); /* うっすら色味を追加 */
+}
+.type-events:hover .card-title { color: var(--color-events); }
 
-.category-admin:hover .icon-wrapper { box-shadow: 0 0 20px rgba(100, 116, 139, 0.3); border-color: rgba(100, 116, 139, 0.3); }
-.category-admin svg { stroke: var(--accent-admin); }
+
+/* Earnings */
+.type-earnings {
+  border-color: rgba(52, 211, 153, var(--card-border-opacity));
+}
+.type-earnings .icon-wrapper {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.5);
+}
+.type-earnings svg { stroke: var(--color-earnings); }
+.type-earnings:hover {
+  border-color: var(--color-earnings);
+  background: rgba(52, 211, 153, 0.05);
+}
+.type-earnings:hover .card-title { color: var(--color-earnings); }
+
+
+/* Sector */
+.type-sector {
+  border-color: rgba(56, 189, 248, var(--card-border-opacity));
+}
+.type-sector .icon-wrapper {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.type-sector svg { stroke: var(--color-sector); }
+.type-sector:hover {
+  border-color: var(--color-sector);
+  background: rgba(56, 189, 248, 0.05);
+}
+.type-sector:hover .card-title { color: var(--color-sector); }
+
+
+/* Prediction */
+.type-prediction {
+  border-color: rgba(167, 139, 250, var(--card-border-opacity));
+}
+.type-prediction .icon-wrapper {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+.type-prediction svg { stroke: var(--color-prediction); }
+.type-prediction:hover {
+  border-color: var(--color-prediction);
+  background: rgba(167, 139, 250, 0.05);
+}
+.type-prediction:hover .card-title { color: var(--color-prediction); }
+
+
+/* Person */
+.type-person {
+  border-color: rgba(251, 191, 36, var(--card-border-opacity));
+}
+.type-person .icon-wrapper {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+.type-person svg { stroke: var(--color-person); }
+.type-person:hover {
+  border-color: var(--color-person);
+  background: rgba(251, 191, 36, 0.05);
+}
+.type-person:hover .card-title { color: var(--color-person); }
+
+
+/* Explanation */
+.type-explanation {
+  border-color: rgba(45, 212, 191, var(--card-border-opacity));
+}
+.type-explanation .icon-wrapper {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.5);
+}
+.type-explanation svg { stroke: var(--color-explanation); }
+.type-explanation:hover {
+  border-color: var(--color-explanation);
+  background: rgba(45, 212, 191, 0.05);
+}
+.type-explanation:hover .card-title { color: var(--color-explanation); }
+
+
+/* Prompt */
+.type-prompt {
+  border-color: rgba(248, 113, 113, var(--card-border-opacity));
+}
+.type-prompt .icon-wrapper {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+.type-prompt svg { stroke: var(--color-prompt); }
+.type-prompt:hover {
+  border-color: var(--color-prompt);
+  background: rgba(248, 113, 113, 0.05);
+}
+.type-prompt:hover .card-title { color: var(--color-prompt); }
+
+
+/* Admin & Settings (Neutral but Bold) */
+.type-admin, .type-settings {
+  border-color: rgba(148, 163, 184, var(--card-border-opacity));
+}
+.type-admin .icon-wrapper, .type-settings .icon-wrapper {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+.type-admin svg, .type-settings svg { stroke: var(--color-admin); }
+.type-admin:hover, .type-settings:hover {
+  border-color: var(--color-admin);
+  background: rgba(148, 163, 184, 0.05);
+}
+.type-admin:hover .card-title, .type-settings:hover .card-title { color: var(--color-admin); }
 
 
 /* Responsive Design */
-
-/* Tablet (max 900px) */
 @media (max-width: 900px) {
   .grid-cols-4 {
-    grid-template-columns: repeat(2, 1fr); /* 4列を2列へ */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* Mobile (max 600px) */
 @media (max-width: 600px) {
   .app-container {
-    padding: 1rem 0.5rem;
+    padding: 1rem;
   }
   
   .section-title {
     font-size: 0.8rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    padding-left: 0.75rem;
+    border-left-width: 4px;
   }
   
   .dashboard-section {
     margin-bottom: 2rem;
   }
 
-  /* Force 2 columns for visibility, but respect hierarchy */
+  .grid-container {
+    gap: 1rem;
+  }
+
   .grid-cols-2 {
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: auto;
-    gap: 0.5rem;
+    grid-auto-rows: minmax(150px, auto);
   }
   
   .grid-cols-1 {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
+    grid-auto-rows: minmax(120px, auto);
   }
   
   .grid-cols-4 {
-    grid-template-columns: repeat(2, 1fr); /* モバイルでも2列で表示 */
-    gap: 0.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: minmax(140px, auto);
   }
 
   /* Card Styles for Mobile */
   .dashboard-card {
-    padding: 1rem 0.5rem;
-    border-radius: 12px;
-    min-height: 110px; /* 最低高さを確保 */
+    padding: 1.5rem 1rem;
+    border-radius: 20px;
+    border-width: 2px; /* モバイルでも太線維持 */
   }
   
   .icon-wrapper {
-    width: 42px;
-    height: 42px;
-    margin-bottom: 0.5rem;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 1rem;
+    border-radius: 16px;
   }
   
   .icon-wrapper svg {
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
   }
   
   .card-title {
-    font-size: 0.85rem;
-    white-space: normal;
+    font-size: 1.1rem;
   }
   
   .card-subtitle {
-    font-size: 0.7rem;
-    display: block; /* サブタイトル表示 */
+    font-size: 0.8rem;
   }
 }

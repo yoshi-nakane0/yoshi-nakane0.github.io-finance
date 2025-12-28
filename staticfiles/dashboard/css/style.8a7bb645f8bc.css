@@ -24,7 +24,7 @@
   --color-admin: #94A3B8;       /* Slate 400 */
   --color-settings: #CBD5E1;    /* Slate 300 */
   --app-max-width: 450px;
-  --outer-bg: #1E1E2E;
+  --outer-bg: rgba(230, 233, 238, 0.7);
 }
 
 body {
