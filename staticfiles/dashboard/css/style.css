@@ -1,140 +1,270 @@
-body {
-    margin: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: #1E1E2E; /* body の背景色を #1E1E2E に */
-    color: white;
-  }
+:root {
+  --bg-color: #0F172A;
+  --bg-gradient-start: #0F172A;
+  --bg-gradient-end: #1E293B;
+  --card-bg: rgba(30, 41, 59, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
   
-  .app-container {
-    max-width: 414px;
-    margin: 0 auto;
-    height: 100vh;
-    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* グラデーションを適用 */
-    position: relative;
-    overflow-y: auto; /* スクロール可能に変更 */
-    overflow-x: hidden; /* 横方向のはみ出しを抑制 */
-    overflow-x: clip;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-  }
-  .app-container::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-  }
+  /* Accent Colors */
+  --accent-analysis: #10B981; /* Green */
+  --accent-ai: #8B5CF6;       /* Violet */
+  --accent-market: #3B82F6;   /* Blue */
+  --accent-admin: #64748B;    /* Slate */
+  --accent-alert: #EF4444;    /* Red */
+}
 
-  .content {
-    margin-top: 10px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start; /* 上部に寄せる */
-    padding-top: 20px; /* 上部に余白を調整 (50px -> 20px) */
-    position: relative;
-  }
-  .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    padding: 20px; /* menu-grid に padding を追加 */
-  }
-  .menu-item-wrapper {
-    background-color: rgba(41, 45, 53, 0.7); /* 背景色を少し透明に */
-    border-radius: 30px;
-    padding: 15px;
-  }
-  .menu-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
-    color: white;
-  }
-  .icon-wrapper {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影を追加して立体感を出す */
-    /* グラデーション色の設定 (icon-wrapper に適用) */
-    font-size: 20px;
-  }
-  .icon-wrapper svg {
-    width: 28px;
-    height: 28px;
-    stroke: #fff;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-  }
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: center; 高さが可変になるため解除 */
+}
 
-  .menu-item span {
-    margin-top: 8px;
-    font-size: 15px;
-  }
+.app-container {
+  width: 100%;
+  max-width: 1000px;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
 
-  .app-container::after {
+/* Header */
+.header {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 200;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Section Styles */
+.dashboard-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--accent-market); /* アクセントライン */
+  opacity: 0.9;
+}
+
+/* Grid Layouts */
+.grid-container {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: minmax(180px, auto); /* 高さを確保 */
+}
+
+.grid-cols-1 {
+  grid-template-columns: 1fr;
+  grid-auto-rows: minmax(120px, auto);
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(120px, auto); /* Relatedは少し低めでOK */
+}
+
+
+/* Card Style */
+.dashboard-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-card::before {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
+  left: 0;
   right: 0;
-  width: clamp(200px, 60vw, 280px);
-  height: clamp(200px, 60vw, 280px);
-  background-color: rgba(74, 144, 226, 0.15); /* 透明度を少し上げるか、元の0.2のままでもOK */
-  border-radius: 50%;
-  filter: blur(40px); /* ブラーの値を大幅に下げる (例: 30px～50px程度で試す) */
-  transform: translate(35%, 35%);
-  pointer-events: none;
-  z-index: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
-  /* ボタンのホバーエフェクトを強化 */
-  .menu-item:hover .icon-wrapper {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.dashboard-card:hover::before {
+  opacity: 1;
+}
+
+/* Icons */
+.icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover .icon-wrapper {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.icon-wrapper svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.3s ease;
+}
+
+/* Typography */
+.text-wrapper {
+  text-align: center;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  font-weight: 300;
+}
+
+/* Category Accents */
+.category-analysis:hover .icon-wrapper { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.3); }
+.category-analysis svg { stroke: var(--accent-analysis); }
+
+.category-ai:hover .icon-wrapper { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); border-color: rgba(139, 92, 246, 0.3); }
+.category-ai svg { stroke: var(--accent-ai); }
+
+.category-market:hover .icon-wrapper { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); border-color: rgba(59, 130, 246, 0.3); }
+.category-market svg { stroke: var(--accent-market); }
+
+.category-admin:hover .icon-wrapper { box-shadow: 0 0 20px rgba(100, 116, 139, 0.3); border-color: rgba(100, 116, 139, 0.3); }
+.category-admin svg { stroke: var(--accent-admin); }
+
+
+/* Responsive Design */
+
+/* Tablet (max 900px) */
+@media (max-width: 900px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr); /* 4列を2列へ */
+  }
+}
+
+/* Mobile (max 600px) */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 1rem 0.5rem;
   }
   
-  /* それぞれ異なるグラデーション色を指定 (icon-wrapper に適用) */
-  .schedule-icon {
-    background: linear-gradient(145deg, #506cff, #7589ff);
-  }
-  .prompt-icon {
-    background: linear-gradient(145deg, #8c50ff, #ac78ff);
-  }
-  .earning-icon {
-    background: linear-gradient(145deg, #ff506c, #ff7589);
-  }
-  .target-icon {
-    background: linear-gradient(145deg, #ffaa50, #ffbf75);
-  }
-  .control-icon {
-    background: linear-gradient(145deg, #50c2ff, #75d9ff);
-  }
-  .prediction-icon {
-    background: linear-gradient(145deg, #3f8cff, #6fb1ff);
-  }
-  .person-icon {
-    background: linear-gradient(145deg, #50ff8c, #75ffac);
+  .section-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
   }
   
-  /* Additional icons for 5x2 layout */
-  .test1-icon {
-    background: linear-gradient(145deg, #ff50f0, #ff75f5); /* Pink */
-  }
-  .test2-icon {
-    background: linear-gradient(145deg, #f0ff50, #f5ff75); /* Yellow */
-  }
-  .test3-icon {
-    background: linear-gradient(145deg, #50fff5, #75fff8); /* Cyan */
-  }
-  .test4-icon {
-    background: linear-gradient(145deg, #b0b0b0, #d0d0d0); /* Silver */
+  .dashboard-section {
+    margin-bottom: 2rem;
   }
 
-/* Bootstrap minimal styles - only what's needed */
-.bg-dark {
-    background-color: #212529 !important;
+  /* Force 2 columns for visibility, but respect hierarchy */
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: auto;
+    gap: 0.5rem;
+  }
+  
+  .grid-cols-1 {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr); /* モバイルでも2列で表示 */
+    gap: 0.5rem;
+  }
+
+  /* Card Styles for Mobile */
+  .dashboard-card {
+    padding: 1rem 0.5rem;
+    border-radius: 12px;
+    min-height: 110px; /* 最低高さを確保 */
+  }
+  
+  .icon-wrapper {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .icon-wrapper svg {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .card-title {
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+  
+  .card-subtitle {
+    font-size: 0.7rem;
+    display: block; /* サブタイトル表示 */
+  }
 }
