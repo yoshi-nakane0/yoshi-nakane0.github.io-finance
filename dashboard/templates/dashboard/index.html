@@ -60,8 +60,21 @@
     <!-- Group: Live Stock Trends -->
     <section class="dashboard-section">
       <h3 class="section-title">Live Stock Trends</h3>
-      <div class="grid-container grid-cols-1">
+      <div class="grid-container grid-cols-2">
         
+        <!-- Bias -->
+        <a href="{% url 'bias:index' %}" class="dashboard-card category-analysis type-bias">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Bias</h2>
+            <span class="card-subtitle">Market Sentiment</span>
+          </div>
+        </a>
+
         <!-- 3. Sector -->
         <a href="/sector/" class="dashboard-card category-analysis type-sector">
           <div class="icon-wrapper">

@@ -21,6 +21,7 @@
   --color-person: #FBBF24;      /* Amber 400 */
   --color-explanation: #2DD4BF; /* Teal 400 */
   --color-prompt: #F87171;      /* Red 400 */
+  --color-bias: #F97316;        /* Orange 500 */
   --color-admin: #94A3B8;       /* Slate 400 */
   --color-settings: #CBD5E1;    /* Slate 300 */
   --app-max-width: 450px;
@@ -237,6 +238,22 @@ body {
   background: rgba(56, 189, 248, 0.05);
 }
 .type-sector:hover .card-title { color: var(--color-sector); }
+
+
+/* Bias */
+.type-bias {
+  border-color: rgba(249, 115, 22, var(--card-border-opacity));
+}
+.type-bias .icon-wrapper {
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.5);
+}
+.type-bias svg { stroke: var(--color-bias); }
+.type-bias:hover {
+  border-color: var(--color-bias);
+  background: rgba(249, 115, 22, 0.05);
+}
+.type-bias:hover .card-title { color: var(--color-bias); }
 
 
 /* Prediction */

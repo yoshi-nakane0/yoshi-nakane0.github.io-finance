@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'explanation',
     'person',
     'prediction',
+    'bias',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
