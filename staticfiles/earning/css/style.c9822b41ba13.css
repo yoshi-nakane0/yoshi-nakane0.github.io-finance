@@ -72,9 +72,9 @@ html, body {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background-color: rgba(66, 211, 146, 0.1);
+  background-color: rgba(66, 165, 245, 0.1);
   border-radius: 10px;
-  color: #42d392;
+  color: var(--market-us);
   font-size: 18px;
 }
 
@@ -118,7 +118,7 @@ html, body {
  *******************************************************/
 .meta-info {
   font-family: var(--font-family-mono);
-  font-size: 12px;
+  font-size: 10px;
   color: var(--text-muted);
   opacity: 0.5;
   padding: 2px 20px 0;

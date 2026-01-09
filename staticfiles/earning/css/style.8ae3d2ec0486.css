@@ -72,10 +72,16 @@ html, body {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background-color: rgba(66, 211, 146, 0.1);
+  background-color: rgba(66, 165, 245, 0.1);
   border-radius: 10px;
-  color: #42d392;
+  color: var(--market-us);
   font-size: 18px;
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .app-title {
@@ -86,6 +92,14 @@ html, body {
   line-height: 1.1;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+
+.header-updated {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 
 .header-right {
@@ -114,25 +128,13 @@ html, body {
 }
 
 /*******************************************************
- * Meta Info (Updated time)
- *******************************************************/
-.meta-info {
-  font-family: var(--font-family-mono);
-  font-size: 12px;
-  color: var(--text-muted);
-  opacity: 0.5;
-  padding: 2px 20px 0;
-  letter-spacing: 0.5px;
-}
-
-/*******************************************************
  * Filter buttons
  *******************************************************/
 .filter-buttons {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 12px 0 16px; /* Adjusted margins */
+  margin: 20px 0 16px; /* Adjusted margins */
   padding: 0 16px;
 }
 
@@ -177,7 +179,7 @@ html, body {
 
 .date-header {
   position: sticky;
-  top: 62px; /* Adjusted for header height */
+  top: 73px; /* Adjusted for larger header height */
   background-color: var(--bg-primary);
   z-index: 90;
   padding: 12px 4px 8px;

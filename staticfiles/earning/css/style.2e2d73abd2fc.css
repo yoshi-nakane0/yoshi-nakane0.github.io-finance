@@ -1,0 +1,304 @@
+/* earning/static/earning/css/style.css */
+
+:root {
+  --bg-primary: #1E1E2E;
+  --bg-secondary: #2D2D44;
+  --bg-tertiary: rgba(45, 45, 68, 0.5);
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --accent-color: #64B5F6;
+  --accent-hover: #42A5F5;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --success-color: #4CAF50;
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SF Mono", "Monaco", "Inconsolata", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
+}
+
+html, body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary);
+  min-height: 100vh;
+  font-family: var(--font-family-base);
+}
+
+.app-container {
+  max-width: 450px;
+  margin: 0 auto;
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.schedule-container {
+  font-family: var(--font-family-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0;
+  max-width: 450px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/*******************************************************
+ * Header & status bar
+ *******************************************************/
+.status-bar {
+  background-color: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.status-bar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.status-bar-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border: none !important;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.status-bar-item:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/*******************************************************
+ * Filter buttons
+ *******************************************************/
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 0 16px;
+}
+
+.filter-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  min-width: 60px;
+}
+
+.filter-btn:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.filter-btn.active {
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+/*******************************************************
+ * Schedule & Earnings List
+ *******************************************************/
+.schedule-date {
+  padding: 0 16px;
+}
+
+.earnings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.date-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-header {
+  position: sticky;
+  top: 45px; /* Adjust based on status bar height */
+  background-color: var(--bg-primary);
+  z-index: 90;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.date-title {
+  color: var(--accent-color);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.companies-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* New Company Row Design */
+.company-row {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.company-row:last-child {
+  border-bottom: none;
+}
+
+.company-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Left side: Symbol + Company Name */
+.company-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0; /* Enable truncation */
+}
+
+.symbol-wrapper {
+  flex-shrink: 0;
+  width: 50px; /* Fixed width for alignment */
+}
+
+.company-symbol {
+  font-family: var(--font-family-mono);
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 700;
+  display: block;
+}
+
+.company-name {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+/* Right side: Industry + Action */
+.company-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.industry-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.action-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.analysis-link {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.analysis-link:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.analysis-link i {
+  font-size: 12px;
+}
+
+/*******************************************************
+ * Back to top button
+ *******************************************************/
+#back-to-top {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99;
+  border: none;
+  background-color: var(--accent-color);
+  color: white;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  display: flex; /* For centering icon */
+  align-items: center;
+  justify-content: center;
+}
+
+#back-to-top:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+#back-to-top i {
+  font-size: 18px;
+}
+
+/*******************************************************
+ * Responsive adjustments
+ *******************************************************/
+@media (max-width: 380px) {
+  .symbol-wrapper {
+    width: auto;
+    margin-right: 4px;
+  }
+  
+  .industry-label {
+    display: none; /* Hide industry on very small screens to prioritize name */
+  }
+}

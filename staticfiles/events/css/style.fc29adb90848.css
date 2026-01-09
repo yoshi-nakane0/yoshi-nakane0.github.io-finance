@@ -28,7 +28,7 @@ body {
     align-items: center;
     padding: 2px 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* 境界線を薄く */
-    margin-bottom: 5px; /* ステータスバーの下に間隔を追加 */
+    margin-bottom: 15px; /* ステータスバーの下に間隔を追加 */
 }
 
 .meta-info {
@@ -77,7 +77,6 @@ body {
     color: #ffffff;
     font-size: 14px;
     margin-bottom: 0px;
-    padding-top: 15px;
     padding-left: 5px;
 }
 
