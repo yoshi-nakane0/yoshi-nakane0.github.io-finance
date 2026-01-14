@@ -56,8 +56,8 @@
                         <h3 class="date-title">📊 日本マクロ指標</h3>
                     </div>
 
-                    <!-- Growth / Business -->
-                    <div class="spec-section-title">成長・景況 (Growth)</div>
+                    <!-- Real Economy -->
+                    <div class="spec-section-title">景気・需要 (Real)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">Real GDP</div>
@@ -78,6 +78,9 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
+
+                    <!-- Leading / Sentiment -->
+                    <div class="spec-section-title">景況感・先行 (Leading)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">BOJ Tankan (Business Conditions DI)</div>
@@ -88,19 +91,9 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
-                    <div class="spec-item">
-                        <div class="spec-name-group">
-                            <div class="spec-name-en">Business Conditions Indices (METI)</div>
-                            <div class="spec-name-jp">経済産業省などの業況指数</div>
-                        </div>
-                        <div class="spec-value-container">
-                            <span class="spec-value">--</span>
-                            <span class="last-updated">--/--</span>
-                        </div>
-                    </div>
 
-                    <!-- Inflation / Finance -->
-                    <div class="spec-section-title">インフレ・金融 (Inflation/Fin)</div>
+                    <!-- Inflation -->
+                    <div class="spec-section-title">物価・インフレ (Inflation)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">CPI / Core CPI</div>
@@ -111,6 +104,9 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
+
+                    <!-- Financial Conditions -->
+                    <div class="spec-section-title">金融条件 (Financial Conditions)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">BOJ Policy Rate / YCC</div>
@@ -135,19 +131,6 @@
                         <div class="spec-name-group">
                             <div class="spec-name-en">USD/JPY Exchange Rate</div>
                             <div class="spec-name-jp">USD/JPY為替レート</div>
-                        </div>
-                        <div class="spec-value-container">
-                            <span class="spec-value">--</span>
-                            <span class="last-updated">--/--</span>
-                        </div>
-                    </div>
-
-                    <!-- Others -->
-                    <div class="spec-section-title">その他 (Others)</div>
-                    <div class="spec-item">
-                        <div class="spec-name-group">
-                            <div class="spec-name-en">Machinery Orders, Ind. Prod. Index</div>
-                            <div class="spec-name-jp">機械受注、鉱工業生産指数など</div>
                         </div>
                         <div class="spec-value-container">
                             <span class="spec-value">--</span>
@@ -214,16 +197,15 @@
                     </div>
                 </div>
 
-
                 <!-- Macro Indicators -->
                 <div class="earnings-container">
                     <div class="date-header">
                         <h3 class="date-title">📊 米国マクロ指標</h3>
                     </div>
                     
-                    <!-- Growth -->
-                    <div class="spec-section-title">成長 (Growth)</div>
-                    <div class="spec-item" onclick="location.href='{% url 'explanation:us_macro_gdp' %}'" style="cursor: pointer;">
+                    <!-- Real Economy -->
+                    <div class="spec-section-title">景気・需要 (Real)</div>
+                    <div class="spec-item" data-url="{% url 'explanation:us_macro_gdp' %}" style="cursor: pointer;">
                         <div class="spec-name-group">
                             <div class="spec-name-en">Real GDP (Quarterly)</div>
                             <div class="spec-name-jp">実質GDP［四半期］</div>
@@ -233,27 +215,7 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
-                    <div class="spec-item" onclick="location.href='{% url 'explanation:us_macro_ism' %}'" style="cursor: pointer;">
-                        <div class="spec-name-group">
-                            <div class="spec-name-en">ISM Manufacturing / Services</div>
-                            <div class="spec-name-jp">ISM製造業・非製造業</div>
-                        </div>
-                        <div class="spec-value-container">
-                            <span class="spec-value">--</span>
-                            <span class="last-updated">--/--</span>
-                        </div>
-                    </div>
-                    <div class="spec-item" onclick="location.href='{% url 'explanation:us_macro_pmi' %}'" style="cursor: pointer;">
-                        <div class="spec-name-group">
-                            <div class="spec-name-en">S&P Global PMI (Mfg / Svc)</div>
-                            <div class="spec-name-jp">S&P Global PMI［製造・サービス］</div>
-                        </div>
-                        <div class="spec-value-container">
-                            <span class="spec-value">--</span>
-                            <span class="last-updated">--/--</span>
-                        </div>
-                    </div>
-                    <div class="spec-item">
+                    <div class="spec-item" data-url="{% url 'explanation:us_macro_sales' %}" style="cursor: pointer;">
                         <div class="spec-name-group">
                             <div class="spec-name-en">Retail Sales</div>
                             <div class="spec-name-jp">小売売上高</div>
@@ -273,19 +235,22 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
-                    <div class="spec-item">
+                    
+                    <!-- Leading / Sentiment -->
+                    <div class="spec-section-title">景況感・先行 (Leading)</div>
+                    <div class="spec-item" data-url="{% url 'explanation:us_macro_ism' %}" style="cursor: pointer;">
                         <div class="spec-name-group">
-                            <div class="spec-name-en">Durable Goods Orders</div>
-                            <div class="spec-name-jp">耐久財受注</div>
+                            <div class="spec-name-en">ISM Manufacturing / Services</div>
+                            <div class="spec-name-jp">ISM製造業・非製造業</div>
                         </div>
                         <div class="spec-value-container">
                             <span class="spec-value">--</span>
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
-                    
+
                     <!-- Inflation -->
-                    <div class="spec-section-title">インフレ (Inflation)</div>
+                    <div class="spec-section-title">物価・インフレ (Inflation)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">CPI / Core CPI</div>
@@ -306,7 +271,7 @@
                             <span class="last-updated">--/--</span>
                         </div>
                     </div>
-                    <div class="spec-item">
+                    <div class="spec-item" data-url="{% url 'explanation:us_macro_ppi' %}" style="cursor: pointer;">
                         <div class="spec-name-group">
                             <div class="spec-name-en">PPI</div>
                             <div class="spec-name-jp">PPI</div>
@@ -318,7 +283,7 @@
                     </div>
                     
                     <!-- Employment -->
-                    <div class="spec-section-title">雇用 (Employment)</div>
+                    <div class="spec-section-title">雇用・賃金 (Employment/Wages)</div>
                     <div class="spec-item">
                         <div class="spec-name-group">
                             <div class="spec-name-en">Nonfarm Payrolls (NFP)</div>
@@ -353,16 +318,6 @@
                         <div class="spec-name-group">
                             <div class="spec-name-en">Initial Jobless Claims (Weekly)</div>
                             <div class="spec-name-jp">週次新規失業保険申請件数</div>
-                        </div>
-                        <div class="spec-value-container">
-                            <span class="spec-value">--</span>
-                            <span class="last-updated">--/--</span>
-                        </div>
-                    </div>
-                    <div class="spec-item">
-                        <div class="spec-name-group">
-                            <div class="spec-name-en">JOLTS Job Openings</div>
-                            <div class="spec-name-jp">JOLTS求人件数</div>
                         </div>
                         <div class="spec-value-container">
                             <span class="spec-value">--</span>
@@ -443,18 +398,44 @@
         const viewJp = document.getElementById('jp-view');
         const viewUs = document.getElementById('us-view');
 
-        btnJp.addEventListener('click', () => {
-            btnJp.classList.add('active');
-            btnUs.classList.remove('active');
-            viewJp.style.display = 'block';
-            viewUs.style.display = 'none';
-        });
+        function switchView(viewName) {
+            if (viewName === 'us') {
+                btnUs.classList.add('active');
+                btnJp.classList.remove('active');
+                viewUs.style.display = 'block';
+                viewJp.style.display = 'none';
+            } else {
+                btnJp.classList.add('active');
+                btnUs.classList.remove('active');
+                viewJp.style.display = 'block';
+                viewUs.style.display = 'none';
+            }
+        }
 
-        btnUs.addEventListener('click', () => {
-            btnUs.classList.add('active');
-            btnJp.classList.remove('active');
-            viewUs.style.display = 'block';
-            viewJp.style.display = 'none';
+        btnJp.addEventListener('click', () => switchView('jp'));
+        btnUs.addEventListener('click', () => switchView('us'));
+
+        // Check URL param on load
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialView = urlParams.get('view');
+        if (initialView === 'us') {
+            switchView('us');
+        } else {
+            switchView('jp');
+        }
+
+        // Clickable items with dynamic return param
+        document.querySelectorAll('[data-url]').forEach((item) => {
+            item.addEventListener('click', () => {
+                let targetUrl = item.getAttribute('data-url');
+                if (targetUrl) {
+                    // Determine current active view
+                    const currentView = viewUs.style.display !== 'none' ? 'us' : 'jp';
+                    // Check if targetUrl already has params
+                    const separator = targetUrl.includes('?') ? '&' : '?';
+                    location.href = `${targetUrl}${separator}from_view=${currentView}`;
+                }
+            });
         });
 
         // Back to top

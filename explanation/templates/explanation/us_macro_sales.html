@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMI詳細 - Control</title>
+    <title>Retail Sales</title>
     <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons CDN -->
@@ -98,10 +98,10 @@
             <!-- Title Header -->
             <div class="earnings-container">
                 <div class="date-header">
-                    <h3 class="date-title">🇺🇸 S&P Global PMI (Mfg / Svc)</h3>
+                    <h3 class="date-title">🇺🇸 Retail Sales</h3>
                 </div>
                 <div style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 5px; padding-left: 5px;">
-                    PMI (Purchasing Managers' Index)
+                    小売売上高
                 </div>
             </div>
 
@@ -112,35 +112,41 @@
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingOne">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                            📊 調査期間の目安とFlash/Final
+                            📊 推移把握「適切な調査期間」
                         </button>
                     </h2>
                     <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#pmiAccordion">
                         <div class="accordion-body">
-                            <div class="detail-subtitle">Flash（速報）と Final（確報）</div>
-                            <p>PMIは2段階で発表されます。</p>
-                            <div class="highlight-box">
-                                <strong>Flash（速報）：</strong> 月の後半発表。市場インパクト大。<br>
-                                <strong>Final（確報）：</strong> 翌月月初発表。修正幅は小さめ。
-                            </div>
-                            <p>予測や相場反応を見るなら、情報の早い<strong>「Flash中心」</strong>が基本です。</p>
+                            <div class="detail-subtitle">景気循環・中期予測（リセッション/構造変化）</div>
+                            <ul class="detail-list">
+                                <li>1992年〜最新（推奨）</li>
+                            </ul>
 
-                            <div class="detail-subtitle">調査期間の目安（用途別）</div>
+                            <div class="detail-subtitle">投資判断・短期見通し（予想比/次回Fed影響）</div>
+                            <ul class="detail-list">
+                                <li>サプライズ分布・モデル用＝直近10〜15年（できれば初報ビンテージも）</li>
+                                <li>次回FOMCの含意＝直近24〜36か月</li>
+                            </ul>
+
+                            <div class="detail-subtitle">足元トレンド確認（ノイズ除去/モメンタム）</div>
+                            <ul class="detail-list">
+                                <li>直近18〜36か月（基本24か月）。3か月/6か月平滑化や3m/3mでモメンタムを見る。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">補足（超重要）</div>
+                            <div class="highlight-box">
+                                <strong>Retail Salesは名目で改定もあるので、短期でも実質（デフレ後）と初報vs改定の両方を意識。</strong>
+                            </div>
                             <ul class="detail-list">
                                 <li>
-                                    <strong>足元のトレンド把握：</strong><br>
-                                    <span class="highlight-text">最低12か月</span><br>
-                                    季節性や一時要因をならして見るため。
+                                    <strong>名目（Nominal）：</strong>「売上の金額そのまま」。<br>
+                                    → 物価が上がると、モノが同じだけ売れてても金額だけ増えるので、“景気が良い”と勘違いしやすい。<br>
+                                    ⇒ だから <strong>実質（Real）</strong>＝「物価の影響を取り除いた売上」も一緒に見る（＝本当に買う量が増えたか確認）。
                                 </li>
                                 <li>
-                                    <strong>景気局面（拡大/減速）判断：</strong><br>
-                                    <span class="highlight-text">24〜36か月</span><br>
-                                    循環の波（サイクル）を確認するため。
-                                </li>
-                                <li>
-                                    <strong>将来予測モデル構築：</strong><br>
-                                    <span class="highlight-text">5〜10年</span><br>
-                                    利上げ局面や後退局面を含めて係数を安定させるため。
+                                    <strong>改定（Revision）：</strong>最初に出た数字（初報）が、あとで修正されること。<br>
+                                    → 発表直後に市場が反応するのは初報、後から数字が変わることがある。<br>
+                                    ⇒ 短期分析では「初報でどう動くか」と「後で直る（変わる）か」の両方を意識。
                                 </li>
                             </ul>
                         </div>

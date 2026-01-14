@@ -15,7 +15,7 @@
   --color-sector: #38BDF8;      /* Sky 400 */
   --color-prediction: #A78BFA;  /* Violet 400 */
   --color-person: #FBBF24;      /* Amber 400 */
-  --color-explanation: #2DD4BF; /* Teal 400 */
+  --color-explanation: #6366F1; /* Indigo 500 */
   --color-prompt: #F87171;      /* Red 400 */
   --color-bias: #F97316;        /* Orange 500 */
   --color-admin: #94A3B8;       /* Slate 400 */
@@ -278,16 +278,16 @@ body {
 
 /* Explanation */
 .type-explanation {
-  border-color: rgba(45, 212, 191, var(--card-border-opacity));
+  border-color: rgba(99, 102, 241, var(--card-border-opacity));
 }
 .type-explanation .icon-wrapper {
-  background: rgba(45, 212, 191, 0.1);
-  border-color: rgba(45, 212, 191, 0.5);
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.5);
 }
 .type-explanation svg { stroke: var(--color-explanation); }
 .type-explanation:hover {
   border-color: var(--color-explanation);
-  background: rgba(45, 212, 191, 0.05);
+  background: rgba(99, 102, 241, 0.05);
 }
 .type-explanation:hover .card-title { color: var(--color-explanation); }
 
