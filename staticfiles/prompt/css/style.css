@@ -4,16 +4,12 @@ html, body {
     margin: 0;
     padding: 0;
     font-family: sans-serif;
-    background: #1E1E2E;
     color: white;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 .app-container {
-    max-width: 450px;
-    margin: 0 auto;
-    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
     position: relative;
     overflow: hidden;
 }

@@ -4,7 +4,6 @@ html, body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1E1E2E !important;
   color: #ffffff;
   min-height: 100vh;
   font-family: sans-serif;
@@ -12,22 +11,15 @@ html, body {
 
 /* Container */
 .app-container {
-  max-width: 450px;
-  margin: 0 auto;
-  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
 }
 
 .schedule-container {
   font-family: sans-serif;
-  background-color: #1E1E2E;
   color: #ffffff;
   padding: 5px;
-  max-width: 450px;
   width: 100%;
-  margin: 0 auto;
 }
 
 /* Header & status bar */

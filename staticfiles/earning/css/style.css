@@ -1,7 +1,7 @@
 /* earning/static/earning/css/style.css */
 
 :root {
-  --bg-primary: #1E1E2E;
+  --bg-primary: #0f172a;
   --bg-secondary: #2D2D44;
   --bg-tertiary: rgba(45, 45, 68, 0.5);
   --text-primary: #ffffff;
@@ -20,19 +20,14 @@
 
 html, body {
   margin: 0;
-  background-color: var(--bg-primary) !important;
   color: var(--text-primary);
   min-height: 100vh;
   font-family: var(--font-family-base);
 }
 
 .app-container {
-  max-width: 480px; /* Slightly wider for better breathing room */
-  margin: 0 auto;
-  background: var(--bg-primary);
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
 }
 
 .schedule-container {

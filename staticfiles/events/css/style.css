@@ -2,20 +2,15 @@ body {
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #1E1E2E; /* style1と統一 */
     color: white;
   }
 /* 全体コンテナ */
 .app-container {
-    max-width: 450px;
-    margin: 0 auto;
-    background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%); /* style1と同じグラデーション */
     position: relative;
     overflow: hidden;
   }
 .events-container {
     font-family: sans-serif;
-    background-color: #1E1E2E; /* style1のbody背景色と統一 */
     color: #ffffff;
     padding: 10px;
 }

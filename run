@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python manage.py migrate
-python manage.py collectstatic --noinput
-exec python manage.py runserver
+# 1=True: dev hot-reload, skip migrate/collectstatic.
+# 2=False: prod-like run with migrate/collectstatic.
+echo "Select DEBUG mode: 1) True(開発)  2) False(公開)"
+read -r mode
+
+case "$mode" in
+  1)
+    exec env DEBUG=True python manage.py runserver
+    ;;
+  2)
+    env DEBUG=False python manage.py migrate
+    env DEBUG=False python manage.py collectstatic --noinput
+    exec env DEBUG=False python manage.py runserver
+    ;;
+  *)
+    echo "Invalid input. Use 1 or 2." >&2
+    exit 1
+    ;;
+esac
