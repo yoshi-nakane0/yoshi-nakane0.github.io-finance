@@ -1,4 +1,6 @@
+import csv
 import datetime
+import json
 import logging
 import re
 import statistics
@@ -22,7 +24,10 @@ HEADERS = {
 }
 HTTP_SILENT_STATUS = {403, 404, 429}
 PRICE_SYMBOLS = ("^N225", "1329.T")
-FRED_JGB10Y_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IRLTLT01JPM156N"
+MOF_JGB10Y_CSV_URL = (
+    "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
+)
+NIKKEI_FUNDAMENTAL_URL = "https://nikkei225fut.jp/fundamental/nikkei"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
 STOOQ_NIKKEI_SYMBOL = "^nkx"
 WORLD_BANK_NOMINAL_GDP_URL = (
@@ -33,8 +38,13 @@ GDP_GROWTH_YEARS = 10
 GDP_GROWTH_MEDIAN_DEFAULT = 0.01
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
-JGB10Y_YIELD_DEFAULT = 2.15
+JGB10Y_YIELD_DEFAULT = "-"
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
+DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
+FUNDAMENTAL_VALUES_RE = re.compile(
+    r"const\s+values\s*=\s*(\[[\s\S]*?\])\s*;",
+    re.MULTILINE,
+)
 
 def _parse_float(text):
     if not text:
@@ -47,6 +57,77 @@ def _parse_float(text):
         return float(match.group(0))
     except ValueError:
         return None
+
+def _parse_mof_jgb10y(text):
+    reader = csv.reader(text.splitlines())
+    header = None
+    ten_year_index = None
+    latest_value = None
+    for row in reader:
+        if not row:
+            continue
+        first_cell = row[0].lstrip("\ufeff").strip()
+        if header is None:
+            if first_cell == "Date":
+                header = [cell.strip() for cell in row]
+                try:
+                    ten_year_index = header.index("10Y")
+                except ValueError:
+                    return None
+            continue
+        if not DATE_RE.match(first_cell):
+            continue
+        if ten_year_index is None or len(row) <= ten_year_index:
+            continue
+        value = _parse_float(row[ten_year_index])
+        if value is not None:
+            latest_value = value
+    return latest_value
+
+def _parse_nikkei_fundamental_values(text):
+    if not text:
+        return None
+    match = FUNDAMENTAL_VALUES_RE.search(text)
+    if not match:
+        return None
+    raw_values = match.group(1).strip()
+    try:
+        values = json.loads(raw_values)
+    except ValueError as exc:
+        logger.warning("Fundamental data decode failed: %s", exc)
+        return None
+    if not isinstance(values, list):
+        return None
+    return values
+
+def _select_latest_fundamental(values):
+    if not values:
+        return None
+    latest_item = None
+    latest_date = None
+    for item in values:
+        if not isinstance(item, dict):
+            continue
+        date_value = item.get("date")
+        if date_value is None:
+            continue
+        date_text = str(date_value).strip()
+        date_digits = re.sub(r"\D", "", date_text)
+        if len(date_digits) < 8:
+            continue
+        try:
+            date_int = int(date_digits[:8])
+        except ValueError:
+            continue
+        if latest_date is None or date_int > latest_date:
+            latest_date = date_int
+            latest_item = item
+    return latest_item
+
+def _get_nikkei_fundamental_latest():
+    text = _get_text(NIKKEI_FUNDAMENTAL_URL)
+    values = _parse_nikkei_fundamental_values(text)
+    return _select_latest_fundamental(values)
 
 def _get_json(url):
     try:
@@ -185,25 +266,13 @@ def get_nikkei_price():
 
 def get_jgb10y_yield_percent():
     """
-    FREDから日本国債10年利回りを取得
+    財務省CSVから日本国債10年利回りを取得
     """
-    text = _get_text(FRED_JGB10Y_URL)
-    if not text:
-        return None
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if len(lines) < 2:
-        return None
-    for line in reversed(lines[1:]):
-        parts = line.split(",")
-        if len(parts) < 2:
-            continue
-        value = parts[1].strip()
-        if not value or value == ".":
-            continue
-        try:
-            return float(value)
-        except ValueError:
-            continue
+    text = _get_text(MOF_JGB10Y_CSV_URL)
+    if text:
+        value = _parse_mof_jgb10y(text)
+        if value is not None:
+            return value
     return None
 
 def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
@@ -254,15 +323,21 @@ def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
 
 def get_forward_per():
     """
-    無料ソースでの安定取得が難しいため未取得
+    日経平均の加重平均PER（予想）を取得
     """
-    return None
+    latest = _get_nikkei_fundamental_latest()
+    if not latest:
+        return None
+    return _extract_numeric(latest.get("weighted_average_per"))
 
 def get_actual_per():
     """
-    無料ソースでの安定取得が難しいため未取得
+    日経平均の指数ベースPER（予想）を取得
     """
-    return None
+    latest = _get_nikkei_fundamental_latest()
+    if not latest:
+        return None
+    return _extract_numeric(latest.get("exponential_base_per"))
 
 def calculate_bias(
     price,
@@ -432,8 +507,8 @@ if __name__ == "__main__":
         jgb10y_yield_percent = get_jgb10y_yield_percent()
         
         if price is None: price = 54000
-        if f_per is None: f_per = 23.84
-        if a_per is None: a_per = 21.77
+        if f_per is None: f_per = "-"
+        if a_per is None: a_per = "-"
         
         print(f"Price: {price}, Forward PER: {f_per}, Actual PER: {a_per}")
             
