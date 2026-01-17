@@ -4,9 +4,15 @@ import json
 import logging
 import re
 import statistics
+import time
 from urllib.parse import quote
 
 import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 # ロガー設定
 logger = logging.getLogger(__name__)
@@ -28,6 +34,8 @@ MOF_JGB10Y_CSV_URL = (
     "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
 )
 NIKKEI_FUNDAMENTAL_URL = "https://nikkei225fut.jp/fundamental/nikkei"
+NIKKEI_ARCHIVES_SUMMARY_URL = "https://indexes.nikkei.co.jp/nkave/archives/summary"
+NIKKEI_COM_JAPANIDX_URL = "https://www.nikkei.com/markets/kabu/japanidx/"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
 STOOQ_NIKKEI_SYMBOL = "^nkx"
 WORLD_BANK_NOMINAL_GDP_URL = (
@@ -38,7 +46,8 @@ GDP_GROWTH_YEARS = 10
 GDP_GROWTH_MEDIAN_DEFAULT = 0.01
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
-JGB10Y_YIELD_DEFAULT = "-"
+JGB10Y_YIELD_DEFAULT = 1.0
+ERP_FIXED_DEFAULT = 0.05
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 FUNDAMENTAL_VALUES_RE = re.compile(
@@ -49,7 +58,7 @@ FUNDAMENTAL_VALUES_RE = re.compile(
 def _parse_float(text):
     if not text:
         return None
-    cleaned = text.replace(",", "").strip()
+    cleaned = text.replace(",", "").replace("倍", "").strip()
     match = FLOAT_RE.search(cleaned)
     if not match:
         return None
@@ -321,23 +330,122 @@ def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
     values = [value for _, value in growth_rates]
     return _median(values)
 
-def get_forward_per():
+def get_nikkei_per_values_selenium():
     """
-    日経平均の加重平均PER（予想）を取得
+    日経のサマリーページから株価収益率(PER)の「指数ベース」および「加重平均」を取得する (Selenium使用)
+    Returns:
+        dict: {"index_based": float, "weighted_average": float} or None
     """
-    latest = _get_nikkei_fundamental_latest()
-    if not latest:
+    url = NIKKEI_ARCHIVES_SUMMARY_URL
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    
+    driver = None
+    try:
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        driver.get(url)
+        time.sleep(3) # 読み込み待機
+        
+        html = driver.page_source
+        soup = BeautifulSoup(html, "lxml")
+        
+        # 株価収益率(PER) セクションを探す
+        per_link = soup.find("a", string=lambda t: "株価収益率" in t if t else False)
+        if not per_link:
+            logger.warning("PER link not found in Nikkei summary page.")
+            return None
+            
+        # 親コンテナ (measures-category) を取得
+        container = per_link.find_parent(class_="measures-category")
+        if not container:
+            logger.warning("PER container not found.")
+            return None
+            
+        result = {}
+
+        # "指数ベース" の取得
+        index_base_label = container.find(string=lambda t: "指数ベース" in t if t else False)
+        if index_base_label:
+            index_base_item = index_base_label.find_parent(class_="measures-item")
+            if index_base_item:
+                value_elem = index_base_item.find(class_="value")
+                if value_elem:
+                    result["index_based"] = _parse_float(value_elem.get_text(strip=True))
+        
+        # "加重平均" の取得
+        weighted_avg_label = container.find(string=lambda t: "加重平均" in t if t else False)
+        if weighted_avg_label:
+            weighted_avg_item = weighted_avg_label.find_parent(class_="measures-item")
+            if weighted_avg_item:
+                value_elem = weighted_avg_item.find(class_="value")
+                if value_elem:
+                    result["weighted_average"] = _parse_float(value_elem.get_text(strip=True))
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Selenium error fetching Nikkei summary: {e}")
         return None
-    return _extract_numeric(latest.get("weighted_average_per"))
+    finally:
+        if driver:
+            driver.quit()
 
 def get_actual_per():
     """
-    日経平均の指数ベースPER（予想）を取得
+    日経平均の指数ベースPER（実績）を取得
+    Source: https://www.nikkei.com/markets/kabu/japanidx/
+    Target Table: Headers [項目名, 前期基準, 予想], Row [日経平均, 19.76倍, 20.33倍]
     """
-    latest = _get_nikkei_fundamental_latest()
-    if not latest:
+    url = NIKKEI_COM_JAPANIDX_URL
+    text = _get_text(url)
+    if not text:
         return None
-    return _extract_numeric(latest.get("exponential_base_per"))
+    
+    try:
+        soup = BeautifulSoup(text, "lxml")
+        tables = soup.find_all("table")
+        
+        for table in tables:
+            # Check headers
+            headers = [th.get_text(strip=True) for th in table.find_all(["th", "td"], recursive=True)]
+            # We look for a table that likely has these headers. 
+            # Note: findAll on table might return all cells, we should look at thead or first row specifically if possible,
+            # but flattening all text in table to check for existence is easier first.
+            table_text = table.get_text(strip=True)
+            if "前期基準" not in table_text or "予想" not in table_text:
+                continue
+                
+            # Check for "日経平均" row
+            rows = table.find_all("tr")
+            for row in rows:
+                cols = row.find_all(["th", "td"])
+                if not cols:
+                    continue
+                
+                row_head = cols[0].get_text(strip=True)
+                if row_head == "日経平均":
+                    # Found the row. Now check value format to distinguish from Yield table (%)
+                    if len(cols) < 2:
+                        break
+                    
+                    val_text = cols[1].get_text(strip=True)
+                    if "倍" in val_text:
+                        # This is the PER table (or PBR, but PBR table usually has different headers or values < 5)
+                        # The user specified table has "前期基準" and "予想" headers. PBR table usually only has "純資産倍率" or similar.
+                        # Inspection showed Table 4 headers: ['項目名', '前期基準', '予想'] and values with "倍".
+                        # This matches.
+                        return _parse_float(val_text)
+        
+        logger.warning("Actual PER table/row not found on Nikkei.com")
+        return None
+
+    except Exception as e:
+        logger.error(f"Error parsing Actual PER from Nikkei.com: {e}")
+        return None
 
 def calculate_bias(
     price,
@@ -345,6 +453,8 @@ def calculate_bias(
     actual_per,
     gdp_growth_median=None,
     jgb10y_yield_percent=None,
+    forward_per_weighted=None,
+    erp_fixed=None,
 ):
     # --- 3. 入力仕様（固定値） ---
     # price, forward_per, actual_per は引数から取得
@@ -354,6 +464,8 @@ def calculate_bias(
         jgb10y_yield_percent = JGB10Y_YIELD_DEFAULT
     if gdp_growth_median is None:
         gdp_growth_median = GDP_GROWTH_MEDIAN_DEFAULT
+    if erp_fixed is None:
+        erp_fixed = ERP_FIXED_DEFAULT
 
     # --- 9. パラメータ（初期値） ---
     GROWTH_CORE_WIDTH = GROWTH_CORE_WIDTH_DEFAULT
@@ -372,25 +484,38 @@ def calculate_bias(
     jgb10y_yield_decimal = jgb10y_yield_percent / 100.0
 
     # --- 4. 計算指標 ---
-    # 4.4 指標D: 実績EPS (実績PERから逆算)
+    # 4.0 指標D: EPS（PERから逆算）
     forward_eps = price / forward_per
+    forward_eps_weighted = price / forward_per_weighted if forward_per_weighted else None
     actual_eps = price / actual_per
 
     # 4.1 指標A：益利回り
-    earnings_yield_forward = 1.0 / forward_per
+    # Method 1: From PER (1 / PER)
+    ey_fwd_index_per = 1.0 / forward_per
+    ey_fwd_weighted_per = 1.0 / forward_per_weighted if forward_per_weighted else None
+    
+    # Method 2: From EPS (EPS / Price)
+    ey_fwd_index_eps = forward_eps / price
+    ey_fwd_weighted_eps = forward_eps_weighted / price if forward_eps_weighted else None
+
+    # Default for downstream logic (using PER based as primary)
+    earnings_yield_forward = ey_fwd_index_per
+    earnings_yield_forward_weighted = ey_fwd_weighted_per
     earnings_yield_actual = 1.0 / actual_per
 
-    # 4.2 指標B：イールドギャップ
+    # 4.2 指標B：イールドギャップ（市場の暗黙ERP）
     yield_gap = earnings_yield_forward - jgb10y_yield_decimal
 
-    # 4.3 指標C：暗黙成長率
-    implied_erp = yield_gap
-    required_return = jgb10y_yield_decimal + implied_erp
-    g_implied = required_return - dividend_yield_decimal
+    # 4.3 指標C：暗黙成長率（市場の利回りから推定）
+    market_required_return = earnings_yield_forward
+    g_implied = market_required_return - dividend_yield_decimal
+
+    # 4.4 指標D：フェアバリュー用の要求収益率（固定ERP）
+    required_return_fair = jgb10y_yield_decimal + erp_fixed
 
     # 4.5 指標E：フェアバリュー（成長率レンジ）
     def _calc_fair_per(growth_rate):
-        spread = required_return - growth_rate
+        spread = required_return_fair - growth_rate
         if spread <= 0:
             return None
         return 1.0 / spread
@@ -458,12 +583,17 @@ def calculate_bias(
         "date": datetime.date.today().isoformat(),
         "price": round(price, 0),
         "forward_per": forward_per,
+        "forward_per_weighted": forward_per_weighted,
         "forward_eps": round(forward_eps, 2),
+        "forward_eps_weighted": round(forward_eps_weighted, 2) if forward_eps_weighted else None,
         "actual_per": round(actual_per, 2),
         "actual_eps": round(actual_eps, 2), # 計算値なので丸める
         "jgb10y_yield_percent": jgb10y_yield_percent,
         "jgb10y_yield_decimal": round(jgb10y_yield_decimal, 6),
         "earnings_yield_forward": round(earnings_yield_forward, 6),
+        "earnings_yield_forward_weighted": round(earnings_yield_forward_weighted, 6) if earnings_yield_forward_weighted else None,
+        "earnings_yield_forward_from_eps": round(ey_fwd_index_eps, 6),
+        "earnings_yield_forward_weighted_from_eps": round(ey_fwd_weighted_eps, 6) if ey_fwd_weighted_eps else None,
         "earnings_yield_actual": round(earnings_yield_actual, 6),
         "yield_gap": round(yield_gap, 6),
         "dividend_yield_percent": dividend_yield_percent,
@@ -486,7 +616,7 @@ def calculate_bias(
         if fair_price_gap_pct is not None
         else None,
         "valuation_label": valuation_label,
-        "erp_percent": round(implied_erp * 100.0, 2),
+        "erp_percent": round(erp_fixed * 100.0, 2),
         "gdp_growth_median_percent": round(gdp_growth_median * 100.0, 2),
         "gdp_growth_years": GDP_GROWTH_YEARS,
         "growth_core_width_percent": round(GROWTH_CORE_WIDTH * 100.0, 2),
@@ -501,16 +631,19 @@ if __name__ == "__main__":
     try:
         print("Scraping Data...")
         price = get_nikkei_price()
-        f_per = get_forward_per()
+        per_values = get_nikkei_per_values_selenium()
+        f_per = per_values.get("index_based") if per_values else None
+        f_per_w = per_values.get("weighted_average") if per_values else None
         a_per = get_actual_per()
         gdp_growth_median = get_nominal_gdp_growth_median()
         jgb10y_yield_percent = get_jgb10y_yield_percent()
         
         if price is None: price = 54000
-        if f_per is None: f_per = "-"
+        if f_per is None: f_per = 23.84
+        if f_per_w is None: f_per_w = 20.33
         if a_per is None: a_per = "-"
         
-        print(f"Price: {price}, Forward PER: {f_per}, Actual PER: {a_per}")
+        print(f"Price: {price}, Forward PER (Index): {f_per}, Forward PER (Weighted): {f_per_w}, Actual PER: {a_per}")
             
         result = calculate_bias(
             price,
@@ -518,6 +651,7 @@ if __name__ == "__main__":
             a_per,
             gdp_growth_median=gdp_growth_median,
             jgb10y_yield_percent=jgb10y_yield_percent,
+            forward_per_weighted=f_per_w
         )
         
         print("--- Nikkei 225 Bias Calculation ---")

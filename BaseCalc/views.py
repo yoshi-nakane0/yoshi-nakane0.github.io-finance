@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.core.cache import cache
+from concurrent.futures import ThreadPoolExecutor
 from .nikkei_bias import (
     calculate_bias,
     get_actual_per,
-    get_forward_per,
+    get_nikkei_per_values_selenium,
     get_jgb10y_yield_percent,
     get_nikkei_price,
     get_nominal_gdp_growth_median,
@@ -13,6 +14,7 @@ def index(request):
     try:
         # キャッシュキー
         CACHE_KEY_FWD = 'nikkei_forward_per'
+        CACHE_KEY_FWD_WEIGHTED = 'nikkei_forward_per_weighted'
         CACHE_KEY_ACT = 'nikkei_actual_per'
         CACHE_KEY_PRICE = 'nikkei_price'
         CACHE_KEY_GDP = 'nikkei_gdp_growth_median'
@@ -23,68 +25,80 @@ def index(request):
         
         # 1. パラメータ確認: update=true なら強制更新
         force_update = request.GET.get('update') == 'true'
+        erp_fixed = None
+        erp_input = None
+        erp_query = None
+        erp_param = request.GET.get('erp')
+        if erp_param:
+            cleaned = erp_param.replace(',', '').replace('%', '').strip()
+            try:
+                erp_value = float(cleaned)
+            except ValueError:
+                erp_value = None
+            if erp_value is not None:
+                erp_fixed = erp_value / 100.0
+                erp_input = f"{erp_value:.2f}"
+                erp_query = erp_input
         
         # 2. キャッシュから取得
         forward_per = cache.get(CACHE_KEY_FWD)
+        forward_per_weighted = cache.get(CACHE_KEY_FWD_WEIGHTED)
         actual_per = cache.get(CACHE_KEY_ACT)
         price = cache.get(CACHE_KEY_PRICE)
         gdp_growth_median = cache.get(CACHE_KEY_GDP)
         jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
         
+        # 3. 更新リクエストがある場合のみデータ取得・更新 (All or Nothing)
         if force_update:
-            # 更新リクエスト時はスクレイピング実行
-            
-            # Forward PER
-            scraped_f_per = get_forward_per()
-            if scraped_f_per:
-                forward_per = scraped_f_per
-                cache.set(CACHE_KEY_FWD, forward_per, timeout=None)
+            with ThreadPoolExecutor() as executor:
+                futures = {}
+                futures['per_values'] = executor.submit(get_nikkei_per_values_selenium)
+                futures['a_per'] = executor.submit(get_actual_per)
+                futures['price'] = executor.submit(get_nikkei_price)
+                futures['gdp'] = executor.submit(get_nominal_gdp_growth_median)
+                futures['jgb'] = executor.submit(get_jgb10y_yield_percent)
+
+                # 結果の回収と変数・キャッシュ更新
+                if 'per_values' in futures:
+                    per_vals = futures['per_values'].result()
+                    if per_vals:
+                        if per_vals.get('index_based'):
+                            forward_per = per_vals['index_based']
+                            cache.set(CACHE_KEY_FWD, forward_per, timeout=None)
+                        if per_vals.get('weighted_average'):
+                            forward_per_weighted = per_vals['weighted_average']
+                            cache.set(CACHE_KEY_FWD_WEIGHTED, forward_per_weighted, timeout=None)
                 
-            # Actual PER
-            scraped_a_per = get_actual_per()
-            if scraped_a_per:
-                actual_per = scraped_a_per
-                cache.set(CACHE_KEY_ACT, actual_per, timeout=None)
+                if 'a_per' in futures:
+                    val = futures['a_per'].result()
+                    if val:
+                        actual_per = val
+                        cache.set(CACHE_KEY_ACT, actual_per, timeout=None)
 
-            # Nikkei Price
-            scraped_price = get_nikkei_price()
-            if scraped_price is not None:
-                price = scraped_price
-                cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
+                if 'price' in futures:
+                    val = futures['price'].result()
+                    if val is not None:
+                        price = val
+                        cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
 
-            # GDP Median Growth
-            scraped_gdp_growth = get_nominal_gdp_growth_median()
-            if scraped_gdp_growth is not None:
-                gdp_growth_median = scraped_gdp_growth
-                cache.set(CACHE_KEY_GDP, gdp_growth_median, timeout=CACHE_TTL_GDP)
+                if 'gdp' in futures:
+                    val = futures['gdp'].result()
+                    if val is not None:
+                        gdp_growth_median = val
+                        cache.set(CACHE_KEY_GDP, gdp_growth_median, timeout=CACHE_TTL_GDP)
 
-            # JGB 10Y Yield
-            scraped_jgb_yield = get_jgb10y_yield_percent()
-            if scraped_jgb_yield is not None:
-                jgb10y_yield_percent = scraped_jgb_yield
-                cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
-
-        if price is None:
-            scraped_price = get_nikkei_price()
-            if scraped_price is not None:
-                price = scraped_price
-                cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
-
-        if gdp_growth_median is None:
-            scraped_gdp_growth = get_nominal_gdp_growth_median()
-            if scraped_gdp_growth is not None:
-                gdp_growth_median = scraped_gdp_growth
-                cache.set(CACHE_KEY_GDP, gdp_growth_median, timeout=CACHE_TTL_GDP)
-
-        if jgb10y_yield_percent is None:
-            scraped_jgb_yield = get_jgb10y_yield_percent()
-            if scraped_jgb_yield is not None:
-                jgb10y_yield_percent = scraped_jgb_yield
-                cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
+                if 'jgb' in futures:
+                    val = futures['jgb'].result()
+                    if val is not None:
+                        jgb10y_yield_percent = val
+                        cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
         
-        # キャッシュがない場合（初回など）はデフォルト値を使用
+        # 4. キャッシュがない場合（初回など）はデフォルト値を使用
         if forward_per is None:
-            forward_per = 23.84 
+            forward_per = 23.84
+            
+        if forward_per_weighted is None:
+            forward_per_weighted = 20.33
             
         if actual_per is None:
             actual_per = 21.77 # ユーザー指定の例示値に近い値をデフォルトに
@@ -92,18 +106,24 @@ def index(request):
         if price is None:
             price = 54000
 
-        # 3. 計算実行
+        # 5. 計算実行
         data = calculate_bias(
             price,
             forward_per,
             actual_per,
             gdp_growth_median=gdp_growth_median,
             jgb10y_yield_percent=jgb10y_yield_percent,
+            forward_per_weighted=forward_per_weighted,
+            erp_fixed=erp_fixed,
         )
+        if erp_query is None and data.get('erp_percent') is not None:
+            erp_query = f"{data['erp_percent']:.2f}"
         
         context = {
             'data': data,
-            'updated': force_update
+            'updated': force_update,
+            'erp_input': erp_input,
+            'erp_query': erp_query,
         }
     except Exception as e:
         context = {

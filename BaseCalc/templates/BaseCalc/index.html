@@ -308,7 +308,7 @@
 
             <!-- 2. Controls -->
             <div class="controls">
-                <a href="?update=true" class="btn-update">
+                <a href="?update=true{% if erp_query %}&erp={{ erp_query }}{% endif %}" class="btn-update">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 4v6h-6"></path>
                         <path d="M1 20v-6h6"></path>
@@ -317,21 +317,27 @@
                     Refresh
                 </a>
             </div>
+            <div class="controls">
+                <form method="get" action="">
+                    <input type="text" name="erp" size="6" inputmode="decimal" placeholder="ERP (%)" value="{% if erp_input %}{{ erp_input }}{% else %}{{ data.erp_percent|floatformat:2 }}{% endif %}">
+                    <button type="submit" class="btn-update">Apply ERP</button>
+                </form>
+            </div>
 
             <!-- 3. Key Metrics Grid -->
             <div class="metrics-grid-3">
                 <div class="metric-box">
-                    <label>Fair Value (Mid)<br>理論株価 中立</label>
+                    <label>Fair Value (Mid)<br></label>
                     <div class="value text-blue">¥{{ data.fair_price_mid|floatformat:0|default:"-" }}</div>
                 </div>
                 <div class="metric-box">
-                    <label>Gap<br>乖離率</label>
+                    <label>Gap</label>
                     <div class="value {% if data.fair_price_gap_pct > 0 %}text-red{% else %}text-green{% endif %}">
                         {{ data.fair_price_gap_pct|floatformat:2|default:"-" }}<span class="unit">%</span>
                     </div>
                 </div>
                 <div class="metric-box">
-                    <label>Implied Growth<br>市場期待成長率</label>
+                    <label>Implied Growth<br></label>
                     <div class="value text-amber">{{ data.g_implied|floatformat:4 }}</div>
                 </div>
             </div>
@@ -346,15 +352,36 @@
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
                     </div>
-                    <div class="card-title">Valuation Details / 評価詳細</div>
+                    <div class="card-title">Valuation Details</div>
                 </div>
                 <div class="data-list">
                     <div class="data-row">
                         <div class="label-group">
                             <span class="label-main">Forward PER</span>
-                            <span class="label-sub">予想PER</span>
+                            <span class="label-sub">予想PER（指数ベース）</span>
                         </div>
                         <span class="data-value">{{ data.forward_per }}<span class="unit">x</span></span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Forward EPS (Index)</span>
+                            <span class="label-sub">予想EPS（指数ベース）</span>
+                        </div>
+                        <span class="data-value">¥{{ data.forward_eps }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Forward PER (Weighted)</span>
+                            <span class="label-sub">予想PER（加重平均）</span>
+                        </div>
+                        <span class="data-value">{{ data.forward_per_weighted|default:"-" }}<span class="unit">x</span></span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Forward EPS (Weighted)</span>
+                            <span class="label-sub">予想EPS（加重平均概算）</span>
+                        </div>
+                        <span class="data-value">{% if data.forward_eps_weighted %}¥{{ data.forward_eps_weighted }}{% else %}-{% endif %}</span>
                     </div>
                     <div class="data-row">
                         <div class="label-group">
@@ -365,10 +392,17 @@
                     </div>
                     <div class="data-row">
                         <div class="label-group">
-                            <span class="label-main">Earnings Yield (Fwd)</span>
-                            <span class="label-sub">益利回り（予想）</span>
+                            <span class="label-main">Earnings Yield (Fwd/Index)</span>
+                            <span class="label-sub">益利回り（予想/指数ベース）</span>
                         </div>
-                        <span class="data-value">{{ data.earnings_yield_forward|floatformat:4 }}</span>
+                        <span class="data-value">{{ data.earnings_yield_forward_from_eps|floatformat:4 }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Earnings Yield (Fwd/Weighted)</span>
+                            <span class="label-sub">益利回り（予想/加重平均）</span>
+                        </div>
+                        <span class="data-value">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"-" }}</span>
                     </div>
                     <div class="data-row" style="border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 6px;">
                         <div class="label-group">
@@ -402,20 +436,29 @@
                             <polyline points="17 6 23 6 23 12"></polyline>
                         </svg>
                     </div>
-                    <div class="card-title">Conditions / 前提条件</div>
+                    <div class="card-title">Conditions</div>
                 </div>
-                <div class="metrics-grid-3">
-                    <div class="metric-box">
-                        <label>JGB 10Y</label>
-                        <div class="value">{{ data.jgb10y_yield_percent }}<span class="unit">%</span></div>
+                <div class="data-list">
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">JGB 10Y</span>
+                            <span class="label-sub">日本国債10年利回り</span>
+                        </div>
+                        <span class="data-value">{{ data.jgb10y_yield_percent }}<span class="unit">%</span></span>
                     </div>
-                    <div class="metric-box">
-                        <label>Dividend Yield</label>
-                        <div class="value">{{ data.dividend_yield_percent }}<span class="unit">%</span></div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Dividend Yield</span>
+                            <span class="label-sub">配当利回り</span>
+                        </div>
+                        <span class="data-value">{{ data.dividend_yield_percent }}<span class="unit">%</span></span>
                     </div>
-                    <div class="metric-box">
-                        <label>GDP Growth (Med)</label>
-                        <div class="value">{{ data.gdp_growth_median_percent|floatformat:2 }}<span class="unit">%</span></div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">GDP Growth (Med)</span>
+                            <span class="label-sub">名目GDP成長率（中央値）</span>
+                        </div>
+                        <span class="data-value">{{ data.gdp_growth_median_percent|floatformat:2 }}<span class="unit">%</span></span>
                     </div>
                 </div>
                 <div style="margin-top: 12px; font-size: 0.75rem; color: var(--color-text-muted); text-align: right;">
