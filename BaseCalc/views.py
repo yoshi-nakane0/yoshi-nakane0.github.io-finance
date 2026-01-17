@@ -93,18 +93,21 @@ def index(request):
                         jgb10y_yield_percent = val
                         cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
         
-        # 4. キャッシュがない場合（初回など）はデフォルト値を使用
+        # 4. 欠落時は0.00を使用
         if forward_per is None:
-            forward_per = 23.84
-            
+            forward_per = 0.0
         if forward_per_weighted is None:
-            forward_per_weighted = 20.33
-            
+            forward_per_weighted = 0.0
         if actual_per is None:
-            actual_per = 21.77 # ユーザー指定の例示値に近い値をデフォルトに
-        
+            actual_per = 0.0
         if price is None:
-            price = 54000
+            price = 0.0
+        if gdp_growth_median is None:
+            gdp_growth_median = 0.0
+        if jgb10y_yield_percent is None:
+            jgb10y_yield_percent = 0.0
+        if erp_fixed is None:
+            erp_fixed = 0.0
 
         # 5. 計算実行
         data = calculate_bias(
@@ -118,6 +121,21 @@ def index(request):
         )
         if erp_query is None and data.get('erp_percent') is not None:
             erp_query = f"{data['erp_percent']:.2f}"
+        def format_price(value, decimals=0):
+            if value is None:
+                return ""
+            try:
+                return f"{value:,.{decimals}f}"
+            except (TypeError, ValueError):
+                return ""
+
+        data["price_display"] = format_price(data.get("price"), decimals=0)
+        data["forward_eps_display"] = format_price(data.get("forward_eps"), decimals=2)
+        data["forward_eps_weighted_display"] = format_price(data.get("forward_eps_weighted"), decimals=2)
+        data["fair_price_core_low_display"] = format_price(data.get("fair_price_core_low"), decimals=0)
+        data["fair_price_core_high_display"] = format_price(data.get("fair_price_core_high"), decimals=0)
+        data["fair_price_wide_low_display"] = format_price(data.get("fair_price_wide_low"), decimals=0)
+        data["fair_price_wide_high_display"] = format_price(data.get("fair_price_wide_high"), decimals=0)
         
         context = {
             'data': data,

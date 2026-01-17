@@ -43,11 +43,8 @@ WORLD_BANK_NOMINAL_GDP_URL = (
     "indicator/NY.GDP.MKTP.CN?format=json&per_page=70"
 )
 GDP_GROWTH_YEARS = 10
-GDP_GROWTH_MEDIAN_DEFAULT = 0.01
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
-JGB10Y_YIELD_DEFAULT = 1.0
-ERP_FIXED_DEFAULT = 0.05
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 FUNDAMENTAL_VALUES_RE = re.compile(
@@ -461,11 +458,19 @@ def calculate_bias(
 
     dividend_yield_percent = 1.60  # %
     if jgb10y_yield_percent is None:
-        jgb10y_yield_percent = JGB10Y_YIELD_DEFAULT
+        jgb10y_yield_percent = 0.0
     if gdp_growth_median is None:
-        gdp_growth_median = GDP_GROWTH_MEDIAN_DEFAULT
+        gdp_growth_median = 0.0
     if erp_fixed is None:
-        erp_fixed = ERP_FIXED_DEFAULT
+        erp_fixed = 0.0
+    if price is None or price <= 0:
+        price = 0.0
+    if forward_per is None or forward_per <= 0:
+        forward_per = 0.0
+    if actual_per is None or actual_per <= 0:
+        actual_per = 0.0
+    if forward_per_weighted is None or forward_per_weighted <= 0:
+        forward_per_weighted = 0.0
 
     # --- 9. パラメータ（初期値） ---
     GROWTH_CORE_WIDTH = GROWTH_CORE_WIDTH_DEFAULT
@@ -473,35 +478,34 @@ def calculate_bias(
     G_IMPLIED_HI = 0.05
     G_IMPLIED_LO = 0.00
 
-    # --- 7. 例外・入力バリデーション ---
-    if price <= 0:
-        raise ValueError("Price must be positive.")
-    if forward_per <= 0 or actual_per <= 0:
-        raise ValueError("PER must be positive.")
-
     # --- 3.2 単位の正規化 ---
     dividend_yield_decimal = dividend_yield_percent / 100.0
     jgb10y_yield_decimal = jgb10y_yield_percent / 100.0
 
     # --- 4. 計算指標 ---
+    def safe_divide(numerator, denominator):
+        if numerator is None or denominator in (None, 0):
+            return 0.0
+        return numerator / denominator
+
     # 4.0 指標D: EPS（PERから逆算）
-    forward_eps = price / forward_per
-    forward_eps_weighted = price / forward_per_weighted if forward_per_weighted else None
-    actual_eps = price / actual_per
+    forward_eps = safe_divide(price, forward_per)
+    forward_eps_weighted = safe_divide(price, forward_per_weighted)
+    actual_eps = safe_divide(price, actual_per)
 
     # 4.1 指標A：益利回り
     # Method 1: From PER (1 / PER)
-    ey_fwd_index_per = 1.0 / forward_per
-    ey_fwd_weighted_per = 1.0 / forward_per_weighted if forward_per_weighted else None
+    ey_fwd_index_per = safe_divide(1.0, forward_per)
+    ey_fwd_weighted_per = safe_divide(1.0, forward_per_weighted)
     
     # Method 2: From EPS (EPS / Price)
-    ey_fwd_index_eps = forward_eps / price
-    ey_fwd_weighted_eps = forward_eps_weighted / price if forward_eps_weighted else None
+    ey_fwd_index_eps = safe_divide(forward_eps, price)
+    ey_fwd_weighted_eps = safe_divide(forward_eps_weighted, price)
 
     # Default for downstream logic (using PER based as primary)
     earnings_yield_forward = ey_fwd_index_per
     earnings_yield_forward_weighted = ey_fwd_weighted_per
-    earnings_yield_actual = 1.0 / actual_per
+    earnings_yield_actual = safe_divide(1.0, actual_per)
 
     # 4.2 指標B：イールドギャップ（市場の暗黙ERP）
     yield_gap = earnings_yield_forward - jgb10y_yield_decimal
@@ -561,15 +565,15 @@ def calculate_bias(
         and fair_price_wide_high is not None
     ):
         if price > fair_price_wide_high:
-            valuation_label = "大幅に割高"
+            valuation_label = "Over +"
         elif price < fair_price_wide_low:
-            valuation_label = "大幅に割安"
+            valuation_label = "Deep Under"
         elif price > fair_price_core_high:
-            valuation_label = "割高"
+            valuation_label = "Over"
         elif price < fair_price_core_low:
-            valuation_label = "割安"
+            valuation_label = "Under"
         else:
-            valuation_label = "適正"
+            valuation_label = "Fair"
 
     # --- 6. 注釈ロジック ---
     regime_note = None
@@ -585,32 +589,40 @@ def calculate_bias(
         "forward_per": forward_per,
         "forward_per_weighted": forward_per_weighted,
         "forward_eps": round(forward_eps, 2),
-        "forward_eps_weighted": round(forward_eps_weighted, 2) if forward_eps_weighted else None,
+        "forward_eps_weighted": round(forward_eps_weighted, 2)
+        if forward_eps_weighted is not None
+        else None,
         "actual_per": round(actual_per, 2),
         "actual_eps": round(actual_eps, 2), # 計算値なので丸める
         "jgb10y_yield_percent": jgb10y_yield_percent,
         "jgb10y_yield_decimal": round(jgb10y_yield_decimal, 6),
         "earnings_yield_forward": round(earnings_yield_forward, 6),
-        "earnings_yield_forward_weighted": round(earnings_yield_forward_weighted, 6) if earnings_yield_forward_weighted else None,
+        "earnings_yield_forward_weighted": round(earnings_yield_forward_weighted, 6)
+        if earnings_yield_forward_weighted is not None
+        else None,
         "earnings_yield_forward_from_eps": round(ey_fwd_index_eps, 6),
-        "earnings_yield_forward_weighted_from_eps": round(ey_fwd_weighted_eps, 6) if ey_fwd_weighted_eps else None,
+        "earnings_yield_forward_weighted_from_eps": round(ey_fwd_weighted_eps, 6)
+        if ey_fwd_weighted_eps is not None
+        else None,
         "earnings_yield_actual": round(earnings_yield_actual, 6),
         "yield_gap": round(yield_gap, 6),
         "dividend_yield_percent": dividend_yield_percent,
         "dividend_yield_decimal": round(dividend_yield_decimal, 6),
         "g_implied": round(g_implied, 6),
-        "fair_price_mid": round(fair_price_mid, 0) if fair_price_mid else None,
+        "fair_price_mid": round(fair_price_mid, 0)
+        if fair_price_mid is not None
+        else None,
         "fair_price_core_low": round(fair_price_core_low, 0)
-        if fair_price_core_low
+        if fair_price_core_low is not None
         else None,
         "fair_price_core_high": round(fair_price_core_high, 0)
-        if fair_price_core_high
+        if fair_price_core_high is not None
         else None,
         "fair_price_wide_low": round(fair_price_wide_low, 0)
-        if fair_price_wide_low
+        if fair_price_wide_low is not None
         else None,
         "fair_price_wide_high": round(fair_price_wide_high, 0)
-        if fair_price_wide_high
+        if fair_price_wide_high is not None
         else None,
         "fair_price_gap_pct": round(fair_price_gap_pct, 2)
         if fair_price_gap_pct is not None
