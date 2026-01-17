@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .nikkei_bias import (
     calculate_bias,
     get_actual_per,
-    get_nikkei_per_values_selenium,
+    get_nikkei_per_values,
     get_jgb10y_yield_percent,
     get_nikkei_price,
     get_nominal_gdp_growth_median,
@@ -52,7 +52,7 @@ def index(request):
         if force_update:
             with ThreadPoolExecutor() as executor:
                 futures = {}
-                futures['per_values'] = executor.submit(get_nikkei_per_values_selenium)
+                futures['per_values'] = executor.submit(get_nikkei_per_values)
                 futures['a_per'] = executor.submit(get_actual_per)
                 futures['price'] = executor.submit(get_nikkei_price)
                 futures['gdp'] = executor.submit(get_nominal_gdp_growth_median)

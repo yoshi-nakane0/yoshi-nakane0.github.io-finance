@@ -2,6 +2,7 @@ import csv
 import datetime
 import json
 import logging
+import os
 import re
 import statistics
 import time
@@ -9,10 +10,6 @@ from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
 # ロガー設定
 logger = logging.getLogger(__name__)
@@ -327,6 +324,47 @@ def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
     values = [value for _, value in growth_rates]
     return _median(values)
 
+def _extract_nikkei_per_values(soup):
+    if soup is None:
+        return None
+    per_link = soup.find("a", string=lambda t: "株価収益率" in t if t else False)
+    if not per_link:
+        logger.warning("PER link not found in Nikkei summary page.")
+        return None
+
+    container = per_link.find_parent(class_="measures-category")
+    if not container:
+        logger.warning("PER container not found.")
+        return None
+
+    result = {}
+    index_base_label = container.find(string=lambda t: "指数ベース" in t if t else False)
+    if index_base_label:
+        index_base_item = index_base_label.find_parent(class_="measures-item")
+        if index_base_item:
+            value_elem = index_base_item.find(class_="value")
+            if value_elem:
+                result["index_based"] = _parse_float(value_elem.get_text(strip=True))
+
+    weighted_avg_label = container.find(string=lambda t: "加重平均" in t if t else False)
+    if weighted_avg_label:
+        weighted_avg_item = weighted_avg_label.find_parent(class_="measures-item")
+        if weighted_avg_item:
+            value_elem = weighted_avg_item.find(class_="value")
+            if value_elem:
+                result["weighted_average"] = _parse_float(value_elem.get_text(strip=True))
+
+    return result or None
+
+def get_nikkei_per_values():
+    text = _get_text(NIKKEI_ARCHIVES_SUMMARY_URL)
+    if text:
+        soup = BeautifulSoup(text, "lxml")
+        result = _extract_nikkei_per_values(soup)
+        if result:
+            return result
+    return get_nikkei_per_values_selenium()
+
 def get_nikkei_per_values_selenium():
     """
     日経のサマリーページから株価収益率(PER)の「指数ベース」および「加重平均」を取得する (Selenium使用)
@@ -334,58 +372,48 @@ def get_nikkei_per_values_selenium():
         dict: {"index_based": float, "weighted_average": float} or None
     """
     url = NIKKEI_ARCHIVES_SUMMARY_URL
+    try:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+        from selenium.webdriver.chrome.options import Options
+    except Exception as exc:
+        logger.warning("Selenium not available: %s", exc)
+        return None
+
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    
+    chrome_binary = os.getenv("CHROME_BINARY")
+    if chrome_binary:
+        options.binary_location = chrome_binary
+
     driver = None
     try:
-        service = Service(ChromeDriverManager().install())
+        chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+        if chromedriver_path:
+            service = Service(executable_path=chromedriver_path)
+        else:
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+            except Exception as exc:
+                logger.warning("webdriver_manager not available: %s", exc)
+                return None
+            service = Service(ChromeDriverManager().install())
+
         driver = webdriver.Chrome(service=service, options=options)
+        driver.set_page_load_timeout(15)
         driver.get(url)
         time.sleep(3) # 読み込み待機
-        
+
         html = driver.page_source
         soup = BeautifulSoup(html, "lxml")
-        
-        # 株価収益率(PER) セクションを探す
-        per_link = soup.find("a", string=lambda t: "株価収益率" in t if t else False)
-        if not per_link:
-            logger.warning("PER link not found in Nikkei summary page.")
-            return None
-            
-        # 親コンテナ (measures-category) を取得
-        container = per_link.find_parent(class_="measures-category")
-        if not container:
-            logger.warning("PER container not found.")
-            return None
-            
-        result = {}
+        return _extract_nikkei_per_values(soup)
 
-        # "指数ベース" の取得
-        index_base_label = container.find(string=lambda t: "指数ベース" in t if t else False)
-        if index_base_label:
-            index_base_item = index_base_label.find_parent(class_="measures-item")
-            if index_base_item:
-                value_elem = index_base_item.find(class_="value")
-                if value_elem:
-                    result["index_based"] = _parse_float(value_elem.get_text(strip=True))
-        
-        # "加重平均" の取得
-        weighted_avg_label = container.find(string=lambda t: "加重平均" in t if t else False)
-        if weighted_avg_label:
-            weighted_avg_item = weighted_avg_label.find_parent(class_="measures-item")
-            if weighted_avg_item:
-                value_elem = weighted_avg_item.find(class_="value")
-                if value_elem:
-                    result["weighted_average"] = _parse_float(value_elem.get_text(strip=True))
-
-        return result
-
-    except Exception as e:
-        logger.error(f"Selenium error fetching Nikkei summary: {e}")
+    except Exception as exc:
+        logger.warning("Selenium error fetching Nikkei summary: %s", exc)
         return None
     finally:
         if driver:
@@ -643,7 +671,7 @@ if __name__ == "__main__":
     try:
         print("Scraping Data...")
         price = get_nikkei_price()
-        per_values = get_nikkei_per_values_selenium()
+        per_values = get_nikkei_per_values()
         f_per = per_values.get("index_based") if per_values else None
         f_per_w = per_values.get("weighted_average") if per_values else None
         a_per = get_actual_per()
