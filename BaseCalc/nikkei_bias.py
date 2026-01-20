@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import statistics
-import time
 from urllib.parse import quote
 
 import requests
@@ -32,6 +31,7 @@ MOF_JGB10Y_CSV_URL = (
 )
 NIKKEI_FUNDAMENTAL_URL = "https://nikkei225fut.jp/fundamental/nikkei"
 NIKKEI_ARCHIVES_SUMMARY_URL = "https://indexes.nikkei.co.jp/nkave/archives/summary"
+NIKKEI_ARCHIVES_PER_DATA_URL = "https://indexes.nikkei.co.jp/nkave/archives/data?list=per"
 NIKKEI_COM_JAPANIDX_URL = "https://www.nikkei.com/markets/kabu/japanidx/"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
 STOOQ_NIKKEI_SYMBOL = "^nkx"
@@ -356,11 +356,93 @@ def _extract_nikkei_per_values(soup):
 
     return result or None
 
+def _extract_nikkei_per_values_from_data(soup):
+    if soup is None:
+        return None
+    tables = soup.find_all("table")
+    if not tables:
+        logger.warning("PER data table not found.")
+        return None
+    for table in tables:
+        rows = table.find_all("tr")
+        if not rows:
+            continue
+        header_cells = rows[0].find_all(["th", "td"])
+        if not header_cells:
+            continue
+        index_col = None
+        weighted_col = None
+        for idx, cell in enumerate(header_cells):
+            text = cell.get_text(strip=True)
+            if "指数ベース" in text:
+                index_col = idx
+            if "加重平均" in text:
+                weighted_col = idx
+        if index_col is None and weighted_col is None:
+            continue
+        for row in reversed(rows[1:]):
+            cols = row.find_all(["td", "th"])
+            if not cols:
+                continue
+            index_val = None
+            weighted_val = None
+            if index_col is not None and len(cols) > index_col:
+                index_val = _parse_float(cols[index_col].get_text(strip=True))
+            if weighted_col is not None and len(cols) > weighted_col:
+                weighted_val = _parse_float(cols[weighted_col].get_text(strip=True))
+            if index_val is None and weighted_val is None:
+                continue
+            result = {}
+            if index_val is not None:
+                result["index_based"] = index_val
+            if weighted_val is not None:
+                result["weighted_average"] = weighted_val
+            return result
+    logger.warning("PER values not found in data table.")
+    return None
+
+def _ensure_executable(path):
+    if not path or not os.path.isfile(path):
+        return None
+    if not os.access(path, os.X_OK):
+        try:
+            os.chmod(path, os.stat(path).st_mode | 0o111)
+        except OSError:
+            return None
+    return path
+
+def _resolve_chromedriver_path(path):
+    if not path:
+        return None
+    basename = os.path.basename(path)
+    if basename.startswith("chromedriver") and "THIRD_PARTY_NOTICES" not in basename:
+        return _ensure_executable(path)
+
+    base_dir = os.path.dirname(path)
+    if not os.path.isdir(base_dir):
+        return None
+    for candidate in ("chromedriver", "chromedriver.exe"):
+        candidate_path = os.path.join(base_dir, candidate)
+        if os.path.isfile(candidate_path):
+            return _ensure_executable(candidate_path)
+    for entry in os.listdir(base_dir):
+        if entry.startswith("chromedriver") and "THIRD_PARTY_NOTICES" not in entry:
+            candidate_path = os.path.join(base_dir, entry)
+            if os.path.isfile(candidate_path):
+                return _ensure_executable(candidate_path)
+    return None
+
 def get_nikkei_per_values():
     text = _get_text(NIKKEI_ARCHIVES_SUMMARY_URL)
     if text:
         soup = BeautifulSoup(text, "lxml")
         result = _extract_nikkei_per_values(soup)
+        if result:
+            return result
+    text = _get_text(NIKKEI_ARCHIVES_PER_DATA_URL)
+    if text:
+        soup = BeautifulSoup(text, "lxml")
+        result = _extract_nikkei_per_values_from_data(soup)
         if result:
             return result
     return get_nikkei_per_values_selenium()
@@ -371,11 +453,13 @@ def get_nikkei_per_values_selenium():
     Returns:
         dict: {"index_based": float, "weighted_average": float} or None
     """
-    url = NIKKEI_ARCHIVES_SUMMARY_URL
     try:
         from selenium import webdriver
         from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.chrome.options import Options
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
     except Exception as exc:
         logger.warning("Selenium not available: %s", exc)
         return None
@@ -394,23 +478,47 @@ def get_nikkei_per_values_selenium():
     try:
         chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
         if chromedriver_path:
-            service = Service(executable_path=chromedriver_path)
+            resolved_path = _resolve_chromedriver_path(chromedriver_path)
+            if not resolved_path:
+                logger.warning("Invalid chromedriver path: %s", chromedriver_path)
+                return None
+            service = Service(executable_path=resolved_path)
         else:
             try:
                 from webdriver_manager.chrome import ChromeDriverManager
             except Exception as exc:
                 logger.warning("webdriver_manager not available: %s", exc)
                 return None
-            service = Service(ChromeDriverManager().install())
+            driver_path = ChromeDriverManager().install()
+            resolved_path = _resolve_chromedriver_path(driver_path)
+            if not resolved_path:
+                logger.warning("Invalid webdriver_manager path: %s", driver_path)
+                return None
+            service = Service(executable_path=resolved_path)
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.set_page_load_timeout(15)
-        driver.get(url)
-        time.sleep(3) # 読み込み待機
-
-        html = driver.page_source
-        soup = BeautifulSoup(html, "lxml")
-        return _extract_nikkei_per_values(soup)
+        driver.set_page_load_timeout(20)
+        targets = [
+            (NIKKEI_ARCHIVES_PER_DATA_URL, _extract_nikkei_per_values_from_data, "table"),
+            (NIKKEI_ARCHIVES_SUMMARY_URL, _extract_nikkei_per_values, ".measures-category"),
+        ]
+        for target_url, extractor, selector in targets:
+            driver.get(target_url)
+            WebDriverWait(driver, 15).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
+            if selector:
+                try:
+                    WebDriverWait(driver, 8).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                except Exception:
+                    pass
+            html = driver.page_source
+            soup = BeautifulSoup(html, "lxml")
+            result = extractor(soup)
+            if result:
+                return result
 
     except Exception as exc:
         logger.warning("Selenium error fetching Nikkei summary: %s", exc)
@@ -435,8 +543,6 @@ def get_actual_per():
         tables = soup.find_all("table")
         
         for table in tables:
-            # Check headers
-            headers = [th.get_text(strip=True) for th in table.find_all(["th", "td"], recursive=True)]
             # We look for a table that likely has these headers. 
             # Note: findAll on table might return all cells, we should look at thead or first row specifically if possible,
             # but flattening all text in table to check for existence is easier first.
@@ -681,7 +787,7 @@ if __name__ == "__main__":
         if price is None: price = 54000
         if f_per is None: f_per = 23.84
         if f_per_w is None: f_per_w = 20.33
-        if a_per is None: a_per = "-"
+        if a_per is None: a_per = 0.0
         
         print(f"Price: {price}, Forward PER (Index): {f_per}, Forward PER (Weighted): {f_per_w}, Actual PER: {a_per}")
             
