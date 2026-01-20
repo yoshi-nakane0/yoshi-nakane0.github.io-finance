@@ -1,7 +1,7 @@
 {
   "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=per",
-  "fetched_at": null,
-  "date": null,
-  "index_based": null,
-  "weighted_average": null
+  "fetched_at": "2026-01-20T10:38:58Z",
+  "date": "2026.01.20",
+  "index_based": 24.69,
+  "weighted_average": 20.12
 }
