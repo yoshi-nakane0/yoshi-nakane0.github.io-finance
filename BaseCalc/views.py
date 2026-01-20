@@ -48,8 +48,19 @@ def index(request):
         gdp_growth_median = cache.get(CACHE_KEY_GDP)
         jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
         
-        # 3. 更新リクエストがある場合のみデータ取得・更新 (All or Nothing)
-        if force_update:
+        # 3. 更新リクエストまたは未取得時はデータ取得・更新 (All or Nothing)
+        needs_update = force_update or any(
+            value is None
+            for value in (
+                forward_per,
+                forward_per_weighted,
+                actual_per,
+                price,
+                gdp_growth_median,
+                jgb10y_yield_percent,
+            )
+        )
+        if needs_update:
             with ThreadPoolExecutor() as executor:
                 futures = {}
                 futures['per_values'] = executor.submit(get_nikkei_per_values)

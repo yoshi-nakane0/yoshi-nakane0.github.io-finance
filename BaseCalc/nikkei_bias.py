@@ -29,9 +29,6 @@ PRICE_SYMBOLS = ("^N225", "1329.T")
 MOF_JGB10Y_CSV_URL = (
     "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
 )
-NIKKEI_FUNDAMENTAL_URL = "https://nikkei225fut.jp/fundamental/nikkei"
-NIKKEI_ARCHIVES_SUMMARY_URL = "https://indexes.nikkei.co.jp/nkave/archives/summary"
-NIKKEI_ARCHIVES_PER_DATA_URL = "https://indexes.nikkei.co.jp/nkave/archives/data?list=per"
 NIKKEI_COM_JAPANIDX_URL = "https://www.nikkei.com/markets/kabu/japanidx/"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
 STOOQ_NIKKEI_SYMBOL = "^nkx"
@@ -39,15 +36,17 @@ WORLD_BANK_NOMINAL_GDP_URL = (
     "https://api.worldbank.org/v2/country/JPN/"
     "indicator/NY.GDP.MKTP.CN?format=json&per_page=70"
 )
+NIKKEI_PER_DATA_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "data",
+    "nikkei_per.json",
+)
+NIKKEI_PER_DATA_URL = os.getenv("NIKKEI_PER_DATA_URL")
 GDP_GROWTH_YEARS = 10
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
-FUNDAMENTAL_VALUES_RE = re.compile(
-    r"const\s+values\s*=\s*(\[[\s\S]*?\])\s*;",
-    re.MULTILINE,
-)
 
 def _parse_float(text):
     if not text:
@@ -87,51 +86,6 @@ def _parse_mof_jgb10y(text):
             latest_value = value
     return latest_value
 
-def _parse_nikkei_fundamental_values(text):
-    if not text:
-        return None
-    match = FUNDAMENTAL_VALUES_RE.search(text)
-    if not match:
-        return None
-    raw_values = match.group(1).strip()
-    try:
-        values = json.loads(raw_values)
-    except ValueError as exc:
-        logger.warning("Fundamental data decode failed: %s", exc)
-        return None
-    if not isinstance(values, list):
-        return None
-    return values
-
-def _select_latest_fundamental(values):
-    if not values:
-        return None
-    latest_item = None
-    latest_date = None
-    for item in values:
-        if not isinstance(item, dict):
-            continue
-        date_value = item.get("date")
-        if date_value is None:
-            continue
-        date_text = str(date_value).strip()
-        date_digits = re.sub(r"\D", "", date_text)
-        if len(date_digits) < 8:
-            continue
-        try:
-            date_int = int(date_digits[:8])
-        except ValueError:
-            continue
-        if latest_date is None or date_int > latest_date:
-            latest_date = date_int
-            latest_item = item
-    return latest_item
-
-def _get_nikkei_fundamental_latest():
-    text = _get_text(NIKKEI_FUNDAMENTAL_URL)
-    values = _parse_nikkei_fundamental_values(text)
-    return _select_latest_fundamental(values)
-
 def _get_json(url):
     try:
         response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT_SEC)
@@ -148,9 +102,11 @@ def _get_json(url):
         logger.warning("JSON decode failed (%s): %s", url, exc)
         return None
 
-def _get_text(url):
+def _get_text(url, headers=None):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT_SEC)
+        response = requests.get(
+            url, headers=headers or HEADERS, timeout=REQUEST_TIMEOUT_SEC
+        )
         response.raise_for_status()
         return response.text
     except requests.RequestException as exc:
@@ -324,208 +280,43 @@ def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
     values = [value for _, value in growth_rates]
     return _median(values)
 
-def _extract_nikkei_per_values(soup):
-    if soup is None:
+def _extract_nikkei_per_values_from_payload(payload):
+    if not isinstance(payload, dict):
         return None
-    per_link = soup.find("a", string=lambda t: "株価収益率" in t if t else False)
-    if not per_link:
-        logger.warning("PER link not found in Nikkei summary page.")
+    index_val = _extract_numeric(payload.get("index_based"))
+    weighted_val = _extract_numeric(payload.get("weighted_average"))
+    if index_val is None and weighted_val is None:
         return None
-
-    container = per_link.find_parent(class_="measures-category")
-    if not container:
-        logger.warning("PER container not found.")
-        return None
-
     result = {}
-    index_base_label = container.find(string=lambda t: "指数ベース" in t if t else False)
-    if index_base_label:
-        index_base_item = index_base_label.find_parent(class_="measures-item")
-        if index_base_item:
-            value_elem = index_base_item.find(class_="value")
-            if value_elem:
-                result["index_based"] = _parse_float(value_elem.get_text(strip=True))
+    if index_val is not None:
+        result["index_based"] = index_val
+    if weighted_val is not None:
+        result["weighted_average"] = weighted_val
+    return result
 
-    weighted_avg_label = container.find(string=lambda t: "加重平均" in t if t else False)
-    if weighted_avg_label:
-        weighted_avg_item = weighted_avg_label.find_parent(class_="measures-item")
-        if weighted_avg_item:
-            value_elem = weighted_avg_item.find(class_="value")
-            if value_elem:
-                result["weighted_average"] = _parse_float(value_elem.get_text(strip=True))
-
-    return result or None
-
-def _extract_nikkei_per_values_from_data(soup):
-    if soup is None:
+def _load_nikkei_per_data_file(path):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except FileNotFoundError:
         return None
-    tables = soup.find_all("table")
-    if not tables:
-        logger.warning("PER data table not found.")
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("Failed to read Nikkei PER data file (%s): %s", path, exc)
         return None
-    for table in tables:
-        rows = table.find_all("tr")
-        if not rows:
-            continue
-        header_cells = rows[0].find_all(["th", "td"])
-        if not header_cells:
-            continue
-        index_col = None
-        weighted_col = None
-        for idx, cell in enumerate(header_cells):
-            text = cell.get_text(strip=True)
-            if "指数ベース" in text:
-                index_col = idx
-            if "加重平均" in text:
-                weighted_col = idx
-        if index_col is None and weighted_col is None:
-            continue
-        for row in reversed(rows[1:]):
-            cols = row.find_all(["td", "th"])
-            if not cols:
-                continue
-            index_val = None
-            weighted_val = None
-            if index_col is not None and len(cols) > index_col:
-                index_val = _parse_float(cols[index_col].get_text(strip=True))
-            if weighted_col is not None and len(cols) > weighted_col:
-                weighted_val = _parse_float(cols[weighted_col].get_text(strip=True))
-            if index_val is None and weighted_val is None:
-                continue
-            result = {}
-            if index_val is not None:
-                result["index_based"] = index_val
-            if weighted_val is not None:
-                result["weighted_average"] = weighted_val
-            return result
-    logger.warning("PER values not found in data table.")
-    return None
+    return _extract_nikkei_per_values_from_payload(payload)
 
-def _ensure_executable(path):
-    if not path or not os.path.isfile(path):
+def _load_nikkei_per_data_url(url):
+    payload = _get_json(url)
+    if not payload:
         return None
-    if not os.access(path, os.X_OK):
-        try:
-            os.chmod(path, os.stat(path).st_mode | 0o111)
-        except OSError:
-            return None
-    return path
-
-def _resolve_chromedriver_path(path):
-    if not path:
-        return None
-    basename = os.path.basename(path)
-    if basename.startswith("chromedriver") and "THIRD_PARTY_NOTICES" not in basename:
-        return _ensure_executable(path)
-
-    base_dir = os.path.dirname(path)
-    if not os.path.isdir(base_dir):
-        return None
-    for candidate in ("chromedriver", "chromedriver.exe"):
-        candidate_path = os.path.join(base_dir, candidate)
-        if os.path.isfile(candidate_path):
-            return _ensure_executable(candidate_path)
-    for entry in os.listdir(base_dir):
-        if entry.startswith("chromedriver") and "THIRD_PARTY_NOTICES" not in entry:
-            candidate_path = os.path.join(base_dir, entry)
-            if os.path.isfile(candidate_path):
-                return _ensure_executable(candidate_path)
-    return None
+    return _extract_nikkei_per_values_from_payload(payload)
 
 def get_nikkei_per_values():
-    text = _get_text(NIKKEI_ARCHIVES_SUMMARY_URL)
-    if text:
-        soup = BeautifulSoup(text, "lxml")
-        result = _extract_nikkei_per_values(soup)
+    if NIKKEI_PER_DATA_URL:
+        result = _load_nikkei_per_data_url(NIKKEI_PER_DATA_URL)
         if result:
             return result
-    text = _get_text(NIKKEI_ARCHIVES_PER_DATA_URL)
-    if text:
-        soup = BeautifulSoup(text, "lxml")
-        result = _extract_nikkei_per_values_from_data(soup)
-        if result:
-            return result
-    return get_nikkei_per_values_selenium()
-
-def get_nikkei_per_values_selenium():
-    """
-    日経のサマリーページから株価収益率(PER)の「指数ベース」および「加重平均」を取得する (Selenium使用)
-    Returns:
-        dict: {"index_based": float, "weighted_average": float} or None
-    """
-    try:
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service
-        from selenium.webdriver.chrome.options import Options
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
-    except Exception as exc:
-        logger.warning("Selenium not available: %s", exc)
-        return None
-
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    chrome_binary = os.getenv("CHROME_BINARY")
-    if chrome_binary:
-        options.binary_location = chrome_binary
-
-    driver = None
-    try:
-        chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
-        if chromedriver_path:
-            resolved_path = _resolve_chromedriver_path(chromedriver_path)
-            if not resolved_path:
-                logger.warning("Invalid chromedriver path: %s", chromedriver_path)
-                return None
-            service = Service(executable_path=resolved_path)
-        else:
-            try:
-                from webdriver_manager.chrome import ChromeDriverManager
-            except Exception as exc:
-                logger.warning("webdriver_manager not available: %s", exc)
-                return None
-            driver_path = ChromeDriverManager().install()
-            resolved_path = _resolve_chromedriver_path(driver_path)
-            if not resolved_path:
-                logger.warning("Invalid webdriver_manager path: %s", driver_path)
-                return None
-            service = Service(executable_path=resolved_path)
-
-        driver = webdriver.Chrome(service=service, options=options)
-        driver.set_page_load_timeout(20)
-        targets = [
-            (NIKKEI_ARCHIVES_PER_DATA_URL, _extract_nikkei_per_values_from_data, "table"),
-            (NIKKEI_ARCHIVES_SUMMARY_URL, _extract_nikkei_per_values, ".measures-category"),
-        ]
-        for target_url, extractor, selector in targets:
-            driver.get(target_url)
-            WebDriverWait(driver, 15).until(
-                lambda d: d.execute_script("return document.readyState") == "complete"
-            )
-            if selector:
-                try:
-                    WebDriverWait(driver, 8).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                    )
-                except Exception:
-                    pass
-            html = driver.page_source
-            soup = BeautifulSoup(html, "lxml")
-            result = extractor(soup)
-            if result:
-                return result
-
-    except Exception as exc:
-        logger.warning("Selenium error fetching Nikkei summary: %s", exc)
-        return None
-    finally:
-        if driver:
-            driver.quit()
+    return _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)
 
 def get_actual_per():
     """
@@ -772,37 +563,3 @@ def calculate_bias(
     }
 
     return output
-
-if __name__ == "__main__":
-    try:
-        print("Scraping Data...")
-        price = get_nikkei_price()
-        per_values = get_nikkei_per_values()
-        f_per = per_values.get("index_based") if per_values else None
-        f_per_w = per_values.get("weighted_average") if per_values else None
-        a_per = get_actual_per()
-        gdp_growth_median = get_nominal_gdp_growth_median()
-        jgb10y_yield_percent = get_jgb10y_yield_percent()
-        
-        if price is None: price = 54000
-        if f_per is None: f_per = 23.84
-        if f_per_w is None: f_per_w = 20.33
-        if a_per is None: a_per = 0.0
-        
-        print(f"Price: {price}, Forward PER (Index): {f_per}, Forward PER (Weighted): {f_per_w}, Actual PER: {a_per}")
-            
-        result = calculate_bias(
-            price,
-            f_per,
-            a_per,
-            gdp_growth_median=gdp_growth_median,
-            jgb10y_yield_percent=jgb10y_yield_percent,
-            forward_per_weighted=f_per_w
-        )
-        
-        print("--- Nikkei 225 Bias Calculation ---")
-        for key, value in result.items():
-            print(f"{key}: {value}")
-        print("-----------------------------------")
-    except Exception as e:
-        print(f"Error: {e}")
