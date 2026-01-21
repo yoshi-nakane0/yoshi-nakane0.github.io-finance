@@ -7,278 +7,7 @@
     <title>BaseCalc - Nikkei Bias</title>
     <!-- 共通CSSの読み込み -->
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <style>
-        :root {
-            --color-text-main: #f1f5f9;
-            --color-text-muted: #94a3b8;
-            --color-accent-blue: #38bdf8;
-            --color-accent-purple: #a78bfa;
-            --color-accent-amber: #fbbf24;
-            --color-accent-green: #4ade80;
-            --color-accent-red: #f87171;
-            --color-border: rgba(255,255,255,0.08);
-            --color-card-bg-local: rgba(30, 41, 59, 0.5);
-        }
-
-        body {
-            color: var(--color-text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.5;
-            font-size: 15px;
-        }
-
-        .header {
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid var(--color-border);
-        }
-        .header h1 {
-            font-size: 1.2rem;
-            margin: 0;
-            font-weight: 700;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .home-icon {
-            color: var(--color-text-muted);
-            transition: color 0.2s;
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-        }
-        .home-icon:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.1);
-        }
-
-        .content {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Hero Section */
-        .hero-card {
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--color-border);
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-label {
-            font-size: 0.9rem;
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-        .hero-value {
-            font-size: 2.6rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 4px;
-            background: -webkit-linear-gradient(45deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.02em;
-        }
-        .status-LONG_BIAS .hero-value { background: linear-gradient(to right, #4ade80, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .status-SHORT_BIAS .hero-value { background: linear-gradient(to right, #f87171, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* Independent Price Display */
-        .price-display {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .price-label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--color-text-muted);
-            margin-bottom: 2px;
-        }
-        .price-value {
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: #fff;
-            font-feature-settings: "tnum";
-            letter-spacing: -0.02em;
-        }
-
-        /* Controls */
-        .erp-form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-        .control-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-        }
-        .action-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-        }
-        .erp-input {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--color-border);
-            color: #fff;
-            padding: 0 8px;
-            border-radius: 10px;
-            height: 44px;
-            font-size: 0.95rem;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .input-value {
-            width: 80px;
-            flex-shrink: 0;
-        }
-        .erp-select {
-            flex-grow: 1;
-            text-align: left;
-            width: auto;
-            /* iOS select fix */
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            padding-right: 32px;
-        }
-        .input-growth {
-            width: 70px;
-            flex-shrink: 0;
-        }
-
-        .erp-input:focus {
-            outline: none;
-            border-color: var(--color-accent-blue);
-            background: rgba(15, 23, 42, 0.8);
-        }
-        
-        .btn-base {
-            border-radius: 10px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            font-weight: 600;
-            white-space: nowrap;
-            height: 44px;
-            width: 100%;
-            box-sizing: border-box;
-            line-height: 1;
-        }
-        
-        @media (max-width: 380px) {
-            .control-row, .action-row {
-                gap: 8px;
-            }
-            .btn-base {
-                font-size: 0.8rem;
-            }
-            .erp-input {
-                font-size: 0.85rem;
-            }
-            .input-value { width: 60px; }
-            .input-growth { width: 50px; }
-            .btn-base svg { margin-right: 4px; width: 14px; height: 14px; }
-        }
-        .btn-primary { background: var(--color-accent-blue); color: #0f172a; border: none; }
-        .btn-primary:hover { background: #7dd3fc; }
-        .btn-outline { background: rgba(56, 189, 248, 0.1); color: var(--color-accent-blue); border: 1px solid rgba(56, 189, 248, 0.3); }
-        .btn-outline:hover { background: rgba(56, 189, 248, 0.2); }
-        .btn-base svg { margin-right: 6px; }
-
-        /* Card Styles */
-        .card {
-            background: var(--color-card-bg-local);
-            border-radius: 18px;
-            padding: 24px;
-            border: 1px solid var(--color-border);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--color-border);
-        }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: var(--color-text-muted); }
-
-        .valuation-section { margin-bottom: 16px; }
-        .section-title {
-            font-size: 0.85rem; color: var(--color-accent-blue); margin-bottom: 12px; font-weight: 700; text-transform: uppercase;
-            border-left: 3px solid var(--color-accent-blue); padding-left: 10px;
-        }
-        .section-separator {
-            height: 1px;
-            background: var(--color-border);
-            margin: 20px 0;
-            opacity: 0.6;
-        }
-        
-        /* List Styles */
-        .data-list { display: flex; flex-direction: column; gap: 10px; }
-        .data-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 0; }
-        .label-group { display: flex; flex-direction: column; }
-        .label-main { font-size: 0.9rem; color: #e2e8f0; font-weight: 500; }
-        .label-sub { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
-        .data-value { font-size: 1.1rem; font-weight: 600; color: #fff; font-feature-settings: "tnum"; text-align: right; }
-
-        /* Summary Grid */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .summary-grid .metric-box:nth-child(5) {
-            grid-column: 1 / -1;
-        }
-
-        .metric-box {
-            background: rgba(255,255,255,0.03);
-            padding: 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.04);
-            text-align: center;
-        }
-        .metric-box label { display: block; font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 4px; line-height: 1.3; }
-        .metric-box .value { font-size: 1.3rem; font-weight: 700; color: #fff; font-feature-settings: "tnum"; }
-        .metric-box .unit { font-size: 0.9rem; color: var(--color-text-muted); font-weight: 400; margin-left: 2px; }
-
-        /* Utility */
-        .text-blue { color: var(--color-accent-blue); }
-        .text-purple { color: var(--color-accent-purple); }
-        .text-amber { color: var(--color-accent-amber); }
-        .text-green { color: var(--color-accent-green); }
-        .text-red { color: var(--color-accent-red); }
-
-    </style>
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}">
 </head>
 <body>
     <div class="app-container">
@@ -311,44 +40,45 @@
             {% else %}
 
             <!-- 1. Hero / Valuation (No Price) -->
-            <div class="hero-card status-{{ data.regime }}">
+            <div class="hero-card status-{{ data.regime }}" id="hero-card">
                 <div class="hero-label">Market Evaluation</div>
-                <div class="hero-value">{{ data.valuation_label }}</div>
-                {% if data.regime_note %}
-                <div style="margin-top: 12px;">
+                <div class="hero-value" data-field="valuation_label">{{ data.valuation_label }}</div>
+                <div id="regime-note" style="margin-top: 12px;" {% if not data.regime_note %}hidden{% endif %}>
                     <span style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 6px 16px; border-radius: 99px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(251, 191, 36, 0.3);">
-                        ⚠️ {{ data.regime_note }}
+                        ⚠️ <span data-field="regime_note">{{ data.regime_note|default:"" }}</span>
                     </span>
                 </div>
-                {% endif %}
             </div>
 
             <!-- 2. Independent Price Display -->
             <div class="price-display">
-                <span class="price-label">Current Price</span>
-                <div class="price-value">{{ data.price_display|default:"" }}</div>
+                <span class="price-label">Current Price (Investing.com)</span>
+                <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
             </div>
 
             <!-- 3. Controls -->
-            <form method="get" action="" class="erp-form"
-                  data-forward-per="{{ data.forward_per|default:0 }}"
-                  data-jgb-yield="{{ data.jgb10y_yield_percent|default:0 }}"
-                  data-dividend-yield="{{ data.dividend_yield_index_percent|default:0 }}">
+            <form method="get" action="" class="erp-form">
+                <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
                 <!-- Row 1: Inputs -->
                 <div class="control-row">
-                    <input type="text" name="erp" class="erp-input input-value" inputmode="decimal" placeholder="ERP %" value="{% if erp_input %}{{ erp_input }}{% else %}{{ data.erp_percent|floatformat:2 }}{% endif %}" {% if erp_method != "manual" %}readonly{% endif %}>
                     <select name="erp_method" class="erp-input erp-select" aria-label="ERP算出方法">
-                        <option value="manual" {% if erp_method == "manual" %}selected{% endif %}>手入力</option>
                         <option value="method_a" {% if erp_method == "method_a" %}selected{% endif %}>A 益回り</option>
                         <option value="method_b" {% if erp_method == "method_b" %}selected{% endif %}>B 益回り+成長</option>
                         <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
                     </select>
-                    <input type="text" name="erp_growth" class="erp-input input-growth" inputmode="decimal" placeholder="g %" value="{% if erp_growth_input %}{{ erp_growth_input }}{% endif %}" {% if erp_method != "method_b" and erp_method != "method_c" %}hidden disabled{% endif %}>
+                    {% with growth_selected=erp_growth_input|default:"2.1" %}
+                    <input type="text" class="erp-input input-growth" id="growth-fixed" value="0.00" readonly {% if erp_method != "method_a" %}hidden{% endif %}>
+                    <select name="erp_growth" class="erp-input erp-select input-growth" id="growth-select" aria-label="g 選択" {% if erp_method != "method_b" and erp_method != "method_c" %}hidden disabled{% endif %}>
+                        <option value="1.7" {% if growth_selected == "1.7" %}selected{% endif %}>1.7</option>
+                        <option value="2.1" {% if growth_selected == "2.1" %}selected{% endif %}>2.1</option>
+                        <option value="2.7" {% if growth_selected == "2.7" %}selected{% endif %}>2.7</option>
+                    </select>
+                    {% endwith %}
                 </div>
                 <!-- Row 2: Actions -->
                 <div class="action-row">
                     <button type="submit" class="btn-base btn-primary">Apply ERP</button>
-                    <a href="?update=true{% if erp_query %}&erp={{ erp_query }}{% endif %}&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}" class="btn-base btn-outline">
+                    <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 4v6h-6"></path>
                             <path d="M1 20v-6h6"></path>
@@ -358,6 +88,38 @@
                     </a>
                 </div>
             </form>
+
+            <!-- 4. Fair Value Ranges -->
+            <div class="card fair-value-card">
+                <!-- Fair Range Detail -->
+                <div class="valuation-section">
+                    <h3 class="section-title">Fair Value Ranges</h3>
+                    <div class="data-list">
+                        <div class="data-row range-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range (Core)</span>
+                                <span class="label-sub">適正レンジ（コア ±0.5%）</span>
+                            </div>
+                            <div class="range-values">
+                                <span class="range-val text-blue" data-field="fair_price_core_low_display">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</span>
+                                <span class="range-sep text-muted">~</span>
+                                <span class="range-val text-blue" data-field="fair_price_core_high_display">{% if data.fair_price_core_high_display %}{{ data.fair_price_core_high_display }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="data-row range-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range (Wide)</span>
+                                <span class="label-sub">適正レンジ（ワイド ±1.0%）</span>
+                            </div>
+                            <div class="range-values">
+                                <span class="range-val text-blue" data-field="fair_price_wide_low_display">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</span>
+                                <span class="range-sep text-muted">~</span>
+                                <span class="range-val text-blue" data-field="fair_price_wide_high_display">{% if data.fair_price_wide_high_display %}{{ data.fair_price_wide_high_display }}{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="card">
                 <h3 class="section-title">B 益回り+成長率（g）シナリオ</h3>
@@ -386,39 +148,9 @@
                 </div>
             </div>
 
-            <!-- 4. Fair Value Ranges -->
-            <div class="card">
-                <!-- Fair Range Detail -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Fair Value Ranges</h3>
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Core)</span>
-                                <span class="label-sub">適正レンジ（コア ±0.5%）</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <div class="data-value text-blue">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</div>
-                                <div class="data-value text-blue" style="font-size: 0.95rem; opacity: 0.8;">{% if data.fair_price_core_high_display %}- {{ data.fair_price_core_high_display }}{% endif %}</div>
-                            </div>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Wide)</span>
-                                <span class="label-sub">適正レンジ（ワイド ±1.0%）</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <div class="data-value text-blue">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</div>
-                                <div class="data-value text-blue" style="font-size: 0.95rem; opacity: 0.8;">{% if data.fair_price_wide_high_display %}- {{ data.fair_price_wide_high_display }}{% endif %}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- 5. Market Conditions -->
-            <div class="card">
-                <div class="card-header">
+            <details class="card">
+                <summary class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-amber);">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -426,49 +158,54 @@
                         </svg>
                     </div>
                     <div class="card-title">Market Conditions</div>
+                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
+                    <div class="data-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">JGB 10Y</span>
+                                <span class="label-sub">日本国債10年利回り</span>
+                            </div>
+                            <span class="data-value" data-field="jgb10y_yield_percent">{% if data.jgb10y_yield_percent %}{{ data.jgb10y_yield_percent }}<span class="unit">%</span>{% endif %}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Forward PER</span>
+                                <span class="label-sub">予想PER（指数ベース）</span>
+                            </div>
+                            <span class="data-value" data-field="forward_per">{{ data.forward_per|default:"" }}<span class="unit">x</span></span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Dividend Yield</span>
+                                <span class="label-sub">配当利回り（指数ベース）</span>
+                            </div>
+                            <span class="data-value" data-field="dividend_yield_index_percent">{% if data.dividend_yield_index_percent %}{{ data.dividend_yield_index_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Forward PER</span>
+                                <span class="label-sub">予想PER（加重平均）</span>
+                            </div>
+                            <span class="data-value" data-field="forward_per_weighted">{{ data.forward_per_weighted|default:"" }}<span class="unit">x</span></span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Dividend Yield</span>
+                                <span class="label-sub">配当利回り（単純平均）</span>
+                            </div>
+                            <span class="data-value" data-field="dividend_yield_weighted_percent">{% if data.dividend_yield_weighted_percent %}{{ data.dividend_yield_weighted_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="data-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">JGB 10Y</span>
-                            <span class="label-sub">日本国債10年利回り</span>
-                        </div>
-                        <span class="data-value">{% if data.jgb10y_yield_percent %}{{ data.jgb10y_yield_percent }}<span class="unit">%</span>{% endif %}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Forward PER</span>
-                            <span class="label-sub">予想PER（指数ベース）</span>
-                        </div>
-                        <span class="data-value">{{ data.forward_per|default:"" }}<span class="unit">x</span></span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Dividend Yield</span>
-                            <span class="label-sub">配当利回り（指数ベース）</span>
-                        </div>
-                        <span class="data-value">{% if data.dividend_yield_index_percent %}{{ data.dividend_yield_index_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Forward PER</span>
-                            <span class="label-sub">予想PER（加重平均）</span>
-                        </div>
-                        <span class="data-value">{{ data.forward_per_weighted|default:"" }}<span class="unit">x</span></span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Dividend Yield</span>
-                            <span class="label-sub">配当利回り（単純平均）</span>
-                        </div>
-                        <span class="data-value">{% if data.dividend_yield_weighted_percent %}{{ data.dividend_yield_weighted_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
-                    </div>
-                </div>
-            </div>
+            </details>
 
             <!-- 6. Calculation Evidence -->
-            <div class="card">
-                <div class="card-header">
+            <details class="card">
+                <summary class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-purple);">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -477,67 +214,71 @@
                         </svg>
                     </div>
                     <div class="card-title">Calculation Evidence</div>
-                </div>
+                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </summary>
                 
-                <!-- Index Base -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Index Base (Nikkei Official)</h3>
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward EPS</span>
-                                <span class="label-sub">予想EPS（指数ベース）</span>
+                <div class="accordion-content">
+                    <!-- Index Base -->
+                    <div class="valuation-section">
+                        <h3 class="section-title">Index Base (Nikkei Official)</h3>
+                        <div class="data-list">
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Forward EPS</span>
+                                    <span class="label-sub">予想EPS（指数ベース）</span>
+                                </div>
+                                <span class="data-value" data-field="forward_eps_display">{% if data.forward_eps_display %}{{ data.forward_eps_display }}{% endif %}</span>
                             </div>
-                            <span class="data-value">{% if data.forward_eps_display %}{{ data.forward_eps_display }}{% endif %}</span>
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Earnings Yield</span>
+                                    <span class="label-sub">益利回り（予想/指数ベース）</span>
+                                </div>
+                                <span class="data-value" data-field="earnings_yield_forward_from_eps">{{ data.earnings_yield_forward_from_eps|floatformat:4|default:"" }}</span>
+                            </div>
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Implied Growth</span>
+                                    <span class="label-sub">暗黙成長率（指数ベース）</span>
+                                </div>
+                                <span class="data-value" data-field="g_implied_index">{{ data.g_implied_index|floatformat:4|default:"" }}</span>
+                            </div>
                         </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Earnings Yield</span>
-                                <span class="label-sub">益利回り（予想/指数ベース）</span>
+                    </div>
+
+                    <div class="section-separator"></div>
+
+                    <!-- Weighted Average -->
+                    <div class="valuation-section">
+                        <h3 class="section-title">Weighted Average (Market Cap)</h3>
+                        <div class="data-list">
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Forward EPS</span>
+                                    <span class="label-sub">予想EPS（加重平均概算）</span>
+                                </div>
+                                <span class="data-value" data-field="forward_eps_weighted_display">{% if data.forward_eps_weighted_display %}{{ data.forward_eps_weighted_display }}{% endif %}</span>
                             </div>
-                            <span class="data-value">{{ data.earnings_yield_forward_from_eps|floatformat:4|default:"" }}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Implied Growth</span>
-                                <span class="label-sub">暗黙成長率（指数ベース）</span>
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Earnings Yield</span>
+                                    <span class="label-sub">益利回り（予想/加重平均）</span>
+                                </div>
+                                <span class="data-value" data-field="earnings_yield_forward_weighted_from_eps">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"" }}</span>
                             </div>
-                            <span class="data-value">{{ data.g_implied_index|floatformat:4|default:"" }}</span>
+                            <div class="data-row">
+                                <div class="label-group">
+                                    <span class="label-main">Implied Growth</span>
+                                    <span class="label-sub">暗黙成長率（単純平均）</span>
+                                </div>
+                                <span class="data-value" data-field="g_implied_weighted">{{ data.g_implied_weighted|floatformat:4|default:"" }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="section-separator"></div>
-
-                <!-- Weighted Average -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Weighted Average (Market Cap)</h3>
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward EPS</span>
-                                <span class="label-sub">予想EPS（加重平均概算）</span>
-                            </div>
-                            <span class="data-value">{% if data.forward_eps_weighted_display %}{{ data.forward_eps_weighted_display }}{% endif %}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Earnings Yield</span>
-                                <span class="label-sub">益利回り（予想/加重平均）</span>
-                            </div>
-                            <span class="data-value">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"" }}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Implied Growth</span>
-                                <span class="label-sub">暗黙成長率（単純平均）</span>
-                            </div>
-                            <span class="data-value">{{ data.g_implied_weighted|floatformat:4|default:"" }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
+            </details>
 
             <!-- 7. Analysis Summary (Moved to Bottom) -->
             <div class="card">
@@ -555,21 +296,21 @@
                 <div class="summary-grid">
                     <div class="metric-box">
                         <label>Fair Value (Mid)</label>
-                        <div class="value text-blue">{% if data.fair_price_mid %}{{ data.fair_price_mid|floatformat:0|intcomma }}{% endif %}</div>
+                        <div class="value text-blue" data-field="fair_price_mid">{% if data.fair_price_mid %}{{ data.fair_price_mid|floatformat:0|intcomma }}{% endif %}</div>
                     </div>
                     <div class="metric-box">
                         <label>Gap</label>
-                        <div class="value {% if data.fair_price_gap_pct > 0 %}text-red{% else %}text-green{% endif %}">
+                        <div class="value {% if data.fair_price_gap_pct > 0 %}text-red{% else %}text-green{% endif %}" data-field="fair_price_gap_pct" data-sync-class="true">
                             {% if data.fair_price_gap_pct %}{{ data.fair_price_gap_pct|floatformat:2 }}<span class="unit">%</span>{% endif %}
                         </div>
                     </div>
                      <div class="metric-box">
                         <label>Actual PER</label>
-                        <div class="value">{% if data.actual_per %}{{ data.actual_per }}<span class="unit">x</span>{% endif %}</div>
+                        <div class="value" data-field="actual_per">{% if data.actual_per %}{{ data.actual_per }}<span class="unit">x</span>{% endif %}</div>
                     </div>
                      <div class="metric-box">
                         <label>Assumed ERP</label>
-                        <div class="value text-purple">{% if data.erp_percent %}{{ data.erp_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</div>
+                        <div class="value text-purple" data-field="erp_percent">{% if data.erp_percent %}{{ data.erp_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</div>
                     </div>
                 </div>
             </div>
@@ -580,99 +321,216 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.querySelector(".erp-form");
-            if (!form) {
-                return;
-            }
-            const methodSelect = form.querySelector('[name="erp_method"]');
-            const growthInput = form.querySelector('[name="erp_growth"]');
-            const erpInput = form.querySelector('[name="erp"]');
-            const forwardPer = Number(form.dataset.forwardPer);
-            const jgbYield = Number(form.dataset.jgbYield);
-            const dividendYield = Number(form.dataset.dividendYield);
+            const priceValue = document.getElementById("current-price");
+            const priceInput = form ? form.querySelector('[name="price"]') : null;
+            const refreshLink = document.getElementById("price-refresh");
+            const STORAGE_KEY = "basecalc_current_price";
 
-            if (!methodSelect || !growthInput || !erpInput) {
-                return;
+            if (form) {
+                const methodSelect = form.querySelector('[name="erp_method"]');
+                const growthSelect = form.querySelector("#growth-select");
+                const growthFixed = form.querySelector("#growth-fixed");
+                if (methodSelect && growthSelect && growthFixed) {
+                    const updateInputs = (method) => {
+                        const needsGrowth = method === "method_b" || method === "method_c";
+                        growthSelect.disabled = !needsGrowth;
+                        growthSelect.hidden = !needsGrowth;
+                        growthFixed.hidden = needsGrowth;
+                    };
+
+                    methodSelect.addEventListener("change", () => {
+                        updateInputs(methodSelect.value);
+                    });
+
+                    updateInputs(methodSelect.value);
+                }
             }
 
-            const parsePercent = (value) => {
+            const normalizePrice = (value) => {
                 if (value === null || value === undefined) {
                     return null;
                 }
-                const cleaned = value.toString().replace(/,/g, "").replace("%", "").trim();
-                if (!cleaned) {
+                const cleaned = String(value).replace(/,/g, "");
+                const parsed = parseInt(cleaned, 10);
+                if (!Number.isFinite(parsed) || parsed <= 0) {
                     return null;
                 }
-                const parsed = Number(cleaned);
-                return Number.isFinite(parsed) ? parsed : null;
+                return parsed;
+            };
+            const formatPriceDisplay = (value) =>
+                value.toLocaleString("en-US", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                });
+            const applyPrice = (value) => {
+                if (!priceValue) {
+                    return;
+                }
+                priceValue.textContent = formatPriceDisplay(value);
+                if (priceInput) {
+                    priceInput.value = String(value);
+                }
+            };
+            const readStorage = () => {
+                try {
+                    return localStorage.getItem(STORAGE_KEY);
+                } catch (e) {
+                    return null;
+                }
+            };
+            const writeStorage = (value) => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, value);
+                } catch (e) {}
             };
 
-            const parsePercentOrZero = (value) => {
-                const parsed = parsePercent(value);
-                return parsed === null ? 0 : parsed;
+            const storedPrice = normalizePrice(readStorage());
+            const inputPrice = priceInput ? normalizePrice(priceInput.value) : null;
+            const initialPrice = storedPrice !== null ? storedPrice : inputPrice;
+            if (initialPrice !== null) {
+                applyPrice(initialPrice);
+                writeStorage(String(initialPrice));
+            }
+
+            const parsePriceFromHtml = (html) => {
+                const match = html.match(/current\s+Nikkei 225 Futures price is\s*([0-9.,]+)/i);
+                if (!match) {
+                    return null;
+                }
+                const raw = match[1].replace(/,/g, "");
+                const value = parseFloat(raw);
+                if (!Number.isFinite(value)) {
+                    return null;
+                }
+                const floored = Math.floor(value);
+                return floored > 0 ? floored : null;
+            };
+            const fetchLatestPrice = () => {
+                return fetch("https://www.investing.com/indices/japan-225-futures", {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "omit",
+                    headers: {
+                        Accept: "text/html",
+                    },
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error("price fetch failed");
+                        }
+                        return response.text();
+                    })
+                    .then((html) => parsePriceFromHtml(html));
             };
 
-            const calcErpPercent = (method) => {
-                const per = Number.isFinite(forwardPer) ? forwardPer : 0;
-                const jgb = Number.isFinite(jgbYield) ? jgbYield : 0;
-                const g = parsePercentOrZero(growthInput.value);
-                if (method === "method_a") {
-                    if (per <= 0) {
-                        return null;
+            const buildUrlFromForm = (options = {}) => {
+                const url = new URL(window.location.href);
+                url.search = "";
+                if (form) {
+                    const formData = new FormData(form);
+                    for (const [key, value] of formData.entries()) {
+                        if (value !== "") {
+                            url.searchParams.set(key, value);
+                        }
                     }
-                    return (1 / per) * 100 - jgb;
                 }
-                if (method === "method_b") {
-                    if (per <= 0) {
-                        return null;
-                    }
-                    return (1 / per) * 100 + g - jgb;
+                if (options.update) {
+                    url.searchParams.set("update", "true");
                 }
-                if (method === "method_c") {
-                    const dividend = Number.isFinite(dividendYield) ? dividendYield : 0;
-                    return dividend + g - jgb;
-                }
-                return null;
+                return url;
             };
 
-            const updateInputs = (method) => {
-                const needsGrowth = method === "method_b" || method === "method_c";
-                growthInput.disabled = !needsGrowth;
-                growthInput.hidden = !needsGrowth;
-                erpInput.readOnly = method !== "manual";
-                if (method !== "manual") {
-                    const erpPercent = calcErpPercent(method);
-                    if (erpPercent === null || !Number.isFinite(erpPercent)) {
+            const syncFieldsFromDoc = (doc) => {
+                const fields = document.querySelectorAll("[data-field]");
+                fields.forEach((field) => {
+                    const key = field.getAttribute("data-field");
+                    const next = doc.querySelector(`[data-field="${key}"]`);
+                    if (!next) {
                         return;
                     }
-                    erpInput.value = erpPercent.toFixed(2);
+                    if (
+                        field.tagName === "INPUT" ||
+                        field.tagName === "SELECT" ||
+                        field.tagName === "TEXTAREA"
+                    ) {
+                        field.value = next.value;
+                    } else {
+                        field.innerHTML = next.innerHTML;
+                    }
+                    if (field.hasAttribute("data-sync-class")) {
+                        field.className = next.className;
+                    }
+                });
+
+                const heroCard = document.getElementById("hero-card");
+                const heroNext = doc.getElementById("hero-card");
+                if (heroCard && heroNext) {
+                    heroCard.className = heroNext.className;
+                }
+
+                const regimeNote = document.getElementById("regime-note");
+                if (regimeNote) {
+                    const noteText = regimeNote.querySelector('[data-field="regime_note"]');
+                    const hasNote = noteText && noteText.textContent.trim() !== "";
+                    regimeNote.hidden = !hasNote;
                 }
             };
 
-            const submitAuto = () => {
-                const method = methodSelect.value;
-                if (method === "manual") {
+            const syncStoredPrice = () => {
+                if (!priceInput) {
                     return;
                 }
-                const erpPercent = calcErpPercent(method);
-                if (erpPercent === null || !Number.isFinite(erpPercent)) {
-                    return;
+                const value = normalizePrice(priceInput.value);
+                if (value !== null) {
+                    writeStorage(String(value));
                 }
-                erpInput.value = erpPercent.toFixed(2);
-                form.submit();
             };
 
-            methodSelect.addEventListener("change", () => {
-                updateInputs(methodSelect.value);
-                submitAuto();
-            });
+            const requestUpdate = async (url) => {
+                try {
+                    const response = await fetch(url.toString(), {
+                        method: "GET",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                        cache: "no-store",
+                    });
+                    if (!response.ok) {
+                        return;
+                    }
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, "text/html");
+                    syncFieldsFromDoc(doc);
+                    syncStoredPrice();
+                    window.history.replaceState({}, "", url.toString());
+                } catch (e) {}
+            };
 
-            growthInput.addEventListener("change", () => {
-                if (methodSelect.value === "method_b" || methodSelect.value === "method_c") {
-                    submitAuto();
-                }
-            });
+            if (form) {
+                form.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    const url = buildUrlFromForm();
+                    requestUpdate(url);
+                });
+            }
 
-            updateInputs(methodSelect.value);
+            if (refreshLink) {
+                refreshLink.addEventListener("click", async (event) => {
+                    event.preventDefault();
+                    let latestPrice = null;
+                    try {
+                        latestPrice = await fetchLatestPrice();
+                    } catch (e) {}
+                    if (latestPrice !== null) {
+                        if (priceInput) {
+                            priceInput.value = String(latestPrice);
+                        }
+                        writeStorage(String(latestPrice));
+                    }
+                    const url = buildUrlFromForm({ update: true });
+                    requestUpdate(url);
+                });
+            }
         });
     </script>
 </body>
