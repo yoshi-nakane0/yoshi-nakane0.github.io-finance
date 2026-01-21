@@ -9,6 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 
 NIKKEI_PER_URL = "https://indexes.nikkei.co.jp/nkave/archives/data?list=per"
+NIKKEI_DIVIDEND_URL = (
+    "https://indexes.nikkei.co.jp/nkave/archives/data?list=dividend"
+)
 REQUEST_TIMEOUT_SEC = (5, 15)
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -22,6 +25,13 @@ HEADERS = {
     "Connection": "close",
     "Referer": "https://indexes.nikkei.co.jp/",
 }
+DIVIDEND_YIELD_KEY = "dividend_yield"
+PER_AVERAGE_KEY = "weighted_average"
+DIVIDEND_AVERAGE_KEY = "simple_average"
+PER_AVERAGE_HEADER_TERMS = ("加重平均", "加重", "weighted")
+DIVIDEND_AVERAGE_HEADER_TERMS = ("単純平均", "単純", "simple")
+PER_AVERAGE_KEY_TERMS = ("weight", "weighted", "加重")
+DIVIDEND_AVERAGE_KEY_TERMS = ("simple", "単純", "plain")
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"(\d{4})[./-](\d{1,2})[./-](\d{1,2})")
 OUTPUT_PATH = (
@@ -41,6 +51,8 @@ TABLE_SELECTORS = (
     "table.per-table",
     "table[data-list='per']",
     "table[data-table='per']",
+    "table[data-list='dividend']",
+    "table[data-table='dividend']",
 )
 logger = logging.getLogger(__name__)
 
@@ -79,25 +91,40 @@ def _normalize_date(text):
     return f"{year:04d}.{month:02d}.{day:02d}"
 
 
-def _header_indices(header_cells):
+def _matches_terms(text, lowered, terms):
+    for term in terms:
+        if term in text:
+            return True
+        if term.lower() in lowered:
+            return True
+    return False
+
+
+def _header_indices(header_cells, average_terms):
     date_col = None
     index_col = None
-    weighted_col = None
+    average_col = None
     for idx, text in enumerate(header_cells):
-        normalized = text.replace(" ", "")
+        normalized = text.replace(" ", "").replace("\u3000", "").strip()
         if not normalized:
             continue
+        lowered = normalized.lower()
         if date_col is None and (
             "日付" in normalized
             or "年月日" in normalized
-            or "date" in normalized.lower()
+            or "date" in lowered
         ):
             date_col = idx
-        if index_col is None and "指数" in normalized and "ベース" in normalized:
+        if index_col is None and (
+            ("指数" in normalized and "ベース" in normalized)
+            or ("index" in lowered and "base" in lowered)
+        ):
             index_col = idx
-        if weighted_col is None and "加重" in normalized and "平均" in normalized:
-            weighted_col = idx
-    return date_col, index_col, weighted_col
+        if average_col is None and _matches_terms(
+            normalized, lowered, average_terms
+        ):
+            average_col = idx
+    return date_col, index_col, average_col
 
 
 def _iter_tables(soup):
@@ -117,30 +144,32 @@ def _iter_tables(soup):
         yield table
 
 
-def _extract_latest_per_values_from_table(table):
+def _extract_latest_values_from_table(table, average_header_terms):
     header_rows = table.select("thead tr")
     if not header_rows:
         header_rows = table.select("tr")[:2]
 
     date_col = None
     index_col = None
-    weighted_col = None
+    average_col = None
     for row in header_rows:
         cells = row.find_all(["th", "td"])
         if not cells:
             continue
         texts = [cell.get_text(strip=True) for cell in cells]
-        row_date_col, row_index_col, row_weighted_col = _header_indices(texts)
+        row_date_col, row_index_col, row_average_col = _header_indices(
+            texts, average_header_terms
+        )
         if row_date_col is not None:
             date_col = row_date_col
         if row_index_col is not None:
             index_col = row_index_col
-        if row_weighted_col is not None:
-            weighted_col = row_weighted_col
-        if index_col is not None and weighted_col is not None:
+        if row_average_col is not None:
+            average_col = row_average_col
+        if index_col is not None and average_col is not None:
             break
 
-    if index_col is None or weighted_col is None:
+    if index_col is None or average_col is None:
         return None
     if date_col is None:
         date_col = 0
@@ -154,12 +183,12 @@ def _extract_latest_per_values_from_table(table):
         cells = row.find_all(["td", "th"])
         if not cells:
             continue
-        max_idx = max(date_col, index_col, weighted_col)
+        max_idx = max(date_col, index_col, average_col)
         if len(cells) <= max_idx:
             continue
         index_val = _parse_float(cells[index_col].get_text(strip=True))
-        weighted_val = _parse_float(cells[weighted_col].get_text(strip=True))
-        if index_val is None or weighted_val is None:
+        average_val = _parse_float(cells[average_col].get_text(strip=True))
+        if index_val is None or average_val is None:
             continue
         date_text = cells[date_col].get_text(strip=True)
         normalized_date = _normalize_date(date_text)
@@ -171,7 +200,7 @@ def _extract_latest_per_values_from_table(table):
                 "date": normalized_date,
                 "date_parts": date_parts,
                 "index_based": index_val,
-                "weighted_average": weighted_val,
+                "average_value": average_val,
             }
         )
 
@@ -187,11 +216,11 @@ def _extract_latest_per_values_from_table(table):
     return {
         "date": record["date"],
         "index_based": record["index_based"],
-        "weighted_average": record["weighted_average"],
+        "average_value": record["average_value"],
     }
 
 
-def _extract_from_next_data(soup):
+def _extract_from_next_data(soup, average_key_terms):
     script = soup.select_one("script#__NEXT_DATA__")
     if not script:
         return None
@@ -204,6 +233,7 @@ def _extract_from_next_data(soup):
         return None
 
     candidates = []
+    average_key_terms = tuple(average_key_terms)
     stack = [payload]
     while stack:
         current = stack.pop()
@@ -217,7 +247,7 @@ def _extract_from_next_data(soup):
             for item in current:
                 date_text = None
                 index_val = None
-                weighted_val = None
+                average_val = None
                 for key, value in item.items():
                     if isinstance(value, str) and DATE_RE.search(value):
                         date_text = value
@@ -225,16 +255,17 @@ def _extract_from_next_data(soup):
                         numeric = _parse_float(str(value))
                         if numeric is None:
                             continue
-                        key_lower = str(key).lower()
+                        key_text = str(key)
+                        key_lower = key_text.lower()
                         if "index" in key_lower or "base" in key_lower:
                             index_val = numeric
-                        if "weight" in key_lower:
-                            weighted_val = numeric
+                        if _matches_terms(key_text, key_lower, average_key_terms):
+                            average_val = numeric
                 normalized_date = _normalize_date(date_text) if date_text else None
                 if (
                     normalized_date is not None
                     and index_val is not None
-                    and weighted_val is not None
+                    and average_val is not None
                 ):
                     date_parts = _parse_date_parts(date_text)
                     candidates.append(
@@ -242,7 +273,7 @@ def _extract_from_next_data(soup):
                             "date": normalized_date,
                             "date_parts": date_parts,
                             "index_based": index_val,
-                            "weighted_average": weighted_val,
+                            "average_value": average_val,
                         }
                     )
 
@@ -251,20 +282,26 @@ def _extract_from_next_data(soup):
     return max(candidates, key=lambda item: item["date_parts"])
 
 
-def _extract_latest_per_values(soup):
+def _extract_latest_values(
+    soup, average_header_terms, average_key_terms, average_key
+):
     if soup is None:
         return None
-    from_next = _extract_from_next_data(soup)
+    from_next = _extract_from_next_data(soup, average_key_terms)
     if from_next:
         return {
             "date": from_next["date"],
             "index_based": from_next["index_based"],
-            "weighted_average": from_next["weighted_average"],
+            average_key: from_next["average_value"],
         }
     for table in _iter_tables(soup):
-        result = _extract_latest_per_values_from_table(table)
+        result = _extract_latest_values_from_table(table, average_header_terms)
         if result:
-            return result
+            return {
+                "date": result["date"],
+                "index_based": result["index_based"],
+                average_key: result["average_value"],
+            }
     return None
 
 
@@ -275,7 +312,7 @@ def _is_positive_number(value):
         return False
 
 
-def _is_valid_result(result):
+def _is_valid_result(result, average_key):
     if not isinstance(result, dict):
         return False
     date_value = result.get("date")
@@ -283,12 +320,21 @@ def _is_valid_result(result):
         return False
     if not _is_positive_number(result.get("index_based")):
         return False
-    if not _is_positive_number(result.get("weighted_average")):
+    if not _is_positive_number(result.get(average_key)):
         return False
     return True
 
 
-def _load_existing_payload():
+def _is_valid_payload(payload, require_dividend):
+    if not _is_valid_result(payload, PER_AVERAGE_KEY):
+        return False
+    if not require_dividend:
+        return True
+    dividend = payload.get(DIVIDEND_YIELD_KEY)
+    return _is_valid_result(dividend, DIVIDEND_AVERAGE_KEY)
+
+
+def _load_existing_payload(require_dividend=False):
     if not OUTPUT_PATH.exists():
         return None
     try:
@@ -296,7 +342,7 @@ def _load_existing_payload():
             payload = json.load(handle)
     except (OSError, json.JSONDecodeError):
         return None
-    if not _is_valid_result(payload):
+    if not _is_valid_payload(payload, require_dividend):
         return None
     return payload
 
@@ -394,27 +440,61 @@ def _build_soup(html):
 def main():
     html = _fetch_html(NIKKEI_PER_URL)
     if not html:
-        if _load_existing_payload():
-            logger.warning("Fetch failed; keeping existing data.")
+        if _load_existing_payload(require_dividend=True):
+            logger.warning("PER fetch failed; keeping existing data.")
             return 0
-        logger.error("Fetch failed and no valid local data found.")
+        logger.error("PER fetch failed and no valid local data found.")
         return 1
     soup = _build_soup(html)
-    result = _extract_latest_per_values(soup)
-    if not _is_valid_result(result):
-        if _load_existing_payload():
-            logger.warning("Parse failed; keeping existing data.")
+    per_result = _extract_latest_values(
+        soup,
+        PER_AVERAGE_HEADER_TERMS,
+        PER_AVERAGE_KEY_TERMS,
+        PER_AVERAGE_KEY,
+    )
+    if not _is_valid_result(per_result, PER_AVERAGE_KEY):
+        if _load_existing_payload(require_dividend=True):
+            logger.warning("PER parse failed; keeping existing data.")
             return 0
         logger.error("PER data parse failed and no valid local data found.")
+        return 1
+
+    dividend_html = _fetch_html(NIKKEI_DIVIDEND_URL)
+    if not dividend_html:
+        if _load_existing_payload(require_dividend=True):
+            logger.warning("Dividend yield fetch failed; keeping existing data.")
+            return 0
+        logger.error("Dividend yield fetch failed and no valid local data found.")
+        return 1
+    dividend_soup = _build_soup(dividend_html)
+    dividend_result = _extract_latest_values(
+        dividend_soup,
+        DIVIDEND_AVERAGE_HEADER_TERMS,
+        DIVIDEND_AVERAGE_KEY_TERMS,
+        DIVIDEND_AVERAGE_KEY,
+    )
+    if not _is_valid_result(dividend_result, DIVIDEND_AVERAGE_KEY):
+        if _load_existing_payload(require_dividend=True):
+            logger.warning("Dividend yield parse failed; keeping existing data.")
+            return 0
+        logger.error(
+            "Dividend yield data parse failed and no valid local data found."
+        )
         return 1
 
     payload = {
         "source": NIKKEI_PER_URL,
         "fetched_at": datetime.datetime.utcnow().replace(microsecond=0).isoformat()
         + "Z",
-        "date": result.get("date"),
-        "index_based": result["index_based"],
-        "weighted_average": result["weighted_average"],
+        "date": per_result.get("date"),
+        "index_based": per_result["index_based"],
+        PER_AVERAGE_KEY: per_result[PER_AVERAGE_KEY],
+        DIVIDEND_YIELD_KEY: {
+            "source": NIKKEI_DIVIDEND_URL,
+            "date": dividend_result.get("date"),
+            "index_based": dividend_result["index_based"],
+            DIVIDEND_AVERAGE_KEY: dividend_result[DIVIDEND_AVERAGE_KEY],
+        },
     }
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import re
-import statistics
 from urllib.parse import quote
 
 import requests
@@ -32,17 +31,12 @@ MOF_JGB10Y_CSV_URL = (
 NIKKEI_COM_JAPANIDX_URL = "https://www.nikkei.com/markets/kabu/japanidx/"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
 STOOQ_NIKKEI_SYMBOL = "^nkx"
-WORLD_BANK_NOMINAL_GDP_URL = (
-    "https://api.worldbank.org/v2/country/JPN/"
-    "indicator/NY.GDP.MKTP.CN?format=json&per_page=70"
-)
 NIKKEI_PER_DATA_PATH = os.path.join(
     os.path.dirname(__file__),
     "data",
     "nikkei_per.json",
 )
 NIKKEI_PER_DATA_URL = os.getenv("NIKKEI_PER_DATA_URL")
-GDP_GROWTH_YEARS = 10
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
@@ -159,11 +153,6 @@ def _extract_quote_value(quote, field_names):
             return value
     return None
 
-def _median(values):
-    if not values:
-        return None
-    return statistics.median(values)
-
 def _extract_last_close(chart):
     if not isinstance(chart, dict):
         return None
@@ -234,64 +223,35 @@ def get_jgb10y_yield_percent():
             return value
     return None
 
-def get_nominal_gdp_growth_median(years=GDP_GROWTH_YEARS):
-    """
-    World Bank APIから名目GDP成長率の中央値を取得
-    """
-    data = _get_json(WORLD_BANK_NOMINAL_GDP_URL)
-    if not data or len(data) < 2 or not isinstance(data[1], list):
-        return None
-
-    series = []
-    for item in data[1]:
-        year = item.get("date")
-        value = item.get("value")
-        if year is None or value is None:
-            continue
-        try:
-            year_int = int(year)
-        except ValueError:
-            continue
-        try:
-            value_float = float(value)
-        except (TypeError, ValueError):
-            continue
-        series.append((year_int, value_float))
-
-    if len(series) < 2:
-        return None
-
-    series.sort(key=lambda item: item[0])
-    growth_rates = []
-    for idx in range(1, len(series)):
-        year, value = series[idx]
-        prev_year, prev_value = series[idx - 1]
-        if prev_value == 0:
-            continue
-        growth = (value / prev_value) - 1.0
-        growth_rates.append((year, growth))
-
-    if not growth_rates:
-        return None
-
-    growth_rates.sort(key=lambda item: item[0])
-    if years and len(growth_rates) > years:
-        growth_rates = growth_rates[-years:]
-    values = [value for _, value in growth_rates]
-    return _median(values)
-
 def _extract_nikkei_per_values_from_payload(payload):
     if not isinstance(payload, dict):
         return None
     index_val = _extract_numeric(payload.get("index_based"))
     weighted_val = _extract_numeric(payload.get("weighted_average"))
-    if index_val is None and weighted_val is None:
+    dividend_payload = payload.get("dividend_yield")
+    dividend_index_val = None
+    dividend_simple_val = None
+    if isinstance(dividend_payload, dict):
+        dividend_index_val = _extract_numeric(dividend_payload.get("index_based"))
+        dividend_simple_val = _extract_numeric(
+            dividend_payload.get("simple_average")
+        )
+    if (
+        index_val is None
+        and weighted_val is None
+        and dividend_index_val is None
+        and dividend_simple_val is None
+    ):
         return None
     result = {}
     if index_val is not None:
         result["index_based"] = index_val
     if weighted_val is not None:
         result["weighted_average"] = weighted_val
+    if dividend_index_val is not None:
+        result["dividend_yield_index_based"] = dividend_index_val
+    if dividend_simple_val is not None:
+        result["dividend_yield_simple_average"] = dividend_simple_val
     return result
 
 def _load_nikkei_per_data_file(path):
@@ -373,7 +333,8 @@ def calculate_bias(
     price,
     forward_per,
     actual_per,
-    gdp_growth_median=None,
+    dividend_yield_index_percent=None,
+    dividend_yield_weighted_percent=None,
     jgb10y_yield_percent=None,
     forward_per_weighted=None,
     erp_fixed=None,
@@ -381,11 +342,14 @@ def calculate_bias(
     # --- 3. 入力仕様（固定値） ---
     # price, forward_per, actual_per は引数から取得
 
-    dividend_yield_percent = 1.60  # %
+    dividend_yield_index_display = dividend_yield_index_percent
+    dividend_yield_weighted_display = dividend_yield_weighted_percent
+    if dividend_yield_index_percent is None:
+        dividend_yield_index_percent = 0.0
+    if dividend_yield_weighted_percent is None:
+        dividend_yield_weighted_percent = 0.0
     if jgb10y_yield_percent is None:
         jgb10y_yield_percent = 0.0
-    if gdp_growth_median is None:
-        gdp_growth_median = 0.0
     if erp_fixed is None:
         erp_fixed = 0.0
     if price is None or price <= 0:
@@ -404,7 +368,10 @@ def calculate_bias(
     G_IMPLIED_LO = 0.00
 
     # --- 3.2 単位の正規化 ---
+    dividend_yield_percent = dividend_yield_index_percent
     dividend_yield_decimal = dividend_yield_percent / 100.0
+    dividend_yield_index_decimal = dividend_yield_index_percent / 100.0
+    dividend_yield_weighted_decimal = dividend_yield_weighted_percent / 100.0
     jgb10y_yield_decimal = jgb10y_yield_percent / 100.0
 
     # --- 4. 計算指標 ---
@@ -438,6 +405,22 @@ def calculate_bias(
     # 4.3 指標C：暗黙成長率（市場の利回りから推定）
     market_required_return = earnings_yield_forward
     g_implied = market_required_return - dividend_yield_decimal
+    g_implied_index = None
+    if (
+        dividend_yield_index_display is not None
+        and forward_per > 0
+        and price > 0
+    ):
+        g_implied_index = ey_fwd_index_eps - dividend_yield_index_decimal
+    g_implied_weighted = None
+    if (
+        dividend_yield_weighted_display is not None
+        and forward_per_weighted > 0
+        and price > 0
+    ):
+        g_implied_weighted = (
+            ey_fwd_weighted_eps - dividend_yield_weighted_decimal
+        )
 
     # 4.4 指標D：フェアバリュー用の要求収益率（固定ERP）
     required_return_fair = jgb10y_yield_decimal + erp_fixed
@@ -449,7 +432,7 @@ def calculate_bias(
             return None
         return 1.0 / spread
 
-    growth_center = gdp_growth_median
+    growth_center = 0.0
     growth_core_low = growth_center - GROWTH_CORE_WIDTH
     growth_core_high = growth_center + GROWTH_CORE_WIDTH
     growth_wide_low = growth_center - GROWTH_WIDE_WIDTH
@@ -531,9 +514,20 @@ def calculate_bias(
         else None,
         "earnings_yield_actual": round(earnings_yield_actual, 6),
         "yield_gap": round(yield_gap, 6),
-        "dividend_yield_percent": dividend_yield_percent,
-        "dividend_yield_decimal": round(dividend_yield_decimal, 6),
-        "g_implied": round(g_implied, 6),
+        "dividend_yield_index_percent": dividend_yield_index_display,
+        "dividend_yield_weighted_percent": dividend_yield_weighted_display,
+        "dividend_yield_index_decimal": round(dividend_yield_index_decimal, 6)
+        if dividend_yield_index_display is not None
+        else None,
+        "dividend_yield_weighted_decimal": round(dividend_yield_weighted_decimal, 6)
+        if dividend_yield_weighted_display is not None
+        else None,
+        "g_implied_index": round(g_implied_index, 6)
+        if g_implied_index is not None
+        else None,
+        "g_implied_weighted": round(g_implied_weighted, 6)
+        if g_implied_weighted is not None
+        else None,
         "fair_price_mid": round(fair_price_mid, 0)
         if fair_price_mid is not None
         else None,
@@ -554,8 +548,6 @@ def calculate_bias(
         else None,
         "valuation_label": valuation_label,
         "erp_percent": round(erp_fixed * 100.0, 2),
-        "gdp_growth_median_percent": round(gdp_growth_median * 100.0, 2),
-        "gdp_growth_years": GDP_GROWTH_YEARS,
         "growth_core_width_percent": round(GROWTH_CORE_WIDTH * 100.0, 2),
         "growth_wide_width_percent": round(GROWTH_WIDE_WIDTH * 100.0, 2),
         "regime": regime,

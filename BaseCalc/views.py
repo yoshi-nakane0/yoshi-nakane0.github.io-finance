@@ -7,7 +7,6 @@ from .nikkei_bias import (
     get_nikkei_per_values,
     get_jgb10y_yield_percent,
     get_nikkei_price,
-    get_nominal_gdp_growth_median,
 )
 
 def index(request):
@@ -17,10 +16,10 @@ def index(request):
         CACHE_KEY_FWD_WEIGHTED = 'nikkei_forward_per_weighted'
         CACHE_KEY_ACT = 'nikkei_actual_per'
         CACHE_KEY_PRICE = 'nikkei_price'
-        CACHE_KEY_GDP = 'nikkei_gdp_growth_median'
         CACHE_KEY_JGB = 'nikkei_jgb10y_yield_percent'
+        CACHE_KEY_DIVIDEND_INDEX = 'nikkei_dividend_yield_index'
+        CACHE_KEY_DIVIDEND_WEIGHTED = 'nikkei_dividend_yield_weighted'
         CACHE_TTL_PRICE = 300
-        CACHE_TTL_GDP = 86400
         CACHE_TTL_JGB = 3600
         
         # 1. パラメータ確認: update=true なら強制更新
@@ -28,25 +27,41 @@ def index(request):
         erp_fixed = None
         erp_input = None
         erp_query = None
-        erp_param = request.GET.get('erp')
-        if erp_param:
-            cleaned = erp_param.replace(',', '').replace('%', '').strip()
+        erp_growth_input = None
+        erp_growth_percent = None
+        erp_method = request.GET.get('erp_method', 'manual')
+        if erp_method not in {'manual', 'method_a', 'method_b', 'method_c'}:
+            erp_method = 'manual'
+
+        def parse_percent_param(value):
+            if not value:
+                return None
+            cleaned = value.replace(',', '').replace('%', '').strip()
             try:
-                erp_value = float(cleaned)
+                return float(cleaned)
             except ValueError:
-                erp_value = None
-            if erp_value is not None:
-                erp_fixed = erp_value / 100.0
-                erp_input = f"{erp_value:.2f}"
-                erp_query = erp_input
+                return None
+
+        erp_param = request.GET.get('erp')
+        erp_value = parse_percent_param(erp_param)
+        if erp_value is not None:
+            erp_fixed = erp_value / 100.0
+            erp_input = f"{erp_value:.2f}"
+            erp_query = erp_input
+
+        growth_param = request.GET.get('erp_growth')
+        erp_growth_percent = parse_percent_param(growth_param)
+        if erp_growth_percent is not None:
+            erp_growth_input = f"{erp_growth_percent:.2f}"
         
         # 2. キャッシュから取得
         forward_per = cache.get(CACHE_KEY_FWD)
         forward_per_weighted = cache.get(CACHE_KEY_FWD_WEIGHTED)
         actual_per = cache.get(CACHE_KEY_ACT)
         price = cache.get(CACHE_KEY_PRICE)
-        gdp_growth_median = cache.get(CACHE_KEY_GDP)
         jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
+        dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
+        dividend_yield_weighted_percent = cache.get(CACHE_KEY_DIVIDEND_WEIGHTED)
         
         # 3. 更新リクエストまたは未取得時はデータ取得・更新 (All or Nothing)
         needs_update = force_update or any(
@@ -56,8 +71,9 @@ def index(request):
                 forward_per_weighted,
                 actual_per,
                 price,
-                gdp_growth_median,
                 jgb10y_yield_percent,
+                dividend_yield_index_percent,
+                dividend_yield_weighted_percent,
             )
         )
         if needs_update:
@@ -66,7 +82,6 @@ def index(request):
                 futures['per_values'] = executor.submit(get_nikkei_per_values)
                 futures['a_per'] = executor.submit(get_actual_per)
                 futures['price'] = executor.submit(get_nikkei_price)
-                futures['gdp'] = executor.submit(get_nominal_gdp_growth_median)
                 futures['jgb'] = executor.submit(get_jgb10y_yield_percent)
 
                 # 結果の回収と変数・キャッシュ更新
@@ -79,6 +94,12 @@ def index(request):
                         if per_vals.get('weighted_average'):
                             forward_per_weighted = per_vals['weighted_average']
                             cache.set(CACHE_KEY_FWD_WEIGHTED, forward_per_weighted, timeout=None)
+                        if per_vals.get('dividend_yield_index_based') is not None:
+                            dividend_yield_index_percent = per_vals['dividend_yield_index_based']
+                            cache.set(CACHE_KEY_DIVIDEND_INDEX, dividend_yield_index_percent, timeout=None)
+                        if per_vals.get('dividend_yield_simple_average') is not None:
+                            dividend_yield_weighted_percent = per_vals['dividend_yield_simple_average']
+                            cache.set(CACHE_KEY_DIVIDEND_WEIGHTED, dividend_yield_weighted_percent, timeout=None)
                 
                 if 'a_per' in futures:
                     val = futures['a_per'].result()
@@ -91,12 +112,6 @@ def index(request):
                     if val is not None:
                         price = val
                         cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
-
-                if 'gdp' in futures:
-                    val = futures['gdp'].result()
-                    if val is not None:
-                        gdp_growth_median = val
-                        cache.set(CACHE_KEY_GDP, gdp_growth_median, timeout=CACHE_TTL_GDP)
 
                 if 'jgb' in futures:
                     val = futures['jgb'].result()
@@ -113,10 +128,34 @@ def index(request):
             actual_per = 0.0
         if price is None:
             price = 0.0
-        if gdp_growth_median is None:
-            gdp_growth_median = 0.0
         if jgb10y_yield_percent is None:
             jgb10y_yield_percent = 0.0
+        if erp_growth_percent is None and erp_method in ('method_b', 'method_c'):
+            erp_growth_percent = 0.0
+            erp_growth_input = "0.00"
+
+        if erp_method != 'manual':
+            growth_decimal = (erp_growth_percent or 0.0) / 100.0
+            jgb_decimal = (jgb10y_yield_percent or 0.0) / 100.0
+            erp_fixed_method = None
+            if erp_method == 'method_a' and forward_per > 0:
+                erp_fixed_method = (1.0 / forward_per) - jgb_decimal
+            elif erp_method == 'method_b' and forward_per > 0:
+                erp_fixed_method = (
+                    (1.0 / forward_per) + growth_decimal - jgb_decimal
+                )
+            elif erp_method == 'method_c':
+                dividend_percent = (
+                    dividend_yield_index_percent
+                    if dividend_yield_index_percent is not None
+                    else 0.0
+                )
+                dividend_decimal = dividend_percent / 100.0
+                erp_fixed_method = dividend_decimal + growth_decimal - jgb_decimal
+            if erp_fixed_method is not None:
+                erp_fixed = erp_fixed_method
+                erp_input = f"{erp_fixed * 100.0:.2f}"
+                erp_query = erp_input
         if erp_fixed is None:
             erp_fixed = 0.0
 
@@ -125,7 +164,8 @@ def index(request):
             price,
             forward_per,
             actual_per,
-            gdp_growth_median=gdp_growth_median,
+            dividend_yield_index_percent=dividend_yield_index_percent,
+            dividend_yield_weighted_percent=dividend_yield_weighted_percent,
             jgb10y_yield_percent=jgb10y_yield_percent,
             forward_per_weighted=forward_per_weighted,
             erp_fixed=erp_fixed,
@@ -153,6 +193,8 @@ def index(request):
             'updated': force_update,
             'erp_input': erp_input,
             'erp_query': erp_query,
+            'erp_method': erp_method,
+            'erp_growth_input': erp_growth_input,
         }
     except Exception as e:
         context = {

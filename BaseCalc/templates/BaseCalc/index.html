@@ -121,35 +121,62 @@
         }
 
         /* Controls */
-        .controls-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-        }
         .erp-form {
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
             gap: 8px;
-            flex: 1;
+            width: 100%;
+        }
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
         }
         .erp-input {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--color-border);
             color: #fff;
-            padding: 8px 12px;
+            padding: 0 8px;
             border-radius: 10px;
-            width: 80px;
+            height: 44px;
             font-size: 0.95rem;
             text-align: center;
+            box-sizing: border-box;
         }
+        .input-value {
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .erp-select {
+            flex-grow: 1;
+            text-align: left;
+            width: auto;
+            /* iOS select fix */
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 32px;
+        }
+        .input-growth {
+            width: 70px;
+            flex-shrink: 0;
+        }
+
         .erp-input:focus {
             outline: none;
             border-color: var(--color-accent-blue);
+            background: rgba(15, 23, 42, 0.8);
         }
+        
         .btn-base {
-            padding: 8px 16px;
             border-radius: 10px;
             font-size: 0.9rem;
             cursor: pointer;
@@ -160,6 +187,25 @@
             transition: all 0.2s;
             font-weight: 600;
             white-space: nowrap;
+            height: 44px;
+            width: 100%;
+            box-sizing: border-box;
+            line-height: 1;
+        }
+        
+        @media (max-width: 380px) {
+            .control-row, .action-row {
+                gap: 8px;
+            }
+            .btn-base {
+                font-size: 0.8rem;
+            }
+            .erp-input {
+                font-size: 0.85rem;
+            }
+            .input-value { width: 60px; }
+            .input-growth { width: 50px; }
+            .btn-base svg { margin-right: 4px; width: 14px; height: 14px; }
         }
         .btn-primary { background: var(--color-accent-blue); color: #0f172a; border: none; }
         .btn-primary:hover { background: #7dd3fc; }
@@ -284,95 +330,64 @@
             </div>
 
             <!-- 3. Controls -->
-            <div class="controls-wrapper">
-                <form method="get" action="" class="erp-form">
-                    <input type="text" name="erp" class="erp-input" inputmode="decimal" placeholder="ERP %" value="{% if erp_input %}{{ erp_input }}{% else %}{{ data.erp_percent|floatformat:2 }}{% endif %}">
+            <form method="get" action="" class="erp-form"
+                  data-forward-per="{{ data.forward_per|default:0 }}"
+                  data-jgb-yield="{{ data.jgb10y_yield_percent|default:0 }}"
+                  data-dividend-yield="{{ data.dividend_yield_index_percent|default:0 }}">
+                <!-- Row 1: Inputs -->
+                <div class="control-row">
+                    <input type="text" name="erp" class="erp-input input-value" inputmode="decimal" placeholder="ERP %" value="{% if erp_input %}{{ erp_input }}{% else %}{{ data.erp_percent|floatformat:2 }}{% endif %}" {% if erp_method != "manual" %}readonly{% endif %}>
+                    <select name="erp_method" class="erp-input erp-select" aria-label="ERP算出方法">
+                        <option value="manual" {% if erp_method == "manual" %}selected{% endif %}>手入力</option>
+                        <option value="method_a" {% if erp_method == "method_a" %}selected{% endif %}>A 益回り</option>
+                        <option value="method_b" {% if erp_method == "method_b" %}selected{% endif %}>B 益回り+成長</option>
+                        <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
+                    </select>
+                    <input type="text" name="erp_growth" class="erp-input input-growth" inputmode="decimal" placeholder="g %" value="{% if erp_growth_input %}{{ erp_growth_input }}{% endif %}" {% if erp_method != "method_b" and erp_method != "method_c" %}hidden disabled{% endif %}>
+                </div>
+                <!-- Row 2: Actions -->
+                <div class="action-row">
                     <button type="submit" class="btn-base btn-primary">Apply ERP</button>
-                </form>
-                
-                <a href="?update=true{% if erp_query %}&erp={{ erp_query }}{% endif %}" class="btn-base btn-outline">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 4v6h-6"></path>
-                        <path d="M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Refresh
-                </a>
+                    <a href="?update=true{% if erp_query %}&erp={{ erp_query }}{% endif %}&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}" class="btn-base btn-outline">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Refresh
+                    </a>
+                </div>
+            </form>
+
+            <div class="card">
+                <h3 class="section-title">B 益回り+成長率（g）シナリオ</h3>
+                <div class="data-list">
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">保守的シナリオ（PP寄り）</span>
+                            <span class="label-sub">内訳：0.7% + 1.0%</span>
+                        </div>
+                        <span class="data-value">1.7<span class="unit">%</span></span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">中間シナリオ（レンジ中点）</span>
+                            <span class="label-sub">内訳：0.65% + 1.5%</span>
+                        </div>
+                        <span class="data-value">2.1<span class="unit">%</span></span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">目標整合シナリオ（TN寄り）</span>
+                            <span class="label-sub">内訳：0.7% + 2.0%</span>
+                        </div>
+                        <span class="data-value">2.7<span class="unit">%</span></span>
+                    </div>
+                </div>
             </div>
 
-            <!-- 4. Calculation Evidence (Moved up) -->
+            <!-- 4. Fair Value Ranges -->
             <div class="card">
-                <div class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-purple);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
-                        </svg>
-                    </div>
-                    <div class="card-title">Calculation Evidence</div>
-                </div>
-                
-                <!-- Index Base -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Index Base (Nikkei Official)</h3>
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward PER</span>
-                                <span class="label-sub">予想PER（指数ベース）</span>
-                            </div>
-                            <span class="data-value">{{ data.forward_per|default:"" }}<span class="unit">x</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward EPS</span>
-                                <span class="label-sub">予想EPS（指数ベース）</span>
-                            </div>
-                            <span class="data-value">{% if data.forward_eps_display %}{{ data.forward_eps_display }}{% endif %}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Earnings Yield</span>
-                                <span class="label-sub">益利回り（予想/指数ベース）</span>
-                            </div>
-                            <span class="data-value">{{ data.earnings_yield_forward_from_eps|floatformat:4|default:"" }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-separator"></div>
-
-                <!-- Weighted Average -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Weighted Average (Market Cap)</h3>
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward PER</span>
-                                <span class="label-sub">予想PER（加重平均）</span>
-                            </div>
-                            <span class="data-value">{{ data.forward_per_weighted|default:"" }}<span class="unit">x</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward EPS</span>
-                                <span class="label-sub">予想EPS（加重平均概算）</span>
-                            </div>
-                            <span class="data-value">{% if data.forward_eps_weighted_display %}{{ data.forward_eps_weighted_display }}{% endif %}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Earnings Yield</span>
-                                <span class="label-sub">益利回り（予想/加重平均）</span>
-                            </div>
-                            <span class="data-value">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"" }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="section-separator"></div>
-                
                 <!-- Fair Range Detail -->
                 <div class="valuation-section">
                     <h3 class="section-title">Fair Value Ranges</h3>
@@ -401,7 +416,7 @@
                 </div>
             </div>
 
-            <!-- 5. Market Conditions (Moved up) -->
+            <!-- 5. Market Conditions -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-amber);">
@@ -422,22 +437,109 @@
                     </div>
                     <div class="data-row">
                         <div class="label-group">
-                            <span class="label-main">Dividend Yield</span>
-                            <span class="label-sub">配当利回り</span>
+                            <span class="label-main">Forward PER</span>
+                            <span class="label-sub">予想PER（指数ベース）</span>
                         </div>
-                        <span class="data-value">{% if data.dividend_yield_percent %}{{ data.dividend_yield_percent }}<span class="unit">%</span>{% endif %}</span>
+                        <span class="data-value">{{ data.forward_per|default:"" }}<span class="unit">x</span></span>
                     </div>
                     <div class="data-row">
                         <div class="label-group">
-                            <span class="label-main">GDP Growth (Med)</span>
-                            <span class="label-sub">名目GDP成長率（中央値）</span>
+                            <span class="label-main">Dividend Yield</span>
+                            <span class="label-sub">配当利回り（指数ベース）</span>
                         </div>
-                        <span class="data-value">{% if data.gdp_growth_median_percent %}{{ data.gdp_growth_median_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
+                        <span class="data-value">{% if data.dividend_yield_index_percent %}{{ data.dividend_yield_index_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Forward PER</span>
+                            <span class="label-sub">予想PER（加重平均）</span>
+                        </div>
+                        <span class="data-value">{{ data.forward_per_weighted|default:"" }}<span class="unit">x</span></span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Dividend Yield</span>
+                            <span class="label-sub">配当利回り（単純平均）</span>
+                        </div>
+                        <span class="data-value">{% if data.dividend_yield_weighted_percent %}{{ data.dividend_yield_weighted_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 6. Analysis Summary (Moved to Bottom) -->
+            <!-- 6. Calculation Evidence -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: var(--color-accent-purple);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                    <div class="card-title">Calculation Evidence</div>
+                </div>
+                
+                <!-- Index Base -->
+                <div class="valuation-section">
+                    <h3 class="section-title">Index Base (Nikkei Official)</h3>
+                    <div class="data-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Forward EPS</span>
+                                <span class="label-sub">予想EPS（指数ベース）</span>
+                            </div>
+                            <span class="data-value">{% if data.forward_eps_display %}{{ data.forward_eps_display }}{% endif %}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Earnings Yield</span>
+                                <span class="label-sub">益利回り（予想/指数ベース）</span>
+                            </div>
+                            <span class="data-value">{{ data.earnings_yield_forward_from_eps|floatformat:4|default:"" }}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Implied Growth</span>
+                                <span class="label-sub">暗黙成長率（指数ベース）</span>
+                            </div>
+                            <span class="data-value">{{ data.g_implied_index|floatformat:4|default:"" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-separator"></div>
+
+                <!-- Weighted Average -->
+                <div class="valuation-section">
+                    <h3 class="section-title">Weighted Average (Market Cap)</h3>
+                    <div class="data-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Forward EPS</span>
+                                <span class="label-sub">予想EPS（加重平均概算）</span>
+                            </div>
+                            <span class="data-value">{% if data.forward_eps_weighted_display %}{{ data.forward_eps_weighted_display }}{% endif %}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Earnings Yield</span>
+                                <span class="label-sub">益利回り（予想/加重平均）</span>
+                            </div>
+                            <span class="data-value">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"" }}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Implied Growth</span>
+                                <span class="label-sub">暗黙成長率（単純平均）</span>
+                            </div>
+                            <span class="data-value">{{ data.g_implied_weighted|floatformat:4|default:"" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- 7. Analysis Summary (Moved to Bottom) -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-blue);">
@@ -461,10 +563,6 @@
                             {% if data.fair_price_gap_pct %}{{ data.fair_price_gap_pct|floatformat:2 }}<span class="unit">%</span>{% endif %}
                         </div>
                     </div>
-                    <div class="metric-box">
-                        <label>Implied Growth</label>
-                        <div class="value text-amber">{{ data.g_implied|floatformat:4|default:"" }}</div>
-                    </div>
                      <div class="metric-box">
                         <label>Actual PER</label>
                         <div class="value">{% if data.actual_per %}{{ data.actual_per }}<span class="unit">x</span>{% endif %}</div>
@@ -479,5 +577,103 @@
             {% endif %}
         </main>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector(".erp-form");
+            if (!form) {
+                return;
+            }
+            const methodSelect = form.querySelector('[name="erp_method"]');
+            const growthInput = form.querySelector('[name="erp_growth"]');
+            const erpInput = form.querySelector('[name="erp"]');
+            const forwardPer = Number(form.dataset.forwardPer);
+            const jgbYield = Number(form.dataset.jgbYield);
+            const dividendYield = Number(form.dataset.dividendYield);
+
+            if (!methodSelect || !growthInput || !erpInput) {
+                return;
+            }
+
+            const parsePercent = (value) => {
+                if (value === null || value === undefined) {
+                    return null;
+                }
+                const cleaned = value.toString().replace(/,/g, "").replace("%", "").trim();
+                if (!cleaned) {
+                    return null;
+                }
+                const parsed = Number(cleaned);
+                return Number.isFinite(parsed) ? parsed : null;
+            };
+
+            const parsePercentOrZero = (value) => {
+                const parsed = parsePercent(value);
+                return parsed === null ? 0 : parsed;
+            };
+
+            const calcErpPercent = (method) => {
+                const per = Number.isFinite(forwardPer) ? forwardPer : 0;
+                const jgb = Number.isFinite(jgbYield) ? jgbYield : 0;
+                const g = parsePercentOrZero(growthInput.value);
+                if (method === "method_a") {
+                    if (per <= 0) {
+                        return null;
+                    }
+                    return (1 / per) * 100 - jgb;
+                }
+                if (method === "method_b") {
+                    if (per <= 0) {
+                        return null;
+                    }
+                    return (1 / per) * 100 + g - jgb;
+                }
+                if (method === "method_c") {
+                    const dividend = Number.isFinite(dividendYield) ? dividendYield : 0;
+                    return dividend + g - jgb;
+                }
+                return null;
+            };
+
+            const updateInputs = (method) => {
+                const needsGrowth = method === "method_b" || method === "method_c";
+                growthInput.disabled = !needsGrowth;
+                growthInput.hidden = !needsGrowth;
+                erpInput.readOnly = method !== "manual";
+                if (method !== "manual") {
+                    const erpPercent = calcErpPercent(method);
+                    if (erpPercent === null || !Number.isFinite(erpPercent)) {
+                        return;
+                    }
+                    erpInput.value = erpPercent.toFixed(2);
+                }
+            };
+
+            const submitAuto = () => {
+                const method = methodSelect.value;
+                if (method === "manual") {
+                    return;
+                }
+                const erpPercent = calcErpPercent(method);
+                if (erpPercent === null || !Number.isFinite(erpPercent)) {
+                    return;
+                }
+                erpInput.value = erpPercent.toFixed(2);
+                form.submit();
+            };
+
+            methodSelect.addEventListener("change", () => {
+                updateInputs(methodSelect.value);
+                submitAuto();
+            });
+
+            growthInput.addEventListener("change", () => {
+                if (methodSelect.value === "method_b" || methodSelect.value === "method_c") {
+                    submitAuto();
+                }
+            });
+
+            updateInputs(methodSelect.value);
+        });
+    </script>
 </body>
 </html>
