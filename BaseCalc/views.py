@@ -3,7 +3,6 @@ from django.core.cache import cache
 from concurrent.futures import ThreadPoolExecutor
 from .nikkei_bias import (
     calculate_bias,
-    get_actual_per,
     get_nikkei_per_values,
     get_jgb10y_yield_percent,
 )
@@ -12,12 +11,9 @@ def index(request):
     try:
         # キャッシュキー
         CACHE_KEY_FWD = 'nikkei_forward_per'
-        CACHE_KEY_FWD_WEIGHTED = 'nikkei_forward_per_weighted'
-        CACHE_KEY_ACT = 'nikkei_actual_per'
         CACHE_KEY_PRICE = 'nikkei_price'
         CACHE_KEY_JGB = 'nikkei_jgb10y_yield_percent'
         CACHE_KEY_DIVIDEND_INDEX = 'nikkei_dividend_yield_index'
-        CACHE_KEY_DIVIDEND_WEIGHTED = 'nikkei_dividend_yield_weighted'
         CACHE_TTL_PRICE = 300
         CACHE_TTL_JGB = 3600
         
@@ -57,11 +53,28 @@ def index(request):
             except (TypeError, ValueError):
                 return None
             return rounded if rounded in allowed_growth_values else None
+        def normalize_ratio(value, min_value, max_value, default_value):
+            if value is None:
+                return default_value
+            try:
+                ratio = float(value)
+            except (TypeError, ValueError):
+                return default_value
+            if ratio <= 0:
+                return default_value
+            if ratio < min_value:
+                return min_value
+            if ratio > max_value:
+                return max_value
+            return ratio
 
         growth_param = request.GET.get('erp_growth')
         erp_growth_percent = normalize_growth(parse_float_param(growth_param))
         if erp_growth_percent is not None:
             erp_growth_input = f"{erp_growth_percent:.1f}"
+        if erp_method == 'method_c':
+            erp_growth_percent = 0.0
+            erp_growth_input = None
 
         price_override = normalize_price(
             parse_float_param(request.GET.get('price'))
@@ -73,11 +86,26 @@ def index(request):
             return f"{int(value)}"
 
         price_param = format_price_param(price_override)
+
+        core_ratio_param = request.GET.get('growth_core_ratio')
+        wide_ratio_param = request.GET.get('growth_wide_ratio')
+        growth_core_ratio = normalize_ratio(
+            parse_float_param(core_ratio_param),
+            min_value=0.1,
+            max_value=2.0,
+            default_value=1.0,
+        )
+        growth_wide_ratio = normalize_ratio(
+            parse_float_param(wide_ratio_param),
+            min_value=0.1,
+            max_value=2.0,
+            default_value=1.0,
+        )
+        growth_core_ratio_input = f"{growth_core_ratio:.1f}"
+        growth_wide_ratio_input = f"{growth_wide_ratio:.1f}"
         
         # 2. キャッシュから取得
         forward_per = cache.get(CACHE_KEY_FWD)
-        forward_per_weighted = cache.get(CACHE_KEY_FWD_WEIGHTED)
-        actual_per = cache.get(CACHE_KEY_ACT)
         price = (
             price_override
             if price_override is not None
@@ -85,26 +113,21 @@ def index(request):
         )
         jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
         dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
-        dividend_yield_weighted_percent = cache.get(CACHE_KEY_DIVIDEND_WEIGHTED)
         
         # 3. 更新リクエストまたは未取得時はデータ取得・更新 (All or Nothing)
         needs_update = force_update or any(
             value is None
             for value in (
                 forward_per,
-                forward_per_weighted,
-                actual_per,
                 price,
                 jgb10y_yield_percent,
                 dividend_yield_index_percent,
-                dividend_yield_weighted_percent,
             )
         )
         if needs_update:
             with ThreadPoolExecutor() as executor:
                 futures = {}
                 futures['per_values'] = executor.submit(get_nikkei_per_values)
-                futures['a_per'] = executor.submit(get_actual_per)
                 futures['jgb'] = executor.submit(get_jgb10y_yield_percent)
 
                 # 結果の回収と変数・キャッシュ更新
@@ -114,21 +137,9 @@ def index(request):
                         if per_vals.get('index_based'):
                             forward_per = per_vals['index_based']
                             cache.set(CACHE_KEY_FWD, forward_per, timeout=None)
-                        if per_vals.get('weighted_average'):
-                            forward_per_weighted = per_vals['weighted_average']
-                            cache.set(CACHE_KEY_FWD_WEIGHTED, forward_per_weighted, timeout=None)
                         if per_vals.get('dividend_yield_index_based') is not None:
                             dividend_yield_index_percent = per_vals['dividend_yield_index_based']
                             cache.set(CACHE_KEY_DIVIDEND_INDEX, dividend_yield_index_percent, timeout=None)
-                        if per_vals.get('dividend_yield_simple_average') is not None:
-                            dividend_yield_weighted_percent = per_vals['dividend_yield_simple_average']
-                            cache.set(CACHE_KEY_DIVIDEND_WEIGHTED, dividend_yield_weighted_percent, timeout=None)
-                
-                if 'a_per' in futures:
-                    val = futures['a_per'].result()
-                    if val:
-                        actual_per = val
-                        cache.set(CACHE_KEY_ACT, actual_per, timeout=None)
 
                 if 'jgb' in futures:
                     val = futures['jgb'].result()
@@ -143,15 +154,11 @@ def index(request):
         # 4. 欠落時は0.00を使用
         if forward_per is None:
             forward_per = 0.0
-        if forward_per_weighted is None:
-            forward_per_weighted = 0.0
-        if actual_per is None:
-            actual_per = 0.0
         if price is None:
             price = 0.0
         if jgb10y_yield_percent is None:
             jgb10y_yield_percent = 0.0
-        if erp_growth_percent is None and erp_method in ('method_b', 'method_c'):
+        if erp_growth_percent is None and erp_method == 'method_b':
             erp_growth_percent = 2.1
             erp_growth_input = "2.1"
 
@@ -170,16 +177,22 @@ def index(request):
             dividend_decimal = dividend_percent / 100.0
             erp_fixed = dividend_decimal + growth_decimal - jgb_decimal
 
+        growth_center_percent = None
+        if erp_method == 'method_b':
+            growth_center_percent = erp_growth_percent
+        elif erp_method == 'method_c':
+            growth_center_percent = 0.0
+
         # 5. 計算実行
         data = calculate_bias(
             price,
             forward_per,
-            actual_per,
             dividend_yield_index_percent=dividend_yield_index_percent,
-            dividend_yield_weighted_percent=dividend_yield_weighted_percent,
             jgb10y_yield_percent=jgb10y_yield_percent,
-            forward_per_weighted=forward_per_weighted,
             erp_fixed=erp_fixed,
+            growth_center_percent=growth_center_percent,
+            growth_core_ratio=growth_core_ratio,
+            growth_wide_ratio=growth_wide_ratio,
         )
         def format_price(value, decimals=0):
             if value is None:
@@ -191,7 +204,6 @@ def index(request):
 
         data["price_display"] = format_price(data.get("price"), decimals=0)
         data["forward_eps_display"] = format_price(data.get("forward_eps"), decimals=2)
-        data["forward_eps_weighted_display"] = format_price(data.get("forward_eps_weighted"), decimals=2)
         data["fair_price_core_low_display"] = format_price(data.get("fair_price_core_low"), decimals=0)
         data["fair_price_core_high_display"] = format_price(data.get("fair_price_core_high"), decimals=0)
         data["fair_price_wide_low_display"] = format_price(data.get("fair_price_wide_low"), decimals=0)
@@ -203,6 +215,8 @@ def index(request):
             'erp_method': erp_method,
             'erp_growth_input': erp_growth_input,
             'price_param': price_param,
+            'growth_core_ratio_input': growth_core_ratio_input,
+            'growth_wide_ratio_input': growth_wide_ratio_input,
         }
     except Exception as e:
         context = {

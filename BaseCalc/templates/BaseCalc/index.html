@@ -54,6 +54,9 @@
             <div class="price-display">
                 <span class="price-label">Current Price (Investing.com)</span>
                 <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
+                <div id="price-warning" class="text-red" style="margin-top: 8px; font-size: 0.85rem;" hidden>
+                    価格取得に失敗しました。更新を停止しました。
+                </div>
             </div>
 
             <!-- 3. Controls -->
@@ -67,18 +70,59 @@
                         <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
                     </select>
                     {% with growth_selected=erp_growth_input|default:"2.1" %}
-                    <input type="text" class="erp-input input-growth" id="growth-fixed" value="0.00" readonly {% if erp_method != "method_a" %}hidden{% endif %}>
-                    <select name="erp_growth" class="erp-input erp-select input-growth" id="growth-select" aria-label="g 選択" {% if erp_method != "method_b" and erp_method != "method_c" %}hidden disabled{% endif %}>
+                    <input type="text" class="erp-input input-growth" id="growth-fixed" value="0.00" readonly {% if erp_method != "method_a" and erp_method != "method_c" %}hidden{% endif %}>
+                    <select name="erp_growth" class="erp-input erp-select input-growth" id="growth-select" aria-label="g 選択" {% if erp_method != "method_b" %}hidden disabled{% endif %}>
                         <option value="1.7" {% if growth_selected == "1.7" %}selected{% endif %}>1.7</option>
                         <option value="2.1" {% if growth_selected == "2.1" %}selected{% endif %}>2.1</option>
                         <option value="2.7" {% if growth_selected == "2.7" %}selected{% endif %}>2.7</option>
                     </select>
                     {% endwith %}
                 </div>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 class="section-title" style="margin: 0;">Range Tuning</h3>
+                    </div>
+
+                    <details style="margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden;">
+                        <summary style="padding: 10px 16px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; font-weight: 500; list-style: none; color: var(--color-text-main);">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                設定の説明と推奨値
+                            </span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </summary>
+                        <div style="padding: 16px; background: rgba(0,0,0,0.2); font-size: 0.85rem; line-height: 1.6; color: var(--color-text-muted);">
+                            <p style="margin-top: 0; margin-bottom: 12px;">GROWTH_CORE_RATIO_DEFAULT（推奨0.8〜1.2）とWIDE（推奨0.6〜1.4）は、適正レンジ幅を決める倍率です。1.0を基準に、値を大きくすると範囲が広がり、小さくすると狭まります。</p>
+                            <p style="margin-bottom: 12px;">WideはCore以上の設定が推奨され、下回るとCore幅になります。実レンジには上下限（Core:0.1〜0.5%、Wide:0.2〜1.0%）があります。まずは1.0から始め、広すぎる場合はCore→Wideの順で下げて調整してください。</p>
+                        </div>
+                    </details>
+                    <div class="data-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">GROWTH_CORE_RATIO</span>
+                                <span class="label-sub">コアレンジの幅を決める係数です。推奨 0.8-1.2。</span>
+                            </div>
+                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'1.0' }}" data-field="growth_core_ratio_input">
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">GROWTH_WIDE_RATIO</span>
+                                <span class="label-sub">ワイドレンジの幅を決める係数です。推奨 0.6-1.4。</span>
+                            </div>
+                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'1.0' }}" data-field="growth_wide_ratio_input">
+                        </div>
+                    </div>
+                </div>
                 <!-- Row 2: Actions -->
                 <div class="action-row">
                     <button type="submit" class="btn-base btn-primary">Apply ERP</button>
-                    <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
+                    <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if growth_core_ratio_input %}&growth_core_ratio={{ growth_core_ratio_input }}{% endif %}{% if growth_wide_ratio_input %}&growth_wide_ratio={{ growth_wide_ratio_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 4v6h-6"></path>
                             <path d="M1 20v-6h6"></path>
@@ -98,7 +142,7 @@
                         <div class="data-row range-row">
                             <div class="label-group">
                                 <span class="label-main">Fair Range (Core)</span>
-                                <span class="label-sub">適正レンジ（コア ±0.5%）</span>
+                                <span class="label-sub">適正レンジ（コア ±{{ data.growth_core_width_percent|floatformat:2 }}%）</span>
                             </div>
                             <div class="range-values">
                                 <span class="range-val text-blue" data-field="fair_price_core_low_display">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</span>
@@ -109,7 +153,7 @@
                         <div class="data-row range-row">
                             <div class="label-group">
                                 <span class="label-main">Fair Range (Wide)</span>
-                                <span class="label-sub">適正レンジ（ワイド ±1.0%）</span>
+                                <span class="label-sub">適正レンジ（ワイド ±{{ data.growth_wide_width_percent|floatformat:2 }}%）</span>
                             </div>
                             <div class="range-values">
                                 <span class="range-val text-blue" data-field="fair_price_wide_low_display">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</span>
@@ -185,20 +229,6 @@
                             </div>
                             <span class="data-value" data-field="dividend_yield_index_percent">{% if data.dividend_yield_index_percent %}{{ data.dividend_yield_index_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
                         </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward PER</span>
-                                <span class="label-sub">予想PER（加重平均）</span>
-                            </div>
-                            <span class="data-value" data-field="forward_per_weighted">{{ data.forward_per_weighted|default:"" }}<span class="unit">x</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Dividend Yield</span>
-                                <span class="label-sub">配当利回り（単純平均）</span>
-                            </div>
-                            <span class="data-value" data-field="dividend_yield_weighted_percent">{% if data.dividend_yield_weighted_percent %}{{ data.dividend_yield_weighted_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
-                        </div>
                     </div>
                 </div>
             </details>
@@ -247,36 +277,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="section-separator"></div>
-
-                    <!-- Weighted Average -->
-                    <div class="valuation-section">
-                        <h3 class="section-title">Weighted Average (Market Cap)</h3>
-                        <div class="data-list">
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Forward EPS</span>
-                                    <span class="label-sub">予想EPS（加重平均概算）</span>
-                                </div>
-                                <span class="data-value" data-field="forward_eps_weighted_display">{% if data.forward_eps_weighted_display %}{{ data.forward_eps_weighted_display }}{% endif %}</span>
-                            </div>
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Earnings Yield</span>
-                                    <span class="label-sub">益利回り（予想/加重平均）</span>
-                                </div>
-                                <span class="data-value" data-field="earnings_yield_forward_weighted_from_eps">{{ data.earnings_yield_forward_weighted_from_eps|floatformat:4|default:"" }}</span>
-                            </div>
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Implied Growth</span>
-                                    <span class="label-sub">暗黙成長率（単純平均）</span>
-                                </div>
-                                <span class="data-value" data-field="g_implied_weighted">{{ data.g_implied_weighted|floatformat:4|default:"" }}</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </details>
 
@@ -305,10 +305,6 @@
                         </div>
                     </div>
                      <div class="metric-box">
-                        <label>Actual PER</label>
-                        <div class="value" data-field="actual_per">{% if data.actual_per %}{{ data.actual_per }}<span class="unit">x</span>{% endif %}</div>
-                    </div>
-                     <div class="metric-box">
                         <label>Assumed ERP</label>
                         <div class="value text-purple" data-field="erp_percent">{% if data.erp_percent %}{{ data.erp_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</div>
                     </div>
@@ -325,6 +321,14 @@
             const priceInput = form ? form.querySelector('[name="price"]') : null;
             const refreshLink = document.getElementById("price-refresh");
             const STORAGE_KEY = "basecalc_current_price";
+            const priceWarning = document.getElementById("price-warning");
+
+            const setPriceWarning = (visible) => {
+                if (!priceWarning) {
+                    return;
+                }
+                priceWarning.hidden = !visible;
+            };
 
             if (form) {
                 const methodSelect = form.querySelector('[name="erp_method"]');
@@ -332,7 +336,7 @@
                 const growthFixed = form.querySelector("#growth-fixed");
                 if (methodSelect && growthSelect && growthFixed) {
                     const updateInputs = (method) => {
-                        const needsGrowth = method === "method_b" || method === "method_c";
+                        const needsGrowth = method === "method_b";
                         growthSelect.disabled = !needsGrowth;
                         growthSelect.hidden = !needsGrowth;
                         growthFixed.hidden = needsGrowth;
@@ -517,16 +521,19 @@
             if (refreshLink) {
                 refreshLink.addEventListener("click", async (event) => {
                     event.preventDefault();
+                    setPriceWarning(false);
                     let latestPrice = null;
                     try {
                         latestPrice = await fetchLatestPrice();
                     } catch (e) {}
-                    if (latestPrice !== null) {
-                        if (priceInput) {
-                            priceInput.value = String(latestPrice);
-                        }
-                        writeStorage(String(latestPrice));
+                    if (latestPrice === null) {
+                        setPriceWarning(true);
+                        return;
                     }
+                    if (priceInput) {
+                        priceInput.value = String(latestPrice);
+                    }
+                    writeStorage(String(latestPrice));
                     const url = buildUrlFromForm({ update: true });
                     requestUpdate(url);
                 });

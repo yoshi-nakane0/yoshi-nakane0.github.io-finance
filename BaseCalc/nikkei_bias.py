@@ -4,10 +4,8 @@ import json
 import logging
 import os
 import re
-from urllib.parse import quote
 
 import requests
-from bs4 import BeautifulSoup
 
 # ロガー設定
 logger = logging.getLogger(__name__)
@@ -24,13 +22,9 @@ HEADERS = {
     "Connection": "close",
 }
 HTTP_SILENT_STATUS = {403, 404, 429}
-PRICE_SYMBOLS = ("^N225", "1329.T")
 MOF_JGB10Y_CSV_URL = (
     "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
 )
-NIKKEI_COM_JAPANIDX_URL = "https://www.nikkei.com/markets/kabu/japanidx/"
-STOOQ_QUOTE_URL = "https://stooq.com/q/l/?s={symbol}&i=d"
-STOOQ_NIKKEI_SYMBOL = "^nkx"
 NIKKEI_PER_DATA_PATH = os.path.join(
     os.path.dirname(__file__),
     "data",
@@ -39,6 +33,14 @@ NIKKEI_PER_DATA_PATH = os.path.join(
 NIKKEI_PER_DATA_URL = os.getenv("NIKKEI_PER_DATA_URL")
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
+GROWTH_CORE_RATIO_BASE = 0.1
+GROWTH_WIDE_RATIO_BASE = 0.18
+GROWTH_CORE_RATIO_DEFAULT = 1.0
+GROWTH_WIDE_RATIO_DEFAULT = 1.0
+GROWTH_CORE_WIDTH_MIN_DEFAULT = 0.001
+GROWTH_WIDE_WIDTH_MIN_DEFAULT = 0.002
+GROWTH_RATIO_MIN_DEFAULT = 0.1
+GROWTH_RATIO_MAX_DEFAULT = 2.0
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 
@@ -111,25 +113,6 @@ def _get_text(url, headers=None):
             logger.warning("HTTP request failed (%s): %s", url, exc)
         return None
 
-def _get_yahoo_chart(symbol):
-    encoded_symbol = quote(symbol, safe="")
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded_symbol}"
-    data = _get_json(url)
-    if not data:
-        return None
-    results = _get_nested(data, ("chart", "result"))
-    if not results:
-        return None
-    return results[0]
-
-def _get_nested(data, keys):
-    current = data
-    for key in keys:
-        if not isinstance(current, dict):
-            return None
-        current = current.get(key)
-    return current
-
 def _extract_numeric(value):
     if value is None:
         return None
@@ -142,74 +125,6 @@ def _extract_numeric(value):
         return None
     if isinstance(value, str):
         return _parse_float(value)
-    return None
-
-def _extract_quote_value(quote, field_names):
-    if not isinstance(quote, dict):
-        return None
-    for field in field_names:
-        value = _extract_numeric(quote.get(field))
-        if value is not None:
-            return value
-    return None
-
-def _extract_last_close(chart):
-    if not isinstance(chart, dict):
-        return None
-    indicators = chart.get("indicators", {})
-    quote_list = indicators.get("quote")
-    if not quote_list:
-        return None
-    closes = quote_list[0].get("close")
-    if not closes:
-        return None
-    for value in reversed(closes):
-        if value is not None:
-            return float(value)
-    return None
-
-def _get_stooq_last_close(symbol):
-    url = STOOQ_QUOTE_URL.format(symbol=symbol)
-    text = _get_text(url)
-    if not text:
-        return None
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if not lines:
-        return None
-    if lines[0].lower().startswith("symbol") and len(lines) > 1:
-        line = lines[1]
-    else:
-        line = lines[0]
-    parts = [part.strip() for part in line.split(",")]
-    if len(parts) < 7:
-        return None
-    close_value = parts[6]
-    if not close_value or close_value == "N/D":
-        return None
-    try:
-        return float(close_value)
-    except ValueError:
-        return None
-
-def get_nikkei_price():
-    """
-    Stooqを優先し、取得できない場合はYahoo chartから日経平均株価を取得
-    """
-    stooq_value = _get_stooq_last_close(STOOQ_NIKKEI_SYMBOL)
-    if stooq_value is not None:
-        return stooq_value
-    for symbol in PRICE_SYMBOLS:
-        chart = _get_yahoo_chart(symbol)
-        if not chart:
-            continue
-        meta = chart.get("meta", {})
-        value = _extract_quote_value(
-            meta, ("regularMarketPrice", "chartPreviousClose")
-        )
-        if value is None:
-            value = _extract_last_close(chart)
-        if value is not None:
-            return value
     return None
 
 def get_jgb10y_yield_percent():
@@ -227,31 +142,20 @@ def _extract_nikkei_per_values_from_payload(payload):
     if not isinstance(payload, dict):
         return None
     index_val = _extract_numeric(payload.get("index_based"))
-    weighted_val = _extract_numeric(payload.get("weighted_average"))
     dividend_payload = payload.get("dividend_yield")
     dividend_index_val = None
-    dividend_simple_val = None
     if isinstance(dividend_payload, dict):
         dividend_index_val = _extract_numeric(dividend_payload.get("index_based"))
-        dividend_simple_val = _extract_numeric(
-            dividend_payload.get("simple_average")
-        )
     if (
         index_val is None
-        and weighted_val is None
         and dividend_index_val is None
-        and dividend_simple_val is None
     ):
         return None
     result = {}
     if index_val is not None:
         result["index_based"] = index_val
-    if weighted_val is not None:
-        result["weighted_average"] = weighted_val
     if dividend_index_val is not None:
         result["dividend_yield_index_based"] = dividend_index_val
-    if dividend_simple_val is not None:
-        result["dividend_yield_simple_average"] = dividend_simple_val
     return result
 
 def _load_nikkei_per_data_file(path):
@@ -278,100 +182,67 @@ def get_nikkei_per_values():
             return result
     return _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)
 
-def get_actual_per():
-    """
-    日経平均の指数ベースPER（実績）を取得
-    Source: https://www.nikkei.com/markets/kabu/japanidx/
-    Target Table: Headers [項目名, 前期基準, 予想], Row [日経平均, 19.76倍, 20.33倍]
-    """
-    url = NIKKEI_COM_JAPANIDX_URL
-    text = _get_text(url)
-    if not text:
-        return None
-    
-    try:
-        soup = BeautifulSoup(text, "lxml")
-        tables = soup.find_all("table")
-        
-        for table in tables:
-            # We look for a table that likely has these headers. 
-            # Note: findAll on table might return all cells, we should look at thead or first row specifically if possible,
-            # but flattening all text in table to check for existence is easier first.
-            table_text = table.get_text(strip=True)
-            if "前期基準" not in table_text or "予想" not in table_text:
-                continue
-                
-            # Check for "日経平均" row
-            rows = table.find_all("tr")
-            for row in rows:
-                cols = row.find_all(["th", "td"])
-                if not cols:
-                    continue
-                
-                row_head = cols[0].get_text(strip=True)
-                if row_head == "日経平均":
-                    # Found the row. Now check value format to distinguish from Yield table (%)
-                    if len(cols) < 2:
-                        break
-                    
-                    val_text = cols[1].get_text(strip=True)
-                    if "倍" in val_text:
-                        # This is the PER table (or PBR, but PBR table usually has different headers or values < 5)
-                        # The user specified table has "前期基準" and "予想" headers. PBR table usually only has "純資産倍率" or similar.
-                        # Inspection showed Table 4 headers: ['項目名', '前期基準', '予想'] and values with "倍".
-                        # This matches.
-                        return _parse_float(val_text)
-        
-        logger.warning("Actual PER table/row not found on Nikkei.com")
-        return None
-
-    except Exception as e:
-        logger.error(f"Error parsing Actual PER from Nikkei.com: {e}")
-        return None
-
 def calculate_bias(
     price,
     forward_per,
-    actual_per,
     dividend_yield_index_percent=None,
-    dividend_yield_weighted_percent=None,
     jgb10y_yield_percent=None,
-    forward_per_weighted=None,
     erp_fixed=None,
+    growth_center_percent=None,
+    growth_core_ratio=None,
+    growth_wide_ratio=None,
 ):
     # --- 3. 入力仕様（固定値） ---
-    # price, forward_per, actual_per は引数から取得
+    # price, forward_per は引数から取得
 
     dividend_yield_index_display = dividend_yield_index_percent
-    dividend_yield_weighted_display = dividend_yield_weighted_percent
     if dividend_yield_index_percent is None:
         dividend_yield_index_percent = 0.0
-    if dividend_yield_weighted_percent is None:
-        dividend_yield_weighted_percent = 0.0
     if jgb10y_yield_percent is None:
         jgb10y_yield_percent = 0.0
     if erp_fixed is None:
         erp_fixed = 0.0
+    growth_center_decimal = None
+    if growth_center_percent is not None:
+        try:
+            growth_center_decimal = float(growth_center_percent) / 100.0
+        except (TypeError, ValueError):
+            growth_center_decimal = None
+    core_ratio = GROWTH_CORE_RATIO_DEFAULT
+    if growth_core_ratio is not None:
+        try:
+            core_ratio = float(growth_core_ratio)
+        except (TypeError, ValueError):
+            core_ratio = GROWTH_CORE_RATIO_DEFAULT
+    wide_ratio = GROWTH_WIDE_RATIO_DEFAULT
+    if growth_wide_ratio is not None:
+        try:
+            wide_ratio = float(growth_wide_ratio)
+        except (TypeError, ValueError):
+            wide_ratio = GROWTH_WIDE_RATIO_DEFAULT
+    if core_ratio <= 0:
+        core_ratio = GROWTH_CORE_RATIO_DEFAULT
+    if wide_ratio <= 0:
+        wide_ratio = GROWTH_WIDE_RATIO_DEFAULT
+    core_ratio = min(
+        GROWTH_RATIO_MAX_DEFAULT,
+        max(GROWTH_RATIO_MIN_DEFAULT, core_ratio),
+    )
+    wide_ratio = min(
+        GROWTH_RATIO_MAX_DEFAULT,
+        max(GROWTH_RATIO_MIN_DEFAULT, wide_ratio),
+    )
     if price is None or price <= 0:
         price = 0.0
     if forward_per is None or forward_per <= 0:
         forward_per = 0.0
-    if actual_per is None or actual_per <= 0:
-        actual_per = 0.0
-    if forward_per_weighted is None or forward_per_weighted <= 0:
-        forward_per_weighted = 0.0
 
     # --- 9. パラメータ（初期値） ---
-    GROWTH_CORE_WIDTH = GROWTH_CORE_WIDTH_DEFAULT
-    GROWTH_WIDE_WIDTH = GROWTH_WIDE_WIDTH_DEFAULT
     G_IMPLIED_HI = 0.05
     G_IMPLIED_LO = 0.00
 
     # --- 3.2 単位の正規化 ---
-    dividend_yield_percent = dividend_yield_index_percent
-    dividend_yield_decimal = dividend_yield_percent / 100.0
     dividend_yield_index_decimal = dividend_yield_index_percent / 100.0
-    dividend_yield_weighted_decimal = dividend_yield_weighted_percent / 100.0
     jgb10y_yield_decimal = jgb10y_yield_percent / 100.0
 
     # --- 4. 計算指標 ---
@@ -382,29 +253,23 @@ def calculate_bias(
 
     # 4.0 指標D: EPS（PERから逆算）
     forward_eps = safe_divide(price, forward_per)
-    forward_eps_weighted = safe_divide(price, forward_per_weighted)
-    actual_eps = safe_divide(price, actual_per)
 
     # 4.1 指標A：益利回り
     # Method 1: From PER (1 / PER)
     ey_fwd_index_per = safe_divide(1.0, forward_per)
-    ey_fwd_weighted_per = safe_divide(1.0, forward_per_weighted)
     
     # Method 2: From EPS (EPS / Price)
     ey_fwd_index_eps = safe_divide(forward_eps, price)
-    ey_fwd_weighted_eps = safe_divide(forward_eps_weighted, price)
 
     # Default for downstream logic (using PER based as primary)
     earnings_yield_forward = ey_fwd_index_per
-    earnings_yield_forward_weighted = ey_fwd_weighted_per
-    earnings_yield_actual = safe_divide(1.0, actual_per)
 
     # 4.2 指標B：イールドギャップ（市場の暗黙ERP）
     yield_gap = earnings_yield_forward - jgb10y_yield_decimal
 
     # 4.3 指標C：暗黙成長率（市場の利回りから推定）
     market_required_return = earnings_yield_forward
-    g_implied = market_required_return - dividend_yield_decimal
+    g_implied = market_required_return - dividend_yield_index_decimal
     g_implied_index = None
     if (
         dividend_yield_index_display is not None
@@ -412,15 +277,6 @@ def calculate_bias(
         and price > 0
     ):
         g_implied_index = ey_fwd_index_eps - dividend_yield_index_decimal
-    g_implied_weighted = None
-    if (
-        dividend_yield_weighted_display is not None
-        and forward_per_weighted > 0
-        and price > 0
-    ):
-        g_implied_weighted = (
-            ey_fwd_weighted_eps - dividend_yield_weighted_decimal
-        )
 
     # 4.4 指標D：フェアバリュー用の要求収益率（固定ERP）
     required_return_fair = jgb10y_yield_decimal + erp_fixed
@@ -432,7 +288,35 @@ def calculate_bias(
             return None
         return 1.0 / spread
 
-    growth_center = 0.0
+    growth_center = growth_center_decimal if growth_center_decimal is not None else 0.0
+    width_anchor_growth = growth_center
+    if growth_center_decimal is None and g_implied_index is not None:
+        width_anchor_growth = g_implied_index
+
+    spread_for_width = required_return_fair - width_anchor_growth
+    if spread_for_width is None or spread_for_width <= 0:
+        spread_for_width = 0.0
+
+    core_ratio_effective = GROWTH_CORE_RATIO_BASE * core_ratio
+    wide_ratio_effective = GROWTH_WIDE_RATIO_BASE * wide_ratio
+
+    GROWTH_CORE_WIDTH = min(
+        GROWTH_CORE_WIDTH_DEFAULT,
+        max(
+            GROWTH_CORE_WIDTH_MIN_DEFAULT,
+            spread_for_width * core_ratio_effective,
+        ),
+    )
+    GROWTH_WIDE_WIDTH = min(
+        GROWTH_WIDE_WIDTH_DEFAULT,
+        max(
+            GROWTH_WIDE_WIDTH_MIN_DEFAULT,
+            spread_for_width * wide_ratio_effective,
+        ),
+    )
+    if GROWTH_WIDE_WIDTH < GROWTH_CORE_WIDTH:
+        GROWTH_WIDE_WIDTH = GROWTH_CORE_WIDTH
+
     growth_core_low = growth_center - GROWTH_CORE_WIDTH
     growth_core_high = growth_center + GROWTH_CORE_WIDTH
     growth_wide_low = growth_center - GROWTH_WIDE_WIDTH
@@ -495,38 +379,18 @@ def calculate_bias(
         "date": datetime.date.today().isoformat(),
         "price": round(price, 0),
         "forward_per": forward_per,
-        "forward_per_weighted": forward_per_weighted,
         "forward_eps": round(forward_eps, 2),
-        "forward_eps_weighted": round(forward_eps_weighted, 2)
-        if forward_eps_weighted is not None
-        else None,
-        "actual_per": round(actual_per, 2),
-        "actual_eps": round(actual_eps, 2), # 計算値なので丸める
         "jgb10y_yield_percent": jgb10y_yield_percent,
         "jgb10y_yield_decimal": round(jgb10y_yield_decimal, 6),
         "earnings_yield_forward": round(earnings_yield_forward, 6),
-        "earnings_yield_forward_weighted": round(earnings_yield_forward_weighted, 6)
-        if earnings_yield_forward_weighted is not None
-        else None,
         "earnings_yield_forward_from_eps": round(ey_fwd_index_eps, 6),
-        "earnings_yield_forward_weighted_from_eps": round(ey_fwd_weighted_eps, 6)
-        if ey_fwd_weighted_eps is not None
-        else None,
-        "earnings_yield_actual": round(earnings_yield_actual, 6),
         "yield_gap": round(yield_gap, 6),
         "dividend_yield_index_percent": dividend_yield_index_display,
-        "dividend_yield_weighted_percent": dividend_yield_weighted_display,
         "dividend_yield_index_decimal": round(dividend_yield_index_decimal, 6)
         if dividend_yield_index_display is not None
         else None,
-        "dividend_yield_weighted_decimal": round(dividend_yield_weighted_decimal, 6)
-        if dividend_yield_weighted_display is not None
-        else None,
         "g_implied_index": round(g_implied_index, 6)
         if g_implied_index is not None
-        else None,
-        "g_implied_weighted": round(g_implied_weighted, 6)
-        if g_implied_weighted is not None
         else None,
         "fair_price_mid": round(fair_price_mid, 0)
         if fair_price_mid is not None
