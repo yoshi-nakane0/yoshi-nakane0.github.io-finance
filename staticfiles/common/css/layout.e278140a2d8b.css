@@ -1,0 +1,24 @@
+:root {
+  --app-max-width: 450px;
+  --app-min-height: 100vh;
+  --app-bg: #1E1E2E;
+  --app-container-bg: #0f172a;
+}
+
+html,
+body {
+  background-color: var(--app-bg) !important;
+}
+
+body.bg-dark {
+  background-color: var(--app-bg) !important;
+}
+
+.app-container {
+  width: 100%;
+  max-width: var(--app-max-width);
+  min-height: var(--app-min-height);
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: var(--app-container-bg) !important;
+}

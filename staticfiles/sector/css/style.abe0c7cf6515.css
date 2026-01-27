@@ -1,0 +1,278 @@
+:root {
+  --bg-accent: #464678; /* グラデーション上部 */
+  --bg-surface: rgba(41, 45, 53, 0.3);
+  --bg-surface-strong: rgba(41, 45, 53, 0.7);
+
+  --border: rgba(255, 255, 255, 0.2);
+  --text-white: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.8);
+
+  --positive: #4CAF50;
+  --negative: #f44336;
+  --neutral: #2196F3;
+  --average: #FF9800;
+}
+
+/* ---------- ベース ---------- */
+html, body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: sans-serif;
+}
+
+/* ---------- ルートコンテナ ---------- */
+.app-container {
+  background: linear-gradient(180deg, #464678 50%, #1E1E2E 300%);
+  position: relative;
+  overflow: hidden;
+}
+
+.schedule-container {
+  font-family: sans-serif;
+  color: #ffffff;
+  padding: 10px;
+  width: 100%;
+}
+
+/* ---------- ステータスバー ---------- */
+.status-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 5px;
+  background: #2D2D44;
+  border-bottom: 1px solid var(--border);
+}
+
+.status-bar-item {
+  background: var(--bg-surface-strong);
+  padding: 3px 5px;
+  font-size: 13px;
+  color: var(--text-white);
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.status-bar-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ---------- 更新時間 ---------- */
+.update-time {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 10px 0;
+  padding: 8px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+}
+
+/* ---------- セクションヘッダー ---------- */
+.schedule-date {
+  margin-bottom: 20px;
+}
+
+.schedule-date-title {
+  color: var(--text-white);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  padding: 10px 15px;
+  background: var(--bg-surface-strong);
+  border-radius: 10px;
+  border-left: 4px solid #4CAF50;
+}
+
+/* ---------- テーブルコンテナ ---------- */
+.schedule-table-container {
+  background: var(--bg-surface);
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid var(--border);
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.schedule-table th {
+  background: var(--bg-surface-strong);
+  color: var(--text-white);
+  font-weight: 600;
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  font-size: 14px;
+}
+
+.schedule-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 15px;
+  vertical-align: middle;
+}
+
+.schedule-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.schedule-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.schedule-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- セクター行の色分け ---------- */
+.positive-row {
+  background: rgba(76, 175, 80, 0.1) !important;
+}
+
+.negative-row {
+  background: rgba(244, 67, 54, 0.1) !important;
+}
+
+.positive-text {
+  color: var(--positive) !important;
+  font-weight: 600;
+}
+
+.negative-text {
+  color: var(--negative) !important;
+  font-weight: 600;
+}
+
+/* ---------- セクター関連セル ---------- */
+.sector-icon-cell {
+  width: 35px;
+  text-align: center;
+  font-size: 15px;
+}
+
+.sector-name-cell {
+  color: var(--text-white);
+  font-weight: 500;
+}
+
+.sector-change-cell {
+  text-align: right;
+  font-weight: 600;
+  width: 80px;
+}
+
+/* ---------- サマリーメトリクス ---------- */
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  background: var(--bg-surface-strong);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+}
+
+.metric-card.positive {
+  border-left: 4px solid var(--positive);
+}
+
+.metric-card.negative {
+  border-left: 4px solid var(--negative);
+}
+
+.metric-card.neutral {
+  border-left: 4px solid var(--neutral);
+}
+
+.metric-card.average {
+  border-left: 4px solid var(--average);
+}
+
+.metric-icon {
+  font-size: 18px;
+  margin-bottom: 3px;
+}
+
+.metric-card h2 {
+  margin: 2px 0;
+  font-size: 20px;
+  color: var(--text-white);
+}
+
+.metric-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------- トップに戻るボタン ---------- */
+#back-to-top {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99;
+  background: var(--positive);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+#back-to-top:hover {
+  background: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  opacity: 0.8;
+}
+
+/* ---------- レスポンシブ ---------- */
+@media (max-width: 480px) {
+  .summary-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  
+  .metric-card {
+    padding: 6px 8px;
+  }
+  
+  .metric-card h2 {
+    font-size: 18px;
+  }
+  
+  .schedule-table th,
+  .schedule-table td {
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+  
+  .sector-change-cell {
+    width: 55px;
+  }
+}

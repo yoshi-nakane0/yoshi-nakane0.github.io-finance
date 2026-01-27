@@ -7,8 +7,8 @@ export DJANGO_SETTINGS_MODULE=myproject.settings
 python3.9 -m ensurepip
 python3.9 -m pip install --upgrade pip --no-warn-script-location
 
-# 依存関係のインストール
-python3.9 -m pip install -r requirements.txt --no-warn-script-location
+# 依存関係のインストール（本番向け）
+python3.9 -m pip install -r requirements-prod.txt --no-warn-script-location
 
 # DBマイグレーション
 python3.9 manage.py migrate --noinput
@@ -22,3 +22,6 @@ find staticfiles -type f | grep "\.css$"
 
 # 重要: staticディレクトリを保持
 cp -r static/* staticfiles/ 2>/dev/null || echo "No additional files to copy"
+
+# トップページを静的HTMLとして生成
+python3.9 scripts/build_static_home.py

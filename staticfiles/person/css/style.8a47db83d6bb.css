@@ -1,0 +1,428 @@
+/* Specific styles for Person App */
+
+/* Dynamic Color Variables for Charts */
+:root {
+    --chart-color-macro: #506cff; /* Default Blue */
+    --chart-color-stock: #30d158; /* Default Green */
+}
+
+body.bg-dark {
+    background-color: #2D2D44 !important;
+}
+
+/* Adjust scrollable content to account for the new header */
+.scrollable-content {
+    height: 100vh;
+    overflow-y: auto;
+    /* Top padding reduced because status-bar is now present */
+    padding: 15px 8px 0px 8px; 
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    box-sizing: border-box;
+}
+
+.scrollable-content::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+/* Status Bar (Header) - Earning Appと同一デザインに統一 */
+.status-bar {
+    background-color: #2D2D44;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 2px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 15px;
+}
+
+.status-bar-right {
+    display: flex;
+    gap: 5px;
+}
+
+.status-bar-item {
+    background-color: rgba(41, 45, 53, 0.7);
+    padding: 3px 5px;
+    font-size: 13px;
+    color: #ffffff;
+    border: none !important;
+    margin-left: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+.status-bar-item:hover {
+    background-color: rgba(41, 45, 53, 0.9);
+}
+
+
+/* Summary Section (3 Columns Fixed) */
+.summary-section {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    margin-top: 10px;
+}
+
+/* Common Legend - Sleek Floating Bar Style */
+.common-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 12px 20px;
+    background: rgba(30, 30, 35, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50px; /* Pill shape */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.legend-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.legend-item:hover {
+    transform: scale(1.15);
+}
+
+/* Remove old pseudo-element dots since we are coloring the whole circle */
+.legend-item::before {
+    display: none;
+}
+
+/* Legend Background Colors */
+.legend-1 { background: linear-gradient(135deg, #ff453a, #d63a30); box-shadow: 0 0 10px rgba(255, 69, 58, 0.4); }
+.legend-2 { background: linear-gradient(135deg, #ff9f0a, #d68305); box-shadow: 0 0 10px rgba(255, 159, 10, 0.4); }
+.legend-3 { background: linear-gradient(135deg, #ffd60a, #d6b300); color: #1c1c1e; box-shadow: 0 0 10px rgba(255, 214, 10, 0.4); }
+.legend-4 { background: linear-gradient(135deg, #32d74b, #24a836); box-shadow: 0 0 10px rgba(50, 215, 75, 0.4); }
+.legend-5 { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 0 10px rgba(10, 132, 255, 0.4); }
+
+
+/* Mobile adjustments for 3 columns */
+@media (max-width: 720px) {
+    .summary-section {
+        gap: 10px;
+    }
+    .summary-card {
+        padding: 12px 6px;
+    }
+    .summary-title {
+        font-size: 0.65rem;
+        margin-bottom: 8px;
+    }
+    /* Adjust chart size slightly for very small screens if needed */
+    .chart-container {
+        width: 70px;
+        height: 70px;
+    }
+    .donut-inner {
+        width: 54px;
+        height: 54px;
+    }
+    .chart-value {
+        font-size: 1rem;
+    }
+}
+
+/* Rich Summary Card Design */
+.summary-card {
+    background: linear-gradient(160deg, rgba(60, 60, 65, 0.6) 0%, rgba(35, 35, 40, 0.8) 100%);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(160deg, rgba(70, 70, 75, 0.7) 0%, rgba(40, 40, 45, 0.85) 100%);
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+.summary-title {
+    font-size: 0.75rem;
+    color: #b0b0b8;
+    margin-bottom: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Enhanced Donut Chart */
+.chart-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 4px; /* Reduced bottom margin since legend is gone */
+}
+
+.donut-chart {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.donut-inner {
+    width: 64px;
+    height: 64px;
+    background-color: #262629;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    /* Inner shadow for depth */
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.05);
+}
+
+/* Ensure inner circle background matches the card dark theme properly */
+.summary-card .donut-inner {
+    background: linear-gradient(145deg, #1e1e22, #25252a);
+}
+
+.chart-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #f2f2f7;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Remove old chart-legend styles if they exist to avoid conflict */
+.chart-legend {
+    display: none;
+}
+
+/* Sentiment Badge */
+.sentiment-badge {
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+.sentiment-badge.long {
+    color: #4cd964;
+    background: rgba(76, 217, 100, 0.15);
+    border: 1px solid rgba(76, 217, 100, 0.2);
+}
+
+.sentiment-badge.short {
+    color: #ff453a;
+    background: rgba(255, 69, 58, 0.15);
+    border: 1px solid rgba(255, 69, 58, 0.2);
+}
+
+/* List Styles */
+.category-section {
+    margin-bottom: 25px;
+}
+
+.category-title {
+    color: #8E8E93;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    border-left: 3px solid #0a84ff;
+}
+
+.analyst-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Accordion Wrapper */
+.analyst-card_wrapper {
+    background-color: rgba(44, 44, 46, 0.75);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.analyst-card_wrapper.active {
+    background-color: rgba(50, 50, 55, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Header (Trigger) */
+.analyst-item {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.analyst-info {
+    flex: 1;
+    margin-right: 15px;
+    overflow: hidden; 
+}
+
+.analyst-name {
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.analyst-affil {
+    font-size: 0.75rem;
+    color: #aeaeb2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.analyst-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.analyst-score {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #1c1c1e;
+    flex-shrink: 0; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.accordion-icon {
+    color: #8e8e93;
+    transition: transform 0.3s ease;
+}
+
+.analyst-card_wrapper.active .accordion-icon {
+    transform: rotate(180deg);
+}
+
+/* Accordion Body */
+.analyst-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+    background-color: rgba(30, 30, 35, 0.5);
+}
+
+.analyst-card_wrapper.active .analyst-body {
+    max-height: 500px; /* Arbitrary large height */
+    overflow-y: auto;
+}
+
+/* Article List */
+.article-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.article-item {
+    display: block;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.article-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.article-title {
+    font-size: 0.85rem;
+    color: #e5e5ea;
+    margin-bottom: 6px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #8e8e93;
+}
+
+.article-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.65rem;
+}
+
+/* Score Colors */
+.score-1 { background: linear-gradient(135deg, #ff453a, #ff3b30); color: white; }
+.score-2 { background: linear-gradient(135deg, #ff9f0a, #ff9500); color: white; }
+.score-3 { background: linear-gradient(135deg, #ffd60a, #ffcc00); color: #333; }
+.score-4 { background: linear-gradient(135deg, #32d74b, #28cd41); color: white; }
+.score-5 { background: linear-gradient(135deg, #64d2ff, #0a84ff); color: white; }
+.score-na { background: rgba(142, 142, 147, 0.35); color: #e5e5ea; }
+
+.empty-state {
+    color: #8e8e93;
+    font-size: 0.85rem;
+    padding: 12px 16px;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
