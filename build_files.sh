@@ -4,17 +4,21 @@
 export DJANGO_SETTINGS_MODULE=myproject.settings
 
 # pip の準備とアップグレード
-python3.9 -m ensurepip
-python3.9 -m pip install --upgrade pip --no-warn-script-location
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  PYTHON_BIN=python
+fi
+$PYTHON_BIN -m ensurepip
+$PYTHON_BIN -m pip install --upgrade pip --no-warn-script-location
 
 # 依存関係のインストール（本番向け）
-python3.9 -m pip install -r requirements-prod.txt --no-warn-script-location
+$PYTHON_BIN -m pip install -r requirements-prod.txt --no-warn-script-location
 
 # DBマイグレーション
-python3.9 manage.py migrate --noinput
+$PYTHON_BIN manage.py migrate --noinput
 
 # 静的ファイルの収集
-python3.9 manage.py collectstatic --noinput --clear
+$PYTHON_BIN manage.py collectstatic --noinput --clear
 
 # 収集後のデバッグ用ログ
 echo "Static files collected, checking staticfiles directory"
@@ -24,4 +28,4 @@ find staticfiles -type f | grep "\.css$"
 cp -r static/* staticfiles/ 2>/dev/null || echo "No additional files to copy"
 
 # トップページを静的HTMLとして生成
-python3.9 scripts/build_static_home.py
+$PYTHON_BIN scripts/build_static_home.py
