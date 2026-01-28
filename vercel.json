@@ -35,26 +35,26 @@
       ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "^/$",
-      "dest": "/staticfiles/index.html"
+      "source": "/",
+      "destination": "/staticfiles/index.html"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
+      "source": "/static/(.*)",
+      "destination": "/staticfiles/$1"
     },
     {
-      "src": "/favicon.ico",
-      "dest": "/static/images/ico/favicon.ico"
+      "source": "/favicon.ico",
+      "destination": "/static/images/ico/favicon.ico"
     },
     {
-      "src": "/favicon.png",
-      "dest": "/static/images/ico/favicon.png"
+      "source": "/favicon.png",
+      "destination": "/static/images/ico/favicon.png"
     },
     {
-      "src": "/(.*)",
-      "dest": "myproject/wsgi.py"
+      "source": "/(.*)",
+      "destination": "/myproject/wsgi.py"
     }
   ]
 }
