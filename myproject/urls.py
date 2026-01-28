@@ -16,6 +16,5 @@ urlpatterns = [
     path('explanation/', include(('explanation.urls', 'explanation'), namespace='explanation')),
     path('person/', include('person.urls')),
     path('prediction/', include('prediction.urls')),
-    path('bias/', include('bias.urls')),
     path('BaseCalc/', include('BaseCalc.urls')),
 ]

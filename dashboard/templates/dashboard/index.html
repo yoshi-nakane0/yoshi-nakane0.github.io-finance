@@ -80,20 +80,23 @@
       <h3 class="section-title">Live Stock Trends</h3>
       <div class="grid-container grid-cols-2">
         
-        <!-- Bias -->
-        <a href="{% url 'bias:index' %}" class="dashboard-card category-analysis type-bias">
+        <!-- BaseCalc -->
+        <a href="{% url 'BaseCalc:index' %}" class="dashboard-card category-admin type-admin">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
           </div>
           <div class="text-wrapper">
-            <h2 class="card-title">Bias</h2>
-            <span class="card-subtitle">Market Sentiment</span>
+            <h2 class="card-title">BaseCalc</h2>
+            <span class="card-subtitle">Nikkei Bias</span>
           </div>
         </a>
 
-        <!-- 3. Sector -->
+        <!-- Sector -->
         <a href="/sector/" class="dashboard-card category-analysis type-sector">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
@@ -163,22 +166,6 @@
               <div class="text-wrapper">
                 <h2 class="card-title">Prompt</h2>
                 <span class="card-subtitle">Management</span>
-              </div>
-            </a>
-    
-            <!-- 8. BaseCalc -->
-            <a href="{% url 'BaseCalc:index' %}" class="dashboard-card category-admin type-admin">
-              <div class="icon-wrapper">
-                <svg viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-              </div>
-              <div class="text-wrapper">
-                <h2 class="card-title">BaseCalc</h2>
-                <span class="card-subtitle">Nikkei Bias</span>
               </div>
             </a>
     

@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'explanation',
     'person',
     'prediction',
-    'bias',
     'BaseCalc',
     'django.contrib.admin',
     'django.contrib.auth',
