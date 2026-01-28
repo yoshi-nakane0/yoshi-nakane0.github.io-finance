@@ -7,6 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earnings Calendar</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
@@ -130,22 +133,22 @@
 
                                 <div class="metrics-grid">
                                     <div class="metric">
-                                        <span class="metric-label">売上成長</span>
+                                        <span class="metric-label"><i class="bi bi-graph-up"></i> 売上成長</span>
                                         <span class="metric-value {{ company.revenue_growth_class }}">{{ company.revenue_growth_display }}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">EPS成長</span>
+                                        <span class="metric-label"><i class="bi bi-currency-dollar"></i> EPS成長</span>
                                         <span class="metric-value {{ company.eps_growth_class }}">{{ company.eps_growth_display }}</span>
                                     </div>
                                     <div class="metric surprise-metric" data-meter="{{ company.surprise_meter|default_if_none:'' }}">
-                                        <span class="metric-label">サプライズ</span>
+                                        <span class="metric-label"><i class="bi bi-lightning-charge"></i> サプライズ</span>
                                         <span class="metric-value {{ company.surprise_class }}">{{ company.surprise_display }}</span>
                                         <div class="surprise-track">
                                             <span class="surprise-fill"></span>
                                         </div>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">ガイダンス</span>
+                                        <span class="metric-label"><i class="bi bi-megaphone"></i> ガイダンス</span>
                                         <span class="metric-value {{ company.guidance_surprise_class }}">
                                             <i class="bi {{ company.guidance_surprise_icon }}"></i>
                                             {{ company.guidance_surprise_label }}
@@ -155,22 +158,22 @@
 
                                 <div class="forecast-grid">
                                     <div class="metric">
-                                        <span class="metric-label">次回予想</span>
+                                        <span class="metric-label"><i class="bi bi-calendar-event"></i> 次回予想</span>
                                         <span class="metric-value">{{ company.next_consensus|default:"—" }}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">予想精度</span>
+                                        <span class="metric-label"><i class="bi bi-bullseye"></i> 予想精度</span>
                                         <span class="metric-value {{ company.forecast_accuracy_class }}">{{ company.forecast_accuracy_display }}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">方向性</span>
+                                        <span class="metric-label"><i class="bi bi-compass"></i> 方向性</span>
                                         <span class="metric-value {{ company.guidance_direction_class }}">
                                             <i class="bi {{ company.guidance_direction_icon }}"></i>
                                             {{ company.guidance_direction_label }}
                                         </span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">レーティング</span>
+                                        <span class="metric-label"><i class="bi bi-star"></i> レーティング</span>
                                         <span class="metric-value {{ company.rating_change_class }}">
                                             <i class="bi {{ company.rating_change_icon }}"></i>
                                             {{ company.rating_change_label }}
