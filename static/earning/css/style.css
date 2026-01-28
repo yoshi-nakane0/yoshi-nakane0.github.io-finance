@@ -365,22 +365,17 @@ html, body {
   gap: 8px;
 }
 
-.company-symbol {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent-secondary);
-  background: rgba(99, 102, 241, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
 .industry-label {
   font-size: 11px;
-  color: var(--text-tertiary);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
+  font-weight: 500;
+  color: var(--accent-secondary);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 4px 10px;
   border-radius: 100px;
+  letter-spacing: 0.2px;
+  display: inline-block;
+  backdrop-filter: blur(4px);
 }
 
 .company-name {
@@ -405,20 +400,6 @@ html, body {
 .rating-strong { background: var(--positive-bg); color: var(--positive); }
 .rating-neutral { background: var(--neutral-bg); color: var(--neutral); }
 .rating-weak { background: var(--negative-bg); color: var(--negative); }
-
-.countdown-badge {
-  font-size: 10px;
-  padding: 4px 8px;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border-radius: 6px;
-}
-.countdown-soon {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--market-us);
-  font-weight: 600;
-}
-
 /*******************************************************
  * Metrics Grid
  *******************************************************/

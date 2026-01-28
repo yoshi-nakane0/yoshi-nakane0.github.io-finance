@@ -121,13 +121,11 @@
                                     <div class="company-identity">
                                         <div class="company-name" title="{{ company.company }}">{{ company.company }}</div>
                                         <div class="company-sub">
-                                            <span class="company-symbol">{{ company.market }} {{ company.symbol }}</span>
                                             <span class="industry-label">{{ company.industry }}</span>
                                         </div>
                                     </div>
                                     <div class="company-badges">
                                         <span class="rating-badge rating-{{ company.rating_key }}">{{ company.rating_label }}</span>
-                                        <span class="countdown-badge{% if company.is_soon %} countdown-soon{% endif %}">{{ company.countdown_label }}</span>
                                     </div>
                                 </div>
 
@@ -189,7 +187,6 @@
                                         <span class="spark-bar"></span>
                                         <span class="spark-bar"></span>
                                     </div>
-                                    <span class="trend-caption">{{ company.market_label }}</span>
                                 </div>
 
                                 <div class="summary-row">
