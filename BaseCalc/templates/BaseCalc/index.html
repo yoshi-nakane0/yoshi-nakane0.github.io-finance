@@ -39,20 +39,39 @@
             </div>
             {% else %}
 
-            <!-- 1. Hero / Valuation (No Price) -->
-            <div class="hero-card status-{{ data.regime }}" id="hero-card">
-                <div class="hero-label">Market Evaluation</div>
-                <div class="hero-value" data-field="valuation_label">{{ data.valuation_label }}</div>
-                <div id="regime-note" style="margin-top: 12px;" {% if not data.regime_note %}hidden{% endif %}>
-                    <span style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 6px 16px; border-radius: 99px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(251, 191, 36, 0.3);">
-                        ⚠️ <span data-field="regime_note">{{ data.regime_note|default:"" }}</span>
-                    </span>
+            <!-- 1. Fair Value Ranges -->
+            <div class="card fair-value-card">
+                <!-- Fair Range Detail -->
+                <div class="valuation-section">
+                    <h3 class="section-title">Fair Value Ranges</h3>
+                    <div class="data-list">
+                        <div class="data-row range-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range (Core)</span>
+                            </div>
+                            <div class="range-values">
+                                <span class="range-val text-blue" data-field="fair_price_core_low_display">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</span>
+                                <span class="range-sep text-muted">~</span>
+                                <span class="range-val text-blue" data-field="fair_price_core_high_display">{% if data.fair_price_core_high_display %}{{ data.fair_price_core_high_display }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="data-row range-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range (Wide)</span>
+                            </div>
+                            <div class="range-values">
+                                <span class="range-val text-blue" data-field="fair_price_wide_low_display">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</span>
+                                <span class="range-sep text-muted">~</span>
+                                <span class="range-val text-blue" data-field="fair_price_wide_high_display">{% if data.fair_price_wide_high_display %}{{ data.fair_price_wide_high_display }}{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- 2. Independent Price Display -->
             <div class="price-display">
-                <span class="price-label">Current Price (Investing.com)</span>
+                <span class="price-label">Current Price</span>
                 <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
                 <div id="price-warning" class="text-red" style="margin-top: 8px; font-size: 0.85rem;" hidden>
                     価格取得に失敗しました。更新を停止しました。
@@ -80,42 +99,30 @@
                 </div>
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 class="section-title" style="margin: 0;">Range Tuning</h3>
-                    </div>
-
-                    <details style="margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden;">
-                        <summary style="padding: 10px 16px; background: rgba(255,255,255,0.05); cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; font-weight: 500; list-style: none; color: var(--color-text-main);">
-                            <span style="display: flex; align-items: center; gap: 8px;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue">
+                        <div style="display: flex; align-items: center;">
+                            <h3 class="section-title" style="margin: 0; border: none; padding: 0;">Range Tuning</h3>
+                            <button type="button" class="info-icon-btn" id="tuning-info-btn" aria-label="Show explanation">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
-                                設定の説明と推奨値
-                            </span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </summary>
-                        <div style="padding: 16px; background: rgba(0,0,0,0.2); font-size: 0.85rem; line-height: 1.6; color: var(--color-text-muted);">
-                            <p style="margin-top: 0; margin-bottom: 12px;">GROWTH_CORE_RATIO_DEFAULT（推奨0.8〜1.2）とWIDE（推奨0.6〜1.4）は、適正レンジ幅を決める倍率です。1.0を基準に、値を大きくすると範囲が広がり、小さくすると狭まります。</p>
-                            <p style="margin-bottom: 12px;">WideはCore以上の設定が推奨され、下回るとCore幅になります。実レンジには上下限（Core:0.1〜0.5%、Wide:0.2〜1.0%）があります。まずは1.0から始め、広すぎる場合はCore→Wideの順で下げて調整してください。</p>
+                            </button>
                         </div>
-                    </details>
+                    </div>
+
                     <div class="data-list">
-                        <div class="data-row">
+                        <div class="data-row" style="align-items: center;">
                             <div class="label-group">
                                 <span class="label-main">GROWTH_CORE_RATIO</span>
-                                <span class="label-sub">コアレンジの幅を決める係数です。推奨 0.8-1.2。</span>
                             </div>
-                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'1.0' }}" data-field="growth_core_ratio_input">
+                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'0.6' }}" data-field="growth_core_ratio_input">
                         </div>
-                        <div class="data-row">
+                        <div class="data-row" style="align-items: center;">
                             <div class="label-group">
                                 <span class="label-main">GROWTH_WIDE_RATIO</span>
-                                <span class="label-sub">ワイドレンジの幅を決める係数です。推奨 0.6-1.4。</span>
                             </div>
-                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'1.0' }}" data-field="growth_wide_ratio_input">
+                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'0.7' }}" data-field="growth_wide_ratio_input">
                         </div>
                     </div>
                 </div>
@@ -133,66 +140,7 @@
                 </div>
             </form>
 
-            <!-- 4. Fair Value Ranges -->
-            <div class="card fair-value-card">
-                <!-- Fair Range Detail -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Fair Value Ranges</h3>
-                    <div class="data-list">
-                        <div class="data-row range-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Core)</span>
-                                <span class="label-sub">適正レンジ（コア ±{{ data.growth_core_width_percent|floatformat:2 }}%）</span>
-                            </div>
-                            <div class="range-values">
-                                <span class="range-val text-blue" data-field="fair_price_core_low_display">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</span>
-                                <span class="range-sep text-muted">~</span>
-                                <span class="range-val text-blue" data-field="fair_price_core_high_display">{% if data.fair_price_core_high_display %}{{ data.fair_price_core_high_display }}{% endif %}</span>
-                            </div>
-                        </div>
-                        <div class="data-row range-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Wide)</span>
-                                <span class="label-sub">適正レンジ（ワイド ±{{ data.growth_wide_width_percent|floatformat:2 }}%）</span>
-                            </div>
-                            <div class="range-values">
-                                <span class="range-val text-blue" data-field="fair_price_wide_low_display">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</span>
-                                <span class="range-sep text-muted">~</span>
-                                <span class="range-val text-blue" data-field="fair_price_wide_high_display">{% if data.fair_price_wide_high_display %}{{ data.fair_price_wide_high_display }}{% endif %}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3 class="section-title">B 益回り+成長率（g）シナリオ</h3>
-                <div class="data-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">保守的シナリオ（PP寄り）</span>
-                            <span class="label-sub">内訳：0.7% + 1.0%</span>
-                        </div>
-                        <span class="data-value">1.7<span class="unit">%</span></span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">中間シナリオ（レンジ中点）</span>
-                            <span class="label-sub">内訳：0.65% + 1.5%</span>
-                        </div>
-                        <span class="data-value">2.1<span class="unit">%</span></span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">目標整合シナリオ（TN寄り）</span>
-                            <span class="label-sub">内訳：0.7% + 2.0%</span>
-                        </div>
-                        <span class="data-value">2.7<span class="unit">%</span></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Market Conditions -->
+            <!-- 4. Market Conditions -->
             <details class="card">
                 <summary class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-amber);">
@@ -233,7 +181,7 @@
                 </div>
             </details>
 
-            <!-- 6. Calculation Evidence -->
+            <!-- 5. Calculation Evidence -->
             <details class="card">
                 <summary class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-purple);">
@@ -280,7 +228,56 @@
                 </div>
             </details>
 
-            <!-- 7. Analysis Summary (Moved to Bottom) -->
+            <!-- 6. Scenario -->
+            <details class="card">
+                <summary class="card-header">
+                    <div class="card-icon" style="color: var(--color-accent-green);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-title">
+                        益回り+成長率（g）シナリオ
+                        <button type="button" class="info-icon-btn" id="scenario-info-btn" aria-label="Show explanation" style="margin-left: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
+                    <div class="data-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">保守的シナリオ（PP寄り）</span>
+                                <span class="label-sub">内訳：0.7% + 1.0%</span>
+                            </div>
+                            <span class="data-value">1.7<span class="unit">%</span></span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">中間シナリオ（レンジ中点）</span>
+                                <span class="label-sub">内訳：0.6% + 1.5%</span>
+                            </div>
+                            <span class="data-value">2.1<span class="unit">%</span></span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">目標整合シナリオ（TN寄り）</span>
+                                <span class="label-sub">内訳：0.7% + 2.0%</span>
+                            </div>
+                            <span class="data-value">2.7<span class="unit">%</span></span>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- 7. Analysis Summary -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon" style="color: var(--color-accent-blue);">
@@ -299,23 +296,129 @@
                         <div class="value text-blue" data-field="fair_price_mid">{% if data.fair_price_mid %}{{ data.fair_price_mid|floatformat:0|intcomma }}{% endif %}</div>
                     </div>
                     <div class="metric-box">
-                        <label>Gap</label>
-                        <div class="value {% if data.fair_price_gap_pct > 0 %}text-red{% else %}text-green{% endif %}" data-field="fair_price_gap_pct" data-sync-class="true">
-                            {% if data.fair_price_gap_pct %}{{ data.fair_price_gap_pct|floatformat:2 }}<span class="unit">%</span>{% endif %}
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 6px;">
+                            <label style="margin-bottom: 0;">Assumed ERP</label>
+                            <button type="button" class="info-icon-btn" id="erp-info-btn" aria-label="Show explanation">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
                         </div>
-                    </div>
-                     <div class="metric-box">
-                        <label>Assumed ERP</label>
                         <div class="value text-purple" data-field="erp_percent">{% if data.erp_percent %}{{ data.erp_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</div>
                     </div>
                 </div>
             </div>
 
+
+
             {% endif %}
         </main>
     </div>
+
+    <!-- Range Tuning Modal -->
+    <div class="modal-overlay" id="tuning-modal">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="tuning-modal-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">設定の説明と推奨値</h3>
+            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
+                <p style="margin-top: 0; margin-bottom: 12px;">GROWTH_CORE_RATIO_DEFAULT（推奨0.8〜1.2）とGROWTH_WIDE_RATIO_DEFAULT（推奨0.6〜1.4）は、成長率レンジ幅を調整する係数です。要求収益率と成長率中心の差に基づく幅に対し、1.0を基準に値を大きくすると広がり、小さくすると狭まります（ただし上下限で頭打ちになります）。</p>
+                <p style="margin-bottom: 0;">WideはCore以上の設定が推奨され、下回った場合はCore幅に揃えられます。実レンジには上下限（Core:0.1〜0.5%、Wide:0.2〜1.0%）があり、入力値自体は0.1〜2.0に制限されます。まずは1.0から始め、広すぎる場合はCore→Wideの順で下げて調整してください。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assumed ERP Modal -->
+    <div class="modal-overlay" id="erp-modal">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="erp-modal-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">Assumed ERPについて</h3>
+            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
+                <p style="margin-top: 0; margin-bottom: 12px;">Assumed ERPは、JGB10年利回りに上乗せする「株式リスクプレミアムの仮定値」で、Fair Value 算出の要求収益率の基準になります。選択した算出方法（A: 益回り、B: 益回り+成長、C: 配当+成長）と成長率に応じて値が変わり、Fair Rangeの中心値と幅に直接影響します。市場の暗黙ERP（イールドギャップ）とは別で、ユーザーが前提として置くERPを示す指標です。CはERPが0%未満になった場合は0%に丸めます。</p>
+                <ul style="margin-bottom: 0; padding-left: 20px; list-style-type: disc;">
+                    <li>A 益回り: 1 / 予想PER − JGB10Y利回り</li>
+                    <li>B 益回り+成長: 1 / 予想PER + 成長率(g) − JGB10Y利回り</li>
+                    <li>C 配当+成長: 配当利回り（指数） + 成長率(g)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Modal -->
+    <div class="modal-overlay" id="scenario-modal">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="scenario-modal-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">益回り+成長率（g）シナリオについて</h3>
+            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
+                <div style="margin-bottom: 12px;">
+                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">保守的シナリオ（PP寄り）</div>
+                    <div>成長率を低めに置き、下振れ局面のレンジ確認を目的とする。</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">中間シナリオ（レンジ中点）</div>
+                    <div>gの中位をベースケースとして採用し、中心レンジを把握する。</div>
+                </div>
+                <div style="margin-bottom: 0;">
+                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">目標整合シナリオ（TN寄り）</div>
+                    <div>成長率を高めに見積もり、上振れ時のレンジを確認する。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Modal Logic
+            const setupModal = (btnId, modalId, closeId) => {
+                const btn = document.getElementById(btnId);
+                const modal = document.getElementById(modalId);
+                const close = document.getElementById(closeId);
+
+                if (btn && modal && close) {
+                    const toggleModal = (show) => {
+                        if (show) {
+                            modal.classList.add("active");
+                            document.body.style.overflow = "hidden";
+                        } else {
+                            modal.classList.remove("active");
+                            document.body.style.overflow = "";
+                        }
+                    };
+
+                    btn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleModal(true);
+                    });
+                    close.addEventListener("click", () => toggleModal(false));
+                    modal.addEventListener("click", (e) => {
+                        if (e.target === modal) {
+                            toggleModal(false);
+                        }
+                    });
+                }
+            };
+
+            setupModal("tuning-info-btn", "tuning-modal", "tuning-modal-close");
+            setupModal("erp-info-btn", "erp-modal", "erp-modal-close");
+            setupModal("scenario-info-btn", "scenario-modal", "scenario-modal-close");
+
             const form = document.querySelector(".erp-form");
             const priceValue = document.getElementById("current-price");
             const priceInput = form ? form.querySelector('[name="price"]') : null;
@@ -466,18 +569,6 @@
                     }
                 });
 
-                const heroCard = document.getElementById("hero-card");
-                const heroNext = doc.getElementById("hero-card");
-                if (heroCard && heroNext) {
-                    heroCard.className = heroNext.className;
-                }
-
-                const regimeNote = document.getElementById("regime-note");
-                if (regimeNote) {
-                    const noteText = regimeNote.querySelector('[data-field="regime_note"]');
-                    const hasNote = noteText && noteText.textContent.trim() !== "";
-                    regimeNote.hidden = !hasNote;
-                }
             };
 
             const syncStoredPrice = () => {

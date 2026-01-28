@@ -65,39 +65,6 @@ body {
     box-sizing: border-box;
 }
 
-/* Hero Section */
-.hero-card {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-    border-radius: 20px;
-    padding: 24px;
-    border: 1px solid rgba(255,255,255,0.1);
-    text-align: center;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-    position: relative;
-    overflow: hidden;
-}
-.hero-label {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-.hero-value {
-    font-size: 3rem;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 6px;
-    background: -webkit-linear-gradient(45deg, #fff, #cbd5e1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.02em;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-.status-LONG_BIAS .hero-value { background: linear-gradient(to right, #4ade80, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.status-SHORT_BIAS .hero-value { background: linear-gradient(to right, #f87171, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
 /* Independent Price Display */
 .price-display {
     text-align: center;
@@ -149,6 +116,9 @@ body {
     text-align: center;
     box-sizing: border-box;
     transition: all 0.2s;
+}
+.erp-form input.erp-input {
+    font-size: 16px;
 }
 .input-value {
     width: 80px;
@@ -246,9 +216,6 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-}
-.summary-grid .metric-box:nth-child(5) {
-    grid-column: 1 / -1;
 }
 
 .metric-box {
@@ -357,6 +324,99 @@ details.card[open] .accordion-toggle {
 .text-green { color: var(--color-accent-green); }
 .text-red { color: var(--color-accent-red); }
 
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: #1e293b;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.info-icon-btn {
+    background: none;
+    border: none;
+    color: var(--color-accent-blue);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    margin-left: 8px;
+}
+
+.info-icon-btn:hover {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* Accordion Section (Generic) */
+details.accordion-section[open] .accordion-toggle {
+    transform: rotate(180deg);
+}
+
+summary.accordion-summary {
+    cursor: pointer;
+    list-style: none;
+}
+summary.accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
 /* --- Mobile Optimization (Max Width 480px) --- */
 @media (max-width: 480px) {
     .content {
@@ -388,9 +448,6 @@ details.card[open] .accordion-toggle {
     .card-icon { width: 32px; height: 32px; border-radius: 8px; }
 
     /* Fonts scaling */
-    .hero-label { font-size: 0.75rem; letter-spacing: 0.1em; }
-    .hero-value { font-size: 2.2rem; }
-    
     .price-value { font-size: 2rem; }
 
     /* List Compactness */
@@ -410,6 +467,7 @@ details.card[open] .accordion-toggle {
     /* Controls */
     .btn-base { height: 44px; font-size: 0.9rem; border-radius: 10px; }
     .erp-input { height: 44px; font-size: 0.9rem; border-radius: 10px; }
+    .erp-form input.erp-input { font-size: 16px; }
     
     /* Summary Grid */
     .summary-grid {

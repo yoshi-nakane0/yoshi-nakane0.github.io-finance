@@ -93,13 +93,13 @@ def index(request):
             parse_float_param(core_ratio_param),
             min_value=0.1,
             max_value=2.0,
-            default_value=1.0,
+            default_value=0.6,
         )
         growth_wide_ratio = normalize_ratio(
             parse_float_param(wide_ratio_param),
             min_value=0.1,
             max_value=2.0,
-            default_value=1.0,
+            default_value=0.7,
         )
         growth_core_ratio_input = f"{growth_core_ratio:.1f}"
         growth_wide_ratio_input = f"{growth_wide_ratio:.1f}"
@@ -175,7 +175,7 @@ def index(request):
                 else 0.0
             )
             dividend_decimal = dividend_percent / 100.0
-            erp_fixed = dividend_decimal + growth_decimal - jgb_decimal
+            erp_fixed = max(0.0, dividend_decimal + growth_decimal)
 
         growth_center_percent = None
         if erp_method == 'method_b':

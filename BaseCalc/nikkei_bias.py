@@ -35,14 +35,46 @@ GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
 GROWTH_CORE_RATIO_BASE = 0.1
 GROWTH_WIDE_RATIO_BASE = 0.18
-GROWTH_CORE_RATIO_DEFAULT = 1.0
-GROWTH_WIDE_RATIO_DEFAULT = 1.0
+GROWTH_CORE_RATIO_DEFAULT = 0.6
+GROWTH_WIDE_RATIO_DEFAULT = 0.7
 GROWTH_CORE_WIDTH_MIN_DEFAULT = 0.001
 GROWTH_WIDE_WIDTH_MIN_DEFAULT = 0.002
 GROWTH_RATIO_MIN_DEFAULT = 0.1
 GROWTH_RATIO_MAX_DEFAULT = 2.0
 FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
+DATE_ANY_RE = re.compile(r"(\d{4})[./-](\d{1,2})[./-](\d{1,2})")
+PER_INDEX_KEYS = (
+    "index_based",
+    "index_base",
+    "indexBase",
+    "indexBased",
+    "index",
+    "index_value",
+    "indexValue",
+    "value",
+)
+DIVIDEND_INDEX_KEYS = (
+    "dividend_yield_index_based",
+    "dividend_yield_index_percent",
+    "dividend_yield_index",
+    "dividend_yield",
+    "dividendYieldIndexBased",
+    "dividendYieldIndex",
+    "dividendYield",
+    "dividend",
+    "dividend_index_based",
+    "dividend_index",
+)
+DIVIDEND_CONTAINER_KEYS = (
+    "dividend_yield",
+    "dividendYield",
+    "dividend",
+    "dividend_yield_index",
+    "dividendYieldIndex",
+)
+SERIES_KEYS = ("data", "items", "results", "records", "values")
+DATE_KEYS = ("date", "date_text", "as_of", "asof", "timestamp")
 
 def _parse_float(text):
     if not text:
@@ -55,6 +87,112 @@ def _parse_float(text):
         return float(match.group(0))
     except ValueError:
         return None
+
+def _normalize_key(text):
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+def _extract_numeric_from_mapping(mapping, keys):
+    if not isinstance(mapping, dict):
+        return None
+    for key in keys:
+        if key in mapping:
+            value = _extract_numeric(mapping.get(key))
+            if value is not None:
+                return value
+    normalized = {_normalize_key(key): key for key in keys}
+    for key, value in mapping.items():
+        if _normalize_key(str(key)) in normalized:
+            numeric = _extract_numeric(value)
+            if numeric is not None:
+                return numeric
+    return None
+
+def _parse_date_parts_any(text):
+    if not text:
+        return None
+    match = DATE_ANY_RE.search(str(text).strip())
+    if not match:
+        return None
+    try:
+        year, month, day = (int(part) for part in match.groups())
+    except ValueError:
+        return None
+    return year, month, day
+
+def _extract_latest_value_from_series(series, keys):
+    if not isinstance(series, list):
+        return None
+    best_value = None
+    best_date = None
+    for item in series:
+        if not isinstance(item, dict):
+            continue
+        value = _extract_numeric_from_mapping(item, keys)
+        if value is None:
+            continue
+        date_value = None
+        for date_key in DATE_KEYS:
+            if date_key in item:
+                date_value = item.get(date_key)
+                break
+        date_parts = _parse_date_parts_any(date_value) if date_value else None
+        if date_parts is None:
+            if best_value is None:
+                best_value = value
+            continue
+        if best_date is None or date_parts > best_date:
+            best_date = date_parts
+            best_value = value
+    return best_value
+
+def _extract_index_based_value(payload):
+    if isinstance(payload, dict):
+        value = _extract_numeric_from_mapping(payload, PER_INDEX_KEYS)
+        if value is not None:
+            return value
+        for key in SERIES_KEYS:
+            value = _extract_latest_value_from_series(
+                payload.get(key),
+                PER_INDEX_KEYS,
+            )
+            if value is not None:
+                return value
+        return None
+    if isinstance(payload, list):
+        return _extract_latest_value_from_series(payload, PER_INDEX_KEYS)
+    return None
+
+def _extract_dividend_index_based_value(payload):
+    if isinstance(payload, dict):
+        value = _extract_numeric_from_mapping(payload, DIVIDEND_INDEX_KEYS)
+        if value is not None:
+            return value
+        for key in DIVIDEND_CONTAINER_KEYS:
+            container = payload.get(key)
+            if isinstance(container, dict):
+                value = _extract_numeric_from_mapping(
+                    container, DIVIDEND_INDEX_KEYS + PER_INDEX_KEYS
+                )
+                if value is not None:
+                    return value
+            if isinstance(container, list):
+                value = _extract_latest_value_from_series(
+                    container,
+                    DIVIDEND_INDEX_KEYS + PER_INDEX_KEYS,
+                )
+                if value is not None:
+                    return value
+        for key in SERIES_KEYS:
+            value = _extract_latest_value_from_series(
+                payload.get(key),
+                DIVIDEND_INDEX_KEYS,
+            )
+            if value is not None:
+                return value
+        return None
+    if isinstance(payload, list):
+        return _extract_latest_value_from_series(payload, DIVIDEND_INDEX_KEYS)
+    return None
 
 def _parse_mof_jgb10y(text):
     reader = csv.reader(text.splitlines())
@@ -139,17 +277,11 @@ def get_jgb10y_yield_percent():
     return None
 
 def _extract_nikkei_per_values_from_payload(payload):
-    if not isinstance(payload, dict):
+    if not isinstance(payload, (dict, list)):
         return None
-    index_val = _extract_numeric(payload.get("index_based"))
-    dividend_payload = payload.get("dividend_yield")
-    dividend_index_val = None
-    if isinstance(dividend_payload, dict):
-        dividend_index_val = _extract_numeric(dividend_payload.get("index_based"))
-    if (
-        index_val is None
-        and dividend_index_val is None
-    ):
+    index_val = _extract_index_based_value(payload)
+    dividend_index_val = _extract_dividend_index_based_value(payload)
+    if index_val is None and dividend_index_val is None:
         return None
     result = {}
     if index_val is not None:
@@ -175,11 +307,33 @@ def _load_nikkei_per_data_url(url):
         return None
     return _extract_nikkei_per_values_from_payload(payload)
 
+def _merge_nikkei_per_values(primary, fallback):
+    if not primary:
+        return fallback
+    if not fallback:
+        return primary
+    merged = dict(primary)
+    if "index_based" not in merged and "index_based" in fallback:
+        merged["index_based"] = fallback["index_based"]
+    if (
+        "dividend_yield_index_based" not in merged
+        and "dividend_yield_index_based" in fallback
+    ):
+        merged["dividend_yield_index_based"] = (
+            fallback["dividend_yield_index_based"]
+        )
+    return merged
+
 def get_nikkei_per_values():
     if NIKKEI_PER_DATA_URL:
-        result = _load_nikkei_per_data_url(NIKKEI_PER_DATA_URL)
-        if result:
-            return result
+        primary = _load_nikkei_per_data_url(NIKKEI_PER_DATA_URL)
+        if primary and {
+            "index_based",
+            "dividend_yield_index_based",
+        }.issubset(primary.keys()):
+            return primary
+        fallback = _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)
+        return _merge_nikkei_per_values(primary, fallback)
     return _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)
 
 def calculate_bias(
