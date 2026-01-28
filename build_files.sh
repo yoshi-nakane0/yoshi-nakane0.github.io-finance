@@ -15,7 +15,9 @@ $PYTHON_BIN -m pip install --upgrade pip --no-warn-script-location
 $PYTHON_BIN -m pip install -r requirements-prod.txt --no-warn-script-location
 
 # DBマイグレーション
-$PYTHON_BIN manage.py migrate --noinput
+# SQLiteをGit管理している場合、ローカルでマイグレーションを行いコミットすべきです。
+# Vercelのビルド環境で実行しても永続化されないためコメントアウトします。
+# $PYTHON_BIN manage.py migrate --noinput
 
 # 静的ファイルの収集
 $PYTHON_BIN manage.py collectstatic --noinput --clear
@@ -25,6 +27,7 @@ echo "Static files collected, checking staticfiles directory"
 find staticfiles -type f | grep "\.css$"
 
 # 重要: staticディレクトリを保持
+mkdir -p staticfiles
 cp -r static/* staticfiles/ 2>/dev/null || echo "No additional files to copy"
 
 # トップページを静的HTMLとして生成
