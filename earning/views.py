@@ -233,6 +233,7 @@ def fetch_earnings_from_csv():
 
                     sales_surprise = row.get('sales_surprise')
                     eps_surprise = row.get('eps_surprise')
+                    fiscal_period = (row.get('fiscal_period') or '').strip()
 
                     summary = (row.get('summary') or '').strip()
                     risk_tags = parse_risk_tags(row.get('risk_factors'))
@@ -275,6 +276,7 @@ def fetch_earnings_from_csv():
                         'eps_4q_ago': eps_4q_ago,
                         'eps_4q_prior_period': eps_4q_prior_period,
                         'eps_surprise': eps_surprise,
+                        'fiscal_period': fiscal_period,
                         'summary': summary,
                         'risk_tags': risk_tags,
                     })
@@ -402,6 +404,7 @@ def index(request):
                 'eps_surprise_class': metric_class(eps_surprise_val),
                 'summary': summary_text,
                 'risk_tags': risk_tags,
+                'fiscal_period': item.get('fiscal_period') or '—',
                 'countdown_label': countdown_label,
                 'is_soon': days_to_earnings is not None and days_to_earnings <= 7,
                 'market_label': 'JP' if item.get('market') == 'TSE' else 'US / Global',

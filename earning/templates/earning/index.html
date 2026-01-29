@@ -125,7 +125,10 @@
                                         </div>
                                     </div>
                                     <div class="company-badges">
-                                        <span class="rating-badge rating-{{ company.rating_key }}">{{ company.rating_label }}</span>
+                                        <div class="company-identity">
+                                            <span class="rating-badge rating-{{ company.rating_key }}">{{ company.rating_label }}</span>
+                                            <span class="industry-label">{{ company.fiscal_period }}</span>
+                                        </div>
                                     </div>
                                 </div>
 
