@@ -219,7 +219,21 @@ def fetch_earnings_from_csv():
                         {'upgrade', 'unchanged', 'downgrade'},
                         'unchanged',
                     )
-                    trend_points = parse_trend_points(row.get('trend_4q'))
+                    
+                    # New Absolute Values
+                    sales_current = row.get('sales_current')
+                    sales_forecast = row.get('sales_forecast')
+                    sales_4q_ago = row.get('sales_4q_ago')
+                    sales_4q_prior_period = row.get('sales_4q_prior_period')
+
+                    eps_current = row.get('eps_current')
+                    eps_forecast = row.get('eps_forecast')
+                    eps_4q_ago = row.get('eps_4q_ago')
+                    eps_4q_prior_period = row.get('eps_4q_prior_period')
+
+                    sales_surprise = row.get('sales_surprise')
+                    eps_surprise = row.get('eps_surprise')
+
                     summary = (row.get('summary') or '').strip()
                     risk_tags = parse_risk_tags(row.get('risk_factors'))
                     
@@ -251,7 +265,16 @@ def fetch_earnings_from_csv():
                         'forecast_accuracy_value': forecast_accuracy,
                         'guidance_direction': guidance_direction,
                         'rating_change': rating_change,
-                        'trend_points': trend_points,
+                        'sales_current': sales_current,
+                        'sales_forecast': sales_forecast,
+                        'sales_4q_ago': sales_4q_ago,
+                        'sales_4q_prior_period': sales_4q_prior_period,
+                        'sales_surprise': sales_surprise,
+                        'eps_current': eps_current,
+                        'eps_forecast': eps_forecast,
+                        'eps_4q_ago': eps_4q_ago,
+                        'eps_4q_prior_period': eps_4q_prior_period,
+                        'eps_surprise': eps_surprise,
                         'summary': summary,
                         'risk_tags': risk_tags,
                     })
@@ -274,7 +297,8 @@ def index(request):
     # キャッシュキー
     cache_key = 'earnings_data_grouped_v2'
     # キャッシュからデータを取得
-    grouped_earnings = cache.get(cache_key)
+    # grouped_earnings = cache.get(cache_key)
+    grouped_earnings = None # Force refresh for dev
 
     if grouped_earnings is None:
         earnings_data = fetch_earnings_from_csv()
@@ -325,6 +349,10 @@ def index(request):
             surprise_value = item.get('surprise_rate_value')
             accuracy_value = item.get('forecast_accuracy_value')
 
+            # Parse new surprise values for display
+            sales_surprise_val = parse_float(item.get('sales_surprise'))
+            eps_surprise_val = parse_float(item.get('eps_surprise'))
+
             guidance_surprise = item.get('guidance_surprise')
             guidance_direction = item.get('guidance_direction')
             rating_change = item.get('rating_change')
@@ -333,12 +361,6 @@ def index(request):
             if surprise_value is not None:
                 clamped = max(-10, min(10, surprise_value))
                 surprise_meter = int(round((clamped + 10) * 5))
-
-            trend_points = item.get('trend_points') or []
-            if len(trend_points) < 4:
-                trend_points = trend_points + DEFAULT_TREND_POINTS[: 4 - len(trend_points)]
-            if len(trend_points) > 4:
-                trend_points = trend_points[:4]
 
             summary_text = item.get('summary') or '要約未取得'
             risk_tags = item.get('risk_tags') or []
@@ -374,7 +396,10 @@ def index(request):
                 'rating_change_label': RATING_CHANGE_LABELS.get(rating_change, '据え置き'),
                 'rating_change_class': RATING_STATUS_CLASS_MAP.get(rating_change, 'status-flat'),
                 'rating_change_icon': RATING_CHANGE_ICONS.get(rating_change, 'bi-dash'),
-                'trend_points': trend_points,
+                'sales_surprise_display': format_percent(sales_surprise_val),
+                'sales_surprise_class': metric_class(sales_surprise_val),
+                'eps_surprise_display': format_percent(eps_surprise_val),
+                'eps_surprise_class': metric_class(eps_surprise_val),
                 'summary': summary_text,
                 'risk_tags': risk_tags,
                 'countdown_label': countdown_label,

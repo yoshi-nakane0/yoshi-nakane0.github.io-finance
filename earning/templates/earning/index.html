@@ -129,39 +129,42 @@
                                     </div>
                                 </div>
 
-                                <div class="metrics-grid">
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-graph-up"></i> 売上成長</span>
-                                        <span class="metric-value {{ company.revenue_growth_class }}">{{ company.revenue_growth_display }}</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-currency-dollar"></i> EPS成長</span>
-                                        <span class="metric-value {{ company.eps_growth_class }}">{{ company.eps_growth_display }}</span>
-                                    </div>
-                                    <div class="metric surprise-metric" data-meter="{{ company.surprise_meter|default_if_none:'' }}">
-                                        <span class="metric-label"><i class="bi bi-lightning-charge"></i> サプライズ</span>
-                                        <span class="metric-value {{ company.surprise_class }}">{{ company.surprise_display }}</span>
-                                        <div class="surprise-track">
-                                            <span class="surprise-fill"></span>
-                                        </div>
-                                    </div>
+                                <div class="financial-table-wrapper">
+                                    <table class="financial-table">
+                                        <tbody>
+                                            <tr>
+                                                <th>EPS</th>
+                                                <td><span class="cell-val">{{ company.eps_forecast }}</span></td>
+                                                <td><span class="cell-val">{{ company.eps_4q_ago }}</span></td>
+                                                <td><span class="cell-val">{{ company.eps_current }}</span></td>
+                                                <td><span class="cell-val">{{ company.eps_4q_prior_period }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>REV</th>
+                                                <td><span class="cell-val">{{ company.sales_forecast }}</span></td>
+                                                <td><span class="cell-val">{{ company.sales_4q_ago }}</span></td>
+                                                <td><span class="cell-val">{{ company.sales_current }}</span></td>
+                                                <td><span class="cell-val">{{ company.sales_4q_prior_period }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>VAR</th>
+                                                <td><span class="cell-val {{ company.eps_surprise_class }}">{{ company.eps_surprise_display }}</span></td>
+                                                <td><span class="cell-val {{ company.sales_surprise_class }}">{{ company.sales_surprise_display }}</span></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="table-caption">※ 左から予想、4期前、直近、直近4期前</div>
+                                </div>
+
+                                <div class="forecast-grid">
                                     <div class="metric">
                                         <span class="metric-label"><i class="bi bi-megaphone"></i> ガイダンス</span>
                                         <span class="metric-value {{ company.guidance_surprise_class }}">
                                             <i class="bi {{ company.guidance_surprise_icon }}"></i>
                                             {{ company.guidance_surprise_label }}
                                         </span>
-                                    </div>
-                                </div>
-
-                                <div class="forecast-grid">
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-calendar-event"></i> 次回予想</span>
-                                        <span class="metric-value">{{ company.next_consensus|default:"—" }}</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-bullseye"></i> 予想精度</span>
-                                        <span class="metric-value {{ company.forecast_accuracy_class }}">{{ company.forecast_accuracy_display }}</span>
                                     </div>
                                     <div class="metric">
                                         <span class="metric-label"><i class="bi bi-compass"></i> 方向性</span>
@@ -177,15 +180,9 @@
                                             {{ company.rating_change_label }}
                                         </span>
                                     </div>
-                                </div>
-
-                                <div class="trend-row">
-                                    <span class="trend-label">過去4Q</span>
-                                    <div class="sparkline" data-trend="{{ company.trend_points|join:',' }}">
-                                        <span class="spark-bar"></span>
-                                        <span class="spark-bar"></span>
-                                        <span class="spark-bar"></span>
-                                        <span class="spark-bar"></span>
+                                    <div class="metric">
+                                        <span class="metric-label"><i class="bi bi-bullseye"></i> 予想精度</span>
+                                        <span class="metric-value {{ company.forecast_accuracy_class }}">{{ company.forecast_accuracy_display }}</span>
                                     </div>
                                 </div>
 
@@ -338,30 +335,6 @@
                 }
                 const width = Math.max(0, Math.min(100, meterValue));
                 fill.style.width = `${width}%`;
-            });
-
-            const sparklines = document.querySelectorAll('.sparkline');
-            sparklines.forEach(line => {
-                const data = line.getAttribute('data-trend');
-                if (!data) {
-                    return;
-                }
-                const values = data.split(',').map(value => parseFloat(value)).filter(value => !Number.isNaN(value));
-                if (!values.length) {
-                    return;
-                }
-                const bars = line.querySelectorAll('.spark-bar');
-                const maxValue = Math.max(...values.map(value => Math.abs(value)), 1);
-                bars.forEach((bar, index) => {
-                    const value = values[index] ?? 0;
-                    const height = Math.max(18, Math.round((Math.abs(value) / maxValue) * 100));
-                    bar.style.height = `${height}%`;
-                    if (value < 0) {
-                        bar.classList.add('spark-negative');
-                    } else {
-                        bar.classList.add('spark-positive');
-                    }
-                });
             });
         });
     </script>
