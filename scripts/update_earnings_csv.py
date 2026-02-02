@@ -71,9 +71,6 @@ def update_csv():
             # EPS Surprise is already roughly 'surprise_rate' in original data, but let's ensure we have a dedicated formatted one if needed.
             # actually we can just use the generated current vs forecast for consistency if we wanted, 
             # but let's just generate a specific display value.
-            row['sales_surprise'] = f"{random.uniform(-5, 8):.2f}"
-            row['eps_surprise'] = f"{random.uniform(-10, 15):.2f}"
-
             rows.append(row)
 
     with open(CSV_PATH, 'w', encoding='utf-8', newline='') as f:
@@ -89,7 +86,16 @@ def update_csv():
         final_fieldnames = [f for f in fieldnames if f not in cols_to_remove]
         
         # Ensure new columns are in fieldnames
-        new_cols = ['sales_current', 'sales_forecast', 'sales_4q_ago', 'sales_4q_prior_period', 'eps_current', 'eps_forecast', 'eps_4q_ago', 'eps_4q_prior_period', 'sales_surprise', 'eps_surprise']
+        new_cols = [
+            'sales_current',
+            'sales_forecast',
+            'sales_4q_ago',
+            'sales_4q_prior_period',
+            'eps_current',
+            'eps_forecast',
+            'eps_4q_ago',
+            'eps_4q_prior_period',
+        ]
         for col in new_cols:
             if col not in final_fieldnames:
                 final_fieldnames.append(col)

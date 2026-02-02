@@ -42,21 +42,6 @@
         <div class="schedule-container">
             <section class="summary-section">
                 <div class="summary-grid">
-                    <div class="summary-card summary-strong">
-                        <div class="summary-label">好調</div>
-                        <div class="summary-value">{{ earnings_summary.strong }}</div>
-                        <div class="summary-meta">全{{ earnings_summary.total }}銘柄</div>
-                    </div>
-                    <div class="summary-card summary-neutral">
-                        <div class="summary-label">普通</div>
-                        <div class="summary-value">{{ earnings_summary.neutral }}</div>
-                        <div class="summary-meta">全{{ earnings_summary.total }}銘柄</div>
-                    </div>
-                    <div class="summary-card summary-weak">
-                        <div class="summary-label">不調</div>
-                        <div class="summary-value">{{ earnings_summary.weak }}</div>
-                        <div class="summary-meta">全{{ earnings_summary.total }}銘柄</div>
-                    </div>
                     <div class="summary-card summary-upcoming">
                         <div class="summary-label">7日以内</div>
                         <div class="summary-value">{{ earnings_summary.upcoming_week }}</div>
@@ -64,7 +49,6 @@
                     </div>
                 </div>
                 <div class="summary-note">
-                    <span class="summary-insight">{{ earnings_summary.insight }}</span>
                     <span class="summary-subtext">{{ earnings_summary.subtext }}</span>
                 </div>
             </section>
@@ -74,27 +58,6 @@
                     <button class="filter-btn active" data-filter="all">ALL</button>
                     <button class="filter-btn" data-filter="en">US / Global</button>
                     <button class="filter-btn" data-filter="jp">Japan</button>
-                </div>
-                <div class="filter-selects">
-                    <select id="rating-filter" class="filter-select">
-                        <option value="all">評価: 全て</option>
-                        <option value="strong">好調</option>
-                        <option value="neutral">普通</option>
-                        <option value="weak">不調</option>
-                    </select>
-                    <select id="guidance-filter" class="filter-select">
-                        <option value="all">ガイダンス: 全て</option>
-                        <option value="up">上方</option>
-                        <option value="flat">維持</option>
-                        <option value="down">下方</option>
-                    </select>
-                    <select id="sort-by" class="filter-select">
-                        <option value="score-desc">総合評価順</option>
-                        <option value="days-asc">決算日が近い順</option>
-                        <option value="surprise-desc">サプライズ率順</option>
-                        <option value="revenue-desc">売上成長率順</option>
-                        <option value="eps-desc">EPS成長率順</option>
-                    </select>
                 </div>
             </div>
 
@@ -109,14 +72,7 @@
                         <div class="companies-list">
                             {% for company in date_group.companies %}
                             <div class="company-card"
-                                 data-market="{{ company.market }}"
-                                 data-rating="{{ company.rating_key }}"
-                                 data-guidance="{{ company.guidance_direction }}"
-                                 data-score="{{ company.rating_score }}"
-                                 data-days="{{ company.days_to_earnings_sort }}"
-                                 data-surprise="{{ company.surprise_rate_value|default_if_none:'' }}"
-                                 data-revenue="{{ company.revenue_growth_value|default_if_none:'' }}"
-                                 data-eps="{{ company.eps_growth_value|default_if_none:'' }}">
+                                 data-market="{{ company.market }}">
                                 <div class="company-header">
                                     <div class="company-identity">
                                         <div class="company-name" title="{{ company.company }}">{{ company.company }}</div>
@@ -126,7 +82,6 @@
                                     </div>
                                     <div class="company-badges">
                                         <div class="company-identity">
-                                            <span class="rating-badge rating-{{ company.rating_key }}">{{ company.rating_label }}</span>
                                             <span class="industry-label">{{ company.fiscal_period }}</span>
                                         </div>
                                     </div>
@@ -249,16 +204,11 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const filterButtons = document.querySelectorAll('.filter-btn');
-            const ratingFilter = document.getElementById('rating-filter');
-            const guidanceFilter = document.getElementById('guidance-filter');
-            const sortSelect = document.getElementById('sort-by');
             const dateGroups = document.querySelectorAll('.date-group');
 
             const applyFilters = () => {
                 const activeButton = document.querySelector('.filter-btn.active');
                 const marketFilter = activeButton ? activeButton.getAttribute('data-filter') : 'all';
-                const ratingValue = ratingFilter ? ratingFilter.value : 'all';
-                const guidanceValue = guidanceFilter ? guidanceFilter.value : 'all';
 
                 dateGroups.forEach(group => {
                     const cards = group.querySelectorAll('.company-card');
@@ -266,22 +216,12 @@
 
                     cards.forEach(card => {
                         const market = card.getAttribute('data-market');
-                        const rating = card.getAttribute('data-rating');
-                        const guidance = card.getAttribute('data-guidance');
 
                         let visible = true;
                         if (marketFilter === 'jp') {
                             visible = market === 'TSE';
                         } else if (marketFilter === 'en') {
                             visible = market !== 'TSE';
-                        }
-
-                        if (visible && ratingValue !== 'all') {
-                            visible = rating === ratingValue;
-                        }
-
-                        if (visible && guidanceValue !== 'all') {
-                            visible = guidance === guidanceValue;
                         }
 
                         card.style.display = visible ? '' : 'none';
@@ -292,30 +232,6 @@
 
                     group.style.display = visibleCount > 0 ? '' : 'none';
                 });
-
-                applySort();
-            };
-
-            const applySort = () => {
-                const sortValue = sortSelect ? sortSelect.value : 'score-desc';
-                const [key, direction] = sortValue.split('-');
-                const multiplier = direction === 'asc' ? 1 : -1;
-
-                dateGroups.forEach(group => {
-                    const list = group.querySelector('.companies-list');
-                    if (!list) {
-                        return;
-                    }
-                    const cards = Array.from(list.querySelectorAll('.company-card'));
-                    cards.sort((a, b) => {
-                        const aValue = parseFloat(a.getAttribute(`data-${key}`));
-                        const bValue = parseFloat(b.getAttribute(`data-${key}`));
-                        const safeA = Number.isNaN(aValue) ? (direction === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY) : aValue;
-                        const safeB = Number.isNaN(bValue) ? (direction === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY) : bValue;
-                        return (safeA - safeB) * multiplier;
-                    });
-                    cards.forEach(card => list.appendChild(card));
-                });
             };
 
             filterButtons.forEach(button => {
@@ -325,16 +241,6 @@
                     applyFilters();
                 });
             });
-
-            if (ratingFilter) {
-                ratingFilter.addEventListener('change', applyFilters);
-            }
-            if (guidanceFilter) {
-                guidanceFilter.addEventListener('change', applyFilters);
-            }
-            if (sortSelect) {
-                sortSelect.addEventListener('change', applyFilters);
-            }
 
             const surpriseMetrics = document.querySelectorAll('.surprise-metric');
             surpriseMetrics.forEach(metric => {

@@ -118,62 +118,6 @@ def accuracy_class(value):
     return 'metric-neutral'
 
 
-def score_from_value(value):
-    if value is None:
-        return 0
-    if value >= 15:
-        return 12
-    if value >= 5:
-        return 7
-    if value >= 0:
-        return 3
-    if value <= -5:
-        return -10
-    return -5
-
-
-def compute_rating_score(item):
-    score = 50
-    score += score_from_value(item.get('revenue_growth_value'))
-    score += score_from_value(item.get('eps_growth_value'))
-    surprise = item.get('surprise_rate_value')
-    if surprise is not None:
-        if surprise >= 5:
-            score += 6
-        elif surprise <= -5:
-            score -= 6
-    guidance_surprise = item.get('guidance_surprise')
-    if guidance_surprise == 'up':
-        score += 7
-    elif guidance_surprise == 'down':
-        score -= 7
-    guidance_direction = item.get('guidance_direction')
-    if guidance_direction == 'up':
-        score += 4
-    elif guidance_direction == 'down':
-        score -= 4
-    rating_change = item.get('rating_change')
-    if rating_change == 'upgrade':
-        score += 4
-    elif rating_change == 'downgrade':
-        score -= 4
-    accuracy = item.get('forecast_accuracy_value')
-    if accuracy is not None:
-        if accuracy >= 75:
-            score += 3
-        elif accuracy <= 45:
-            score -= 3
-    return max(0, min(100, score))
-
-
-def rating_bucket(score):
-    if score >= 70:
-        return 'strong', '好調'
-    if score >= 50:
-        return 'neutral', '普通'
-    return 'weak', '不調'
-
-
 def fetch_earnings_from_csv():
     """
     static/earning/data/data.csvから決算データを読み込む
@@ -233,11 +177,9 @@ def fetch_earnings_from_csv():
 
                     sales_surprise = row.get('sales_surprise')
                     eps_surprise = row.get('eps_surprise')
-                    surp_forecast = row.get('surp_forecast')
                     surp_4q_ago = row.get('surp_4q_ago')
                     surp_current = row.get('surp_current')
                     surp_4q_prior_period = row.get('surp_4q_prior_period')
-                    surp_eps_forecast = row.get('surp_eps_forecast')
                     surp_eps_4q_ago = row.get('surp_eps_4q_ago')
                     surp_eps_current = row.get('surp_eps_current')
                     surp_eps_4q_prior_period = row.get('surp_eps_4q_prior_period')
@@ -279,7 +221,7 @@ def fetch_earnings_from_csv():
                         'sales_4q_ago': sales_4q_ago,
                         'sales_4q_prior_period': sales_4q_prior_period,
                         'sales_surprise': sales_surprise,
-                        'surp_forecast': surp_forecast,
+                        'surp_forecast': '-',
                         'surp_4q_ago': surp_4q_ago,
                         'surp_current': surp_current,
                         'surp_4q_prior_period': surp_4q_prior_period,
@@ -288,7 +230,7 @@ def fetch_earnings_from_csv():
                         'eps_4q_ago': eps_4q_ago,
                         'eps_4q_prior_period': eps_4q_prior_period,
                         'eps_surprise': eps_surprise,
-                        'surp_eps_forecast': surp_eps_forecast,
+                        'surp_eps_forecast': '-',
                         'surp_eps_4q_ago': surp_eps_4q_ago,
                         'surp_eps_current': surp_eps_current,
                         'surp_eps_4q_prior_period': surp_eps_4q_prior_period,
@@ -359,9 +301,6 @@ def index(request):
             if earnings_date:
                 days_to_earnings = (earnings_date - today).days
 
-            score = compute_rating_score(item)
-            rating_key, rating_label = rating_bucket(score)
-
             revenue_value = item.get('revenue_growth_value')
             eps_value = item.get('eps_growth_value')
             surprise_value = item.get('surprise_rate_value')
@@ -393,9 +332,6 @@ def index(request):
             item.update({
                 'days_to_earnings': days_to_earnings,
                 'days_to_earnings_sort': days_to_earnings if days_to_earnings is not None else 9999,
-                'rating_score': score,
-                'rating_key': rating_key,
-                'rating_label': rating_label,
                 'revenue_growth_display': format_percent(revenue_value),
                 'revenue_growth_class': metric_class(revenue_value),
                 'eps_growth_display': format_percent(eps_value),
@@ -462,10 +398,6 @@ def index(request):
         cache.set(cache_key, grouped_earnings, 86400)
 
     summary = {
-        'total': 0,
-        'strong': 0,
-        'neutral': 0,
-        'weak': 0,
         'guidance_up': 0,
         'guidance_down': 0,
         'upcoming_week': 0,
@@ -473,15 +405,6 @@ def index(request):
 
     for group in grouped_earnings or []:
         for item in group.get('companies', []):
-            summary['total'] += 1
-            rating_key = item.get('rating_key')
-            if rating_key == 'strong':
-                summary['strong'] += 1
-            elif rating_key == 'weak':
-                summary['weak'] += 1
-            else:
-                summary['neutral'] += 1
-
             guidance_direction = item.get('guidance_direction')
             if guidance_direction == 'up':
                 summary['guidance_up'] += 1
@@ -491,13 +414,6 @@ def index(request):
             days_to_earnings = item.get('days_to_earnings')
             if days_to_earnings is not None and days_to_earnings <= 7:
                 summary['upcoming_week'] += 1
-
-    if summary['strong'] > summary['weak']:
-        insight = '好調見通しが優勢'
-    elif summary['weak'] > summary['strong']:
-        insight = '慎重見通しが優勢'
-    else:
-        insight = '好調・不調が拮抗'
 
     subtext = (
         f"上方ガイダンス {summary['guidance_up']}件 / "
@@ -510,7 +426,6 @@ def index(request):
         'updated_date': date.today().strftime('%Y.%m.%d'),
         'earnings_summary': {
             **summary,
-            'insight': insight,
             'subtext': subtext,
         }
     }
