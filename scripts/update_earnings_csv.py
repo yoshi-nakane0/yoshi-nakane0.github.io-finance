@@ -49,15 +49,7 @@ def update_csv():
             row['sales_4q_prior_period'] = row['sales_4q_ago']
 
             # EPS
-            # Try to parse next_consensus if available
-            nc = row.get('next_consensus', '')
-            if 'EPS' in nc:
-                try:
-                    row['eps_forecast'] = nc.replace('EPS', '').strip()
-                except:
-                    row['eps_forecast'] = f"{fuzz(base_eps):.2f}"
-            else:
-                row['eps_forecast'] = f"{fuzz(base_eps):.2f}"
+            row['eps_forecast'] = f"{fuzz(base_eps):.2f}"
             
             # Current EPS (derive from forecast roughly)
             try:

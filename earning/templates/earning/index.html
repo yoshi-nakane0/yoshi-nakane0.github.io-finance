@@ -143,6 +143,13 @@
                                                 <td><span class="cell-val">{{ company.eps_4q_prior_period }}</span></td>
                                             </tr>
                                             <tr>
+                                                <th>SURP(E)</th>
+                                                <td><span class="cell-val">{{ company.surp_eps_forecast|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_eps_4q_ago|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_eps_current|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_eps_4q_prior_period|default:"-" }}</span></td>
+                                            </tr>
+                                            <tr>
                                                 <th>REV</th>
                                                 <td><span class="cell-val">{{ company.sales_forecast }}</span></td>
                                                 <td><span class="cell-val">{{ company.sales_4q_ago }}</span></td>
@@ -150,11 +157,11 @@
                                                 <td><span class="cell-val">{{ company.sales_4q_prior_period }}</span></td>
                                             </tr>
                                             <tr>
-                                                <th>VAR</th>
-                                                <td><span class="cell-val {{ company.eps_surprise_class }}">{{ company.eps_surprise_display }}</span></td>
-                                                <td><span class="cell-val {{ company.sales_surprise_class }}">{{ company.sales_surprise_display }}</span></td>
-                                                <td></td>
-                                                <td></td>
+                                                <th>SURP(R)</th>
+                                                <td><span class="cell-val">{{ company.surp_forecast|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_4q_ago|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_current|default:"-" }}</span></td>
+                                                <td><span class="cell-val">{{ company.surp_4q_prior_period|default:"-" }}</span></td>
                                             </tr>
                                         </tbody>
                                     </table>

@@ -233,6 +233,14 @@ def fetch_earnings_from_csv():
 
                     sales_surprise = row.get('sales_surprise')
                     eps_surprise = row.get('eps_surprise')
+                    surp_forecast = row.get('surp_forecast')
+                    surp_4q_ago = row.get('surp_4q_ago')
+                    surp_current = row.get('surp_current')
+                    surp_4q_prior_period = row.get('surp_4q_prior_period')
+                    surp_eps_forecast = row.get('surp_eps_forecast')
+                    surp_eps_4q_ago = row.get('surp_eps_4q_ago')
+                    surp_eps_current = row.get('surp_eps_current')
+                    surp_eps_4q_prior_period = row.get('surp_eps_4q_prior_period')
                     fiscal_period = (row.get('fiscal_period') or '').strip()
 
                     summary = (row.get('summary') or '').strip()
@@ -271,11 +279,19 @@ def fetch_earnings_from_csv():
                         'sales_4q_ago': sales_4q_ago,
                         'sales_4q_prior_period': sales_4q_prior_period,
                         'sales_surprise': sales_surprise,
+                        'surp_forecast': surp_forecast,
+                        'surp_4q_ago': surp_4q_ago,
+                        'surp_current': surp_current,
+                        'surp_4q_prior_period': surp_4q_prior_period,
                         'eps_current': eps_current,
                         'eps_forecast': eps_forecast,
                         'eps_4q_ago': eps_4q_ago,
                         'eps_4q_prior_period': eps_4q_prior_period,
                         'eps_surprise': eps_surprise,
+                        'surp_eps_forecast': surp_eps_forecast,
+                        'surp_eps_4q_ago': surp_eps_4q_ago,
+                        'surp_eps_current': surp_eps_current,
+                        'surp_eps_4q_prior_period': surp_eps_4q_prior_period,
                         'fiscal_period': fiscal_period,
                         'summary': summary,
                         'risk_tags': risk_tags,

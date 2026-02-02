@@ -6,13 +6,75 @@ set -euo pipefail
 echo "Select DEBUG mode: 1) True(開発)  2) False(公開)"
 read -r mode
 
+open_chrome() {
+  local url="http://127.0.0.1:8000/"
+  local profile_dir="/tmp/chrome-dev-profile"
+  local size=""
+  local width=""
+  local height=""
+  local half_width=""
+  local chrome_app="/Applications/Google Chrome.app"
+  local open_target="Google Chrome"
+
+  if command -v system_profiler >/dev/null 2>&1; then
+    size=$(system_profiler SPDisplaysDataType 2>/dev/null | awk '/UI Looks like:/{print $4" "$6; exit}')
+    if [ -z "$size" ]; then
+      size=$(system_profiler SPDisplaysDataType 2>/dev/null | awk '/Resolution:/{print $2" "$4; exit}')
+    fi
+  fi
+  if [ -z "$size" ] && command -v osascript >/dev/null 2>&1; then
+    size=$(osascript -e 'tell application "Finder" to get bounds of window of desktop' 2>/dev/null | tr -d ' ' | awk -F',' 'NF>=4{print $3" "$4; exit}')
+  fi
+
+  if [ -n "$size" ]; then
+    read -r width height <<<"$size"
+    if [[ "$width" =~ ^[0-9]+$ && "$height" =~ ^[0-9]+$ ]]; then
+      half_width=$((width / 2))
+    else
+      width=""
+      height=""
+    fi
+  fi
+
+  mkdir -p "$profile_dir" >/dev/null 2>&1 || true
+
+  local chrome_args=(
+    "--new-window"
+    "$url"
+    "--user-data-dir=$profile_dir"
+    "--no-first-run"
+    "--no-default-browser-check"
+  )
+
+  if [ -n "$half_width" ] && [ -n "$height" ]; then
+    chrome_args+=(
+      "--window-position=${half_width},0"
+      "--window-size=${half_width},${height}"
+    )
+  fi
+
+  if [ -d "$chrome_app" ]; then
+    open_target="$chrome_app"
+  fi
+
+  if command -v open >/dev/null 2>&1 && { open -Ra "Google Chrome" >/dev/null 2>&1 || [ -d "$chrome_app" ]; }; then
+    (sleep 1; open -na "$open_target" --args "${chrome_args[@]}") >/dev/null 2>&1 &
+  elif command -v google-chrome >/dev/null 2>&1; then
+    (sleep 1; google-chrome "${chrome_args[@]}") >/dev/null 2>&1 &
+  elif command -v chromium >/dev/null 2>&1; then
+    (sleep 1; chromium "${chrome_args[@]}") >/dev/null 2>&1 &
+  fi
+}
+
 case "$mode" in
   1)
+    open_chrome
     exec env DEBUG=True python manage.py runserver
     ;;
   2)
     env DEBUG=False python manage.py migrate
     env DEBUG=False python manage.py collectstatic --noinput
+    open_chrome
     exec env DEBUG=False python manage.py runserver
     ;;
   *)
