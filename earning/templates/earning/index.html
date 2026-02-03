@@ -37,21 +37,9 @@
             </div>
         </header>
 
-        <div class="meta-info">Updated: {{ updated_date }}</div>
+        <div class="meta-info">Updated: 2026.02.02</div>
 
         <div class="schedule-container">
-            <section class="summary-section">
-                <div class="summary-grid">
-                    <div class="summary-card summary-upcoming">
-                        <div class="summary-label">7日以内</div>
-                        <div class="summary-value">{{ earnings_summary.upcoming_week }}</div>
-                        <div class="summary-meta">決算が近い</div>
-                    </div>
-                </div>
-                <div class="summary-note">
-                    <span class="summary-subtext">{{ earnings_summary.subtext }}</span>
-                </div>
-            </section>
 
             <div class="filter-panel">
                 <div class="filter-buttons">
@@ -125,39 +113,34 @@
 
                                 <div class="forecast-grid">
                                     <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-megaphone"></i> ガイダンス</span>
-                                        <span class="metric-value {{ company.guidance_surprise_class }}">
-                                            <i class="bi {{ company.guidance_surprise_icon }}"></i>
-                                            {{ company.guidance_surprise_label }}
+                                        <span class="metric-label"><i class="bi bi-megaphone"></i> Fundamental</span>
+                                        <span class="metric-value {{ company.fundamental_class }}">
+                                            <i class="bi {{ company.fundamental_icon }}"></i>
+                                            {{ company.fundamental_label }}
                                         </span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-compass"></i> 方向性</span>
-                                        <span class="metric-value {{ company.guidance_direction_class }}">
-                                            <i class="bi {{ company.guidance_direction_icon }}"></i>
-                                            {{ company.guidance_direction_label }}
+                                        <span class="metric-label"><i class="bi bi-compass"></i> Direction</span>
+                                        <span class="metric-value {{ company.direction_class }}">
+                                            <i class="bi {{ company.direction_icon }}"></i>
+                                            {{ company.direction_label }}
                                         </span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-star"></i> レーティング</span>
-                                        <span class="metric-value {{ company.rating_change_class }}">
-                                            <i class="bi {{ company.rating_change_icon }}"></i>
-                                            {{ company.rating_change_label }}
+                                        <span class="metric-label"><i class="bi bi-star"></i> Sentiment</span>
+                                        <span class="metric-value {{ company.sentiment_class }}">
+                                            <i class="bi {{ company.sentiment_icon }}"></i>
+                                            {{ company.sentiment_label }}
                                         </span>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-bullseye"></i> 予想精度</span>
-                                        <span class="metric-value {{ company.forecast_accuracy_class }}">{{ company.forecast_accuracy_display }}</span>
+                                        <span class="metric-label"><i class="bi bi-bullseye"></i> Risk</span>
+                                        <span class="metric-value {{ company.risk_class }}">{{ company.risk_display }}</span>
                                     </div>
                                 </div>
 
                                 <div class="summary-row">
                                     <p class="company-summary">{{ company.summary }}</p>
-                                    <div class="risk-tags">
-                                        {% for risk in company.risk_tags %}
-                                        <span class="risk-tag">{{ risk }}</span>
-                                        {% endfor %}
-                                    </div>
                                 </div>
 
                                 <div class="company-actions">

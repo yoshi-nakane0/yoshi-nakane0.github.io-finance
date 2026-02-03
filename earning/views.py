@@ -9,31 +9,33 @@ from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
-GUIDANCE_LABELS = {
+FUNDAMENTAL_LABELS = {
     'up': '上振れ',
     'flat': '維持',
     'down': '下振れ',
 }
 
-GUIDANCE_ICONS = {
+FUNDAMENTAL_ICONS = {
     'up': 'bi-arrow-up-right',
     'flat': 'bi-dash',
     'down': 'bi-arrow-down-right',
 }
 
-GUIDANCE_DIRECTION_LABELS = {
+DIRECTION_LABELS = {
     'up': '上方',
     'flat': '維持',
     'down': '下方',
 }
 
-RATING_CHANGE_LABELS = {
+DIRECTION_ICONS = FUNDAMENTAL_ICONS
+
+SENTIMENT_LABELS = {
     'upgrade': '格上げ',
     'unchanged': '据え置き',
     'downgrade': '格下げ',
 }
 
-RATING_CHANGE_ICONS = {
+SENTIMENT_ICONS = {
     'upgrade': 'bi-arrow-up',
     'unchanged': 'bi-dash',
     'downgrade': 'bi-arrow-down',
@@ -45,7 +47,7 @@ STATUS_CLASS_MAP = {
     'down': 'status-down',
 }
 
-RATING_STATUS_CLASS_MAP = {
+SENTIMENT_STATUS_CLASS_MAP = {
     'upgrade': 'status-up',
     'unchanged': 'status-flat',
     'downgrade': 'status-down',
@@ -77,13 +79,6 @@ def parse_trend_points(value):
     return points
 
 
-def parse_risk_tags(value):
-    if not value:
-        return []
-    text = str(value).replace(',', '、')
-    return [tag.strip() for tag in text.split('、') if tag.strip()]
-
-
 def normalize_choice(value, choices, default):
     if not value:
         return default
@@ -108,7 +103,7 @@ def metric_class(value):
     return 'metric-neutral'
 
 
-def accuracy_class(value):
+def risk_class(value):
     if value is None:
         return 'metric-muted'
     if value >= 75:
@@ -145,21 +140,21 @@ def fetch_earnings_from_csv():
                     industry = (row.get('industry') or '').strip()
                     revenue_growth = parse_float(row.get('revenue_growth'))
                     eps_growth = parse_float(row.get('eps_growth'))
-                    guidance_surprise = normalize_choice(
-                        row.get('guidance_surprise'),
+                    fundamental = normalize_choice(
+                        row.get('Fundamental'),
                         {'up', 'flat', 'down'},
                         'flat',
                     )
                     surprise_rate = parse_float(row.get('surprise_rate'))
                     next_consensus = (row.get('next_consensus') or '').strip()
-                    forecast_accuracy = parse_float(row.get('forecast_accuracy'))
-                    guidance_direction = normalize_choice(
-                        row.get('guidance_direction'),
+                    risk_value = parse_float(row.get('Risk'))
+                    direction = normalize_choice(
+                        row.get('Direction'),
                         {'up', 'flat', 'down'},
                         'flat',
                     )
-                    rating_change = normalize_choice(
-                        row.get('rating_change'),
+                    sentiment = normalize_choice(
+                        row.get('Sentiment'),
                         {'upgrade', 'unchanged', 'downgrade'},
                         'unchanged',
                     )
@@ -186,7 +181,6 @@ def fetch_earnings_from_csv():
                     fiscal_period = (row.get('fiscal_period') or '').strip()
 
                     summary = (row.get('summary') or '').strip()
-                    risk_tags = parse_risk_tags(row.get('risk_factors'))
                     
                     # 必須フィールドのチェック
                     if not all([date_str, symbol, company]):
@@ -210,12 +204,12 @@ def fetch_earnings_from_csv():
                         'symbol': symbol,
                         'revenue_growth_value': revenue_growth,
                         'eps_growth_value': eps_growth,
-                        'guidance_surprise': guidance_surprise,
+                        'fundamental': fundamental,
                         'surprise_rate_value': surprise_rate,
                         'next_consensus': next_consensus,
-                        'forecast_accuracy_value': forecast_accuracy,
-                        'guidance_direction': guidance_direction,
-                        'rating_change': rating_change,
+                        'risk_value': risk_value,
+                        'direction': direction,
+                        'sentiment': sentiment,
                         'sales_current': sales_current,
                         'sales_forecast': sales_forecast,
                         'sales_4q_ago': sales_4q_ago,
@@ -236,7 +230,6 @@ def fetch_earnings_from_csv():
                         'surp_eps_4q_prior_period': surp_eps_4q_prior_period,
                         'fiscal_period': fiscal_period,
                         'summary': summary,
-                        'risk_tags': risk_tags,
                     })
                     
                 except Exception as e:
@@ -304,15 +297,15 @@ def index(request):
             revenue_value = item.get('revenue_growth_value')
             eps_value = item.get('eps_growth_value')
             surprise_value = item.get('surprise_rate_value')
-            accuracy_value = item.get('forecast_accuracy_value')
+            risk_value = item.get('risk_value')
 
             # Parse new surprise values for display
             sales_surprise_val = parse_float(item.get('sales_surprise'))
             eps_surprise_val = parse_float(item.get('eps_surprise'))
 
-            guidance_surprise = item.get('guidance_surprise')
-            guidance_direction = item.get('guidance_direction')
-            rating_change = item.get('rating_change')
+            fundamental = item.get('fundamental')
+            direction = item.get('direction')
+            sentiment = item.get('sentiment')
 
             surprise_meter = None
             if surprise_value is not None:
@@ -320,7 +313,6 @@ def index(request):
                 surprise_meter = int(round((clamped + 10) * 5))
 
             summary_text = item.get('summary') or '要約未取得'
-            risk_tags = item.get('risk_tags') or []
 
             countdown_label = '日程未定'
             if days_to_earnings is not None:
@@ -339,23 +331,22 @@ def index(request):
                 'surprise_display': format_percent(surprise_value),
                 'surprise_class': metric_class(surprise_value),
                 'surprise_meter': surprise_meter,
-                'forecast_accuracy_display': '—' if accuracy_value is None else f'{accuracy_value:.0f}%',
-                'forecast_accuracy_class': accuracy_class(accuracy_value),
-                'guidance_surprise_label': GUIDANCE_LABELS.get(guidance_surprise, '維持'),
-                'guidance_surprise_class': STATUS_CLASS_MAP.get(guidance_surprise, 'status-flat'),
-                'guidance_surprise_icon': GUIDANCE_ICONS.get(guidance_surprise, 'bi-dash'),
-                'guidance_direction_label': GUIDANCE_DIRECTION_LABELS.get(guidance_direction, '維持'),
-                'guidance_direction_class': STATUS_CLASS_MAP.get(guidance_direction, 'status-flat'),
-                'guidance_direction_icon': GUIDANCE_ICONS.get(guidance_direction, 'bi-dash'),
-                'rating_change_label': RATING_CHANGE_LABELS.get(rating_change, '据え置き'),
-                'rating_change_class': RATING_STATUS_CLASS_MAP.get(rating_change, 'status-flat'),
-                'rating_change_icon': RATING_CHANGE_ICONS.get(rating_change, 'bi-dash'),
+                'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
+                'risk_class': risk_class(risk_value),
+                'fundamental_label': FUNDAMENTAL_LABELS.get(fundamental, '維持'),
+                'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
+                'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
+                'direction_label': DIRECTION_LABELS.get(direction, '維持'),
+                'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
+                'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
+                'sentiment_label': SENTIMENT_LABELS.get(sentiment, '据え置き'),
+                'sentiment_class': SENTIMENT_STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
+                'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
                 'sales_surprise_display': format_percent(sales_surprise_val),
                 'sales_surprise_class': metric_class(sales_surprise_val),
                 'eps_surprise_display': format_percent(eps_surprise_val),
                 'eps_surprise_class': metric_class(eps_surprise_val),
                 'summary': summary_text,
-                'risk_tags': risk_tags,
                 'fiscal_period': item.get('fiscal_period') or '—',
                 'countdown_label': countdown_label,
                 'is_soon': days_to_earnings is not None and days_to_earnings <= 7,
@@ -397,37 +388,9 @@ def index(request):
 
         cache.set(cache_key, grouped_earnings, 86400)
 
-    summary = {
-        'guidance_up': 0,
-        'guidance_down': 0,
-        'upcoming_week': 0,
-    }
-
-    for group in grouped_earnings or []:
-        for item in group.get('companies', []):
-            guidance_direction = item.get('guidance_direction')
-            if guidance_direction == 'up':
-                summary['guidance_up'] += 1
-            elif guidance_direction == 'down':
-                summary['guidance_down'] += 1
-
-            days_to_earnings = item.get('days_to_earnings')
-            if days_to_earnings is not None and days_to_earnings <= 7:
-                summary['upcoming_week'] += 1
-
-    subtext = (
-        f"上方ガイダンス {summary['guidance_up']}件 / "
-        f"下方 {summary['guidance_down']}件 ・ "
-        f"7日以内 {summary['upcoming_week']}件"
-    )
-
     context = {
         'earnings_data': grouped_earnings,
         'updated_date': date.today().strftime('%Y.%m.%d'),
-        'earnings_summary': {
-            **summary,
-            'subtext': subtext,
-        }
     }
     
     return render(request, 'earning/index.html', context)
