@@ -50,6 +50,63 @@
             </div>
 
             <div class="schedule-date">
+                <style>
+                    .forecast-grid.fixed-4-cols {
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 8px !important;
+                    }
+                    .forecast-grid.fixed-4-cols .metric-card {
+                        aspect-ratio: 1 / 1;
+                        min-height: auto;
+                        max-height: none;
+                        padding: 8px 4px;
+                        justify-content: space-evenly;
+                    }
+                    .metric-abbrev {
+                        font-size: 11px;
+                        font-weight: 700;
+                        letter-spacing: -0.2px;
+                        text-transform: capitalize;
+                        color: var(--text-secondary);
+                        margin-bottom: 2px;
+                        line-height: 1;
+                    }
+                    .metric-icon {
+                        width: 32px;
+                        height: 32px;
+                        font-size: 16px;
+                        margin-bottom: 0;
+                        border-radius: 8px;
+                    }
+                    .metric-icon i {
+                        font-size: 18px;
+                    }
+                    .risk-indicator {
+                        font-size: 13px;
+                        font-weight: 700;
+                        padding: 4px 8px;
+                        min-width: auto;
+                    }
+                    @media (max-width: 768px) {
+                        .forecast-grid.fixed-4-cols {
+                             grid-template-columns: repeat(4, 1fr) !important;
+                        }
+                        .metric-abbrev {
+                            font-size: 9px;
+                        }
+                        .metric-icon {
+                            width: 40px;
+                            height: 40px;
+                        }
+                        .metric-icon i {
+                            font-size: 16px;
+                        }
+                        .risk-indicator {
+                            font-size: 20px;
+                            padding: 2px 6px;
+                        }
+                    }
+                </style>
                 <div class="earnings-container">
                     {% for date_group in earnings_data %}
                     <div class="date-group">
@@ -111,31 +168,28 @@
                                     <div class="table-caption">※ 左から予想、4期前、直近、直近4期前</div>
                                 </div>
 
-                                <div class="forecast-grid">
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-megaphone"></i> Fundamental</span>
-                                        <span class="metric-value {{ company.fundamental_class }}">
+                                <div class="forecast-grid fixed-4-cols">
+                                    <div class="metric-card" style="gap: 2px;">
+                                        <span class="metric-abbrev">Fund.</span>
+                                        <div class="metric-icon {{ company.fundamental_class }}">
                                             <i class="bi {{ company.fundamental_icon }}"></i>
-                                            {{ company.fundamental_label }}
-                                        </span>
+                                        </div>
                                     </div>
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-compass"></i> Direction</span>
-                                        <span class="metric-value {{ company.direction_class }}">
+                                    <div class="metric-card" style="gap: 2px;">
+                                        <span class="metric-abbrev">Dir.</span>
+                                        <div class="metric-icon {{ company.direction_class }}">
                                             <i class="bi {{ company.direction_icon }}"></i>
-                                            {{ company.direction_label }}
-                                        </span>
+                                        </div>
                                     </div>
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-star"></i> Sentiment</span>
-                                        <span class="metric-value {{ company.sentiment_class }}">
+                                    <div class="metric-card" style="gap: 2px;">
+                                        <span class="metric-abbrev">Sent.</span>
+                                        <div class="metric-icon {{ company.sentiment_class }}">
                                             <i class="bi {{ company.sentiment_icon }}"></i>
-                                            {{ company.sentiment_label }}
-                                        </span>
+                                        </div>
                                     </div>
-                                    <div class="metric">
-                                        <span class="metric-label"><i class="bi bi-bullseye"></i> Risk</span>
-                                        <span class="metric-value {{ company.risk_class }}">{{ company.risk_display }}</span>
+                                    <div class="metric-card" style="gap: 2px;">
+                                        <span class="metric-abbrev">Risk</span>
+                                        <span class="risk-indicator {{ company.risk_class }}">{{ company.risk_display }}</span>
                                     </div>
                                 </div>
 
