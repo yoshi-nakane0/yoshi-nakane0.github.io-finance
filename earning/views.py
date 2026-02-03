@@ -30,27 +30,21 @@ DIRECTION_LABELS = {
 DIRECTION_ICONS = FUNDAMENTAL_ICONS
 
 SENTIMENT_LABELS = {
-    'upgrade': '格上げ',
-    'unchanged': '据え置き',
-    'downgrade': '格下げ',
+    'up': '格上げ',
+    'flat': '据え置き',
+    'down': '格下げ',
 }
 
 SENTIMENT_ICONS = {
-    'upgrade': 'bi-arrow-up',
-    'unchanged': 'bi-dash',
-    'downgrade': 'bi-arrow-down',
+    'up': 'bi-arrow-up',
+    'flat': 'bi-dash',
+    'down': 'bi-arrow-down',
 }
 
 STATUS_CLASS_MAP = {
     'up': 'status-up',
     'flat': 'status-flat',
     'down': 'status-down',
-}
-
-SENTIMENT_STATUS_CLASS_MAP = {
-    'upgrade': 'status-up',
-    'unchanged': 'status-flat',
-    'downgrade': 'status-down',
 }
 
 DEFAULT_TREND_POINTS = [0.0, 0.0, 0.0, 0.0]
@@ -155,8 +149,8 @@ def fetch_earnings_from_csv():
                     )
                     sentiment = normalize_choice(
                         row.get('Sentiment'),
-                        {'upgrade', 'unchanged', 'downgrade'},
-                        'unchanged',
+                        {'up', 'flat', 'down'},
+                        'flat',
                     )
                     
                     # New Absolute Values
@@ -340,7 +334,7 @@ def index(request):
                 'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
                 'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
                 'sentiment_label': SENTIMENT_LABELS.get(sentiment, '据え置き'),
-                'sentiment_class': SENTIMENT_STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
+                'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
                 'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
                 'sales_surprise_display': format_percent(sales_surprise_val),
                 'sales_surprise_class': metric_class(sales_surprise_val),
