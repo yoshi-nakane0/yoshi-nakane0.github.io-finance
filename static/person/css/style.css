@@ -6,10 +6,6 @@
     --chart-color-stock: #30d158; /* Default Green */
 }
 
-body.bg-dark {
-    background-color: #2D2D44 !important;
-}
-
 /* Adjust scrollable content to account for the new header */
 .scrollable-content {
     height: 100vh;

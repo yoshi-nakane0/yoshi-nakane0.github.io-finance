@@ -7,9 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earnings Calendar</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
@@ -50,63 +47,6 @@
             </div>
 
             <div class="schedule-date">
-                <style>
-                    .forecast-grid.fixed-4-cols {
-                        grid-template-columns: repeat(4, 1fr) !important;
-                        gap: 8px !important;
-                    }
-                    .forecast-grid.fixed-4-cols .metric-card {
-                        aspect-ratio: 1 / 1;
-                        min-height: auto;
-                        max-height: none;
-                        padding: 8px 4px;
-                        justify-content: space-evenly;
-                    }
-                    .metric-abbrev {
-                        font-size: 11px;
-                        font-weight: 700;
-                        letter-spacing: -0.2px;
-                        text-transform: capitalize;
-                        color: var(--text-secondary);
-                        margin-bottom: 2px;
-                        line-height: 1;
-                    }
-                    .metric-icon {
-                        width: 32px;
-                        height: 32px;
-                        font-size: 16px;
-                        margin-bottom: 0;
-                        border-radius: 8px;
-                    }
-                    .metric-icon i {
-                        font-size: 18px;
-                    }
-                    .risk-indicator {
-                        font-size: 13px;
-                        font-weight: 700;
-                        padding: 4px 8px;
-                        min-width: auto;
-                    }
-                    @media (max-width: 768px) {
-                        .forecast-grid.fixed-4-cols {
-                             grid-template-columns: repeat(4, 1fr) !important;
-                        }
-                        .metric-abbrev {
-                            font-size: 9px;
-                        }
-                        .metric-icon {
-                            width: 25px;
-                            height: 25px;
-                        }
-                        .metric-icon i {
-                            font-size: 16px;
-                        }
-                        .risk-indicator {
-                            font-size: 16px;
-                            padding: 2px 6px;
-                        }
-                    }
-                </style>
                 <div class="earnings-container">
                     {% for date_group in earnings_data %}
                     <div class="date-group">
