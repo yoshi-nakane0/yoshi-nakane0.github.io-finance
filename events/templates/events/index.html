@@ -37,27 +37,50 @@
         </button>
 
         <script>
-            let data = [];
+            let groupedEntries = [];
 
-            function fetchAndParseCSV() {
-                return fetch("{% static 'events/data.csv' %}")
-                  .then(response => response.text())
-                  .then(csvText => parseCSV(csvText));
+            async function fetchAndParseCSV() {
+                const response = await fetch("{% static 'events/data.csv' %}", { cache: 'force-cache' });
+                const csvText = await response.text();
+                return parseCSV(csvText);
             }
 
             function parseCSV(csvText) {
-                const lines = csvText.split('\n').map(line => line.trim()).filter(line => line !== '');
-                const headers = lines.shift().split(',');
-                return lines.map(line => {
+                const rows = [];
+                let isHeader = true;
+
+                for (const rawLine of csvText.split(/\r?\n/)) {
+                    const line = rawLine.trim();
+                    if (!line) continue;
+                    if (isHeader) {
+                        isHeader = false;
+                        continue;
+                    }
+
                     const cols = line.split(',');
-                    return {
+                    rows.push({
                         date: cols[0] || '',
                         time: cols[1] || '',
                         currency: cols[2] || '',
                         event: cols[3] || '',
                         impact: cols[4] || ''
-                    };
-                });
+                    });
+                }
+
+                return rows;
+            }
+
+            function groupByDate(items) {
+                const map = new Map();
+                for (const item of items) {
+                    let list = map.get(item.date);
+                    if (!list) {
+                        list = [];
+                        map.set(item.date, list);
+                    }
+                    list.push(item);
+                }
+                return Array.from(map.entries());
             }
 
             let showPastEvents = false;
@@ -66,32 +89,42 @@
 
             function renderSchedule() {
                 const today = new Date().toISOString().slice(0, 10);
+                const fragment = document.createDocumentFragment();
 
-                const groupedEvents = data.reduce((acc, item) => {
-                    acc[item.date] = acc[item.date] || [];
-                    acc[item.date].push(item);
-                    return acc;
-                }, {});
+                for (const [date, events] of groupedEntries) {
+                    if (!showPastEvents && date < today) continue;
 
-                eventsContent.innerHTML = '';
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'events-date';
 
-                Object.entries(groupedEvents)
-                    .filter(([date]) => showPastEvents || date >= today)
-                    .forEach(([date, events]) => {
-                        const dateDiv = document.createElement('div');
-                        dateDiv.className = 'events-date';
+                    const dateTitle = document.createElement('h2');
+                    dateTitle.className = 'events-date-title';
+                    dateTitle.textContent = date;
+                    dateDiv.appendChild(dateTitle);
 
-                        const dateTitle = document.createElement('h2');
-                        dateTitle.className = 'events-date-title';
-                        dateTitle.textContent = date;
-                        dateDiv.appendChild(dateTitle);
+                    const tableContainer = document.createElement('div');
+                    tableContainer.className = 'events-table-container';
 
-                        const tableContainer = document.createElement('div');
-                        tableContainer.className = 'events-table-container';
+                    const rowsHtml = events.map(item => {
+                        const isImportant = item.impact === '★★★';
+                        const eventText = item.event.length > 30 ? item.event.substring(0, 30) + "..." : item.event;
+                        return `
+                                <tr data-impact="${item.impact}">
+                                    <td>${item.time || '-'}</td>
+                                    <td>${item.currency || '-'}</td>
+                                    <td class="event-cell${isImportant ? ' important-event' : ''}">
+                                        ${eventText}
+                                    </td>
+                                    <td class="impact-cell${isImportant ? ' important-impact' : ''}">
+                                        ${item.impact || '-'}
+                                    </td>
+                                </tr>
+                            `;
+                    }).join('');
 
-                        const table = document.createElement('table');
-                        table.className = 'events-table';
-                        table.innerHTML = `
+                    const table = document.createElement('table');
+                    table.className = 'events-table';
+                    table.innerHTML = `
                             <thead>
                                 <tr>
                                     <th>時間</th>
@@ -101,38 +134,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            ${events.map(item => `
-                                <tr data-impact="${item.impact}">
-                                    <td>${item.time || '-'}</td>
-                                    <td>${item.currency || '-'}</td>
-                                    <td class="event-cell">
-                                        ${item.event.length > 30 ? item.event.substring(0, 30) + "..." : item.event}
-                                    </td>
-                                    <td class="impact-cell">
-                                        ${item.impact || '-'}
-                                    </td>
-                                </tr>
-                            `).join('')}
+                            ${rowsHtml}
                             </tbody>
                         `;
-                        tableContainer.appendChild(table);
-                        dateDiv.appendChild(tableContainer);
-                        eventsContent.appendChild(dateDiv);
-                    });
 
-                // 重要度に基づいてスタイルを適用 (修正)
-                const rows = document.querySelectorAll('tr[data-impact="★★★"]'); // data-impact 属性で直接選択
-                rows.forEach(row => {
-                    const impactCell = row.querySelector('.impact-cell');
-                    const eventCell = row.querySelector('.event-cell');
+                    tableContainer.appendChild(table);
+                    dateDiv.appendChild(tableContainer);
+                    fragment.appendChild(dateDiv);
+                }
 
-                    if (impactCell) {
-                        impactCell.classList.add('important-impact');
-                    }
-                    if (eventCell) {
-                        eventCell.classList.add('important-event');
-                    }
-                });
+                eventsContent.replaceChildren(fragment);
             }
 
 
@@ -143,7 +154,7 @@
 
             fetchAndParseCSV()
               .then(parsedData => {
-                  data = parsedData;
+                  groupedEntries = groupByDate(parsedData);
                   renderSchedule();
               })
               .catch(error => {
@@ -153,13 +164,18 @@
             // Back to top button script
             const backToTopButton = document.getElementById("back-to-top");
 
-            window.onscroll = function() {
-                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-                    backToTopButton.style.display = "block";
-                } else {
-                    backToTopButton.style.display = "none";
-                }
-            };
+            let scrollTicking = false;
+            function updateBackToTopVisibility() {
+                scrollTicking = false;
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                backToTopButton.style.display = scrollTop > 20 ? "block" : "none";
+            }
+
+            window.addEventListener('scroll', () => {
+                if (scrollTicking) return;
+                scrollTicking = true;
+                requestAnimationFrame(updateBackToTopVisibility);
+            }, { passive: true });
 
             backToTopButton.addEventListener("click", () => {
                 document.body.scrollTop = 0; // For Safari

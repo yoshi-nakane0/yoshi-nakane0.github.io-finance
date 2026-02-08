@@ -1,19 +1,14 @@
 import csv
 import logging
-import os
 from datetime import date, datetime
 
 from django.conf import settings
 from django.core.cache import cache
 from django.shortcuts import render
+from django.views.decorators.cache import cache_control
+from django.views.decorators.gzip import gzip_page
 
 logger = logging.getLogger(__name__)
-
-FUNDAMENTAL_LABELS = {
-    'up': '上振れ',
-    'flat': '維持',
-    'down': '下振れ',
-}
 
 FUNDAMENTAL_ICONS = {
     'up': 'bi-arrow-up-right',
@@ -21,19 +16,7 @@ FUNDAMENTAL_ICONS = {
     'down': 'bi-arrow-down-right',
 }
 
-DIRECTION_LABELS = {
-    'up': '上方',
-    'flat': '維持',
-    'down': '下方',
-}
-
 DIRECTION_ICONS = FUNDAMENTAL_ICONS
-
-SENTIMENT_LABELS = {
-    'up': '格上げ',
-    'flat': '据え置き',
-    'down': '格下げ',
-}
 
 SENTIMENT_ICONS = {
     'up': 'bi-arrow-up',
@@ -47,8 +30,6 @@ STATUS_CLASS_MAP = {
     'down': 'status-down',
 }
 
-DEFAULT_TREND_POINTS = [0.0, 0.0, 0.0, 0.0]
-
 
 def parse_float(value):
     if value is None:
@@ -59,42 +40,11 @@ def parse_float(value):
         return None
 
 
-def parse_trend_points(value):
-    if not value:
-        return []
-    points = []
-    for part in str(value).replace(' ', '').split(','):
-        if not part:
-            continue
-        try:
-            points.append(float(part))
-        except ValueError:
-            continue
-    return points
-
-
 def normalize_choice(value, choices, default):
     if not value:
         return default
     value = str(value).strip().lower()
     return value if value in choices else default
-
-
-def format_percent(value):
-    if value is None:
-        return '—'
-    sign = '+' if value > 0 else ''
-    return f'{sign}{value:.1f}%'
-
-
-def metric_class(value):
-    if value is None:
-        return 'metric-muted'
-    if value > 0:
-        return 'metric-positive'
-    if value < 0:
-        return 'metric-negative'
-    return 'metric-neutral'
 
 
 def risk_class(value):
@@ -107,23 +57,20 @@ def risk_class(value):
     return 'metric-neutral'
 
 
-def fetch_earnings_from_csv():
+def fetch_earnings_from_csv(csv_path):
     """
     static/earning/data/data.csvから決算データを読み込む
     """
     try:
-        # CSVファイルのパスを構築
-        csv_path = os.path.join(settings.BASE_DIR, 'static', 'earning', 'data', 'data.csv')
-        
-        if not os.path.exists(csv_path):
+        if not csv_path.exists():
             logger.warning("CSV file not found at %s", csv_path)
             return []
-        
+
         earnings_data = []
-        
-        with open(csv_path, 'r', encoding='utf-8') as csvfile:
+
+        with csv_path.open('r', encoding='utf-8', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
-            
+
             for row in reader:
                 try:
                     # CSVの各行をパース
@@ -132,15 +79,11 @@ def fetch_earnings_from_csv():
                     symbol = (row.get('symbol') or '').strip()
                     company = (row.get('company') or '').strip()
                     industry = (row.get('industry') or '').strip()
-                    revenue_growth = parse_float(row.get('revenue_growth'))
-                    eps_growth = parse_float(row.get('eps_growth'))
                     fundamental = normalize_choice(
                         row.get('Fundamental'),
                         {'up', 'flat', 'down'},
                         'flat',
                     )
-                    surprise_rate = parse_float(row.get('surprise_rate'))
-                    next_consensus = (row.get('next_consensus') or '').strip()
                     risk_value = parse_float(row.get('Risk'))
                     direction = normalize_choice(
                         row.get('Direction'),
@@ -152,8 +95,7 @@ def fetch_earnings_from_csv():
                         {'up', 'flat', 'down'},
                         'flat',
                     )
-                    
-                    # New Absolute Values
+
                     sales_current = row.get('sales_current')
                     sales_forecast = row.get('sales_forecast')
                     sales_4q_ago = row.get('sales_4q_ago')
@@ -164,8 +106,6 @@ def fetch_earnings_from_csv():
                     eps_4q_ago = row.get('eps_4q_ago')
                     eps_4q_prior_period = row.get('eps_4q_prior_period')
 
-                    sales_surprise = row.get('sales_surprise')
-                    eps_surprise = row.get('eps_surprise')
                     surp_4q_ago = row.get('surp_4q_ago')
                     surp_current = row.get('surp_current')
                     surp_4q_prior_period = row.get('surp_4q_prior_period')
@@ -175,32 +115,28 @@ def fetch_earnings_from_csv():
                     fiscal_period = (row.get('fiscal_period') or '').strip()
 
                     summary = (row.get('summary') or '').strip()
-                    
+
                     # 必須フィールドのチェック
                     if not all([date_str, symbol, company]):
                         continue
-                    
-                    # 日付の形式をチェック
-                    earnings_date = '決算日未定'
+
+                    earnings_date_obj = None
+                    earnings_date_display = '決算日未定'
                     if date_str and date_str != '決算日未定':
                         try:
-                            datetime.strptime(date_str, '%Y-%m-%d')
-                            earnings_date = date_str
+                            earnings_date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                            earnings_date_display = date_str
                         except ValueError:
                             logger.warning("Invalid date format for %s: %s", symbol, date_str)
-                            earnings_date = '決算日未定'
-                    
+
                     earnings_data.append({
-                        'date': earnings_date,
+                        'date': earnings_date_display,
+                        'date_obj': earnings_date_obj,
                         'company': company,
                         'industry': industry,
                         'market': market,
                         'symbol': symbol,
-                        'revenue_growth_value': revenue_growth,
-                        'eps_growth_value': eps_growth,
                         'fundamental': fundamental,
-                        'surprise_rate_value': surprise_rate,
-                        'next_consensus': next_consensus,
                         'risk_value': risk_value,
                         'direction': direction,
                         'sentiment': sentiment,
@@ -208,7 +144,6 @@ def fetch_earnings_from_csv():
                         'sales_forecast': sales_forecast,
                         'sales_4q_ago': sales_4q_ago,
                         'sales_4q_prior_period': sales_4q_prior_period,
-                        'sales_surprise': sales_surprise,
                         'surp_forecast': '-',
                         'surp_4q_ago': surp_4q_ago,
                         'surp_current': surp_current,
@@ -217,7 +152,6 @@ def fetch_earnings_from_csv():
                         'eps_forecast': eps_forecast,
                         'eps_4q_ago': eps_4q_ago,
                         'eps_4q_prior_period': eps_4q_prior_period,
-                        'eps_surprise': eps_surprise,
                         'surp_eps_forecast': '-',
                         'surp_eps_4q_ago': surp_eps_4q_ago,
                         'surp_eps_current': surp_eps_current,
@@ -232,132 +166,77 @@ def fetch_earnings_from_csv():
 
         logger.info("CSV: Successfully loaded %s earnings announcements", len(earnings_data))
         return earnings_data
-        
+
     except Exception as e:
         logger.warning("Error reading CSV file: %s", e)
         return []
 
+
+def build_cache_key(today, csv_path):
+    """
+    「日付」と「CSV更新」で自動的に無効化されるキャッシュキー。
+    仕様を変えずに、毎リクエストの再計算を避ける。
+    """
+    try:
+        mtime_ns = int(csv_path.stat().st_mtime_ns)
+    except OSError:
+        mtime_ns = 0
+    return f'earnings_data_grouped_v4:{today.isoformat()}:{mtime_ns}'
+
+
+@cache_control(public=True, max_age=0, s_maxage=300, stale_while_revalidate=86400)
+@gzip_page
 def index(request):
     """
     決算カレンダーページの表示
     """
-    # キャッシュキー
-    cache_key = 'earnings_data_grouped_v3'
-    # キャッシュからデータを取得
-    # cached_payload = cache.get(cache_key)
-    cached_payload = None  # Force refresh for dev
+    today = date.today()
+    csv_path = settings.BASE_DIR / 'static' / 'earning' / 'data' / 'data.csv'
+
+    cache_key = build_cache_key(today, csv_path)
+    cached_payload = cache.get(cache_key)
 
     if cached_payload is None:
-        earnings_data = fetch_earnings_from_csv()
-
-        today = date.today()
+        earnings_data = fetch_earnings_from_csv(csv_path)
 
         future_earnings = []
         completed_earnings = []
         for item in earnings_data:
-            if item['date'] == '決算日未定':
+            item_date = item.get('date_obj')
+            if item_date is None:
                 future_earnings.append(item)
             else:
-                try:
-                    earnings_date = datetime.strptime(item['date'], '%Y-%m-%d').date()
-                    if earnings_date >= today:
-                        future_earnings.append(item)
-                    else:
-                        completed_earnings.append(item)
-                except ValueError:
-                    continue
+                if item_date >= today:
+                    future_earnings.append(item)
+                else:
+                    completed_earnings.append(item)
 
         try:
-            def sort_key_future(x):
-                if x['date'] == '決算日未定':
-                    return datetime.max
-                try:
-                    return datetime.strptime(x['date'], '%Y-%m-%d')
-                except ValueError:
-                    return datetime.max
-
-            def sort_key_completed(x):
-                try:
-                    return datetime.strptime(x['date'], '%Y-%m-%d')
-                except ValueError:
-                    return datetime.min
-
-            future_earnings.sort(key=sort_key_future)
-            completed_earnings.sort(key=sort_key_completed, reverse=True)
+            future_earnings.sort(key=lambda x: (x.get('date_obj') is None, x.get('date_obj') or date.max))
+            completed_earnings.sort(key=lambda x: x.get('date_obj') or date.min, reverse=True)
         except Exception as e:
             logger.warning("Error sorting data: %s", e)
 
         def enrich_item(item):
-            earnings_date = None
-            if item['date'] != '決算日未定':
-                try:
-                    earnings_date = datetime.strptime(item['date'], '%Y-%m-%d').date()
-                except ValueError:
-                    earnings_date = None
-
-            days_to_earnings = None
-            if earnings_date:
-                days_to_earnings = (earnings_date - today).days
-
-            revenue_value = item.get('revenue_growth_value')
-            eps_value = item.get('eps_growth_value')
-            surprise_value = item.get('surprise_rate_value')
             risk_value = item.get('risk_value')
-
-            # Parse new surprise values for display
-            sales_surprise_val = parse_float(item.get('sales_surprise'))
-            eps_surprise_val = parse_float(item.get('eps_surprise'))
 
             fundamental = item.get('fundamental')
             direction = item.get('direction')
             sentiment = item.get('sentiment')
 
-            surprise_meter = None
-            if surprise_value is not None:
-                clamped = max(-10, min(10, surprise_value))
-                surprise_meter = int(round((clamped + 10) * 5))
-
             summary_text = item.get('summary') or '要約未取得'
 
-            countdown_label = '日程未定'
-            if days_to_earnings is not None:
-                if days_to_earnings < 0:
-                    countdown_label = '決算済み'
-                elif days_to_earnings == 0:
-                    countdown_label = '本日'
-                else:
-                    countdown_label = f'あと{days_to_earnings}日'
-
             item.update({
-                'days_to_earnings': days_to_earnings,
-                'days_to_earnings_sort': days_to_earnings if days_to_earnings is not None else 9999,
-                'revenue_growth_display': format_percent(revenue_value),
-                'revenue_growth_class': metric_class(revenue_value),
-                'eps_growth_display': format_percent(eps_value),
-                'eps_growth_class': metric_class(eps_value),
-                'surprise_display': format_percent(surprise_value),
-                'surprise_class': metric_class(surprise_value),
-                'surprise_meter': surprise_meter,
                 'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
                 'risk_class': risk_class(risk_value),
-                'fundamental_label': FUNDAMENTAL_LABELS.get(fundamental, '維持'),
                 'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
                 'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
-                'direction_label': DIRECTION_LABELS.get(direction, '維持'),
                 'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
                 'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
-                'sentiment_label': SENTIMENT_LABELS.get(sentiment, '据え置き'),
                 'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
                 'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
-                'sales_surprise_display': format_percent(sales_surprise_val),
-                'sales_surprise_class': metric_class(sales_surprise_val),
-                'eps_surprise_display': format_percent(eps_surprise_val),
-                'eps_surprise_class': metric_class(eps_surprise_val),
                 'summary': summary_text,
                 'fiscal_period': item.get('fiscal_period') or '—',
-                'countdown_label': countdown_label,
-                'is_soon': days_to_earnings is not None and days_to_earnings <= 7,
-                'market_label': 'JP' if item.get('market') == 'TSE' else 'US / Global',
             })
 
         for item in future_earnings:
@@ -418,7 +297,7 @@ def index(request):
         'earnings_data': combined_earnings_data,
         'has_past_earnings': bool(past_earnings_data),
         'past_group_count': len(past_earnings_data),
-        'updated_date': date.today().strftime('%Y.%m.%d'),
+        'updated_date': today.strftime('%Y.%m.%d'),
     }
-    
+
     return render(request, 'earning/index.html', context)
