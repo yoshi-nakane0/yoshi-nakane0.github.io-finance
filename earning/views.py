@@ -242,17 +242,18 @@ def index(request):
     決算カレンダーページの表示
     """
     # キャッシュキー
-    cache_key = 'earnings_data_grouped_v2'
+    cache_key = 'earnings_data_grouped_v3'
     # キャッシュからデータを取得
-    # grouped_earnings = cache.get(cache_key)
-    grouped_earnings = None # Force refresh for dev
+    # cached_payload = cache.get(cache_key)
+    cached_payload = None  # Force refresh for dev
 
-    if grouped_earnings is None:
+    if cached_payload is None:
         earnings_data = fetch_earnings_from_csv()
 
         today = date.today()
 
         future_earnings = []
+        completed_earnings = []
         for item in earnings_data:
             if item['date'] == '決算日未定':
                 future_earnings.append(item)
@@ -261,18 +262,28 @@ def index(request):
                     earnings_date = datetime.strptime(item['date'], '%Y-%m-%d').date()
                     if earnings_date >= today:
                         future_earnings.append(item)
+                    else:
+                        completed_earnings.append(item)
                 except ValueError:
                     continue
 
         try:
-            def sort_key(x):
+            def sort_key_future(x):
                 if x['date'] == '決算日未定':
                     return datetime.max
                 try:
                     return datetime.strptime(x['date'], '%Y-%m-%d')
                 except ValueError:
                     return datetime.max
-            future_earnings.sort(key=sort_key)
+
+            def sort_key_completed(x):
+                try:
+                    return datetime.strptime(x['date'], '%Y-%m-%d')
+                except ValueError:
+                    return datetime.min
+
+            future_earnings.sort(key=sort_key_future)
+            completed_earnings.sort(key=sort_key_completed, reverse=True)
         except Exception as e:
             logger.warning("Error sorting data: %s", e)
 
@@ -310,7 +321,9 @@ def index(request):
 
             countdown_label = '日程未定'
             if days_to_earnings is not None:
-                if days_to_earnings <= 0:
+                if days_to_earnings < 0:
+                    countdown_label = '決算済み'
+                elif days_to_earnings == 0:
                     countdown_label = '本日'
                 else:
                     countdown_label = f'あと{days_to_earnings}日'
@@ -349,41 +362,62 @@ def index(request):
 
         for item in future_earnings:
             enrich_item(item)
+        for item in completed_earnings:
+            enrich_item(item)
 
-        grouped_earnings = []
-        if future_earnings:
+        def group_by_date(items, is_past=False):
+            grouped = []
+            if not items:
+                return grouped
             try:
                 current_date = None
                 current_companies = []
 
-                for item in future_earnings:
+                for item in items:
                     if current_date != item['date']:
                         if current_date is not None:
-                            grouped_earnings.append({
+                            grouped.append({
                                 'date': current_date,
-                                'companies': current_companies
+                                'companies': current_companies,
+                                'is_past': is_past,
                             })
                         current_date = item['date']
                         current_companies = []
                     current_companies.append(item)
 
                 if current_date is not None:
-                    grouped_earnings.append({
+                    grouped.append({
                         'date': current_date,
-                        'companies': current_companies
+                        'companies': current_companies,
+                        'is_past': is_past,
                     })
             except Exception as e:
                 logger.warning("Error grouping data: %s", e)
-                for item in future_earnings:
-                    grouped_earnings.append({
+                for item in items:
+                    grouped.append({
                         'date': item['date'],
-                        'companies': [item]
+                        'companies': [item],
+                        'is_past': is_past,
                     })
+            return grouped
 
-        cache.set(cache_key, grouped_earnings, 86400)
+        grouped_earnings = group_by_date(future_earnings, is_past=False)
+        past_earnings_data = group_by_date(completed_earnings, is_past=True)
 
+        cache_payload = {
+            'upcoming': grouped_earnings,
+            'completed': past_earnings_data,
+        }
+        cache.set(cache_key, cache_payload, 86400)
+    else:
+        grouped_earnings = cached_payload.get('upcoming', [])
+        past_earnings_data = cached_payload.get('completed', [])
+
+    combined_earnings_data = grouped_earnings + past_earnings_data
     context = {
-        'earnings_data': grouped_earnings,
+        'earnings_data': combined_earnings_data,
+        'has_past_earnings': bool(past_earnings_data),
+        'past_group_count': len(past_earnings_data),
         'updated_date': date.today().strftime('%Y.%m.%d'),
     }
     

@@ -6,7 +6,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/ico/favicon.ico')),
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/ico/favicon.png')),
     # トップページ → dashboard.urls
     path('', include('dashboard.urls')),
     path('calendar/', include('events.urls')),

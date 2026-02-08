@@ -46,7 +46,7 @@
     },
     {
       "source": "/favicon.ico",
-      "destination": "/static/images/ico/favicon.ico"
+      "destination": "/static/images/ico/favicon.png"
     },
     {
       "source": "/favicon.png",

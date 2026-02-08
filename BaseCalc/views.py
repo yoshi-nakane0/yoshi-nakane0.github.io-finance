@@ -1,11 +1,18 @@
-from django.shortcuts import render
-from django.core.cache import cache
 from concurrent.futures import ThreadPoolExecutor
-from .nikkei_bias import (
-    calculate_bias,
-    get_nikkei_per_values,
-    get_jgb10y_yield_percent,
+
+from django.core.cache import cache
+from django.shortcuts import render
+
+from .anchor_snapshot import (
+    calculate_erp_fixed,
+    calculate_growth_center_percent,
+    calculate_valuation_label,
+    load_anchor_snapshot,
+    normalize_erp_method,
+    normalize_growth_percent,
+    normalize_ratio,
 )
+from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 
 def index(request):
     try:
@@ -22,9 +29,9 @@ def index(request):
         erp_fixed = 0.0
         erp_growth_input = None
         erp_growth_percent = None
-        erp_method = request.GET.get('erp_method', 'method_a')
-        if erp_method not in {'method_a', 'method_b', 'method_c'}:
-            erp_method = 'method_a'
+        erp_method = normalize_erp_method(
+            request.GET.get('erp_method', 'method_a')
+        )
 
         def parse_float_param(value):
             if not value:
@@ -44,37 +51,13 @@ def index(request):
                 return None
             return normalized if normalized > 0 else None
 
-        allowed_growth_values = {1.7, 2.1, 2.7}
-        def normalize_growth(value):
-            if value is None:
-                return None
-            try:
-                rounded = round(float(value), 1)
-            except (TypeError, ValueError):
-                return None
-            return rounded if rounded in allowed_growth_values else None
-        def normalize_ratio(value, min_value, max_value, default_value):
-            if value is None:
-                return default_value
-            try:
-                ratio = float(value)
-            except (TypeError, ValueError):
-                return default_value
-            if ratio <= 0:
-                return default_value
-            if ratio < min_value:
-                return min_value
-            if ratio > max_value:
-                return max_value
-            return ratio
-
         growth_param = request.GET.get('erp_growth')
-        erp_growth_percent = normalize_growth(parse_float_param(growth_param))
-        if erp_growth_percent is not None:
+        erp_growth_percent = normalize_growth_percent(
+            parse_float_param(growth_param),
+            erp_method,
+        )
+        if erp_method == 'method_b' and erp_growth_percent is not None:
             erp_growth_input = f"{erp_growth_percent:.1f}"
-        if erp_method == 'method_c':
-            erp_growth_percent = 0.0
-            erp_growth_input = None
 
         price_override = normalize_price(
             parse_float_param(request.GET.get('price'))
@@ -91,14 +74,10 @@ def index(request):
         wide_ratio_param = request.GET.get('growth_wide_ratio')
         growth_core_ratio = normalize_ratio(
             parse_float_param(core_ratio_param),
-            min_value=0.1,
-            max_value=2.0,
             default_value=0.6,
         )
         growth_wide_ratio = normalize_ratio(
             parse_float_param(wide_ratio_param),
-            min_value=0.1,
-            max_value=2.0,
             default_value=0.7,
         )
         growth_core_ratio_input = f"{growth_core_ratio:.1f}"
@@ -158,37 +137,47 @@ def index(request):
             price = 0.0
         if jgb10y_yield_percent is None:
             jgb10y_yield_percent = 0.0
-        if erp_growth_percent is None and erp_method == 'method_b':
-            erp_growth_percent = 2.1
-            erp_growth_input = "2.1"
 
-        growth_decimal = (erp_growth_percent or 0.0) / 100.0
-        jgb_decimal = (jgb10y_yield_percent or 0.0) / 100.0
-        if erp_method == 'method_a' and forward_per > 0:
-            erp_fixed = (1.0 / forward_per) - jgb_decimal
-        elif erp_method == 'method_b' and forward_per > 0:
-            erp_fixed = (1.0 / forward_per) + growth_decimal - jgb_decimal
-        elif erp_method == 'method_c':
-            dividend_percent = (
-                dividend_yield_index_percent
-                if dividend_yield_index_percent is not None
-                else 0.0
-            )
-            dividend_decimal = dividend_percent / 100.0
-            erp_fixed = max(0.0, dividend_decimal + growth_decimal)
-
-        growth_center_percent = None
-        if erp_method == 'method_b':
-            growth_center_percent = erp_growth_percent
-        elif erp_method == 'method_c':
-            growth_center_percent = 0.0
+        anchor_snapshot = load_anchor_snapshot()
+        anchor_enabled = anchor_snapshot is not None
+        calc_price = (
+            anchor_snapshot.get('anchor_price')
+            if anchor_enabled
+            else price
+        )
+        calc_forward_per = (
+            anchor_snapshot.get('forward_per')
+            if anchor_enabled
+            else forward_per
+        )
+        calc_jgb10y_yield_percent = (
+            anchor_snapshot.get('jgb10y_yield_percent')
+            if anchor_enabled
+            else jgb10y_yield_percent
+        )
+        calc_dividend_yield_index_percent = (
+            anchor_snapshot.get('dividend_yield_index_percent')
+            if anchor_enabled
+            else dividend_yield_index_percent
+        )
+        erp_fixed = calculate_erp_fixed(
+            erp_method,
+            calc_forward_per,
+            calc_jgb10y_yield_percent,
+            calc_dividend_yield_index_percent,
+            erp_growth_percent,
+        )
+        growth_center_percent = calculate_growth_center_percent(
+            erp_method,
+            erp_growth_percent,
+        )
 
         # 5. 計算実行
         data = calculate_bias(
-            price,
-            forward_per,
-            dividend_yield_index_percent=dividend_yield_index_percent,
-            jgb10y_yield_percent=jgb10y_yield_percent,
+            calc_price,
+            calc_forward_per,
+            dividend_yield_index_percent=calc_dividend_yield_index_percent,
+            jgb10y_yield_percent=calc_jgb10y_yield_percent,
             erp_fixed=erp_fixed,
             growth_center_percent=growth_center_percent,
             growth_core_ratio=growth_core_ratio,
@@ -202,12 +191,59 @@ def index(request):
             except (TypeError, ValueError):
                 return ""
 
+        data["price"] = round(price, 0)
+        data["forward_per"] = forward_per
+        data["jgb10y_yield_percent"] = jgb10y_yield_percent
+        data["dividend_yield_index_percent"] = dividend_yield_index_percent
+        data["valuation_label"] = calculate_valuation_label(
+            price,
+            data.get("fair_price_core_low"),
+            data.get("fair_price_core_high"),
+            data.get("fair_price_wide_low"),
+            data.get("fair_price_wide_high"),
+        )
+        fair_price_mid = data.get("fair_price_mid")
+        if fair_price_mid:
+            fair_price_gap = price - fair_price_mid
+            data["fair_price_gap_pct"] = round(
+                (fair_price_gap / fair_price_mid) * 100.0,
+                2,
+            )
+        else:
+            data["fair_price_gap_pct"] = None
+
         data["price_display"] = format_price(data.get("price"), decimals=0)
         data["forward_eps_display"] = format_price(data.get("forward_eps"), decimals=2)
         data["fair_price_core_low_display"] = format_price(data.get("fair_price_core_low"), decimals=0)
         data["fair_price_core_high_display"] = format_price(data.get("fair_price_core_high"), decimals=0)
         data["fair_price_wide_low_display"] = format_price(data.get("fair_price_wide_low"), decimals=0)
         data["fair_price_wide_high_display"] = format_price(data.get("fair_price_wide_high"), decimals=0)
+        if anchor_enabled:
+            data["anchor_status_display"] = "ACTIVE"
+            data["anchor_message_display"] = "月次アンカー固定レンジを使用中"
+            data["anchor_date_display"] = str(
+                anchor_snapshot.get("anchor_date") or ""
+            )
+            data["anchor_price_display"] = format_price(
+                anchor_snapshot.get("anchor_price"),
+                decimals=0,
+            )
+            data["anchor_forward_per_display"] = format_price(
+                anchor_snapshot.get("forward_per"),
+                decimals=2,
+            )
+            data["anchor_generated_at_display"] = str(
+                anchor_snapshot.get("generated_at") or ""
+            )
+        else:
+            data["anchor_status_display"] = "NOT SET"
+            data["anchor_message_display"] = (
+                "アンカー未設定のため現在値ベースで計算中"
+            )
+            data["anchor_date_display"] = ""
+            data["anchor_price_display"] = ""
+            data["anchor_forward_per_display"] = ""
+            data["anchor_generated_at_display"] = ""
         
         context = {
             'data': data,

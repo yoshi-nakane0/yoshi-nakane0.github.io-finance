@@ -34,7 +34,7 @@
             </div>
         </header>
 
-        <div class="meta-info">Updated: 2026.02.02</div>
+        <div class="meta-info">Updated: {{ updated_date }}</div>
 
         <div class="schedule-container">
 
@@ -44,12 +44,25 @@
                     <button class="filter-btn" data-filter="en">US / Global</button>
                     <button class="filter-btn" data-filter="jp">Japan</button>
                 </div>
+                <div class="history-toggle-wrap">
+                    <button id="toggle-completed-btn"
+                            type="button"
+                            class="toggle-completed-btn"
+                            {% if not has_past_earnings %}disabled{% endif %}>
+                        {% if has_past_earnings %}
+                        決算済みを表示（{{ past_group_count }}日分）
+                        {% else %}
+                        決算済みデータなし
+                        {% endif %}
+                    </button>
+                </div>
             </div>
 
             <div class="schedule-date">
                 <div class="earnings-container">
                     {% for date_group in earnings_data %}
-                    <div class="date-group">
+                    <div class="date-group{% if date_group.is_past %} date-group-past{% endif %}"
+                         data-period="{% if date_group.is_past %}completed{% else %}upcoming{% endif %}">
                         <div class="date-header">
                             <h3 class="date-title">{{ date_group.date }}</h3>
                             <span class="date-count">{{ date_group.companies|length }}件</span>
@@ -182,12 +195,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             const filterButtons = document.querySelectorAll('.filter-btn');
             const dateGroups = document.querySelectorAll('.date-group');
+            const toggleCompletedButton = document.getElementById('toggle-completed-btn');
+            let showCompleted = false;
 
             const applyFilters = () => {
                 const activeButton = document.querySelector('.filter-btn.active');
                 const marketFilter = activeButton ? activeButton.getAttribute('data-filter') : 'all';
 
                 dateGroups.forEach(group => {
+                    const isCompletedGroup = group.getAttribute('data-period') === 'completed';
+                    if (showCompleted && !isCompletedGroup) {
+                        group.style.display = 'none';
+                        return;
+                    }
+                    if (!showCompleted && isCompletedGroup) {
+                        group.style.display = 'none';
+                        return;
+                    }
+
                     const cards = group.querySelectorAll('.company-card');
                     let visibleCount = 0;
 
@@ -218,6 +243,19 @@
                     applyFilters();
                 });
             });
+
+            if (toggleCompletedButton && !toggleCompletedButton.disabled) {
+                toggleCompletedButton.addEventListener('click', () => {
+                    showCompleted = !showCompleted;
+                    toggleCompletedButton.classList.toggle('active', showCompleted);
+                    toggleCompletedButton.textContent = showCompleted
+                        ? '決算済みを非表示'
+                        : '決算済みを表示（{{ past_group_count }}日分）';
+                    applyFilters();
+                });
+            }
+
+            applyFilters();
 
             const surpriseMetrics = document.querySelectorAll('.surprise-metric');
             surpriseMetrics.forEach(metric => {

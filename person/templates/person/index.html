@@ -7,7 +7,6 @@
     <title>Person</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
     <link rel="stylesheet" href="{% static 'person/css/style.css' %}">
 </head>
 <body class="bg-dark">
@@ -65,7 +64,7 @@
                                 <div class="analyst-score {{ person.latest_evaluation_class }}">
                                     {{ person.latest_evaluation }}
                                 </div>
-                                <i class="bi bi-chevron-down accordion-icon"></i>
+                                <svg class="accordion-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"></path></svg>
                             </div>
                         </div>
 
