@@ -69,6 +69,19 @@
                 </div>
             </div>
 
+            <!-- Fair Value Actions -->
+            <div class="action-row">
+                <button type="submit" class="btn-base btn-primary" form="erp-form">Apply ERP</button>
+                <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if growth_core_ratio_input %}&growth_core_ratio={{ growth_core_ratio_input }}{% endif %}{% if growth_wide_ratio_input %}&growth_wide_ratio={{ growth_wide_ratio_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                </a>
+            </div>
+
             <!-- 2. Anchor Snapshot -->
             <div class="card">
                 <div class="card-header">
@@ -130,7 +143,7 @@
             </div>
 
             <!-- 4. Controls -->
-            <form method="get" action="" class="erp-form">
+            <form method="get" action="" class="erp-form" id="erp-form">
                 <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
                 <!-- Row 1: Inputs -->
                 <div class="control-row">
@@ -176,18 +189,6 @@
                             <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'0.7' }}" data-field="growth_wide_ratio_input">
                         </div>
                     </div>
-                </div>
-                <!-- Row 2: Actions -->
-                <div class="action-row">
-                    <button type="submit" class="btn-base btn-primary">Apply ERP</button>
-                    <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if growth_core_ratio_input %}&growth_core_ratio={{ growth_core_ratio_input }}{% endif %}{% if growth_wide_ratio_input %}&growth_wide_ratio={{ growth_wide_ratio_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Refresh
-                    </a>
                 </div>
             </form>
 
