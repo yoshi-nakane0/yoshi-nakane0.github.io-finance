@@ -1,7 +1,11 @@
 import argparse
+import json
 import logging
+import os
+import random
 import re
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -13,6 +17,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from BaseCalc.anchor_snapshot import (
+    ANCHOR_DATA_PATH,
     build_anchor_snapshot,
     load_anchor_snapshot,
     save_anchor_snapshot,
@@ -35,13 +40,91 @@ YAHOO_NIKKEI_CHART_URL = (
     "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225"
     "?interval=5m&range=1d"
 )
+STOOQ_NIKKEI_CSV_URL = "https://stooq.com/q/l/?s=%5Enkx&i=d"
 HTTP_RETRY_STATUS = (403, 429, 500, 502, 503, 504)
-HTTP_RETRY_TOTAL = 3
-HTTP_RETRY_BACKOFF = 1.0
+HTTP_RETRY_TOTAL_DEFAULT = 3
+HTTP_RETRY_BACKOFF_DEFAULT = 1.0
+SOURCE_RETRY_TOTAL_DEFAULT = 3
+SOURCE_RETRY_BASE_DELAY_DEFAULT = 2.0
+SOURCE_RETRY_MAX_DELAY_DEFAULT = 20.0
+SOURCE_RETRY_JITTER_DEFAULT = 1.0
+SOURCE_SWITCH_DELAY_DEFAULT = 0.5
+ANCHOR_API_URL_ENV = "BASECALC_ANCHOR_API_URL"
+ANCHOR_API_TOKEN_ENV = "BASECALC_ANCHOR_API_TOKEN"
+ANCHOR_API_TOKEN_HEADER_ENV = "BASECALC_ANCHOR_API_TOKEN_HEADER"
+ANCHOR_API_JSON_PATH_ENV = "BASECALC_ANCHOR_API_JSON_PATH"
+MANUAL_ANCHOR_PRICE_ENV = "BASECALC_MANUAL_ANCHOR_PRICE"
 INVESTING_MOBILE_USER_AGENT = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) "
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 "
     "Mobile/15E148 Safari/604.1"
+)
+
+
+def _read_env_int(name, default, minimum=0):
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning("Invalid integer value for %s: %s", name, raw)
+        return default
+    if value < minimum:
+        logger.warning("Out-of-range integer value for %s: %s", name, raw)
+        return default
+    return value
+
+
+def _read_env_float(name, default, minimum=0.0):
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        logger.warning("Invalid float value for %s: %s", name, raw)
+        return default
+    if value < minimum:
+        logger.warning("Out-of-range float value for %s: %s", name, raw)
+        return default
+    return value
+
+
+HTTP_RETRY_TOTAL = _read_env_int(
+    "BASECALC_HTTP_RETRY_TOTAL",
+    HTTP_RETRY_TOTAL_DEFAULT,
+    minimum=1,
+)
+HTTP_RETRY_BACKOFF = _read_env_float(
+    "BASECALC_HTTP_RETRY_BACKOFF",
+    HTTP_RETRY_BACKOFF_DEFAULT,
+    minimum=0.0,
+)
+SOURCE_RETRY_TOTAL = _read_env_int(
+    "BASECALC_SOURCE_RETRY_TOTAL",
+    SOURCE_RETRY_TOTAL_DEFAULT,
+    minimum=1,
+)
+SOURCE_RETRY_BASE_DELAY_SEC = _read_env_float(
+    "BASECALC_SOURCE_RETRY_BASE_DELAY_SEC",
+    SOURCE_RETRY_BASE_DELAY_DEFAULT,
+    minimum=0.0,
+)
+SOURCE_RETRY_MAX_DELAY_SEC = _read_env_float(
+    "BASECALC_SOURCE_RETRY_MAX_DELAY_SEC",
+    SOURCE_RETRY_MAX_DELAY_DEFAULT,
+    minimum=0.0,
+)
+SOURCE_RETRY_JITTER_SEC = _read_env_float(
+    "BASECALC_SOURCE_RETRY_JITTER_SEC",
+    SOURCE_RETRY_JITTER_DEFAULT,
+    minimum=0.0,
+)
+SOURCE_SWITCH_DELAY_SEC = _read_env_float(
+    "BASECALC_SOURCE_SWITCH_DELAY_SEC",
+    SOURCE_SWITCH_DELAY_DEFAULT,
+    minimum=0.0,
 )
 PRICE_PATTERNS = (
     re.compile(
@@ -82,6 +165,60 @@ def _parse_price_from_html(html):
     return None
 
 
+def _extract_value_by_path(payload, path):
+    if not path:
+        return payload
+    current = payload
+    for segment in str(path).split("."):
+        part = segment.strip()
+        if not part:
+            continue
+        if isinstance(current, dict):
+            if part not in current:
+                return None
+            current = current.get(part)
+            continue
+        if isinstance(current, list):
+            try:
+                index = int(part)
+            except ValueError:
+                return None
+            if index < 0 or index >= len(current):
+                return None
+            current = current[index]
+            continue
+        return None
+    return current
+
+
+def _sleep_before_retry(source_name, attempt_index):
+    if attempt_index >= SOURCE_RETRY_TOTAL:
+        return
+    base_delay = SOURCE_RETRY_BASE_DELAY_SEC * (2 ** (attempt_index - 1))
+    delay = min(base_delay, SOURCE_RETRY_MAX_DELAY_SEC)
+    if SOURCE_RETRY_JITTER_SEC > 0:
+        delay += random.uniform(0.0, SOURCE_RETRY_JITTER_SEC)
+    if delay <= 0:
+        return
+    logger.info(
+        "Retry %s in %.1f sec (%d/%d).",
+        source_name,
+        delay,
+        attempt_index + 1,
+        SOURCE_RETRY_TOTAL,
+    )
+    time.sleep(delay)
+
+
+def _fetch_with_retries(source_name, fetcher):
+    for attempt in range(1, SOURCE_RETRY_TOTAL + 1):
+        price = fetcher()
+        if price is not None:
+            return price
+        _sleep_before_retry(source_name, attempt)
+    return None
+
+
 def _build_retry_session(headers):
     retry = Retry(
         total=HTTP_RETRY_TOTAL,
@@ -92,6 +229,7 @@ def _build_retry_session(headers):
         status_forcelist=HTTP_RETRY_STATUS,
         allowed_methods=frozenset({"GET"}),
         raise_on_status=False,
+        respect_retry_after_header=True,
     )
     adapter = HTTPAdapter(max_retries=retry)
     session = requests.Session()
@@ -174,6 +312,105 @@ def _fetch_anchor_price_from_investing():
     return None
 
 
+def _build_external_api_headers():
+    headers = dict(HEADERS)
+    headers["Accept"] = "application/json,text/plain,*/*"
+    token = os.getenv(ANCHOR_API_TOKEN_ENV)
+    if token:
+        header_name = (
+            os.getenv(ANCHOR_API_TOKEN_HEADER_ENV, "Authorization").strip()
+            or "Authorization"
+        )
+        if (
+            header_name.lower() == "authorization"
+            and not token.lower().startswith("bearer ")
+        ):
+            headers[header_name] = f"Bearer {token}"
+        else:
+            headers[header_name] = token
+    return headers
+
+
+def _fetch_anchor_price_from_external_api():
+    url = (os.getenv(ANCHOR_API_URL_ENV) or "").strip()
+    if not url:
+        return None
+    json_path = (os.getenv(ANCHOR_API_JSON_PATH_ENV) or "price").strip() or "price"
+    session = _build_retry_session(_build_external_api_headers())
+    try:
+        response = session.get(
+            url,
+            timeout=REQUEST_TIMEOUT_SEC,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except requests.RequestException as exc:
+        logger.warning("Failed to fetch external anchor API: %s", exc)
+        return None
+    except ValueError as exc:
+        logger.warning("Failed to decode external anchor API response: %s", exc)
+        return None
+    finally:
+        session.close()
+
+    candidate = _extract_value_by_path(payload, json_path)
+    price = _parse_positive_float(candidate)
+    if price is None:
+        logger.warning(
+            "Failed to parse external anchor API price (json path: %s).",
+            json_path,
+        )
+    return price
+
+
+def _parse_stooq_csv_price(text):
+    if not text:
+        return None
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return None
+    header = [column.strip().lower() for column in lines[0].split(",")]
+    latest_row = [column.strip() for column in lines[-1].split(",")]
+    close_index = 6
+    if "close" in header:
+        close_index = header.index("close")
+    if close_index >= len(latest_row):
+        return None
+    close_text = latest_row[close_index]
+    if close_text in {"", "-", "N/D"}:
+        return None
+    return _parse_positive_float(close_text)
+
+
+def _fetch_anchor_price_from_stooq():
+    headers = dict(HEADERS)
+    headers.update(
+        {
+            "Accept": "text/csv,text/plain,*/*",
+            "Referer": "https://stooq.com/",
+        }
+    )
+    session = _build_retry_session(headers)
+    try:
+        response = session.get(
+            STOOQ_NIKKEI_CSV_URL,
+            timeout=REQUEST_TIMEOUT_SEC,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.warning("Failed to fetch Stooq Nikkei CSV: %s", exc)
+        return None
+    finally:
+        session.close()
+
+    price = _parse_stooq_csv_price(response.text)
+    if price is None:
+        logger.warning("Failed to parse Stooq Nikkei close price.")
+    return price
+
+
 def _parse_yahoo_chart_price(payload):
     if not isinstance(payload, dict):
         return None
@@ -248,25 +485,65 @@ def _fetch_anchor_price_from_yahoo():
 
 def _load_existing_anchor_price():
     snapshot = load_anchor_snapshot()
-    if not snapshot:
+    if snapshot:
+        parsed = _parse_positive_float(snapshot.get("anchor_price"))
+        if parsed is not None:
+            return parsed
+    try:
+        with open(ANCHOR_DATA_PATH, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except FileNotFoundError:
         return None
-    return _parse_positive_float(snapshot.get("anchor_price"))
+    except (OSError, ValueError) as exc:
+        logger.warning("Failed to read existing anchor snapshot file: %s", exc)
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return _parse_positive_float(payload.get("anchor_price"))
+
+
+def _load_manual_anchor_price():
+    raw = os.getenv(MANUAL_ANCHOR_PRICE_ENV)
+    if raw is None or str(raw).strip() == "":
+        return None
+    value = _parse_positive_float(raw)
+    if value is None:
+        logger.warning(
+            "Invalid manual anchor price in %s: %s",
+            MANUAL_ANCHOR_PRICE_ENV,
+            raw,
+        )
+    return value
 
 
 def _fetch_anchor_price():
-    price = _fetch_anchor_price_from_investing()
-    if price is not None:
-        return price
-    price = _fetch_anchor_price_from_yahoo()
-    if price is not None:
-        logger.warning(
-            "Fallback source in use: Yahoo Nikkei index price.",
-        )
-        return price
+    sources = (
+        ("external API", _fetch_anchor_price_from_external_api, False),
+        ("Investing Nikkei futures", _fetch_anchor_price_from_investing, False),
+        ("Yahoo Nikkei chart", _fetch_anchor_price_from_yahoo, True),
+        ("Stooq Nikkei close", _fetch_anchor_price_from_stooq, True),
+    )
+    for index, (source_name, fetcher, is_fallback) in enumerate(sources):
+        price = _fetch_with_retries(source_name, fetcher)
+        if price is not None:
+            if is_fallback:
+                logger.warning("Fallback source in use: %s.", source_name)
+            return price
+        has_next = index < (len(sources) - 1)
+        if has_next and SOURCE_SWITCH_DELAY_SEC > 0:
+            time.sleep(SOURCE_SWITCH_DELAY_SEC)
+
     price = _load_existing_anchor_price()
     if price is not None:
         logger.warning(
             "Fallback source in use: existing BaseCalc anchor snapshot.",
+        )
+        return price
+    price = _load_manual_anchor_price()
+    if price is not None:
+        logger.warning(
+            "Fallback source in use: manual anchor price (%s).",
+            MANUAL_ANCHOR_PRICE_ENV,
         )
         return price
     return None

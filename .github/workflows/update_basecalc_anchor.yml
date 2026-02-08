@@ -2,7 +2,7 @@ name: Update BaseCalc anchor
 
 on:
   schedule:
-    - cron: "0 10 1 * *"
+    - cron: "17 9 1 * *"
   workflow_dispatch:
 
 permissions:
@@ -11,6 +11,22 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    concurrency:
+      group: update-basecalc-anchor
+      cancel-in-progress: false
+    env:
+      BASECALC_ANCHOR_API_URL: ${{ vars.BASECALC_ANCHOR_API_URL }}
+      BASECALC_ANCHOR_API_TOKEN: ${{ secrets.BASECALC_ANCHOR_API_TOKEN }}
+      BASECALC_ANCHOR_API_TOKEN_HEADER: ${{ vars.BASECALC_ANCHOR_API_TOKEN_HEADER }}
+      BASECALC_ANCHOR_API_JSON_PATH: ${{ vars.BASECALC_ANCHOR_API_JSON_PATH }}
+      BASECALC_MANUAL_ANCHOR_PRICE: ${{ vars.BASECALC_MANUAL_ANCHOR_PRICE }}
+      BASECALC_SOURCE_RETRY_TOTAL: "3"
+      BASECALC_SOURCE_RETRY_BASE_DELAY_SEC: "3"
+      BASECALC_SOURCE_RETRY_MAX_DELAY_SEC: "30"
+      BASECALC_SOURCE_RETRY_JITTER_SEC: "2"
+      HTTP_PROXY: ${{ secrets.BASECALC_HTTP_PROXY }}
+      HTTPS_PROXY: ${{ secrets.BASECALC_HTTPS_PROXY }}
+      NO_PROXY: "localhost,127.0.0.1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,16 +38,36 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Stagger start
+        shell: bash
+        run: |
+          sleep_seconds=$((RANDOM % 180 + 30))
+          echo "Sleep ${sleep_seconds}s to avoid shared-IP bursts."
+          sleep "${sleep_seconds}"
       - name: Update BaseCalc anchor
-        run: python scripts/update_basecalc_anchor.py
+        shell: bash
+        run: |
+          max_attempts=3
+          for attempt in $(seq 1 "${max_attempts}"); do
+            echo "Anchor update attempt ${attempt}/${max_attempts}"
+            if python scripts/update_basecalc_anchor.py; then
+              exit 0
+            fi
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              sleep_seconds=$((attempt * 120))
+              echo "Retry in ${sleep_seconds}s."
+              sleep "${sleep_seconds}"
+            fi
+          done
+          exit 1
       - name: Commit anchor file
         run: |
-          if git diff --quiet -- BaseCalc/data/basecalc_anchor.json; then
+          git add BaseCalc/data/basecalc_anchor.json
+          if git diff --cached --quiet -- BaseCalc/data/basecalc_anchor.json; then
             echo "No changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add BaseCalc/data/basecalc_anchor.json
           git commit -m "Update BaseCalc anchor snapshot"
           git push
