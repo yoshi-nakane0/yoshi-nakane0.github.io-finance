@@ -348,7 +348,7 @@ body {
 
 /* Unified Icon Theme (Match BaseCalc) */
 .dashboard-card {
-  border-color: rgb(106 54 114 / 22%);
+  border-color: rgba(192, 165, 195, 0.47);
 }
 
 .dashboard-card:hover {
@@ -356,7 +356,7 @@ body {
 }
 
 .dashboard-card .icon-wrapper {
-  background: linear-gradient(165deg, #ffffff 0%, #686a6d 36%, #4d4d4d 100% 100%);
+  background: linear-gradient(165deg, #403e3e 0%, #686a6d 36%, #4d4d4d 100% 100%);
   border-color: rgb(211 69 69 / 22%);
   box-shadow:
     0 14px 22px rgba(0, 0, 0, 0.42),
@@ -439,8 +439,8 @@ body {
   }
   
   .icon-wrapper {
-    width: 52px;
-    height: 52px;
+    width: 65px;
+    height: 65px;
     margin-bottom: 1rem;
     border-radius: 16px;
   }
