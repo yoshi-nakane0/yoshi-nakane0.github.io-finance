@@ -220,7 +220,6 @@ def index(request):
         data["fair_price_wide_high_display"] = format_price(data.get("fair_price_wide_high"), decimals=0)
         if anchor_enabled:
             data["anchor_status_display"] = "ACTIVE"
-            data["anchor_message_display"] = "月次アンカー固定レンジを使用中"
             data["anchor_date_display"] = str(
                 anchor_snapshot.get("anchor_date") or ""
             )
@@ -232,18 +231,11 @@ def index(request):
                 anchor_snapshot.get("forward_per"),
                 decimals=2,
             )
-            data["anchor_generated_at_display"] = str(
-                anchor_snapshot.get("generated_at") or ""
-            )
         else:
             data["anchor_status_display"] = "NOT SET"
-            data["anchor_message_display"] = (
-                "アンカー未設定のため現在値ベースで計算中"
-            )
             data["anchor_date_display"] = ""
             data["anchor_price_display"] = ""
             data["anchor_forward_per_display"] = ""
-            data["anchor_generated_at_display"] = ""
         
         context = {
             'data': data,

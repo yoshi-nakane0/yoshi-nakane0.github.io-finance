@@ -1,17 +1,12 @@
 import datetime
 import json
 import logging
-import os
 
-from .nikkei_bias import calculate_bias
+from .nikkei_bias import NIKKEI_PER_DATA_PATH, calculate_bias
 
 logger = logging.getLogger(__name__)
 
-ANCHOR_DATA_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "data",
-    "basecalc_anchor.json",
-)
+ANCHOR_CONFIG_KEY = "basecalc_anchor"
 ANCHOR_SCHEMA_VERSION = 1
 DEFAULT_ERP_METHOD = "method_a"
 DEFAULT_GROWTH_CORE_RATIO = 0.6
@@ -175,13 +170,9 @@ def build_anchor_snapshot(
         growth_wide_ratio=normalized_wide_ratio,
     )
     anchor_date = as_of_date or datetime.date.today().isoformat()
-    generated_at = (
-        datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
-    )
     return {
         "schema_version": ANCHOR_SCHEMA_VERSION,
         "anchor_date": anchor_date,
-        "generated_at": generated_at,
         "anchor_price": round(normalized_anchor_price, 0),
         "forward_per": normalized_forward_per,
         "jgb10y_yield_percent": normalized_jgb10y,
@@ -222,6 +213,8 @@ def is_valid_anchor_snapshot(payload):
         return False
     if _normalize_positive_float(payload.get("forward_per")) is None:
         return False
+    if _to_float(payload.get("jgb10y_yield_percent")) is None:
+        return False
     for key in (
         "fair_price_core_low",
         "fair_price_core_high",
@@ -233,24 +226,74 @@ def is_valid_anchor_snapshot(payload):
     return True
 
 
-def load_anchor_snapshot(path=ANCHOR_DATA_PATH):
+def is_valid_anchor_config(payload):
+    if not isinstance(payload, dict):
+        return False
+    if _normalize_positive_float(payload.get("anchor_price")) is None:
+        return False
+    forward_per = payload.get("forward_per")
+    if forward_per is not None and _normalize_positive_float(forward_per) is None:
+        return False
+    if _to_float(payload.get("jgb10y_yield_percent")) is None:
+        return False
+    anchor_date = payload.get("anchor_date")
+    if anchor_date is not None and not isinstance(anchor_date, str):
+        return False
+    return True
+
+
+def _extract_anchor_config(payload):
+    if not isinstance(payload, dict):
+        return None
+    config = payload.get(ANCHOR_CONFIG_KEY)
+    if not isinstance(config, dict):
+        return None
+    return config
+
+
+def load_anchor_snapshot(path=NIKKEI_PER_DATA_PATH):
     try:
         with open(path, "r", encoding="utf-8") as handle:
             payload = json.load(handle)
     except FileNotFoundError:
         return None
     except (OSError, json.JSONDecodeError) as exc:
-        logger.warning("Failed to load anchor snapshot (%s): %s", path, exc)
+        logger.warning("Failed to load anchor config (%s): %s", path, exc)
         return None
-    if not is_valid_anchor_snapshot(payload):
-        logger.warning("Invalid anchor snapshot format (%s)", path)
+    config = _extract_anchor_config(payload)
+    if config is None:
         return None
-    return payload
-
-
-def save_anchor_snapshot(snapshot, path=ANCHOR_DATA_PATH):
-    if not is_valid_anchor_snapshot(snapshot):
-        raise ValueError("invalid anchor snapshot")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as handle:
-        json.dump(snapshot, handle, ensure_ascii=True, indent=2)
+    if not is_valid_anchor_config(config):
+        logger.warning("Invalid anchor config (%s)", path)
+        return None
+    forward_per = config.get("forward_per")
+    if forward_per is None and isinstance(payload, dict):
+        forward_per = payload.get("index_based")
+    dividend_yield_index_percent = config.get("dividend_yield_index_percent")
+    if (
+        dividend_yield_index_percent is None
+        and isinstance(payload, dict)
+        and isinstance(payload.get("dividend_yield"), dict)
+    ):
+        dividend_yield_index_percent = payload["dividend_yield"].get("index_based")
+    snapshot = build_anchor_snapshot(
+        anchor_price=config.get("anchor_price"),
+        forward_per=forward_per,
+        jgb10y_yield_percent=config.get("jgb10y_yield_percent"),
+        dividend_yield_index_percent=dividend_yield_index_percent,
+        erp_method=config.get("erp_method", DEFAULT_ERP_METHOD),
+        erp_growth_percent=config.get("erp_growth_percent"),
+        growth_core_ratio=config.get(
+            "growth_core_ratio",
+            DEFAULT_GROWTH_CORE_RATIO,
+        ),
+        growth_wide_ratio=config.get(
+            "growth_wide_ratio",
+            DEFAULT_GROWTH_WIDE_RATIO,
+        ),
+        as_of_date=config.get("anchor_date"),
+    )
+    if not snapshot or not is_valid_anchor_snapshot(snapshot):
+        logger.warning("Failed to build anchor snapshot (%s)", path)
+        return None
+    return snapshot

@@ -9,5 +9,11 @@
     "date": "2026.01.20",
     "index_based": 1.52,
     "simple_average": 1.71
+  },
+  "basecalc_anchor": {
+    "anchor_date": "2025.12",
+    "anchor_price": 50339,
+    "jgb10y_yield_percent": 2.236
   }
 }
+

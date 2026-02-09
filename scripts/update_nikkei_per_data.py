@@ -26,6 +26,7 @@ HEADERS = {
     "Referer": "https://indexes.nikkei.co.jp/",
 }
 DIVIDEND_YIELD_KEY = "dividend_yield"
+ANCHOR_CONFIG_KEY = "basecalc_anchor"
 PER_AVERAGE_KEY = "weighted_average"
 DIVIDEND_AVERAGE_KEY = "simple_average"
 PER_AVERAGE_HEADER_TERMS = ("加重平均", "加重", "weighted")
@@ -347,6 +348,22 @@ def _load_existing_payload(require_dividend=False):
     return payload
 
 
+def _load_existing_anchor_config():
+    if not OUTPUT_PATH.exists():
+        return None
+    try:
+        with OUTPUT_PATH.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    config = payload.get(ANCHOR_CONFIG_KEY)
+    if not isinstance(config, dict):
+        return None
+    return config
+
+
 def _warmup_session(session):
     warmup_urls = (
         "https://indexes.nikkei.co.jp/",
@@ -372,6 +389,7 @@ def _fetch_html_with_selenium(url):
         from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.common.by import By
+        from selenium.common.exceptions import WebDriverException
         from selenium.webdriver.support.ui import WebDriverWait
     except ImportError:
         return None
@@ -438,6 +456,8 @@ def _build_soup(html):
 
 
 def main():
+    existing_anchor_config = _load_existing_anchor_config()
+
     html = _fetch_html(NIKKEI_PER_URL)
     if not html:
         if _load_existing_payload(require_dividend=True):
@@ -496,6 +516,8 @@ def main():
             DIVIDEND_AVERAGE_KEY: dividend_result[DIVIDEND_AVERAGE_KEY],
         },
     }
+    if existing_anchor_config is not None:
+        payload[ANCHOR_CONFIG_KEY] = dict(existing_anchor_config)
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT_PATH.open("w", encoding="utf-8") as handle:
