@@ -82,45 +82,6 @@
                 </a>
             </div>
 
-            <!-- 2. Anchor Snapshot -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-blue);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M7 11l5-8 5 8"></path>
-                            <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-                        </svg>
-                    </div>
-                    <div class="card-title">Anchor Snapshot</div>
-                </div>
-                <div class="data-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Status</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_status_display">{{ data.anchor_status_display|default:"" }}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Date</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_date_display">{{ data.anchor_date_display|default:"" }}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Price</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_price_display">{% if data.anchor_price_display %}{{ data.anchor_price_display }}{% endif %}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Forward PER</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_forward_per_display">{% if data.anchor_forward_per_display %}{{ data.anchor_forward_per_display }}{% endif %}</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- 3. Independent Price Display -->
             <div class="price-display">
                 <span class="price-label">Current Price</span>
@@ -316,6 +277,45 @@
                     </div>
                 </div>
             </details>
+
+            <!-- 2. Anchor Snapshot -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: var(--color-accent-blue);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 11l5-8 5 8"></path>
+                            <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+                        </svg>
+                    </div>
+                    <div class="card-title">Anchor Snapshot</div>
+                </div>
+                <div class="data-list">
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Status</span>
+                        </div>
+                        <span class="data-value" data-field="anchor_status_display">{{ data.anchor_status_display|default:"" }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Anchor Date</span>
+                        </div>
+                        <span class="data-value" data-field="anchor_date_display">{{ data.anchor_date_display|default:"" }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Anchor Price</span>
+                        </div>
+                        <span class="data-value" data-field="anchor_price_display">{% if data.anchor_price_display %}{{ data.anchor_price_display }}{% endif %}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">Anchor Forward PER</span>
+                        </div>
+                        <span class="data-value" data-field="anchor_forward_per_display">{% if data.anchor_forward_per_display %}{{ data.anchor_forward_per_display }}{% endif %}</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- 8. Analysis Summary -->
             <div class="card">
