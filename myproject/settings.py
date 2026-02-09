@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'prompt',
     'earning',
     'sector',
+    'outlook',
     'explanation',
     'person',
     'prediction',

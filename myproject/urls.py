@@ -9,6 +9,7 @@ urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/ico/favicon.png')),
     # トップページ → dashboard.urls
     path('', include('dashboard.urls')),
+    path('outlook/', include('outlook.urls')),
     path('calendar/', include('events.urls')),
     path('prompt/', include('prompt.urls')),
     path('earning/', include('earning.urls')),

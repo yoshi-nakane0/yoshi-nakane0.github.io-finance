@@ -12,10 +12,12 @@
   /* Vivid Accent Palette */
   --color-events: #F472B6;      /* Pink 400 */
   --color-earnings: #34D399;    /* Emerald 400 */
+  --color-outlook: #2DD4BF;     /* Teal 400 */
   --color-sector: #38BDF8;      /* Sky 400 */
   --color-prediction: #A78BFA;  /* Violet 400 */
   --color-person: #FBBF24;      /* Amber 400 */
   --color-explanation: #6366F1; /* Indigo 500 */
+  --color-basecalc: #FFFFFF;    /* Crisp White */
   --color-prompt: #F87171;      /* Red 400 */
   --color-admin: #94A3B8;       /* Slate 400 */
   --color-settings: #CBD5E1;    /* Slate 300 */
@@ -82,6 +84,11 @@ body {
   grid-auto-rows: minmax(180px, auto);
 }
 
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: minmax(150px, auto);
+}
+
 .grid-cols-1 {
   grid-template-columns: 1fr;
   grid-auto-rows: minmax(130px, auto);
@@ -90,6 +97,40 @@ body {
 .grid-cols-4 {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   grid-auto-rows: minmax(140px, auto);
+}
+
+.grid-span-2 {
+  grid-column: span 2;
+}
+
+.grid-compact {
+  gap: 1rem;
+}
+
+.grid-compact .dashboard-card {
+  padding: 1.25rem 0.75rem;
+  border-radius: 20px;
+}
+
+.grid-compact .icon-wrapper {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 0.75rem;
+  border-radius: 16px;
+}
+
+.grid-compact .icon-wrapper svg {
+  width: 26px;
+  height: 26px;
+}
+
+.grid-compact .card-title {
+  font-size: 1rem;
+}
+
+.grid-compact .card-subtitle {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 /* Card Style - High Contrast & Bold Borders */
@@ -175,7 +216,6 @@ body {
   display: block;
 }
 
-
 /* --- Category Specific Styling (Bold Borders & Accents) --- */
 
 /* Events */
@@ -188,27 +228,60 @@ body {
   color: var(--color-events); /* For SVG stroke inheritance if needed */
 }
 .type-events svg { stroke: var(--color-events); }
-.type-events:hover {
-  border-color: var(--color-events);
-  background: rgba(244, 114, 182, 0.05); /* うっすら色味を追加 */
-}
-.type-events:hover .card-title { color: var(--color-events); }
-
 
 /* Earnings */
 .type-earnings {
-  border-color: rgba(52, 211, 153, var(--card-border-opacity));
+  border-color: rgba(52, 73, 211, var(--card-border-opacity));
 }
 .type-earnings .icon-wrapper {
   background: rgba(52, 211, 153, 0.1);
-  border-color: rgba(52, 211, 153, 0.5);
+  border-color: rgba(52, 73, 211, 0.5);
 }
 .type-earnings svg { stroke: var(--color-earnings); }
-.type-earnings:hover {
-  border-color: var(--color-earnings);
-  background: rgba(52, 211, 153, 0.05);
+
+
+/* BaseCalc (3D White) */
+.type-basecalc {
+  border-color: rgba(255, 255, 255, 0.22);
 }
-.type-earnings:hover .card-title { color: var(--color-earnings); }
+
+.type-basecalc .icon-wrapper {
+  background: linear-gradient(165deg, #FFFFFF 0%, #363b41 10%, #E2E8F0 100%);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 14px 22px rgba(0, 0, 0, 0.42),
+    inset 0 2px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -10px 14px rgba(15, 23, 42, 0.22);
+  position: relative;
+  overflow: hidden;
+}
+
+.type-basecalc .icon-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 2px 2px auto 2px;
+  height: 48%;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.type-basecalc svg {
+  stroke: var(--color-basecalc);
+  filter:
+    drop-shadow(0 2px 0 rgba(15, 23, 42, 0.45))
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+}
+
+/* Outlook */
+.type-outlook {
+  border-color: rgba(45, 212, 191, var(--card-border-opacity));
+}
+.type-outlook .icon-wrapper {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.5);
+}
+.type-outlook svg { stroke: var(--color-outlook); }
 
 
 /* Sector */
@@ -220,11 +293,6 @@ body {
   border-color: rgba(56, 189, 248, 0.5);
 }
 .type-sector svg { stroke: var(--color-sector); }
-.type-sector:hover {
-  border-color: var(--color-sector);
-  background: rgba(56, 189, 248, 0.05);
-}
-.type-sector:hover .card-title { color: var(--color-sector); }
 
 
 /* Prediction */
@@ -236,11 +304,6 @@ body {
   border-color: rgba(167, 139, 250, 0.5);
 }
 .type-prediction svg { stroke: var(--color-prediction); }
-.type-prediction:hover {
-  border-color: var(--color-prediction);
-  background: rgba(167, 139, 250, 0.05);
-}
-.type-prediction:hover .card-title { color: var(--color-prediction); }
 
 
 /* Person */
@@ -252,12 +315,6 @@ body {
   border-color: rgba(251, 191, 36, 0.5);
 }
 .type-person svg { stroke: var(--color-person); }
-.type-person:hover {
-  border-color: var(--color-person);
-  background: rgba(251, 191, 36, 0.05);
-}
-.type-person:hover .card-title { color: var(--color-person); }
-
 
 /* Explanation */
 .type-explanation {
@@ -268,12 +325,6 @@ body {
   border-color: rgba(99, 102, 241, 0.5);
 }
 .type-explanation svg { stroke: var(--color-explanation); }
-.type-explanation:hover {
-  border-color: var(--color-explanation);
-  background: rgba(99, 102, 241, 0.05);
-}
-.type-explanation:hover .card-title { color: var(--color-explanation); }
-
 
 /* Prompt */
 .type-prompt {
@@ -284,12 +335,6 @@ body {
   border-color: rgba(248, 113, 113, 0.5);
 }
 .type-prompt svg { stroke: var(--color-prompt); }
-.type-prompt:hover {
-  border-color: var(--color-prompt);
-  background: rgba(248, 113, 113, 0.05);
-}
-.type-prompt:hover .card-title { color: var(--color-prompt); }
-
 
 /* Admin & Settings (Neutral but Bold) */
 .type-admin, .type-settings {
@@ -297,14 +342,46 @@ body {
 }
 .type-admin .icon-wrapper, .type-settings .icon-wrapper {
   background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.5);
+  border-color: rgba(187, 196, 210, 0.665);
 }
 .type-admin svg, .type-settings svg { stroke: var(--color-admin); }
-.type-admin:hover, .type-settings:hover {
-  border-color: var(--color-admin);
-  background: rgba(148, 163, 184, 0.05);
+
+/* Unified Icon Theme (Match BaseCalc) */
+.dashboard-card {
+  border-color: rgb(106 54 114 / 22%);
 }
-.type-admin:hover .card-title, .type-settings:hover .card-title { color: var(--color-admin); }
+
+.dashboard-card:hover {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.dashboard-card .icon-wrapper {
+  background: linear-gradient(165deg, #ffffff 0%, #686a6d 36%, #4d4d4d 100% 100%);
+  border-color: rgb(211 69 69 / 22%);
+  box-shadow:
+    0 14px 22px rgba(0, 0, 0, 0.42),
+    inset 0 2px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -10px 14px rgba(15, 23, 42, 0.22);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card .icon-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 2px 2px auto 2px;
+  height: 48%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.dashboard-card svg {
+  stroke: var(--color-basecalc);
+  filter:
+    drop-shadow(0 2px 0 rgba(15, 23, 42, 0.45))
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+}
 
 
 /* Responsive Design */
@@ -339,6 +416,11 @@ body {
     grid-auto-rows: minmax(150px, auto);
   }
   
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(130px, auto);
+  }
+
   .grid-cols-1 {
     grid-template-columns: 1fr;
     grid-auto-rows: minmax(120px, auto);
