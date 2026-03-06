@@ -8,14 +8,18 @@ body {
   --outlook-surface: #162033;
   --outlook-surface-strong: #1b2840;
   --outlook-surface-soft: #22314f;
+  --outlook-surface-glow: rgba(36, 51, 84, 0.86);
   --outlook-border: rgba(148, 163, 184, 0.18);
+  --outlook-border-strong: rgba(148, 163, 184, 0.28);
   --outlook-text: #e2e8f0;
   --outlook-text-muted: #94a3b8;
   --outlook-accent: #60a5fa;
   --outlook-accent-soft: rgba(96, 165, 250, 0.16);
-  --outlook-accent-strong: rgba(96, 165, 250, 0.28);
   --outlook-danger: #fb7185;
   --outlook-success: #34d399;
+  --tradeplan-long: #34d399;
+  --tradeplan-short: #fb7185;
+  --tradeplan-square: #fbbf24;
   display: flex;
   flex-direction: column;
   min-height: var(--app-min-height);
@@ -28,6 +32,11 @@ body {
   align-items: center;
   gap: 12px;
   padding: 18px 16px 0;
+}
+
+.tab-toolbar__spacer {
+  width: 48px;
+  height: 48px;
 }
 
 .tab-nav {
@@ -134,173 +143,310 @@ body {
   font-weight: 600;
 }
 
-.card-list-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.selection-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 18px;
-  background: rgba(96, 165, 250, 0.08);
-}
-
-.selection-toolbar[hidden] {
-  display: none;
-}
-
-.selection-toolbar__count {
-  margin: 0;
-  color: #dbeafe;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.selection-toolbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.selection-inputs {
-  display: none;
-}
-
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
+.tradeplan-editor,
+.tradeplan-board,
 .item-card {
-  position: relative;
-  padding: 18px;
   border: 1px solid var(--outlook-border);
-  border-radius: 20px;
+  border-radius: 24px;
   background: var(--outlook-surface);
   box-shadow: 0 18px 36px rgba(2, 6, 23, 0.24);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease,
-    transform 0.2s ease;
 }
 
-.item-card-featured {
-  background: linear-gradient(180deg, rgba(27, 40, 64, 0.98), rgba(22, 32, 51, 0.98));
-}
-
-.card-list-form.is-selection-mode .js-selectable-card {
-  cursor: pointer;
-  user-select: none;
-}
-
-.card-list-form.is-selection-mode .js-selectable-card:active {
-  transform: scale(0.99);
-}
-
-.js-selectable-card.is-selected {
-  border-color: rgba(96, 165, 250, 0.52);
-  background: linear-gradient(180deg, rgba(31, 48, 78, 0.98), rgba(22, 32, 51, 0.98));
-  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
-}
-
-.item-card__top {
+.tradeplan-editor {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(27, 40, 64, 0.98), rgba(22, 32, 51, 0.98));
+}
+
+.tradeplan-editor__header,
+.tradeplan-board__head {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 18px;
 }
 
-.item-card__top-actions {
+.tradeplan-editor__title,
+.tradeplan-board__title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.tradeplan-board {
+  padding: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(52, 211, 153, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(22, 32, 51, 0.98), rgba(16, 23, 38, 0.98));
+}
+
+.tradeplan-board__hint {
+  max-width: 280px;
+  margin: 0;
+  color: var(--outlook-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.tradeplan-date-field {
+  min-width: 170px;
+}
+
+.tradeplan-form-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 113, 133, 0.22);
+  border-radius: 14px;
+  background: rgba(251, 113, 133, 0.08);
+}
+
+.tradeplan-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tradeplan-input-card {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--outlook-border);
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.46);
 }
 
-.item-card__selection-indicator {
-  position: absolute;
-  top: 18px;
-  right: 18px;
+.tradeplan-input-card--long {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.08), rgba(15, 23, 42, 0.48));
+}
+
+.tradeplan-input-card--short {
+  border-color: rgba(251, 113, 133, 0.24);
+  background: linear-gradient(180deg, rgba(251, 113, 133, 0.08), rgba(15, 23, 42, 0.48));
+}
+
+.tradeplan-input-card--square {
+  border-color: rgba(251, 191, 36, 0.24);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.48));
+}
+
+.tradeplan-input-card__label {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: rgba(96, 165, 250, 0.16);
-  color: #dbeafe;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.9);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.js-selectable-card.is-selected .item-card__selection-indicator {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.card-list-form.is-selection-mode .item-card__single-action {
-  display: none;
-}
-
-.item-meta {
-  color: var(--outlook-text-muted);
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-.item-title {
-  margin: 14px 0 0;
-  color: var(--outlook-text);
-  font-size: 1.02rem;
-  font-weight: 700;
-  line-height: 1.45;
-}
-
-.item-text {
-  margin: 10px 0 0;
-  color: var(--outlook-text-muted);
+  gap: 10px;
+  color: #f8fafc;
   font-size: 0.92rem;
-  line-height: 1.72;
+  font-weight: 700;
 }
 
-.note-body {
-  white-space: normal;
-}
-
-.item-footer {
-  display: flex;
+.tradeplan-input-card__toggle {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  gap: 10px;
+  color: var(--outlook-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-.item-label {
+.tradeplan-continue-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--outlook-accent);
+}
+
+.tradeplan-textarea {
+  min-height: 140px;
+}
+
+.tradeplan-actions {
+  margin-top: 0;
+}
+
+.tradeplan-table-wrap {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tradeplan-table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+}
+
+.tradeplan-table th,
+.tradeplan-table td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.tradeplan-table__corner {
+  padding-right: 14px;
   color: var(--outlook-text-muted);
   font-size: 0.76rem;
   font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.tradeplan-day {
+  min-width: 124px;
+  padding: 0 6px 12px;
+  color: var(--outlook-text-muted);
+  text-align: left;
+}
+
+.tradeplan-day__weekday,
+.tradeplan-day__date {
+  display: block;
+}
+
+.tradeplan-day__weekday {
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.item-value {
+.tradeplan-day__date {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--outlook-text);
+}
+
+.tradeplan-day.is-today .tradeplan-day__date {
+  color: #dbeafe;
+}
+
+.tradeplan-day.is-focus .tradeplan-day__date {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.tradeplan-row-label {
+  padding-right: 14px;
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tradeplan-row-label span:last-child {
+  vertical-align: middle;
+}
+
+.tradeplan-dot,
+.tradeplan-marker {
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.tradeplan-dot {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+}
+
+.tradeplan-dot-long,
+.tradeplan-marker.tradeplan-dot-long,
+.tradeplan-arrow.tradeplan-dot-long {
+  background: var(--tradeplan-long);
+  color: var(--tradeplan-long);
+}
+
+.tradeplan-dot-short,
+.tradeplan-marker.tradeplan-dot-short,
+.tradeplan-arrow.tradeplan-dot-short {
+  background: var(--tradeplan-short);
+  color: var(--tradeplan-short);
+}
+
+.tradeplan-dot-square,
+.tradeplan-marker.tradeplan-dot-square,
+.tradeplan-arrow.tradeplan-dot-square {
+  background: var(--tradeplan-square);
+  color: var(--tradeplan-square);
+}
+
+.tradeplan-cell {
+  min-width: 124px;
+  padding: 0 6px;
+}
+
+.tradeplan-pill {
+  position: relative;
+  min-height: 88px;
+  padding: 14px 14px 14px 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.56);
+  box-sizing: border-box;
+}
+
+.tradeplan-cell.is-active .tradeplan-pill {
+  background: linear-gradient(180deg, rgba(36, 51, 84, 0.94), rgba(22, 32, 51, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.tradeplan-marker {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+}
+
+.tradeplan-arrow {
+  position: absolute;
+  top: 21px;
+  left: 32px;
+  right: 14px;
+  height: 2px;
+  opacity: 0.92;
+}
+
+.tradeplan-arrow::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -1px;
+  border-left: 8px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.tradeplan-pill__text {
+  display: block;
+  padding-top: 20px;
   color: var(--outlook-text);
   font-size: 0.84rem;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tradeplan-cell__empty {
+  display: block;
+  min-height: 88px;
+  border: 1px dashed rgba(148, 163, 184, 0.12);
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.24);
 }
 
 .note-form-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding: 18px;
 }
 
 .form-row {
@@ -315,18 +461,10 @@ body {
   gap: 12px;
 }
 
-.form-grid-single {
-  grid-template-columns: 1fr;
-}
-
 .form-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.form-field.is-hidden {
-  display: none;
 }
 
 .form-label {
@@ -416,9 +554,199 @@ select.form-input {
   cursor: pointer;
 }
 
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .danger-button {
   border-color: rgba(251, 113, 133, 0.22);
   color: #fecdd3;
+}
+
+.card-list-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.selection-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 18px;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.selection-toolbar[hidden] {
+  display: none;
+}
+
+.selection-toolbar__count {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.selection-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selection-inputs {
+  display: none;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.item-card {
+  position: relative;
+  padding: 18px;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.card-list-form.is-selection-mode .js-selectable-card {
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-list-form.is-selection-mode .js-selectable-card:active {
+  transform: scale(0.99);
+}
+
+.js-selectable-card.is-selected {
+  border-color: rgba(96, 165, 250, 0.52);
+  background: linear-gradient(180deg, rgba(31, 48, 78, 0.98), rgba(22, 32, 51, 0.98));
+  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
+}
+
+.item-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.item-card__top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-card__selection-indicator {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(96, 165, 250, 0.16);
+  color: #dbeafe;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.js-selectable-card.is-selected .item-card__selection-indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card-list-form.is-selection-mode .item-card__single-action {
+  display: none;
+}
+
+.item-meta {
+  color: var(--outlook-text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.item-title {
+  margin: 14px 0 0;
+  color: var(--outlook-text);
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.item-text {
+  margin: 10px 0 0;
+  color: var(--outlook-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.72;
+}
+
+.collapsible-text {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collapsible-text__content {
+  display: block;
+}
+
+.collapsible-text__hint {
+  display: inline-flex;
+  margin-top: 6px;
+  color: var(--outlook-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.collapsible-text.is-expanded .collapsible-text__hint {
+  color: var(--outlook-text-muted);
+}
+
+.collapsible-text--title .collapsible-text__hint {
+  margin-top: 8px;
+}
+
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.item-label {
+  color: var(--outlook-text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.item-value {
+  color: var(--outlook-text);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .icon-action-button {
@@ -432,6 +760,7 @@ select.form-input {
   background: rgba(15, 23, 42, 0.48);
   color: var(--outlook-text-muted);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .icon-action-button-danger {
@@ -493,6 +822,17 @@ select.form-input {
   line-height: 1.7;
 }
 
+@media (max-width: 900px) {
+  .tradeplan-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tradeplan-editor__header,
+  .tradeplan-board__head {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 520px) {
   .selection-toolbar,
   .selection-toolbar__actions {
@@ -502,5 +842,9 @@ select.form-input {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tradeplan-table {
+    min-width: 760px;
   }
 }
