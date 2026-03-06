@@ -92,14 +92,34 @@
                 </form>
                 {% endif %}
 
-                <div class="card-list">
+                {% if active_items %}
+                <form class="card-list-form" id="outlook-card-list-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="active_tab" value="{{ active_tab }}">
+                    <div class="selection-toolbar" id="outlook-selection-toolbar" hidden>
+                        <span class="selection-toolbar__count" id="outlook-selection-count">0件選択中</span>
+                        <div class="selection-toolbar__actions">
+                            <button class="secondary-button" id="outlook-selection-cancel" type="button">キャンセル</button>
+                            <button class="secondary-button danger-button" id="outlook-selection-delete" type="submit" name="action" value="delete_selected" disabled>選択したカードを削除</button>
+                        </div>
+                    </div>
+                    <div class="selection-inputs" id="outlook-selection-inputs"></div>
+                    <div class="card-list" id="outlook-card-list">
                     {% for item in active_items %}
-                    <article class="item-card{% if active_tab == 'tradeplan' and forloop.first %} item-card-featured{% endif %}">
+                    <article class="item-card js-selectable-card{% if active_tab == 'tradeplan' and forloop.first %} item-card-featured{% endif %}" data-item-id="{{ item.id }}" tabindex="0">
+                        <div class="item-card__selection-indicator" aria-hidden="true">
+                            <span class="material-symbols-outlined">check_circle</span>
+                        </div>
                         <div class="item-card__top">
                             <span class="item-meta">{{ item.created_at }}</span>
-                            {% if item.watch_until %}
-                            <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
-                            {% endif %}
+                            <div class="item-card__top-actions">
+                                {% if item.watch_until %}
+                                <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
+                                {% endif %}
+                                <button class="icon-action-button icon-action-button-danger item-card__single-action" type="submit" name="delete_id" value="{{ item.id }}" aria-label="このカードを削除">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </button>
+                            </div>
                         </div>
                         <h3 class="item-title">{{ item.title }}</h3>
                         <p class="item-text note-body">{{ item.body|linebreaksbr }}</p>
@@ -110,17 +130,18 @@
                         </div>
                         {% endif %}
                     </article>
-                    {% empty %}
+                    {% endfor %}
+                    </div>
+                </form>
+                {% else %}
                     <div class="empty-state">
                         <h3 class="empty-state__title">データはまだありません。</h3>
                         <p class="empty-state__text">右上の + ボタンから追加し、表示タブを選択してください。</p>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endif %}
             </section>
         </main>
     </div>
-    {% if show_item_form %}
     <script>
         (function () {
             var tabField = document.getElementById("outlook-item-tab");
@@ -129,22 +150,194 @@
                 ? watchUntilField.querySelector("input[name='watch_until']")
                 : null;
             var metaRow = document.getElementById("outlook-meta-row");
+            var cardForm = document.getElementById("outlook-card-list-form");
+            var selectionToolbar = document.getElementById("outlook-selection-toolbar");
+            var selectionCount = document.getElementById("outlook-selection-count");
+            var selectionDelete = document.getElementById("outlook-selection-delete");
+            var selectionCancel = document.getElementById("outlook-selection-cancel");
+            var selectionInputs = document.getElementById("outlook-selection-inputs");
+            var cards = cardForm
+                ? Array.prototype.slice.call(
+                    cardForm.querySelectorAll(".js-selectable-card")
+                )
+                : [];
 
-            if (!tabField || !watchUntilField || !watchUntilInput || !metaRow) {
-                return;
+            function setupComposeForm() {
+                if (!tabField || !watchUntilField || !watchUntilInput || !metaRow) {
+                    return;
+                }
+
+                function syncWatchUntilVisibility() {
+                    var hideWatchUntil = tabField.value === "tradeplan";
+                    watchUntilField.classList.toggle("is-hidden", hideWatchUntil);
+                    metaRow.classList.toggle("form-grid-single", hideWatchUntil);
+                    watchUntilInput.disabled = hideWatchUntil;
+                }
+
+                tabField.addEventListener("change", syncWatchUntilVisibility);
+                syncWatchUntilVisibility();
             }
 
-            function syncWatchUntilVisibility() {
-                var hideWatchUntil = tabField.value === "tradeplan";
-                watchUntilField.classList.toggle("is-hidden", hideWatchUntil);
-                metaRow.classList.toggle("form-grid-single", hideWatchUntil);
-                watchUntilInput.disabled = hideWatchUntil;
+            function setupSelectionMode() {
+                var selectionMode = false;
+                var selectedIds = new Set();
+                var pressTimer = null;
+                var pressCard = null;
+                var pressPoint = null;
+                var longPressCard = null;
+
+                if (!cardForm || !selectionToolbar || !selectionCount || !selectionDelete || !selectionCancel || !selectionInputs || !cards.length) {
+                    return;
+                }
+
+                function syncSelectionInputs() {
+                    selectionInputs.innerHTML = "";
+                    Array.from(selectedIds).forEach(function (itemId) {
+                        var input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = "selected_ids";
+                        input.value = itemId;
+                        selectionInputs.appendChild(input);
+                    });
+                }
+
+                function syncSelectionUi() {
+                    var selectedCount = selectedIds.size;
+                    cardForm.classList.toggle("is-selection-mode", selectionMode);
+                    selectionToolbar.hidden = !selectionMode;
+                    selectionDelete.disabled = selectedCount === 0;
+                    selectionCount.textContent = selectedCount + "件選択中";
+                    cards.forEach(function (card) {
+                        card.classList.toggle(
+                            "is-selected",
+                            selectedIds.has(card.dataset.itemId)
+                        );
+                    });
+                    syncSelectionInputs();
+                }
+
+                function enterSelectionMode(initialCard) {
+                    selectionMode = true;
+                    if (initialCard) {
+                        selectedIds.add(initialCard.dataset.itemId);
+                    }
+                    syncSelectionUi();
+                }
+
+                function clearSelectionMode() {
+                    selectionMode = false;
+                    selectedIds.clear();
+                    syncSelectionUi();
+                }
+
+                function toggleCardSelection(card) {
+                    var itemId = card.dataset.itemId;
+                    if (selectedIds.has(itemId)) {
+                        selectedIds.delete(itemId);
+                    } else {
+                        selectedIds.add(itemId);
+                    }
+                    syncSelectionUi();
+                }
+
+                function clearPressTimer() {
+                    if (pressTimer) {
+                        window.clearTimeout(pressTimer);
+                        pressTimer = null;
+                    }
+                    pressCard = null;
+                    pressPoint = null;
+                }
+
+                function shouldIgnorePress(event) {
+                    return Boolean(
+                        event.target.closest(
+                            "button, a, input, textarea, select, label"
+                        )
+                    );
+                }
+
+                cards.forEach(function (card) {
+                    card.addEventListener("pointerdown", function (event) {
+                        if (selectionMode || shouldIgnorePress(event)) {
+                            return;
+                        }
+
+                        if (event.pointerType === "mouse" && event.button !== 0) {
+                            return;
+                        }
+
+                        pressCard = card;
+                        pressPoint = { x: event.clientX, y: event.clientY };
+                        longPressCard = null;
+                        pressTimer = window.setTimeout(function () {
+                            longPressCard = card;
+                            enterSelectionMode(card);
+                            clearPressTimer();
+                        }, 420);
+                    });
+
+                    card.addEventListener("pointermove", function (event) {
+                        if (!pressTimer || pressCard !== card || !pressPoint) {
+                            return;
+                        }
+
+                        if (
+                            Math.abs(event.clientX - pressPoint.x) > 10 ||
+                            Math.abs(event.clientY - pressPoint.y) > 10
+                        ) {
+                            clearPressTimer();
+                        }
+                    });
+
+                    ["pointerup", "pointerleave", "pointercancel"].forEach(function (eventName) {
+                        card.addEventListener(eventName, function () {
+                            clearPressTimer();
+                        });
+                    });
+
+                    card.addEventListener("click", function (event) {
+                        if (longPressCard === card) {
+                            longPressCard = null;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            return;
+                        }
+
+                        if (!selectionMode || shouldIgnorePress(event)) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        toggleCardSelection(card);
+                    });
+
+                    card.addEventListener("keydown", function (event) {
+                        if (!selectionMode) {
+                            return;
+                        }
+
+                        if (event.key !== "Enter" && event.key !== " ") {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        toggleCardSelection(card);
+                    });
+                });
+
+                selectionCancel.addEventListener("click", clearSelectionMode);
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Escape" && selectionMode) {
+                        clearSelectionMode();
+                    }
+                });
+                syncSelectionUi();
             }
 
-            tabField.addEventListener("change", syncWatchUntilVisibility);
-            syncWatchUntilVisibility();
+            setupComposeForm();
+            setupSelectionMode();
         })();
     </script>
-    {% endif %}
 </body>
 </html>

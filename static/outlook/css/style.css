@@ -134,6 +134,44 @@ body {
   font-weight: 600;
 }
 
+.card-list-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.selection-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 18px;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.selection-toolbar[hidden] {
+  display: none;
+}
+
+.selection-toolbar__count {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.selection-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selection-inputs {
+  display: none;
+}
+
 .card-list {
   display: flex;
   flex-direction: column;
@@ -141,15 +179,33 @@ body {
 }
 
 .item-card {
+  position: relative;
   padding: 18px;
   border: 1px solid var(--outlook-border);
   border-radius: 20px;
   background: var(--outlook-surface);
   box-shadow: 0 18px 36px rgba(2, 6, 23, 0.24);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .item-card-featured {
   background: linear-gradient(180deg, rgba(27, 40, 64, 0.98), rgba(22, 32, 51, 0.98));
+}
+
+.card-list-form.is-selection-mode .js-selectable-card {
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-list-form.is-selection-mode .js-selectable-card:active {
+  transform: scale(0.99);
+}
+
+.js-selectable-card.is-selected {
+  border-color: rgba(96, 165, 250, 0.52);
+  background: linear-gradient(180deg, rgba(31, 48, 78, 0.98), rgba(22, 32, 51, 0.98));
+  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
 }
 
 .item-card__top {
@@ -157,6 +213,39 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.item-card__top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-card__selection-indicator {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(96, 165, 250, 0.16);
+  color: #dbeafe;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.js-selectable-card.is-selected .item-card__selection-indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card-list-form.is-selection-mode .item-card__single-action {
+  display: none;
 }
 
 .item-meta {
@@ -296,6 +385,7 @@ select.form-input {
 }
 
 .primary-button,
+.secondary-button,
 .secondary-link {
   display: inline-flex;
   align-items: center;
@@ -315,10 +405,38 @@ select.form-input {
   cursor: pointer;
 }
 
+.secondary-button,
 .secondary-link {
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(30, 41, 59, 0.48);
   color: var(--outlook-text-muted);
+}
+
+.secondary-button {
+  cursor: pointer;
+}
+
+.danger-button {
+  border-color: rgba(251, 113, 133, 0.22);
+  color: #fecdd3;
+}
+
+.icon-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.48);
+  color: var(--outlook-text-muted);
+  cursor: pointer;
+}
+
+.icon-action-button-danger {
+  border-color: rgba(251, 113, 133, 0.22);
+  color: #fecdd3;
 }
 
 .status-chip {
@@ -376,6 +494,12 @@ select.form-input {
 }
 
 @media (max-width: 520px) {
+  .selection-toolbar,
+  .selection-toolbar__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }

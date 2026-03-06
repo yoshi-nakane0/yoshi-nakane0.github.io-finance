@@ -4,6 +4,7 @@ import time
 from datetime import date, datetime
 from io import StringIO
 from pathlib import Path
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import requests
@@ -15,8 +16,11 @@ OUTLOOK_DATA_DIR = (
     Path(__file__).resolve().parent.parent / "static" / "outlook" / "data"
 )
 OUTLOOK_DATA_PATH = OUTLOOK_DATA_DIR / "data.csv"
-OUTLOOK_CSV_FIELDS = ("tab", "created_at", "title", "body", "watch_until")
-LEGACY_OUTLOOK_CSV_FIELDS = ("created_at", "title", "body", "watch_until")
+OUTLOOK_CSV_FIELDS = ("id", "tab", "created_at", "title", "body", "watch_until")
+LEGACY_OUTLOOK_CSV_FIELDS = (
+    ("tab", "created_at", "title", "body", "watch_until"),
+    ("created_at", "title", "body", "watch_until"),
+)
 TOKYO_TZ = ZoneInfo("Asia/Tokyo")
 TAB_CHOICES = (
     ("tradeplan", "TradePlan"),
@@ -50,10 +54,28 @@ def _normalize_tab(value, default="tradeplan"):
     return default
 
 
+def _generate_item_id():
+    return uuid4().hex
+
+
+def _normalize_item_row(row, default_tab="notes"):
+    return {
+        "id": (row.get("id") or "").strip() or _generate_item_id(),
+        "tab": _normalize_tab(
+            (row.get("tab") or "").strip(),
+            default=default_tab,
+        ),
+        "created_at": (row.get("created_at") or "").strip(),
+        "title": (row.get("title") or "").strip(),
+        "body": (row.get("body") or "").strip(),
+        "watch_until": (row.get("watch_until") or "").strip(),
+    }
+
+
 def _remote_csv_is_valid(csv_text):
     reader = csv.DictReader(StringIO(csv_text))
     fieldnames = tuple(reader.fieldnames or ())
-    return fieldnames in (OUTLOOK_CSV_FIELDS, LEGACY_OUTLOOK_CSV_FIELDS)
+    return fieldnames in (OUTLOOK_CSV_FIELDS, *LEGACY_OUTLOOK_CSV_FIELDS)
 
 
 def _sync_outlook_csv_from_remote():
@@ -96,18 +118,7 @@ def _rewrite_outlook_csv(rows):
         writer = csv.DictWriter(csv_file, fieldnames=OUTLOOK_CSV_FIELDS)
         writer.writeheader()
         for row in rows:
-            writer.writerow(
-                {
-                    "tab": _normalize_tab(
-                        (row.get("tab") or "").strip(),
-                        default="notes",
-                    ),
-                    "created_at": (row.get("created_at") or "").strip(),
-                    "title": (row.get("title") or "").strip(),
-                    "body": (row.get("body") or "").strip(),
-                    "watch_until": (row.get("watch_until") or "").strip(),
-                }
-            )
+            writer.writerow(_normalize_item_row(row, default_tab="notes"))
 
 
 def _ensure_outlook_csv():
@@ -122,9 +133,15 @@ def _ensure_outlook_csv():
         rows = list(reader)
 
     if fieldnames == OUTLOOK_CSV_FIELDS:
+        if any(not (row.get("id") or "").strip() for row in rows):
+            _rewrite_outlook_csv(rows)
         return
 
-    if fieldnames == LEGACY_OUTLOOK_CSV_FIELDS:
+    if fieldnames == LEGACY_OUTLOOK_CSV_FIELDS[0]:
+        _rewrite_outlook_csv(rows)
+        return
+
+    if fieldnames == LEGACY_OUTLOOK_CSV_FIELDS[1]:
         _rewrite_outlook_csv(
             [
                 {
@@ -171,7 +188,28 @@ def _append_item(item_row):
     _ensure_outlook_csv()
     with OUTLOOK_DATA_PATH.open("a", newline="", encoding="utf-8") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=OUTLOOK_CSV_FIELDS)
-        writer.writerow(item_row)
+        writer.writerow(_normalize_item_row(item_row, default_tab="notes"))
+
+
+def _delete_items_by_ids(item_ids):
+    target_ids = {item_id.strip() for item_id in item_ids if item_id.strip()}
+    if not target_ids:
+        return 0
+
+    _ensure_outlook_csv()
+    with OUTLOOK_DATA_PATH.open("r", newline="", encoding="utf-8") as csv_file:
+        reader = csv.DictReader(csv_file)
+        remaining_rows = []
+        deleted_count = 0
+        for row in reader:
+            if (row.get("id") or "").strip() in target_ids:
+                deleted_count += 1
+                continue
+            remaining_rows.append(row)
+
+    if deleted_count:
+        _rewrite_outlook_csv(remaining_rows)
+    return deleted_count
 
 
 def _item_status(watch_until_value):
@@ -206,6 +244,7 @@ def _load_items_by_tab():
 
             items_by_tab[tab].append(
                 {
+                    "id": (row.get("id") or "").strip(),
                     "tab": tab,
                     "created_at": created_at,
                     "title": title,
@@ -259,6 +298,25 @@ def index(request):
     item_errors = {}
 
     if request.method == "POST":
+        delete_tab = _normalize_tab(
+            request.POST.get("active_tab"),
+            default=active_tab,
+        )
+        delete_id = (request.POST.get("delete_id") or "").strip()
+        selected_ids = [
+            item_id.strip()
+            for item_id in request.POST.getlist("selected_ids")
+            if item_id.strip()
+        ]
+
+        if delete_id:
+            _delete_items_by_ids([delete_id])
+            return redirect(f"{reverse('outlook:index')}?tab={delete_tab}")
+
+        if request.POST.get("action") == "delete_selected":
+            _delete_items_by_ids(selected_ids)
+            return redirect(f"{reverse('outlook:index')}?tab={delete_tab}")
+
         item_form = _build_item_form(request.POST, default_tab=active_tab)
         active_tab = item_form["tab"]
         show_item_form = True

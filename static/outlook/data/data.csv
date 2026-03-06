@@ -1,8 +1,6 @@
-tab,created_at,title,body,watch_until
-tradeplan,2026-03-06 09:00,USD/JPY follow-through,米金利の再上昇が続く限り押し目は短く150円台の定着確認を優先する。,2026-03-10
-tradeplan,2026-03-06 08:45,Nikkei pullback response,大型株の利益確定が出ても半導体主導の押し目買いが入るかを優先確認する。,2026-03-11
-tradeplan,2026-03-06 08:30,Gold defensive bid,リスクオフが強まる局面では金の逆行高が継続するかを短期で確認する。,2026-03-12
-watch,2026-03-06 08:20,NVIDIA,AI関連の温度感を最も素直に反映しやすいためガイダンスの継続性を監視する。,2026-03-14
-watch,2026-03-06 08:10,SOX Index,米株のリスク許容度を見る基準としてNASDAQよりも反応が早い局面を警戒する。,2026-03-10
-watch,2026-03-06 08:00,US 10Y Yield,為替とグロース株の両方に効くため4.3%台の推移を継続監視する。,2026-03-08
-tradeplan,2026-03-06 10:00,Check,Body,
+id,tab,created_at,title,body,watch_until
+5e6df181c7624d5e94d4f0f7369b35fc,tradeplan,2026-03-06 08:45,Nikkei pullback response,大型株の利益確定が出ても半導体主導の押し目買いが入るかを優先確認する。,2026-03-11
+9bc8f0cc1d5842a3abc7bd468745b2aa,tradeplan,2026-03-06 08:30,Gold defensive bid,リスクオフが強まる局面では金の逆行高が継続するかを短期で確認する。,2026-03-12
+3b04b5f3461540ed95e6fdf1efe36178,watch,2026-03-06 08:20,NVIDIA,AI関連の温度感を最も素直に反映しやすいためガイダンスの継続性を監視する。,2026-03-14
+48cc17a202d0483bb85f2387dbf6ca62,watch,2026-03-06 08:10,SOX Index,米株のリスク許容度を見る基準としてNASDAQよりも反応が早い局面を警戒する。,2026-03-10
+7101f8342f684d5885a497ee99895f23,watch,2026-03-06 08:00,US 10Y Yield,為替とグロース株の両方に効くため4.3%台の推移を継続監視する。,2026-03-08
