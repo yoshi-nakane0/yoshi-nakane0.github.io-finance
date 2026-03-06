@@ -11,13 +11,7 @@
 </head>
 <body class="bg-dark">
     <div class="app-container">
-        
-        <!-- Status Bar / Header (Same as Earning) -->
-        <div class="status-bar">
-            <div class="status-bar-right">
-                <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-            </div>
-        </div>
+        {% include "common/app_header.html" with page_title="Person" page_slug="person" %}
 
         <div class="content scrollable-content">
             

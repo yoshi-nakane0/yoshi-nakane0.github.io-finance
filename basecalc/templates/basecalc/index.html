@@ -4,29 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaseCalc - Nikkei Bias</title>
+    <title>basecalc - Nikkei Bias</title>
     <!-- 共通CSSの読み込み -->
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}">
 </head>
 <body>
     <div class="app-container">
-        <header class="header">
-            <h1>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                BaseCalc
-            </h1>
-            <a href="/" class="home-icon" aria-label="Home">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-            </a>
-        </header>
+        {% include "common/app_header.html" with page_title="basecalc" page_slug="basecalc" %}
 
         <main class="content">
             {% if error %}

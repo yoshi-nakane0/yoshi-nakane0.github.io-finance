@@ -84,12 +84,12 @@
 </head>
 <body class="bg-dark">
     <div class="app-container">
+        {% include "common/app_header.html" with page_title="PMI" page_slug="explanation" %}
         <div class="schedule-container">
             <!-- Status Bar -->
             <div class="status-bar">
                 <div class="status-bar-right">
                     <a href="{% url 'explanation:index' %}?view={{ request.GET.from_view|default:'us' }}" class="status-bar-item" style="text-decoration: none; display: inline-block;">⬅ 戻る</a>
-                    <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
                 </div>
             </div>
 

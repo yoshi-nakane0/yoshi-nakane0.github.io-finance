@@ -1,0 +1,67 @@
+<header class="common-app-header">
+    <div class="common-app-header__bar">
+        <details class="common-app-header__menu">
+            <summary class="common-app-header__icon-button" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="4" y1="7" x2="20" y2="7"></line>
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <line x1="4" y1="17" x2="20" y2="17"></line>
+                </svg>
+            </summary>
+            <div class="common-app-header__panel">
+                <div class="common-app-header__menu-title">Pages</div>
+                <div class="common-app-header__links">
+                    <a href="{% url 'dashboard:index' %}" class="common-app-header__link{% if page_slug == 'dashboard' %} is-current{% endif %}">Dashboard</a>
+                    <a href="{% url 'outlook:index' %}" class="common-app-header__link{% if page_slug == 'outlook' %} is-current{% endif %}">Outlook</a>
+                    <a href="{% url 'earning:index' %}" class="common-app-header__link{% if page_slug == 'earning' %} is-current{% endif %}">Earnings</a>
+                    <a href="{% url 'events:index' %}" class="common-app-header__link{% if page_slug == 'events' %} is-current{% endif %}">Events</a>
+                    <a href="{% url 'basecalc:index' %}" class="common-app-header__link{% if page_slug == 'basecalc' %} is-current{% endif %}">basecalc</a>
+                    <a href="{% url 'sector:index' %}" class="common-app-header__link{% if page_slug == 'sector' %} is-current{% endif %}">Sector</a>
+                    <a href="{% url 'explanation:index' %}" class="common-app-header__link{% if page_slug == 'explanation' %} is-current{% endif %}">Explanation</a>
+                    <a href="{% url 'person:index' %}" class="common-app-header__link{% if page_slug == 'person' %} is-current{% endif %}">Person</a>
+                    <a href="{% url 'prompt:index' %}" class="common-app-header__link{% if page_slug == 'prompt' %} is-current{% endif %}">Prompt</a>
+                    <a href="{% url 'prediction:index' %}" class="common-app-header__link{% if page_slug == 'prediction' %} is-current{% endif %}">Prediction</a>
+                </div>
+            </div>
+        </details>
+
+        <h1 class="common-app-header__title">{{ page_title }}</h1>
+
+        <a href="{% url 'dashboard:index' %}" class="common-app-header__icon-button common-app-header__home" aria-label="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 10.5 12 3l9 7.5"></path>
+                <path d="M5 9.5V21h14V9.5"></path>
+                <path d="M9 21v-6h6v6"></path>
+            </svg>
+        </a>
+    </div>
+</header>
+<script>
+    if (!window.__commonAppHeaderInitialized) {
+        window.__commonAppHeaderInitialized = true;
+
+        document.addEventListener("click", function (event) {
+            if (event.target.closest(".common-app-header__menu")) {
+                return;
+            }
+
+            document
+                .querySelectorAll(".common-app-header__menu[open]")
+                .forEach(function (menu) {
+                    menu.removeAttribute("open");
+                });
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key !== "Escape") {
+                return;
+            }
+
+            document
+                .querySelectorAll(".common-app-header__menu[open]")
+                .forEach(function (menu) {
+                    menu.removeAttribute("open");
+                });
+        });
+    }
+</script>

@@ -1,193 +1,150 @@
 {% load static %}
 <!DOCTYPE html>
-<html class="dark" lang="jp"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Segmented Outlook Dashboard</title>
-<link rel="stylesheet" href="{% static 'common/css/layout.css' %}"/>
-<link rel="stylesheet" href="{% static 'outlook/css/style.css' %}"/>
-<link rel="icon" type="image/png" href="{% static 'images/ico/favicon.png' %}"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-  </head>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Outlook</title>
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'outlook/css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+</head>
 <body class="bg-dark">
-<div class="app-container flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 font-display antialiased">
-<div class="flex-none flex flex-col gap-6 bg-background-light dark:bg-background-dark p-3 pb-4 z-20">
-<div class="flex items-center justify-between">
-<h1 class="text-slate-900 dark:text-white tracking-tight text-3xl font-extrabold">Outlook</h1>
-<div class="flex gap-2">
-<button class="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800/50 text-slate-900 dark:text-white">
-<span class="material-symbols-outlined text-[20px]">search</span>
-</button>
-<button class="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800/50 text-slate-900 dark:text-white">
-<span class="material-symbols-outlined text-[20px]">tune</span>
-</button>
-</div>
-</div>
-<div class="segmented-control p-1 rounded-xl flex">
-<button class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary text-white text-base font-bold shadow-lg transition-all">
-<span class="material-symbols-outlined text-sm">public</span>
-            US Market
-        </button>
-<button class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-slate-400 text-base font-bold hover:text-white transition-all">
-<span class="material-symbols-outlined text-sm">temple_buddhist</span>
-            Japan Market
-        </button>
-</div>
-<div class="glass-card rounded-2xl p-4 relative overflow-hidden">
-<div class="flex justify-between items-start mb-3">
-<div>
-<p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-1">Market Sentiment (US)</p>
-<div class="flex items-baseline gap-2">
-<span class="text-emerald-400 text-xl font-bold">Bullish</span>
-<span class="text-white text-2xl font-black">64%</span>
-</div>
-</div>
-<div class="text-right">
-<span class="text-rose-400 text-xs font-bold">Bearish 36%</span>
-<div class="flex justify-end gap-1 mt-1">
-<span class="material-symbols-outlined text-emerald-400 text-sm">trending_up</span>
-<span class="text-[10px] text-emerald-400 font-bold">+2.4%</span>
-</div>
-</div>
-</div>
-<div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden relative">
-<div class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-600 to-emerald-400 w-[64%] rounded-full shadow-[0_0_12px_rgba(52,211,153,0.3)]"></div>
-</div>
-<div class="flex justify-between mt-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
-<span>Strong Sell</span>
-<span>Neutral</span>
-<span>Strong Buy</span>
-</div>
-</div>
-<div class="flex gap-6 border-b border-slate-200 dark:border-slate-800/50 px-2">
-<button class="pb-2 border-b-2 border-primary text-primary dark:text-blue-400 font-bold text-xs uppercase tracking-wider">All</button>
-<button class="pb-2 text-slate-500 dark:text-slate-500 font-bold text-xs uppercase tracking-wider">Scheduled</button>
-<button class="pb-2 text-slate-500 dark:text-slate-500 font-bold text-xs uppercase tracking-wider">Sudden</button>
-</div>
-</div>
-<div class="flex-1 overflow-y-auto relative bg-background-light dark:bg-background-dark">
-<div class="absolute left-[31px] top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-800"></div>
-<div class="px-4 pb-20 pt-2 flex flex-col gap-5">
-<div>
-<div class="flex items-center gap-3 mb-4 relative z-10">
-<div class="w-2.5 h-2.5 rounded-full bg-primary border-2 border-background-dark ml-[22px]"></div>
-<h3 class="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">October 24, 2023</h3>
-</div>
-<div class="flex flex-col gap-3">
-<div class="grid grid-cols-[36px_1fr] gap-x-2">
-<div class="flex justify-center pt-2">
-<span class="material-symbols-outlined text-rose-500 text-[18px]">bolt</span>
-</div>
-<div class="glass-card rounded-xl p-3 flex gap-3 hover:bg-slate-800/30 transition-all border-l-2 border-l-rose-500">
-<div class="flex-1">
-<div class="flex justify-between items-center mb-0.5">
-<span class="text-[11px] font-black text-rose-500 uppercase tracking-tighter">Sudden • High Impact</span>
-<span class="text-[10px] text-slate-500 font-medium">10:30 AM</span>
-</div>
-<h4 class="text-slate-900 dark:text-white text-base font-bold leading-tight mb-1">Emergency BOJ Rumor</h4>
-<div class="flex items-center gap-2">
-<div class="flex items-center gap-1">
-<span class="w-3.5 h-2.5 bg-red-600 rounded-[1px] relative overflow-hidden flex items-center justify-center">
-<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-</span>
-<span class="text-[10px] text-slate-400 font-medium">Bloomberg</span>
-</div>
-<span class="text-slate-700 dark:text-slate-600">•</span>
-<div class="flex items-center gap-1 text-rose-400">
-<span class="material-symbols-outlined text-xs">trending_down</span>
-<span class="text-[9px] font-bold">JPY Weakness</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="grid grid-cols-[36px_1fr] gap-x-2">
-<div class="flex justify-center pt-2">
-<span class="material-symbols-outlined text-emerald-500 text-[18px]">calendar_month</span>
-</div>
-<div class="glass-card rounded-xl p-3 flex gap-3 hover:bg-slate-800/30 transition-all border-l-2 border-l-emerald-500">
-<div class="flex-1">
-<div class="flex justify-between items-center mb-0.5">
-<span class="text-[11px] font-black text-emerald-500 uppercase tracking-tighter">Scheduled • Mid Impact</span>
-<span class="text-[10px] text-slate-500 font-medium">09:15 AM</span>
-</div>
-<h4 class="text-slate-900 dark:text-white text-base font-bold leading-tight mb-1">US CPI Flash Report</h4>
-<div class="flex items-center gap-2">
-<div class="flex items-center gap-1">
-<span class="w-3.5 h-2.5 bg-blue-900 rounded-[1px] relative overflow-hidden flex flex-col">
-<div class="h-1/3 bg-blue-800"></div>
-<div class="h-1/3 bg-white"></div>
-<div class="h-1/3 bg-red-600"></div>
-</span>
-<span class="text-[10px] text-slate-400 font-medium">Reuters</span>
-</div>
-<span class="text-slate-700 dark:text-slate-600">•</span>
-<div class="flex items-center gap-1 text-emerald-400">
-<span class="material-symbols-outlined text-xs">analytics</span>
-<span class="text-[9px] font-bold">Expected 3.1%</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div>
-<div class="flex items-center gap-3 mb-4 relative z-10">
-<div class="w-2.5 h-2.5 rounded-full bg-slate-700 border-2 border-background-dark ml-[22px]"></div>
-<h3 class="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">October 21, 2023</h3>
-</div>
-<div class="flex flex-col gap-3">
-<div class="grid grid-cols-[36px_1fr] gap-x-2">
-<div class="flex justify-center pt-2">
-<span class="material-symbols-outlined text-rose-400 text-[18px]">event_repeat</span>
-</div>
-<div class="glass-card rounded-xl p-3 flex gap-3 hover:bg-slate-800/30 transition-all">
-<div class="flex-1">
-<div class="flex justify-between items-center mb-0.5">
-<span class="text-[11px] font-black text-slate-400 uppercase tracking-tighter">Scheduled • Neg</span>
-<span class="text-[10px] text-slate-500 font-medium">02:00 PM</span>
-</div>
-<h4 class="text-slate-900 dark:text-white text-base font-bold leading-tight mb-1">Yield Curve Tweak</h4>
-<div class="flex items-center gap-2">
-<div class="flex items-center gap-1">
-<span class="w-3.5 h-2.5 bg-red-600 rounded-[1px] relative overflow-hidden flex items-center justify-center">
-<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-</span>
-<span class="text-[10px] text-slate-400 font-medium">CNBC Japan</span>
-</div>
-<span class="text-slate-700 dark:text-slate-600">•</span>
-<div class="flex items-center gap-1 text-rose-400">
-<span class="material-symbols-outlined text-xs">show_chart</span>
-<span class="text-[9px] font-bold">Yield Spike</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="flex-none flex items-center justify-around border-t border-slate-200 dark:border-slate-800/80 bg-background-light dark:bg-[#0d1421] px-4 pb-8 pt-3 z-30">
-<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
-<span class="material-symbols-outlined text-[24px]">grid_view</span>
-<p class="text-[10px] font-bold uppercase tracking-widest">Dash</p>
-</a>
-<a class="flex flex-col items-center gap-1 text-primary" href="#">
-<span class="material-symbols-outlined text-[24px] fill-current">visibility</span>
-<p class="text-[10px] font-bold uppercase tracking-widest">Outlook</p>
-</a>
-<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
-<span class="material-symbols-outlined text-[24px]">candlestick_chart</span>
-<p class="text-[10px] font-bold uppercase tracking-widest">Trade</p>
-</a>
-<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
-<span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
-<p class="text-[10px] font-bold uppercase tracking-widest">Assets</p>
-</a>
-</div>
-</div>
-</body></html>
+    <div class="app-container outlook-page">
+        {% include "common/app_header.html" with page_title="Outlook" page_slug="outlook" %}
+
+        <div class="tab-toolbar">
+            <nav class="tab-nav" aria-label="Sections">
+                <a class="tab-link{% if active_tab == 'tradeplan' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=tradeplan">TradePlan</a>
+                <a class="tab-link{% if active_tab == 'watch' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=watch">Watch</a>
+                <a class="tab-link{% if active_tab == 'notes' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=notes">Notes</a>
+            </nav>
+            <a class="compose-link" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;compose=1" aria-label="項目を追加">
+                <span class="material-symbols-outlined">add</span>
+            </a>
+        </div>
+
+        <main class="outlook-main">
+            <section class="panel-section">
+                <div class="section-heading">
+                    <div>
+                        {% if active_tab_eyebrow %}
+                        <p class="section-eyebrow">{{ active_tab_eyebrow }}</p>
+                        {% endif %}
+                        <h2 class="section-title">{{ active_tab_title }}</h2>
+                    </div>
+                    <span class="section-caption">{{ active_count }} items</span>
+                </div>
+
+                {% if saved %}
+                <div class="notice-banner">項目を保存しました。</div>
+                {% endif %}
+
+                {% if show_item_form %}
+                <form class="item-card note-form-card" method="post">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <label class="form-field">
+                            <span class="form-label">表示タブ</span>
+                            <select class="form-input" id="outlook-item-tab" name="tab">
+                                {% for tab_value, tab_label in tab_choices %}
+                                <option value="{{ tab_value }}"{% if item_form.tab == tab_value %} selected{% endif %}>{{ tab_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="form-grid" id="outlook-meta-row">
+                        <label class="form-field">
+                            <span class="form-label">作成日時</span>
+                            <input class="form-input" type="text" name="created_at" value="{{ item_form.created_at }}" readonly>
+                        </label>
+                        <label class="form-field{% if item_form.tab == 'tradeplan' %} is-hidden{% endif %}" id="watch-until-field">
+                            <span class="form-label">監視期限</span>
+                            <input class="form-input{% if item_errors.watch_until %} has-error{% endif %}" type="date" name="watch_until" value="{{ item_form.watch_until }}">
+                            {% if item_errors.watch_until %}
+                            <span class="form-error">{{ item_errors.watch_until }}</span>
+                            {% endif %}
+                        </label>
+                    </div>
+
+                    <label class="form-field">
+                        <span class="form-label">タイトル</span>
+                        <input class="form-input{% if item_errors.title %} has-error{% endif %}" type="text" name="title" value="{{ item_form.title }}" placeholder="表示タイトルを入力">
+                        {% if item_errors.title %}
+                        <span class="form-error">{{ item_errors.title }}</span>
+                        {% endif %}
+                    </label>
+
+                    <label class="form-field">
+                        <span class="form-label">本文</span>
+                        <textarea class="form-textarea{% if item_errors.body %} has-error{% endif %}" name="body" rows="6" placeholder="内容を入力">{{ item_form.body }}</textarea>
+                        {% if item_errors.body %}
+                        <span class="form-error">{{ item_errors.body }}</span>
+                        {% endif %}
+                    </label>
+
+                    <div class="form-actions">
+                        <button class="primary-button" type="submit">保存する</button>
+                        <a class="secondary-link" href="{% url 'outlook:index' %}?tab={{ active_tab }}">閉じる</a>
+                    </div>
+                </form>
+                {% endif %}
+
+                <div class="card-list">
+                    {% for item in active_items %}
+                    <article class="item-card{% if active_tab == 'tradeplan' and forloop.first %} item-card-featured{% endif %}">
+                        <div class="item-card__top">
+                            <span class="item-meta">{{ item.created_at }}</span>
+                            {% if item.watch_until %}
+                            <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="item-title">{{ item.title }}</h3>
+                        <p class="item-text note-body">{{ item.body|linebreaksbr }}</p>
+                        {% if item.watch_until %}
+                        <div class="item-footer">
+                            <span class="item-label">Watch Until</span>
+                            <strong class="item-value">{{ item.watch_until }}</strong>
+                        </div>
+                        {% endif %}
+                    </article>
+                    {% empty %}
+                    <div class="empty-state">
+                        <h3 class="empty-state__title">データはまだありません。</h3>
+                        <p class="empty-state__text">右上の + ボタンから追加し、表示タブを選択してください。</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+    {% if show_item_form %}
+    <script>
+        (function () {
+            var tabField = document.getElementById("outlook-item-tab");
+            var watchUntilField = document.getElementById("watch-until-field");
+            var watchUntilInput = watchUntilField
+                ? watchUntilField.querySelector("input[name='watch_until']")
+                : null;
+            var metaRow = document.getElementById("outlook-meta-row");
+
+            if (!tabField || !watchUntilField || !watchUntilInput || !metaRow) {
+                return;
+            }
+
+            function syncWatchUntilVisibility() {
+                var hideWatchUntil = tabField.value === "tradeplan";
+                watchUntilField.classList.toggle("is-hidden", hideWatchUntil);
+                metaRow.classList.toggle("form-grid-single", hideWatchUntil);
+                watchUntilInput.disabled = hideWatchUntil;
+            }
+
+            tabField.addEventListener("change", syncWatchUntilVisibility);
+            syncWatchUntilVisibility();
+        })();
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -16,25 +16,9 @@
 
 <body class="bg-dark">
     <div class="app-container">
-        <header class="professional-header">
-            <div class="header-content">
-                <div class="header-left">
-                    <div class="header-icon">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
-                    </div>
-                    <h1 class="app-title">Earnings</h1>
-                </div>
-                <div class="header-right">
-                    <a href="/" class="header-home-btn" title="Home">
-                        <i class="bi bi-house"></i>
-                    </a>
-                </div>
-            </div>
-        </header>
+        {% include "common/app_header.html" with page_title="Earnings" page_slug="earning" %}
 
-        <div class="meta-info">Updated: {{ updated_date }}</div>
+        <div class="meta-info">Updated: 2026.02.03</div>
 
         <div class="schedule-container">
 

@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'explanation',
     'person',
     'prediction',
-    'BaseCalc',
+    'basecalc',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

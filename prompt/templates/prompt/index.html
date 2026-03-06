@@ -20,13 +20,8 @@
 <body class="bg-dark">
     <!-- アプリコンテナ -->
     <div class="app-container">
+        {% include "common/app_header.html" with page_title="Prompt" page_slug="prompt" %}
         <div class="prompt-container">
-            <div class="status-bar">
-                <button class="status-bar-item" onclick="location.href='/'">
-                    🏠 ホーム
-                </button>
-            </div>
-
             <!-- メインコンテンツ -->
             <div class="container-fluid mt-3 px-1">
 

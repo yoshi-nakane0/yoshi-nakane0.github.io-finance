@@ -40,12 +40,12 @@ jobs:
         run: python scripts/update_nikkei_per_data.py
       - name: Commit data file
         run: |
-          if git diff --quiet -- BaseCalc/data/nikkei_per.json; then
+          if git diff --quiet -- basecalc/data/nikkei_per.json; then
             echo "No changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add BaseCalc/data/nikkei_per.json
+          git add basecalc/data/nikkei_per.json
           git commit -m "Update Nikkei PER data"
           git push

@@ -250,4 +250,4 @@ def index(request):
         context = {
             'error': str(e)
         }
-    return render(request, 'BaseCalc/index.html', context)
+    return render(request, 'basecalc/index.html', context)

@@ -240,7 +240,7 @@ body {
 .type-earnings svg { stroke: var(--color-earnings); }
 
 
-/* BaseCalc (3D White) */
+/* basecalc (3D White) */
 .type-basecalc {
   border-color: rgba(255, 255, 255, 0.22);
 }
@@ -346,7 +346,7 @@ body {
 }
 .type-admin svg, .type-settings svg { stroke: var(--color-admin); }
 
-/* Unified Icon Theme (Match BaseCalc) */
+/* Unified Icon Theme (Match basecalc) */
 .dashboard-card {
   border-color: rgba(192, 165, 195, 0.47);
 }

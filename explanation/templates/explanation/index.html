@@ -13,14 +13,8 @@
 </head>
 <body class="bg-dark">
     <div class="app-container">
+        {% include "common/app_header.html" with page_title="Explanation" page_slug="explanation" %}
         <div class="schedule-container">
-            <!-- Status Bar -->
-            <div class="status-bar">
-                <div class="status-bar-right">
-                    <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
-                </div>
-            </div>
-
             <!-- Filter Buttons (JP / US) -->
             <div class="filter-buttons">
                 <button class="filter-btn active" id="btn-jp">JP (Japan)</button>

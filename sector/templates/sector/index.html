@@ -19,10 +19,10 @@
 <body class="bg-dark">
     <!-- コンテンツ -->
     <div class="app-container">
+        {% include "common/app_header.html" with page_title="Sector" page_slug="sector" %}
         <div class="schedule-container">
             <!-- ステータスバー -->
             <div class="status-bar">
-                <button class="status-bar-item" onclick="location.href='/'">🏠 ホーム</button>
                 <button class="status-bar-item" id="refresh-btn">📊 データ取得</button>
                 <button class="status-bar-item" onclick="window.open('https://finance.yahoo.com/sectors', '_blank')">リンク</button>
             </div>

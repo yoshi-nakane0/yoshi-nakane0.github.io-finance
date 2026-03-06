@@ -14,11 +14,6 @@
 
 <body>
   <div class="app-container">
-    
-    <div class="header">
-      <h1></h1>
-    </div>
-
     <!-- Group: Key Events & Earnings -->
     <section class="dashboard-section">
       <h3 class="section-title">Key Events & Earnings</h3>
@@ -76,8 +71,8 @@
       <h3 class="section-title">Live Stock Trends</h3>
       <div class="grid-container grid-cols-2">
         
-        <!-- BaseCalc -->
-        <a href="{% url 'BaseCalc:index' %}" class="dashboard-card category-admin type-basecalc">
+        <!-- basecalc -->
+        <a href="{% url 'basecalc:index' %}" class="dashboard-card category-admin type-basecalc">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -87,7 +82,7 @@
             </svg>
           </div>
           <div class="text-wrapper">
-            <h2 class="card-title">BaseCalc</h2>
+            <h2 class="card-title">basecalc</h2>
             <span class="card-subtitle">Nikkei Bias</span>
           </div>
         </a>

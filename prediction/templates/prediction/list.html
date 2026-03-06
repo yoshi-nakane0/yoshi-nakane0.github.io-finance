@@ -110,38 +110,12 @@
             gap: 5px;
         }
 
-        /* ナビゲーション */
-        .status-bar {
-            padding: 20px 0;
-            display: flex;
-            justify-content: flex-end;
-        }
-        .back-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 20px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            transform: translateY(-2px);
-        }
     </style>
 </head>
 <body class="bg-dark">
     <div class="app-container" style="overflow-y: auto;">
         <div class="container pb-5">
-            <div class="status-bar">
-                <a href="{% url 'dashboard:index' %}" class="back-btn">🏠 ホーム</a>
-            </div>
+            {% include "common/app_header.html" with page_title="Prediction" page_slug="prediction" %}
             
             <h3>🤖 予測履歴</h3>
             

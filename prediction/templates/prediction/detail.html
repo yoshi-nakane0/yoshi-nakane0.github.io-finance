@@ -141,9 +141,9 @@
 <body class="bg-dark">
     <div class="app-container" style="overflow-y: auto;">
         <div class="container">
+            {% include "common/app_header.html" with page_title="Prediction Detail" page_slug="prediction" %}
             <div class="status-bar">
                 <a href="{% url 'prediction:index' %}" class="back-btn">⬅️ 戻る</a>
-                <a href="{% url 'dashboard:index' %}" class="back-btn">🏠 ホーム</a>
             </div>
             
             <div class="detail-container">

@@ -37,7 +37,7 @@ FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 DATE_RE = re.compile(r"(\d{4})[./-](\d{1,2})[./-](\d{1,2})")
 OUTPUT_PATH = (
     Path(__file__).resolve().parent.parent
-    / "BaseCalc"
+    / "basecalc"
     / "data"
     / "nikkei_per.json"
 )
