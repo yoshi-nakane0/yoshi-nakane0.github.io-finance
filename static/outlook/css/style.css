@@ -497,6 +497,13 @@ body {
   gap: 10px;
 }
 
+.notice-banner-error {
+  margin-top: 12px;
+  border-color: rgba(251, 113, 133, 0.26);
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+}
+
 .note-form-card {
   display: flex;
   flex-direction: column;

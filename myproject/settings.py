@@ -1,5 +1,6 @@
 import os
 import shutil
+import sqlite3
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 from dotenv import load_dotenv
@@ -57,15 +58,37 @@ def default_sqlite_database_path():
     return Path(os.getenv('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
 
 
-def bootstrap_sqlite_database(sqlite_path):
+def bootstrap_sqlite_database(sqlite_path, source_path=None):
     sqlite_path = Path(sqlite_path)
-    bundled_sqlite_path = BASE_DIR / 'db.sqlite3'
+    bundled_sqlite_path = Path(source_path) if source_path else BASE_DIR / 'db.sqlite3'
     if sqlite_path == bundled_sqlite_path:
         return
-    if sqlite_path.exists() or not bundled_sqlite_path.exists():
+    if not bundled_sqlite_path.exists():
         return
+    if sqlite_path.exists():
+        try:
+            if sqlite_schema_signature(sqlite_path) == sqlite_schema_signature(
+                bundled_sqlite_path
+            ):
+                return
+        except sqlite3.Error:
+            pass
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(bundled_sqlite_path, sqlite_path)
+
+
+def sqlite_schema_signature(sqlite_path):
+    sqlite_path = Path(sqlite_path)
+    with sqlite3.connect(sqlite_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT type, name, IFNULL(sql, '')
+            FROM sqlite_master
+            WHERE name NOT LIKE 'sqlite_%'
+            ORDER BY type, name
+            """
+        ).fetchall()
+    return tuple(rows)
 
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
 

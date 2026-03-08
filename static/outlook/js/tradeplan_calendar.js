@@ -1,6 +1,11 @@
 (function () {
   var calendar = document.querySelector("[data-tradeplan-calendar]");
   var positionData = document.getElementById("tradeplan-position-data");
+  var csrfForm = document.getElementById("tradeplan-csrf-form");
+  var csrfField = csrfForm
+    ? csrfForm.querySelector('input[name="csrfmiddlewaretoken"]')
+    : null;
+  var feedback = document.getElementById("tradeplan-position-feedback");
   var sheet = document.getElementById("tradeplan-position-sheet");
   var sheetTitle = document.getElementById("tradeplan-position-sheet-title");
   var editor = document.getElementById("tradeplan-position-editor");
@@ -370,6 +375,10 @@
   }
 
   function getCsrfToken() {
+    if (csrfField && csrfField.value) {
+      return csrfField.value;
+    }
+
     var cookieSource = document.cookie ? document.cookie.split(";") : [];
     var csrfToken = "";
 
@@ -383,6 +392,33 @@
     });
 
     return csrfToken;
+  }
+
+  function setFeedback(message) {
+    if (!feedback) {
+      return;
+    }
+
+    feedback.textContent = message;
+    feedback.hidden = !message;
+  }
+
+  function clearFeedback() {
+    setFeedback("");
+  }
+
+  function getRequestErrorMessage(error) {
+    if (!error || !error.message) {
+      return "保存に失敗しました。時間をおいて再度お試しください。";
+    }
+
+    if (error.message === "csrf_failed") {
+      return "認証情報の取得に失敗しました。ページを再読み込みしてから再度お試しください。";
+    }
+    if (error.message === "server_error") {
+      return "本番データの保存に失敗しました。しばらくしてから再度お試しください。";
+    }
+    return "保存に失敗しました。ページを再読み込みしてから再度お試しください。";
   }
 
   function requestPositions(payload) {
@@ -403,6 +439,13 @@
         body: JSON.stringify(payload),
       })
       .then(function (response) {
+        var requestError =
+          response.status === 403
+            ? "csrf_failed"
+            : response.status >= 500
+              ? "server_error"
+              : "request_failed";
+
         return response
           .json()
           .catch(function () {
@@ -410,7 +453,7 @@
           })
           .then(function (data) {
             if (!response.ok || !data.ok) {
-              throw new Error(data.error || "request_failed");
+              throw new Error(data.error || requestError);
             }
             return data;
           });
@@ -432,6 +475,7 @@
       end_date: state.pendingCreateDate,
     })
       .then(function (data) {
+        clearFeedback();
         setPositions(data.positions || []);
         closeCreateSheet();
         if (data.position && data.position.id) {
@@ -440,7 +484,8 @@
         }
         renderPositions();
       })
-      .catch(function () {
+      .catch(function (error) {
+        setFeedback(getRequestErrorMessage(error));
         renderPositions();
       });
   }
@@ -471,13 +516,15 @@
       end_date: draftPosition.end_date,
     })
       .then(function (data) {
+        clearFeedback();
         setPositions(data.positions || []);
         state.editingDraft = clonePosition(
           data.position || findPositionById(draftPosition.id)
         );
         renderPositions();
       })
-      .catch(function () {
+      .catch(function (error) {
+        setFeedback(getRequestErrorMessage(error));
         state.editingDraft = clonePosition(sourcePosition);
         renderPositions();
       });
@@ -494,12 +541,14 @@
       id: draftPosition.id,
     })
       .then(function (data) {
+        clearFeedback();
         setPositions(data.positions || []);
         state.editingPositionId = "";
         state.editingDraft = null;
         renderPositions();
       })
-      .catch(function () {
+      .catch(function (error) {
+        setFeedback(getRequestErrorMessage(error));
         renderPositions();
       });
   }

@@ -131,6 +131,10 @@
                             </div>
                         </div>
                     </section>
+                    <form id="tradeplan-csrf-form" hidden aria-hidden="true">
+                        {% csrf_token %}
+                    </form>
+                    <div class="notice-banner notice-banner-error" id="tradeplan-position-feedback" hidden aria-live="polite"></div>
                     {{ tradeplan_positions|json_script:"tradeplan-position-data" }}
                 {% else %}
                     {% if saved %}

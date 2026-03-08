@@ -1,8 +1,15 @@
 import json
+import re
+import shutil
+import sqlite3
+import tempfile
 from datetime import date
+from pathlib import Path
 
 from django.test import TestCase
 from django.urls import reverse
+
+from myproject import settings as project_settings
 
 from .models import OutlookItem, TradePlanEntry, TradePlanPosition
 
@@ -163,3 +170,74 @@ class OutlookViewTests(TestCase):
 
         self.assertEqual(delete_response.status_code, 200)
         self.assertFalse(TradePlanPosition.objects.filter(id=position_id).exists())
+
+    def test_tradeplan_page_renders_csrf_field_for_fetch_requests(self):
+        response = self.client.get(reverse("outlook:index") + "?tab=tradeplan")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="tradeplan-csrf-form"')
+        self.assertContains(response, "csrfmiddlewaretoken")
+
+    def test_tradeplan_position_api_accepts_csrf_token_rendered_in_page(self):
+        client = self.client_class(enforce_csrf_checks=True, HTTP_HOST="localhost")
+        response = client.get(reverse("outlook:index") + "?tab=tradeplan")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8")
+        match = re.search(
+            r'name="csrfmiddlewaretoken" value="([^"]+)"',
+            html,
+        )
+        self.assertIsNotNone(match)
+        csrf_token = match.group(1)
+
+        create_response = client.post(
+            reverse("outlook:tradeplan_positions"),
+            data=json.dumps(
+                {
+                    "action": "create",
+                    "type": "long",
+                    "start_date": "2026-03-09",
+                    "end_date": "2026-03-09",
+                }
+            ),
+            content_type="application/json",
+            HTTP_HOST="localhost",
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+
+        self.assertEqual(create_response.status_code, 200)
+        self.assertEqual(TradePlanPosition.objects.count(), 1)
+
+
+class SqliteBootstrapTests(TestCase):
+    def test_bootstrap_replaces_stale_sqlite_schema(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bundled_db = Path(temp_dir) / "bundled.sqlite3"
+            stale_db = Path(temp_dir) / "stale.sqlite3"
+
+            shutil.copy2(project_settings.BASE_DIR / "db.sqlite3", bundled_db)
+
+            with sqlite3.connect(stale_db) as connection:
+                connection.execute(
+                    "CREATE TABLE stale_only (id INTEGER PRIMARY KEY)"
+                )
+                connection.commit()
+
+            project_settings.bootstrap_sqlite_database(
+                stale_db,
+                source_path=bundled_db,
+            )
+
+            with sqlite3.connect(stale_db) as connection:
+                tables = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    ).fetchall()
+                }
+
+            self.assertIn("outlook_outlookitem", tables)
+            self.assertIn("outlook_tradeplanentry", tables)
+            self.assertIn("outlook_tradeplanposition", tables)
+            self.assertNotIn("stale_only", tables)
