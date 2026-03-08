@@ -160,16 +160,21 @@ def _as_bool(value):
 
 
 def _normalize_item_row(row, default_tab="notes"):
+    normalized_tab = _normalize_tab(
+        (row.get("tab") or "").strip(),
+        default=default_tab,
+    )
     return {
         "id": (row.get("id") or "").strip() or _generate_item_id(),
-        "tab": _normalize_tab(
-            (row.get("tab") or "").strip(),
-            default=default_tab,
-        ),
+        "tab": normalized_tab,
         "created_at": (row.get("created_at") or "").strip(),
         "title": (row.get("title") or "").strip(),
         "body": (row.get("body") or "").strip(),
-        "watch_until": (row.get("watch_until") or "").strip(),
+        "watch_until": (
+            (row.get("watch_until") or "").strip()
+            if normalized_tab == "watch"
+            else ""
+        ),
     }
 
 
@@ -638,22 +643,23 @@ def _load_items_by_tab():
     items_by_tab = {tab: [] for tab in VALID_ITEM_TABS}
 
     for row in _read_outlook_rows():
-        title = (row.get("title") or "").strip()
-        body = (row.get("body") or "").strip()
+        normalized_row = _normalize_item_row(row, default_tab="notes")
+        title = normalized_row["title"]
+        body = normalized_row["body"]
         if not title and not body:
             continue
 
-        tab = _normalize_tab((row.get("tab") or "").strip(), default="notes")
+        tab = normalized_row["tab"]
         if tab not in VALID_ITEM_TABS:
             continue
 
-        created_at = (row.get("created_at") or "").strip()
-        watch_until = (row.get("watch_until") or "").strip()
+        created_at = normalized_row["created_at"]
+        watch_until = normalized_row["watch_until"]
         status_label, status_class = _item_status(watch_until)
 
         items_by_tab[tab].append(
             {
-                "id": (row.get("id") or "").strip(),
+                "id": normalized_row["id"],
                 "tab": tab,
                 "created_at": created_at,
                 "title": title,
@@ -684,19 +690,28 @@ def _build_item_form(post_data=None, default_tab="watch"):
             "created_at": now_text,
             "title": "",
             "body": "",
-            "watch_until": _today_jst().isoformat(),
+            "watch_until": (
+                _today_jst().isoformat()
+                if normalized_default_tab == "watch"
+                else ""
+            ),
         }
 
+    normalized_tab = _normalize_item_tab(
+        (post_data.get("tab") or "").strip(),
+        default=normalized_default_tab,
+    )
     return {
         "edit_id": (post_data.get("edit_id") or "").strip(),
-        "tab": _normalize_item_tab(
-            (post_data.get("tab") or "").strip(),
-            default=normalized_default_tab,
-        ),
+        "tab": normalized_tab,
         "created_at": (post_data.get("created_at") or now_text).strip(),
         "title": (post_data.get("title") or "").strip(),
         "body": (post_data.get("body") or "").strip(),
-        "watch_until": (post_data.get("watch_until") or "").strip(),
+        "watch_until": (
+            (post_data.get("watch_until") or "").strip()
+            if normalized_tab == "watch"
+            else ""
+        ),
     }
 
 
@@ -993,7 +1008,7 @@ def index(request):
                 item_errors["title"] = "タイトルを入力してください。"
             if not item_form["body"]:
                 item_errors["body"] = "本文を入力してください。"
-            if watch_until is None:
+            if item_form["tab"] == "watch" and watch_until is None:
                 item_errors["watch_until"] = "監視期限を入力してください。"
 
             if not item_errors:
@@ -1002,7 +1017,11 @@ def index(request):
                     "created_at": _format_datetime(created_at or _now_jst()),
                     "title": item_form["title"],
                     "body": item_form["body"],
-                    "watch_until": watch_until.isoformat(),
+                    "watch_until": (
+                        watch_until.isoformat()
+                        if item_form["tab"] == "watch" and watch_until is not None
+                        else ""
+                    ),
                 }
                 if editing_item_id:
                     _update_item(editing_item_id, item_row)

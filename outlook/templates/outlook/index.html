@@ -157,9 +157,9 @@
                                 <span class="form-label">作成日時</span>
                                 <input class="form-input" type="text" name="created_at" value="{{ item_form.created_at }}" readonly>
                             </label>
-                            <label class="form-field" id="watch-until-field">
+                            <label class="form-field" id="watch-until-field"{% if item_form.tab != 'watch' %} hidden{% endif %}>
                                 <span class="form-label">監視期限</span>
-                                <input class="form-input{% if item_errors.watch_until %} has-error{% endif %}" type="date" name="watch_until" value="{{ item_form.watch_until }}">
+                                <input class="form-input{% if item_errors.watch_until %} has-error{% endif %}" type="date" name="watch_until" value="{{ item_form.watch_until }}"{% if item_form.tab != 'watch' %} disabled{% endif %}>
                                 {% if item_errors.watch_until %}
                                 <span class="form-error">{{ item_errors.watch_until }}</span>
                                 {% endif %}
@@ -210,7 +210,7 @@
                                 <div class="item-card__top">
                                     <span class="item-meta">{{ item.created_at }}</span>
                                     <div class="item-card__top-actions">
-                                        {% if item.watch_until %}
+                                        {% if item.tab == 'watch' and item.watch_until %}
                                         <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
                                         {% endif %}
                                         <a class="icon-action-button item-card__single-action" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;edit={{ item.id }}" aria-label="このカードを編集">
@@ -237,7 +237,7 @@
                                 {% else %}
                                 <p class="item-text note-body">{{ item.body }}</p>
                                 {% endif %}
-                                {% if item.watch_until %}
+                                {% if item.tab == 'watch' and item.watch_until %}
                                 <div class="item-footer">
                                     <span class="item-label">Watch Until</span>
                                     <strong class="item-value">{{ item.watch_until }}</strong>
@@ -301,6 +301,30 @@
                     });
                     syncCollapsedState(false);
                 });
+            }
+
+            function setupItemFormTabState() {
+                var itemTab = document.getElementById("outlook-item-tab");
+                var watchUntilField = document.getElementById("watch-until-field");
+                var watchUntilInput = watchUntilField
+                    ? watchUntilField.querySelector('input[name="watch_until"]')
+                    : null;
+
+                if (!itemTab || !watchUntilField || !watchUntilInput) {
+                    return;
+                }
+
+                function syncItemFormTabState() {
+                    var isWatchTab = itemTab.value === "watch";
+                    watchUntilField.hidden = !isWatchTab;
+                    watchUntilInput.disabled = !isWatchTab;
+                    if (!isWatchTab) {
+                        watchUntilInput.value = "";
+                    }
+                }
+
+                itemTab.addEventListener("change", syncItemFormTabState);
+                syncItemFormTabState();
             }
 
             function setupSelectionMode() {
@@ -459,6 +483,7 @@
                 });
                 syncSelectionUi();
             }
+            setupItemFormTabState();
             setupCollapsibleText();
             setupSelectionMode();
         })();

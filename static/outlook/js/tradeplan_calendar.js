@@ -663,6 +663,33 @@
     }, LONG_PRESS_MS);
   }
 
+  function handleCalendarTap(event) {
+    if (Date.now() < state.suppressClickUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    var handle = event.target.closest("[data-tradeplan-handle]");
+    if (handle) {
+      event.preventDefault();
+      return;
+    }
+
+    var segment = event.target.closest(".tradeplan-calendar__line-segment");
+    if (segment) {
+      event.preventDefault();
+      enterEditMode(segment.dataset.positionId || "");
+      return;
+    }
+
+    var dayButton = event.target.closest("[data-tradeplan-day]");
+    if (dayButton) {
+      event.preventDefault();
+      openCreateSheet(dayButton.dataset.tradeplanDate || "");
+    }
+  }
+
   calendar.addEventListener("pointerdown", function (event) {
     var handle = event.target.closest("[data-tradeplan-handle]");
     if (handle) {
@@ -685,12 +712,7 @@
       clearLongPress();
     }
   });
-  calendar.addEventListener("click", function (event) {
-    if (Date.now() < state.suppressClickUntil) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  });
+  calendar.addEventListener("click", handleCalendarTap);
 
   window.addEventListener("pointermove", handlePointerMove, { passive: false });
   window.addEventListener("pointerup", function (event) {
