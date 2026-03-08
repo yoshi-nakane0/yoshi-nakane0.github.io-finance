@@ -103,23 +103,14 @@ body {
   gap: 16px;
 }
 
-.section-heading {
+.panel-section > div:first-child {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 16px;
 }
-
-.section-eyebrow {
-  margin: 0 0 4px;
-  color: var(--outlook-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.section-title {
+.panel-section > h2,
+.panel-section > div:first-child h2 {
   margin: 0;
   color: var(--outlook-text);
   font-size: 1.32rem;
@@ -143,8 +134,6 @@ body {
   font-weight: 600;
 }
 
-.tradeplan-editor,
-.tradeplan-board,
 .item-card {
   border: 1px solid var(--outlook-border);
   border-radius: 24px;
@@ -152,294 +141,359 @@ body {
   box-shadow: 0 18px 36px rgba(2, 6, 23, 0.24);
 }
 
-.tradeplan-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 22px;
+.tradeplan-calendar {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 34%),
-    linear-gradient(180deg, rgba(27, 40, 64, 0.98), rgba(22, 32, 51, 0.98));
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(27, 40, 64, 0.98), rgba(15, 23, 42, 0.98));
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.24);
 }
 
-.tradeplan-editor__header,
-.tradeplan-board__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.tradeplan-editor__title,
-.tradeplan-board__title {
+.tradeplan-calendar__title {
   margin: 0;
   color: #f8fafc;
-  font-size: 1.12rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.24rem, 3vw, 1.82rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
 }
 
-.tradeplan-board {
-  padding: 22px;
-  background:
-    radial-gradient(circle at top left, rgba(52, 211, 153, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(22, 32, 51, 0.98), rgba(16, 23, 38, 0.98));
-}
-
-.tradeplan-board__hint {
-  max-width: 280px;
-  margin: 0;
-  color: var(--outlook-text-muted);
-  font-size: 0.84rem;
-  line-height: 1.7;
-}
-
-.tradeplan-date-field {
-  min-width: 170px;
-}
-
-.tradeplan-form-error {
-  padding: 12px 14px;
-  border: 1px solid rgba(251, 113, 133, 0.22);
-  border-radius: 14px;
-  background: rgba(251, 113, 133, 0.08);
-}
-
-.tradeplan-input-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.tradeplan-calendar__toolbar {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
+  padding: 20px 20px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(15, 23, 42, 0.28);
 }
 
-.tradeplan-input-card {
+.tradeplan-calendar__nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 44px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  background: rgba(22, 32, 51, 0.82);
+  color: #e2e8f0;
+  text-decoration: none;
+  box-sizing: border-box;
+  align-self: end;
+}
+
+.tradeplan-calendar__nav-button.is-disabled {
+  opacity: 0.32;
+}
+
+.tradeplan-calendar__selectors {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 40px;
+  align-items: end;
+  gap: 12px;
+}
+
+.tradeplan-calendar__selector {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--outlook-border);
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.46);
+  gap: 6px;
+  min-width: 0;
 }
 
-.tradeplan-input-card--long {
-  border-color: rgba(52, 211, 153, 0.24);
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.08), rgba(15, 23, 42, 0.48));
-}
-
-.tradeplan-input-card--short {
-  border-color: rgba(251, 113, 133, 0.24);
-  background: linear-gradient(180deg, rgba(251, 113, 133, 0.08), rgba(15, 23, 42, 0.48));
-}
-
-.tradeplan-input-card--square {
-  border-color: rgba(251, 191, 36, 0.24);
-  background: linear-gradient(180deg, rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.48));
-}
-
-.tradeplan-input-card__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: #f8fafc;
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
-.tradeplan-input-card__toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--outlook-text-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.tradeplan-continue-checkbox {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--outlook-accent);
-}
-
-.tradeplan-textarea {
-  min-height: 140px;
-}
-
-.tradeplan-actions {
-  margin-top: 0;
-}
-
-.tradeplan-table-wrap {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.tradeplan-table {
-  width: 100%;
-  min-width: 880px;
-  border-collapse: separate;
-  border-spacing: 0 12px;
-}
-
-.tradeplan-table th,
-.tradeplan-table td {
-  padding: 0;
-  vertical-align: top;
-}
-
-.tradeplan-table__corner {
-  padding-right: 14px;
-  color: var(--outlook-text-muted);
-  font-size: 0.76rem;
+.tradeplan-calendar__selector span {
+  color: #94a3b8;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-align: left;
 }
 
-.tradeplan-day {
-  min-width: 124px;
-  padding: 0 6px 12px;
-  color: var(--outlook-text-muted);
-  text-align: left;
-}
-
-.tradeplan-day__weekday,
-.tradeplan-day__date {
-  display: block;
-}
-
-.tradeplan-day__weekday {
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.tradeplan-day__date {
-  margin-top: 4px;
-  font-size: 0.92rem;
-  font-weight: 700;
+.tradeplan-calendar__selector .form-input {
+  min-height: 44px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.92);
   color: var(--outlook-text);
+  border-color: rgba(148, 163, 184, 0.16);
 }
 
-.tradeplan-day.is-today .tradeplan-day__date {
-  color: #dbeafe;
+.tradeplan-calendar__body {
+  padding: 0 14px 14px;
+  background: transparent;
 }
 
-.tradeplan-day.is-focus .tradeplan-day__date {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.tradeplan-calendar__weekdays,
+.tradeplan-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-.tradeplan-row-label {
-  padding-right: 14px;
-  color: #f8fafc;
-  font-size: 0.92rem;
+.tradeplan-calendar__weekdays {
+  padding: 14px 0 8px;
+}
+
+.tradeplan-calendar__weekday {
+  min-width: 0;
+  padding: 10px 4px;
+  color: #cbd5e1;
+  font-size: clamp(0.62rem, 1.65vw, 0.8rem);
   font-weight: 700;
+  text-align: center;
+}
+
+.tradeplan-calendar__weekday.is-sunday {
+  color: #fca5a5;
+}
+
+.tradeplan-calendar__weekday.is-saturday {
+  color: #93c5fd;
+}
+
+.tradeplan-calendar__grid {
+  gap: 1px;
+  padding: 1px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.tradeplan-calendar__cell {
+  min-width: 0;
+  min-height: clamp(96px, 14vw, 148px);
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.tradeplan-calendar__cell.is-outside {
+  background: rgba(15, 23, 42, 0.54);
+}
+
+.tradeplan-calendar__cell.is-focus {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(22, 32, 51, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.36);
+}
+
+.tradeplan-calendar__daybutton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0 10px;
+  border: 0;
+  background: transparent;
+  color: #e2e8f0;
+  text-decoration: none;
+  box-sizing: border-box;
   text-align: left;
-  white-space: nowrap;
+  cursor: pointer;
 }
 
-.tradeplan-row-label span:last-child {
-  vertical-align: middle;
+.tradeplan-calendar__daybutton.is-disabled {
+  color: rgba(148, 163, 184, 0.44);
+  cursor: default;
 }
 
-.tradeplan-dot,
-.tradeplan-marker {
+.tradeplan-calendar__dayhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.tradeplan-calendar__daynumber {
   display: inline-flex;
-  width: 12px;
-  height: 12px;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
   border-radius: 999px;
-  flex: none;
+  color: #f8fafc;
+  font-size: clamp(0.72rem, 1.85vw, 0.92rem);
+  font-weight: 700;
 }
 
-.tradeplan-dot {
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+.tradeplan-calendar__cell.is-outside .tradeplan-calendar__daynumber {
+  color: #64748b;
 }
 
-.tradeplan-dot-long,
-.tradeplan-marker.tradeplan-dot-long,
-.tradeplan-arrow.tradeplan-dot-long {
-  background: var(--tradeplan-long);
-  color: var(--tradeplan-long);
+.tradeplan-calendar__cell.is-focus .tradeplan-calendar__daynumber {
+  background: rgba(96, 165, 250, 0.2);
+  color: #fff;
 }
 
-.tradeplan-dot-short,
-.tradeplan-marker.tradeplan-dot-short,
-.tradeplan-arrow.tradeplan-dot-short {
-  background: var(--tradeplan-short);
-  color: var(--tradeplan-short);
+.tradeplan-calendar__cell.is-today .tradeplan-calendar__daynumber {
+  box-shadow: inset 0 0 0 2px rgba(96, 165, 250, 0.4);
 }
 
-.tradeplan-dot-square,
-.tradeplan-marker.tradeplan-dot-square,
-.tradeplan-arrow.tradeplan-dot-square {
-  background: var(--tradeplan-square);
-  color: var(--tradeplan-square);
-}
-
-.tradeplan-cell {
-  min-width: 124px;
-  padding: 0 6px;
-}
-
-.tradeplan-pill {
-  position: relative;
-  min-height: 88px;
-  padding: 14px 14px 14px 18px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.56);
+.tradeplan-calendar__line-layer {
+  display: grid;
+  grid-template-rows: repeat(var(--tradeplan-track-rows, 2), 10px);
+  gap: 6px;
+  flex: 1;
+  min-height: var(--tradeplan-line-area-height, 26px);
+  min-width: 0;
+  padding: 0 2px;
   box-sizing: border-box;
 }
 
-.tradeplan-cell.is-active .tradeplan-pill {
-  background: linear-gradient(180deg, rgba(36, 51, 84, 0.94), rgba(22, 32, 51, 0.98));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.tradeplan-marker {
-  position: absolute;
-  top: 16px;
-  left: 18px;
-}
-
-.tradeplan-arrow {
-  position: absolute;
-  top: 21px;
-  left: 32px;
-  right: 14px;
-  height: 2px;
-  opacity: 0.92;
-}
-
-.tradeplan-arrow::after {
-  content: "";
-  position: absolute;
-  top: -3px;
-  right: -1px;
-  border-left: 8px solid currentColor;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-}
-
-.tradeplan-pill__text {
+.tradeplan-calendar__line-segment {
+  position: relative;
   display: block;
-  padding-top: 20px;
-  color: var(--outlook-text);
-  font-size: 0.84rem;
-  font-weight: 600;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
+  align-self: center;
+  width: 100%;
+  height: 4px;
+  border-radius: 0;
+  touch-action: manipulation;
 }
 
-.tradeplan-cell__empty {
-  display: block;
-  min-height: 88px;
-  border: 1px dashed rgba(148, 163, 184, 0.12);
+.tradeplan-calendar__line-segment.is-long {
+  background: var(--tradeplan-long);
+}
+
+.tradeplan-calendar__line-segment.is-short {
+  background: var(--tradeplan-short);
+}
+
+.tradeplan-calendar__line-segment.is-single {
+  border-radius: 999px;
+}
+
+.tradeplan-calendar__line-segment.is-start {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.tradeplan-calendar__line-segment.is-end {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.tradeplan-calendar__line-segment.is-editing {
+  box-shadow: 0 0 0 1px rgba(248, 250, 252, 0.32);
+}
+
+.tradeplan-calendar__line-handle {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(248, 250, 252, 0.88);
+  border-radius: 999px;
+  background: #0f172a;
+  transform: translateY(-50%);
+  touch-action: none;
+  cursor: ew-resize;
+}
+
+.tradeplan-calendar__line-handle.is-start {
+  left: -2px;
+}
+
+.tradeplan-calendar__line-handle.is-end {
+  right: -2px;
+}
+
+.tradeplan-calendar__sheet,
+.tradeplan-calendar__editor-bar {
+  position: fixed;
+  z-index: 30;
+}
+
+.tradeplan-calendar__sheet[hidden],
+.tradeplan-calendar__editor-bar[hidden] {
+  display: none;
+}
+
+.tradeplan-calendar__sheet {
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(2, 6, 23, 0.42);
+}
+
+.tradeplan-calendar__sheet-card {
+  width: min(420px, 100%);
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.34);
+}
+
+.tradeplan-calendar__sheet-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.tradeplan-calendar__sheet-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tradeplan-calendar__sheet-button {
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tradeplan-calendar__sheet-button--long {
+  border-color: rgba(52, 211, 153, 0.2);
+  background: rgba(52, 211, 153, 0.14);
+  color: #bbf7d0;
+}
+
+.tradeplan-calendar__sheet-button--short {
+  border-color: rgba(251, 113, 133, 0.2);
+  background: rgba(251, 113, 133, 0.14);
+  color: #fecdd3;
+}
+
+.tradeplan-calendar__sheet-cancel {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.tradeplan-calendar__editor-bar {
+  left: 50%;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(560px, calc(100% - 32px));
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 20px;
-  background: rgba(15, 23, 42, 0.24);
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.34);
+  transform: translateX(-50%);
+}
+
+.tradeplan-calendar__editor-text {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.tradeplan-calendar__editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .note-form-card {
@@ -823,17 +877,32 @@ select.form-input {
 }
 
 @media (max-width: 900px) {
-  .tradeplan-input-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tradeplan-editor__header,
-  .tradeplan-board__head {
-    flex-direction: column;
+  .tradeplan-calendar__selectors {
+    gap: 10px;
   }
 }
 
 @media (max-width: 520px) {
+  .tradeplan-calendar__toolbar {
+    padding: 16px 14px 14px;
+  }
+
+  .tradeplan-calendar__body {
+    padding: 0 10px 10px;
+  }
+
+  .tradeplan-calendar__selectors {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr) 36px;
+    gap: 6px;
+  }
+
+  .tradeplan-calendar__nav-button {
+    width: 36px;
+    min-width: 36px;
+    height: 40px;
+    border-radius: 14px;
+  }
+
   .selection-toolbar,
   .selection-toolbar__actions {
     flex-direction: column;
@@ -844,7 +913,49 @@ select.form-input {
     grid-template-columns: 1fr;
   }
 
-  .tradeplan-table {
-    min-width: 760px;
+  .tradeplan-calendar__weekday {
+    padding: 8px 2px;
+    font-size: 0.58rem;
+    letter-spacing: 0;
+  }
+
+  .tradeplan-calendar__daybutton {
+    gap: 8px;
+    padding: 6px 0 8px;
+  }
+
+  .tradeplan-calendar__daynumber {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 0.68rem;
+  }
+
+  .tradeplan-calendar__dayhead {
+    padding: 0 6px;
+  }
+
+  .tradeplan-calendar__line-layer {
+    padding: 0 1px;
+  }
+
+  .tradeplan-calendar__editor-bar {
+    bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .tradeplan-calendar__editor-actions {
+    justify-content: stretch;
+  }
+
+  .tradeplan-calendar__editor-actions .secondary-button {
+    flex: 1;
+  }
+
+  .tradeplan-calendar__sheet-card {
+    padding: 16px;
   }
 }

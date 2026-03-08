@@ -31,111 +31,107 @@
 
         <main class="outlook-main">
             <section class="panel-section">
-                <div class="section-heading">
-                    <div>
-                        {% if active_tab_eyebrow %}
-                        <p class="section-eyebrow">{{ active_tab_eyebrow }}</p>
-                        {% endif %}
-                        <h2 class="section-title">{{ active_tab_title }}</h2>
-                    </div>
-                    <span class="section-caption">{{ active_count }} {{ active_count_label }}</span>
-                </div>
-
                 {% if active_tab == 'tradeplan' %}
-                    {% if tradeplan_saved %}
-                    <div class="notice-banner">TradePlan を更新しました。</div>
-                    {% endif %}
-
-                    <form class="tradeplan-editor" method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="tradeplan_action" value="save">
-                        <div class="tradeplan-editor__header">
-                            <div>
-                                <h3 class="tradeplan-editor__title">Long / Short / Square を分けて管理</h3>
-                            </div>
-                            <label class="form-field tradeplan-date-field">
-                                <span class="form-label">対象日</span>
-                                <input class="form-input{% if tradeplan_errors.date %} has-error{% endif %}" type="date" name="plan_date" value="{{ tradeplan_form.date }}">
-                                {% if tradeplan_errors.date %}
-                                <span class="form-error">{{ tradeplan_errors.date }}</span>
+                    <section
+                        class="tradeplan-calendar"
+                        aria-label="TradePlan calendar"
+                        data-tradeplan-calendar
+                        data-position-api-url="{{ tradeplan_position_api_url }}"
+                        data-grid-start="{{ tradeplan_calendar.grid_start }}"
+                        data-grid-end="{{ tradeplan_calendar.grid_end }}"
+                        data-min-date="{{ tradeplan_position_min_date }}"
+                        data-max-date="{{ tradeplan_position_max_date }}"
+                    >
+                        <form class="tradeplan-calendar__toolbar" method="get">
+                            <input type="hidden" name="tab" value="tradeplan">
+                            <h3 class="tradeplan-calendar__title">{{ tradeplan_calendar.month_title }}</h3>
+                            <div class="tradeplan-calendar__selectors">
+                                {% if tradeplan_calendar.previous_month %}
+                                <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.previous_month.year }}&amp;calendar_month={{ tradeplan_calendar.previous_month.month }}" aria-label="前の月">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </a>
+                                {% else %}
+                                <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev is-disabled" aria-hidden="true">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </span>
                                 {% endif %}
-                            </label>
-                        </div>
-
-                        {% if tradeplan_errors.non_field %}
-                        <div class="form-error tradeplan-form-error">{{ tradeplan_errors.non_field }}</div>
-                        {% endif %}
-
-                        <div class="tradeplan-input-grid">
-                            {% for lane in tradeplan_form_lanes %}
-                            <label class="tradeplan-input-card tradeplan-input-card--{{ lane.key }}">
-                                <span class="tradeplan-input-card__label">
-                                    <span class="tradeplan-dot {{ lane.dot_class }}"></span>
-                                    <span>{{ lane.label }}</span>
+                                <label class="tradeplan-calendar__selector">
+                                    <span>Year</span>
+                                    <select class="form-input" name="calendar_year" onchange="this.form.submit()">
+                                        {% for year in tradeplan_year_choices %}
+                                        <option value="{{ year }}"{% if tradeplan_calendar.year == year %} selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                <label class="tradeplan-calendar__selector">
+                                    <span>Month</span>
+                                    <select class="form-input" name="calendar_month" onchange="this.form.submit()">
+                                        {% for month_value, month_label in tradeplan_month_choices %}
+                                        <option value="{{ month_value }}"{% if tradeplan_calendar.month == month_value %} selected{% endif %}>{{ month_label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                {% if tradeplan_calendar.next_month %}
+                                <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.next_month.year }}&amp;calendar_month={{ tradeplan_calendar.next_month.month }}" aria-label="次の月">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </a>
+                                {% else %}
+                                <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next is-disabled" aria-hidden="true">
+                                    <span class="material-symbols-outlined">chevron_right</span>
                                 </span>
-                                <textarea class="form-textarea tradeplan-textarea" name="{{ lane.key }}" rows="4" placeholder="{{ lane.placeholder }}">{{ lane.text }}</textarea>
-                                <span class="tradeplan-input-card__toggle">
-                                    <input class="tradeplan-continue-checkbox" type="checkbox" name="{{ lane.key }}_continue"{% if lane.continues %} checked{% endif %}>
-                                    <span>継続</span>
-                                </span>
-                            </label>
-                            {% endfor %}
-                        </div>
-
-                        <div class="form-actions tradeplan-actions">
-                            <button class="primary-button" type="submit">TradePlan を保存</button>
-                        </div>
-                    </form>
-
-                    <div class="tradeplan-board">
-                        <div class="tradeplan-board__head">
-                            <div>
-                                <h3 class="tradeplan-board__title">ガントチャート形式のトレード進行</h3>
+                                {% endif %}
                             </div>
-                            <p class="tradeplan-board__hint">カラーの丸は当日の判断、右向き矢印は継続を示します。</p>
+                        </form>
+
+                        <div class="tradeplan-calendar__body">
+                            <div class="tradeplan-calendar__weekdays" aria-hidden="true">
+                                {% for weekday in tradeplan_calendar.weekday_labels %}
+                                <span class="tradeplan-calendar__weekday{% if forloop.first %} is-sunday{% endif %}{% if forloop.last %} is-saturday{% endif %}">{{ weekday }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="tradeplan-calendar__grid">
+                                {% for day in tradeplan_calendar.days %}
+                                <article class="tradeplan-calendar__cell{% if not day.is_current_month %} is-outside{% endif %}{% if day.is_focus %} is-focus{% endif %}{% if day.is_today %} is-today{% endif %}"{% if day.is_in_range %} data-tradeplan-cell data-tradeplan-date="{{ day.iso }}"{% endif %}>
+                                    {% if day.is_in_range %}
+                                    <button class="tradeplan-calendar__daybutton" type="button" data-tradeplan-day data-tradeplan-date="{{ day.iso }}">
+                                        <span class="tradeplan-calendar__dayhead">
+                                            <span class="tradeplan-calendar__daynumber">{{ day.day }}</span>
+                                        </span>
+                                        <span class="tradeplan-calendar__line-layer" data-tradeplan-line-layer aria-hidden="true"></span>
+                                    </button>
+                                    {% else %}
+                                    <div class="tradeplan-calendar__daybutton is-disabled">
+                                        <span class="tradeplan-calendar__dayhead">
+                                            <span class="tradeplan-calendar__daynumber">{{ day.day }}</span>
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </article>
+                                {% endfor %}
+                            </div>
                         </div>
 
-                        <div class="tradeplan-table-wrap">
-                            <table class="tradeplan-table">
-                                <thead>
-                                    <tr>
-                                        <th class="tradeplan-table__corner" scope="col">Bias</th>
-                                        {% for day in tradeplan_days %}
-                                        <th class="tradeplan-day{% if day.is_today %} is-today{% endif %}{% if day.is_focus %} is-focus{% endif %}" scope="col">
-                                            <span class="tradeplan-day__weekday">{{ day.weekday }}</span>
-                                            <strong class="tradeplan-day__date">{{ day.label }}</strong>
-                                        </th>
-                                        {% endfor %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for row in tradeplan_rows %}
-                                    <tr>
-                                        <th class="tradeplan-row-label" scope="row">
-                                            <span class="tradeplan-dot {{ row.dot_class }}"></span>
-                                            <span>{{ row.label }}</span>
-                                        </th>
-                                        {% for cell in row.cells %}
-                                        <td class="tradeplan-cell{% if cell.has_value %} is-active{% endif %}">
-                                            {% if cell.has_value %}
-                                            <div class="tradeplan-pill">
-                                                <span class="tradeplan-marker {{ cell.dot_class }}"></span>
-                                                {% if cell.continues %}
-                                                <span class="tradeplan-arrow {{ cell.dot_class }}"></span>
-                                                {% endif %}
-                                                <span class="tradeplan-pill__text">{{ cell.text }}</span>
-                                            </div>
-                                            {% else %}
-                                            <span class="tradeplan-cell__empty"></span>
-                                            {% endif %}
-                                        </td>
-                                        {% endfor %}
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="tradeplan-calendar__sheet" id="tradeplan-position-sheet" hidden>
+                            <div class="tradeplan-calendar__sheet-card">
+                                <p class="tradeplan-calendar__sheet-title" id="tradeplan-position-sheet-title">ポジション種別を選択</p>
+                                <div class="tradeplan-calendar__sheet-actions">
+                                    <button class="tradeplan-calendar__sheet-button tradeplan-calendar__sheet-button--long" type="button" data-tradeplan-create="long">Long</button>
+                                    <button class="tradeplan-calendar__sheet-button tradeplan-calendar__sheet-button--short" type="button" data-tradeplan-create="short">Short</button>
+                                </div>
+                                <button class="secondary-button tradeplan-calendar__sheet-cancel" type="button" data-tradeplan-sheet-close>キャンセル</button>
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="tradeplan-calendar__editor-bar" id="tradeplan-position-editor" hidden>
+                            <p class="tradeplan-calendar__editor-text" id="tradeplan-position-editor-text">端のハンドルをドラッグして期間を調整</p>
+                            <div class="tradeplan-calendar__editor-actions">
+                                <button class="secondary-button danger-button" type="button" data-tradeplan-delete>削除</button>
+                                <button class="secondary-button" type="button" data-tradeplan-edit-close>完了</button>
+                            </div>
+                        </div>
+                    </section>
+                    {{ tradeplan_positions|json_script:"tradeplan-position-data" }}
                 {% else %}
                     {% if saved %}
                     <div class="notice-banner">項目を保存しました。</div>
@@ -467,5 +463,6 @@
             setupSelectionMode();
         })();
     </script>
+    <script src="{% static 'outlook/js/tradeplan_calendar.js' %}"></script>
 </body>
 </html>

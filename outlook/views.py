@@ -1,3 +1,4 @@
+import calendar
 import csv
 import json
 import os
@@ -5,19 +6,24 @@ import time
 from datetime import date, datetime, timedelta
 from io import StringIO
 from pathlib import Path
+from urllib.parse import urljoin
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_http_methods
 
 OUTLOOK_DATA_DIR = (
     Path(__file__).resolve().parent.parent / "static" / "outlook" / "data"
 )
 OUTLOOK_DATA_PATH = OUTLOOK_DATA_DIR / "data.csv"
 TRADEPLAN_DATA_PATH = OUTLOOK_DATA_DIR / "tradeplan.json"
+TRADEPLAN_POSITION_DATA_PATH = OUTLOOK_DATA_DIR / "tradeplan_positions.json"
 OUTLOOK_CSV_FIELDS = ("id", "tab", "created_at", "title", "body", "watch_until")
 LEGACY_OUTLOOK_CSV_FIELDS = (
     ("tab", "created_at", "title", "body", "watch_until"),
@@ -38,16 +44,32 @@ TRADEPLAN_LANE_CHOICES = (
     ("short", "Short", "tradeplan-dot-short", "下落シナリオを入力"),
     ("square", "Square", "tradeplan-dot-square", "様子見 / 手仕舞いを入力"),
 )
+TRADEPLAN_POSITION_TYPES = {"long", "short"}
 TAB_LABELS = dict(TAB_CHOICES)
 VALID_TABS = set(TAB_LABELS)
 VALID_ITEM_TABS = {value for value, _label in ITEM_TAB_CHOICES}
 TAB_META = {
-    "tradeplan": {"eyebrow": "Timeline Matrix", "title": "TradePlan"},
+    "tradeplan": {"eyebrow": "", "title": "TradePlan"},
     "watch": {"eyebrow": "Priority Monitor", "title": "Watch"},
     "notes": {"eyebrow": "", "title": "Notes"},
 }
-WEEKDAY_LABELS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+CALENDAR_WEEKDAY_LABELS = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+TRADEPLAN_MIN_DATE = date(2026, 1, 1)
+TRADEPLAN_MAX_DATE = date(2028, 12, 31)
+TRADEPLAN_YEAR_CHOICES = tuple(
+    range(TRADEPLAN_MIN_DATE.year, TRADEPLAN_MAX_DATE.year + 1)
+)
+TRADEPLAN_MONTH_CHOICES = tuple((month, f"{month}月") for month in range(1, 13))
+TRADEPLAN_TEXT_PREVIEW_LIMIT = 22
+OUTLOOK_SYNC_BASE_URL = (os.getenv("OUTLOOK_SYNC_BASE_URL") or "").strip()
 OUTLOOK_SYNC_URL = (os.getenv("OUTLOOK_SYNC_URL") or "").strip()
+OUTLOOK_SYNC_DATA_URL = (
+    os.getenv("OUTLOOK_SYNC_DATA_URL") or OUTLOOK_SYNC_URL
+).strip()
+OUTLOOK_SYNC_TRADEPLAN_URL = (os.getenv("OUTLOOK_SYNC_TRADEPLAN_URL") or "").strip()
+OUTLOOK_SYNC_TRADEPLAN_POSITIONS_URL = (
+    os.getenv("OUTLOOK_SYNC_TRADEPLAN_POSITIONS_URL") or ""
+).strip()
 OUTLOOK_SYNC_INTERVAL_SEC = int(os.getenv("OUTLOOK_SYNC_INTERVAL_SEC", "60"))
 OUTLOOK_SYNC_TIMEOUT_SEC = int(os.getenv("OUTLOOK_SYNC_TIMEOUT_SEC", "10"))
 _SYNC_STATE = {"last_attempt": 0.0}
@@ -64,6 +86,55 @@ def _today_jst():
 
 def _format_datetime(value):
     return value.strftime("%Y-%m-%d %H:%M")
+
+
+def _is_tradeplan_date_in_range(value):
+    return value is not None and TRADEPLAN_MIN_DATE <= value <= TRADEPLAN_MAX_DATE
+
+
+def _clamp_tradeplan_date(value):
+    if value is None:
+        return None
+    if value < TRADEPLAN_MIN_DATE:
+        return TRADEPLAN_MIN_DATE
+    if value > TRADEPLAN_MAX_DATE:
+        return TRADEPLAN_MAX_DATE
+    return value
+
+
+def _resolve_tradeplan_date(value=None):
+    parsed_value = _parse_plan_date(value) or _today_jst()
+    return _clamp_tradeplan_date(parsed_value)
+
+
+def _month_start(value):
+    return date(value.year, value.month, 1)
+
+
+def _shift_month(value, month_delta):
+    month_index = (value.year * 12 + value.month - 1) + month_delta
+    year, zero_based_month = divmod(month_index, 12)
+    return date(year, zero_based_month + 1, 1)
+
+
+def _resolve_tradeplan_calendar_month(
+    year_value=None,
+    month_value=None,
+    focus_date=None,
+):
+    fallback_month = _month_start(_resolve_tradeplan_date(focus_date))
+    try:
+        selected_month = date(int(year_value), int(month_value), 1)
+    except (TypeError, ValueError):
+        return fallback_month
+
+    minimum_month = _month_start(TRADEPLAN_MIN_DATE)
+    maximum_month = _month_start(TRADEPLAN_MAX_DATE)
+    if selected_month < minimum_month:
+        return minimum_month
+    if selected_month > maximum_month:
+        return maximum_month
+    return selected_month
 
 
 def _normalize_tab(value, default="tradeplan"):
@@ -113,44 +184,186 @@ def _normalize_tradeplan_entry(entry):
     return normalized_entry
 
 
+def _normalize_tradeplan_position(position):
+    raw_start_date = position.get("start_date") or position.get("date")
+    raw_end_date = position.get("end_date") or raw_start_date
+    start_date = _clamp_tradeplan_date(
+        _parse_plan_date(raw_start_date) or _today_jst()
+    )
+    end_date = _clamp_tradeplan_date(_parse_plan_date(raw_end_date) or start_date)
+    if end_date < start_date:
+        start_date, end_date = end_date, start_date
+
+    normalized_type = str(position.get("type") or "").strip().lower()
+    if normalized_type not in TRADEPLAN_POSITION_TYPES:
+        normalized_type = "long"
+
+    return {
+        "id": (position.get("id") or "").strip() or _generate_item_id(),
+        "type": normalized_type,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+    }
+
+
 def _remote_csv_is_valid(csv_text):
     reader = csv.DictReader(StringIO(csv_text))
     fieldnames = tuple(reader.fieldnames or ())
     return fieldnames in (OUTLOOK_CSV_FIELDS, *LEGACY_OUTLOOK_CSV_FIELDS)
 
 
-def _sync_outlook_csv_from_remote():
-    if not settings.DEBUG or not OUTLOOK_SYNC_URL:
-        return
+def _normalize_tradeplan_entries(entries):
+    normalized_entries = []
+    for entry in entries:
+        if isinstance(entry, dict):
+            normalized_entries.append(_normalize_tradeplan_entry(entry))
+    normalized_entries.sort(key=lambda entry: entry["date"])
+    return normalized_entries
 
-    now = time.monotonic()
-    if now - _SYNC_STATE["last_attempt"] < OUTLOOK_SYNC_INTERVAL_SEC:
-        return
-    _SYNC_STATE["last_attempt"] = now
+
+def _normalize_tradeplan_positions_list(positions):
+    normalized_positions = []
+    for position in positions:
+        if isinstance(position, dict):
+            normalized_positions.append(_normalize_tradeplan_position(position))
+    normalized_positions.sort(
+        key=lambda position: (
+            position["start_date"],
+            position["end_date"],
+            position["type"],
+            position["id"],
+        )
+    )
+    return normalized_positions
+
+
+def _resolve_outlook_sync_url(explicit_url, relative_path, sibling_name):
+    if explicit_url:
+        return explicit_url
+    if OUTLOOK_SYNC_BASE_URL:
+        return urljoin(
+            OUTLOOK_SYNC_BASE_URL.rstrip("/") + "/",
+            relative_path,
+        )
+    if OUTLOOK_SYNC_DATA_URL:
+        return urljoin(OUTLOOK_SYNC_DATA_URL, sibling_name)
+    return ""
+
+
+def _build_outlook_sync_targets():
+    targets = (
+        {
+            "remote_url": _resolve_outlook_sync_url(
+                OUTLOOK_SYNC_DATA_URL,
+                "static/outlook/data/data.csv",
+                "data.csv",
+            ),
+            "sync": _sync_remote_outlook_csv,
+        },
+        {
+            "remote_url": _resolve_outlook_sync_url(
+                OUTLOOK_SYNC_TRADEPLAN_URL,
+                "static/outlook/data/tradeplan.json",
+                "tradeplan.json",
+            ),
+            "sync": _sync_remote_tradeplan_entries,
+        },
+        {
+            "remote_url": _resolve_outlook_sync_url(
+                OUTLOOK_SYNC_TRADEPLAN_POSITIONS_URL,
+                "static/outlook/data/tradeplan_positions.json",
+                "tradeplan_positions.json",
+            ),
+            "sync": _sync_remote_tradeplan_positions,
+        },
+    )
+    return [target for target in targets if target["remote_url"]]
+
+
+def _fetch_remote_text(remote_url):
+    if not remote_url:
+        return None
 
     try:
         response = requests.get(
-            OUTLOOK_SYNC_URL,
+            remote_url,
             timeout=OUTLOOK_SYNC_TIMEOUT_SEC,
             headers={"Cache-Control": "no-cache"},
         )
         response.raise_for_status()
     except requests.RequestException:
-        return
+        return None
+    return response.text.lstrip("\ufeff")
 
-    remote_csv = response.text.lstrip("\ufeff")
-    if not remote_csv.strip() or not _remote_csv_is_valid(remote_csv):
+
+def _sync_remote_outlook_csv(remote_url):
+    remote_csv = _fetch_remote_text(remote_url)
+    if not remote_csv or not _remote_csv_is_valid(remote_csv):
         return
 
     OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    local_csv = ""
     if OUTLOOK_DATA_PATH.exists():
         local_csv = OUTLOOK_DATA_PATH.read_text(encoding="utf-8")
-
-    if local_csv == remote_csv:
-        return
+        if local_csv == remote_csv:
+            return
 
     OUTLOOK_DATA_PATH.write_text(remote_csv, encoding="utf-8")
+
+
+def _load_remote_json_list(remote_url):
+    remote_text = _fetch_remote_text(remote_url)
+    if not remote_text:
+        return None
+
+    try:
+        loaded = json.loads(remote_text)
+    except json.JSONDecodeError:
+        return None
+
+    if not isinstance(loaded, list):
+        return None
+    return loaded
+
+
+def _sync_remote_tradeplan_entries(remote_url):
+    remote_entries = _load_remote_json_list(remote_url)
+    if remote_entries is None:
+        return
+
+    normalized_remote_entries = _normalize_tradeplan_entries(remote_entries)
+    if _load_tradeplan_entries() == normalized_remote_entries:
+        return
+    _rewrite_tradeplan_data(normalized_remote_entries)
+
+
+def _sync_remote_tradeplan_positions(remote_url):
+    remote_positions = _load_remote_json_list(remote_url)
+    if remote_positions is None:
+        return
+
+    normalized_remote_positions = _normalize_tradeplan_positions_list(
+        remote_positions
+    )
+    if _load_tradeplan_positions() == normalized_remote_positions:
+        return
+    _rewrite_tradeplan_positions(normalized_remote_positions)
+
+
+def sync_local_outlook_data_from_remote(force=False):
+    if not settings.DEBUG:
+        return
+
+    sync_targets = _build_outlook_sync_targets()
+    if not sync_targets:
+        return
+
+    now = time.monotonic()
+    if not force and now - _SYNC_STATE["last_attempt"] < OUTLOOK_SYNC_INTERVAL_SEC:
+        return
+    _SYNC_STATE["last_attempt"] = now
+
+    for target in sync_targets:
+        target["sync"](target["remote_url"])
 
 
 def _rewrite_outlook_csv(rows):
@@ -220,8 +433,7 @@ def _ensure_tradeplan_data():
 
 def _rewrite_tradeplan_data(entries):
     _ensure_tradeplan_data()
-    normalized_entries = [_normalize_tradeplan_entry(entry) for entry in entries]
-    normalized_entries.sort(key=lambda entry: entry["date"])
+    normalized_entries = _normalize_tradeplan_entries(entries)
     TRADEPLAN_DATA_PATH.write_text(
         json.dumps(normalized_entries, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -237,14 +449,7 @@ def _load_tradeplan_entries():
 
     if not isinstance(loaded, list):
         loaded = []
-
-    entries = []
-    for entry in loaded:
-        if isinstance(entry, dict):
-            entries.append(_normalize_tradeplan_entry(entry))
-
-    entries.sort(key=lambda entry: entry["date"])
-    return entries
+    return _normalize_tradeplan_entries(loaded)
 
 
 def _save_tradeplan_entry(tradeplan_form):
@@ -266,6 +471,52 @@ def _save_tradeplan_entry(tradeplan_form):
     _rewrite_tradeplan_data(entries_by_date.values())
 
 
+def _ensure_tradeplan_position_data():
+    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if TRADEPLAN_POSITION_DATA_PATH.exists():
+        return
+    TRADEPLAN_POSITION_DATA_PATH.write_text("[]\n", encoding="utf-8")
+
+
+def _rewrite_tradeplan_positions(positions):
+    _ensure_tradeplan_position_data()
+    normalized_positions = _normalize_tradeplan_positions_list(positions)
+    TRADEPLAN_POSITION_DATA_PATH.write_text(
+        json.dumps(normalized_positions, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _load_tradeplan_positions():
+    _ensure_tradeplan_position_data()
+    try:
+        loaded = json.loads(
+            TRADEPLAN_POSITION_DATA_PATH.read_text(encoding="utf-8")
+        )
+    except (json.JSONDecodeError, OSError):
+        loaded = []
+
+    if not isinstance(loaded, list):
+        loaded = []
+    return _normalize_tradeplan_positions_list(loaded)
+
+
+def _position_overlaps_range(position, start_date, end_date):
+    position_start = _parse_plan_date(position.get("start_date"))
+    position_end = _parse_plan_date(position.get("end_date"))
+    if position_start is None or position_end is None:
+        return False
+    return position_start <= end_date and position_end >= start_date
+
+
+def _visible_tradeplan_positions(positions, start_date, end_date):
+    return [
+        position
+        for position in positions
+        if _position_overlaps_range(position, start_date, end_date)
+    ]
+
+
 def _parse_created_at(value):
     try:
         return datetime.strptime(value, "%Y-%m-%d %H:%M")
@@ -281,6 +532,10 @@ def _parse_watch_until(value):
 
 
 def _parse_plan_date(value):
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
     try:
         return date.fromisoformat((value or "").strip())
     except (TypeError, ValueError, AttributeError):
@@ -445,12 +700,24 @@ def _build_item_form(post_data=None, default_tab="watch"):
     }
 
 
-def _build_tradeplan_form(post_data=None, default_date=None):
-    parsed_default_date = _parse_plan_date(default_date) or _today_jst()
+def _find_tradeplan_entry(entries, plan_date):
+    if plan_date is None:
+        return None
+    target_date = plan_date.isoformat()
+    for entry in entries:
+        if entry.get("date") == target_date:
+            return entry
+    return None
+
+
+def _build_tradeplan_form(post_data=None, default_date=None, entry=None):
+    parsed_default_date = _resolve_tradeplan_date(default_date)
     tradeplan_form = {"date": parsed_default_date.isoformat()}
     for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
-        tradeplan_form[lane_key] = ""
-        tradeplan_form[f"{lane_key}_continue"] = False
+        tradeplan_form[lane_key] = (entry or {}).get(lane_key, "").strip()
+        tradeplan_form[f"{lane_key}_continue"] = _as_bool(
+            (entry or {}).get(f"{lane_key}_continue")
+        )
 
     if not post_data:
         return tradeplan_form
@@ -464,87 +731,162 @@ def _build_tradeplan_form(post_data=None, default_date=None):
     return tradeplan_form
 
 
-def _build_tradeplan_form_lanes(tradeplan_form):
-    lanes = []
-    for lane_key, label, dot_class, placeholder in TRADEPLAN_LANE_CHOICES:
-        lanes.append(
+def _build_tradeplan_calendar_signals(entry):
+    signals = []
+    if not entry:
+        return signals
+
+    for lane_key, label, dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
+        text = (entry.get(lane_key) or "").strip()
+        if not text:
+            continue
+        text_display = _build_text_display(text, limit=TRADEPLAN_TEXT_PREVIEW_LIMIT)
+        signals.append(
             {
                 "key": lane_key,
                 "label": label,
                 "dot_class": dot_class,
-                "placeholder": placeholder,
-                "text": tradeplan_form[lane_key],
-                "continues": tradeplan_form[f"{lane_key}_continue"],
+                "text": text_display["preview"],
+                "full_text": text_display["full"],
+                "is_truncated": text_display["is_truncated"],
+                "continues": _as_bool(entry.get(f"{lane_key}_continue")),
             }
         )
-    return lanes
+    return signals
 
 
-def _count_tradeplan_signals(entries):
-    signal_count = 0
-    for entry in entries:
-        for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
-            if entry.get(lane_key):
-                signal_count += 1
-    return signal_count
+def _build_tradeplan_calendar(entries, displayed_month, focus_date=None):
+    displayed_month = _month_start(displayed_month)
+    first_day = displayed_month
+    last_day = date(
+        displayed_month.year,
+        displayed_month.month,
+        calendar.monthrange(displayed_month.year, displayed_month.month)[1],
+    )
+    grid_start = first_day - timedelta(days=(first_day.weekday() + 1) % 7)
+    grid_end = last_day + timedelta(days=(5 - last_day.weekday()) % 7)
+    entries_by_date = {entry["date"]: entry for entry in entries}
+    focus_date = _parse_plan_date(focus_date)
+    calendar_days = []
+    current_date = grid_start
 
-
-def _build_tradeplan_timeline(entries, focus_date=None):
-    focus_date = focus_date or _today_jst()
-    entry_dates = [
-        _parse_plan_date(entry.get("date"))
-        for entry in entries
-        if _parse_plan_date(entry.get("date")) is not None
-    ]
-    anchor_dates = entry_dates + [focus_date, _today_jst()]
-    start_date = min(anchor_dates) - timedelta(days=1)
-    end_date = max(anchor_dates)
-    minimum_end_date = focus_date + timedelta(days=8)
-    if end_date < minimum_end_date:
-        end_date = minimum_end_date
-
-    days = []
-    current_date = start_date
-    while current_date <= end_date:
-        days.append(
+    while current_date <= grid_end:
+        signals = _build_tradeplan_calendar_signals(
+            entries_by_date.get(current_date.isoformat())
+        )
+        is_in_range = _is_tradeplan_date_in_range(current_date)
+        calendar_days.append(
             {
                 "iso": current_date.isoformat(),
-                "label": current_date.strftime("%m/%d"),
-                "weekday": WEEKDAY_LABELS[current_date.weekday()],
+                "day": current_date.day,
+                "year": current_date.year,
+                "month": current_date.month,
+                "is_current_month": current_date.month == displayed_month.month
+                and current_date.year == displayed_month.year,
                 "is_today": current_date == _today_jst(),
                 "is_focus": current_date == focus_date,
+                "is_in_range": is_in_range,
+                "signals": signals if is_in_range else [],
             }
         )
         current_date += timedelta(days=1)
 
-    entries_by_date = {entry["date"]: entry for entry in entries}
-    rows = []
-    for lane_key, label, dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
-        cells = []
-        for day in days:
-            entry = entries_by_date.get(day["iso"], {})
-            text = (entry.get(lane_key) or "").strip()
-            cells.append(
-                {
-                    "has_value": bool(text),
-                    "text": text,
-                    "continues": _as_bool(entry.get(f"{lane_key}_continue")),
-                    "dot_class": dot_class,
-                }
-            )
-        rows.append(
+    previous_month = _shift_month(displayed_month, -1)
+    next_month = _shift_month(displayed_month, 1)
+    minimum_month = _month_start(TRADEPLAN_MIN_DATE)
+    maximum_month = _month_start(TRADEPLAN_MAX_DATE)
+
+    return {
+        "year": displayed_month.year,
+        "month": displayed_month.month,
+        "month_title": displayed_month.strftime("%b %Y"),
+        "days": calendar_days,
+        "grid_start": grid_start.isoformat(),
+        "grid_end": grid_end.isoformat(),
+        "weekday_labels": CALENDAR_WEEKDAY_LABELS,
+        "previous_month": previous_month if previous_month >= minimum_month else None,
+        "next_month": next_month if next_month <= maximum_month else None,
+    }
+
+
+@require_http_methods(["POST"])
+def tradeplan_positions(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"ok": False, "error": "invalid_json"}, status=400)
+
+    action = str(payload.get("action") or "").strip().lower()
+    positions = _load_tradeplan_positions()
+
+    if action == "create":
+        if str(payload.get("type") or "").strip().lower() not in TRADEPLAN_POSITION_TYPES:
+            return JsonResponse({"ok": False, "error": "invalid_type"}, status=400)
+
+        created_position = _normalize_tradeplan_position(payload)
+        positions.append(created_position)
+        _rewrite_tradeplan_positions(positions)
+        return JsonResponse(
             {
-                "key": lane_key,
-                "label": label,
-                "dot_class": dot_class,
-                "cells": cells,
+                "ok": True,
+                "position": created_position,
+                "positions": _load_tradeplan_positions(),
             }
         )
-    return days, rows
+
+    if action == "update":
+        position_id = str(payload.get("id") or "").strip()
+        if not position_id:
+            return JsonResponse({"ok": False, "error": "missing_id"}, status=400)
+
+        updated_position = None
+        for index, position in enumerate(positions):
+            if position["id"] != position_id:
+                continue
+            merged_position = {
+                "id": position_id,
+                "type": payload.get("type", position["type"]),
+                "start_date": payload.get("start_date", position["start_date"]),
+                "end_date": payload.get("end_date", position["end_date"]),
+            }
+            updated_position = _normalize_tradeplan_position(merged_position)
+            positions[index] = updated_position
+            break
+
+        if updated_position is None:
+            return JsonResponse({"ok": False, "error": "not_found"}, status=404)
+
+        _rewrite_tradeplan_positions(positions)
+        return JsonResponse(
+            {
+                "ok": True,
+                "position": updated_position,
+                "positions": _load_tradeplan_positions(),
+            }
+        )
+
+    if action == "delete":
+        position_id = str(payload.get("id") or "").strip()
+        if not position_id:
+            return JsonResponse({"ok": False, "error": "missing_id"}, status=400)
+
+        remaining_positions = [
+            position for position in positions if position["id"] != position_id
+        ]
+        if len(remaining_positions) == len(positions):
+            return JsonResponse({"ok": False, "error": "not_found"}, status=404)
+
+        _rewrite_tradeplan_positions(remaining_positions)
+        return JsonResponse(
+            {"ok": True, "positions": _load_tradeplan_positions()}
+        )
+
+    return JsonResponse({"ok": False, "error": "invalid_action"}, status=400)
 
 
+@ensure_csrf_cookie
 def index(request):
-    _sync_outlook_csv_from_remote()
+    sync_local_outlook_data_from_remote()
     active_tab = _normalize_tab(request.GET.get("tab"))
     default_item_tab = active_tab if active_tab in VALID_ITEM_TABS else "watch"
     editing_item_id = ""
@@ -553,7 +895,26 @@ def index(request):
     )
     item_form = _build_item_form(default_tab=default_item_tab)
     item_errors = {}
-    tradeplan_form = _build_tradeplan_form(default_date=request.GET.get("plan_date"))
+    tradeplan_entries = _load_tradeplan_entries()
+    tradeplan_positions = _load_tradeplan_positions()
+    requested_plan_date = _parse_plan_date(request.GET.get("plan_date"))
+    requested_calendar_year = request.GET.get("calendar_year")
+    requested_calendar_month = request.GET.get("calendar_month")
+    displayed_month = _resolve_tradeplan_calendar_month(
+        requested_calendar_year,
+        requested_calendar_month,
+        focus_date=requested_plan_date or _today_jst(),
+    )
+    if _is_tradeplan_date_in_range(requested_plan_date):
+        focus_plan_date = requested_plan_date
+    elif requested_calendar_year or requested_calendar_month:
+        focus_plan_date = _resolve_tradeplan_date(displayed_month)
+    else:
+        focus_plan_date = _resolve_tradeplan_date(_today_jst())
+    tradeplan_form = _build_tradeplan_form(
+        default_date=focus_plan_date,
+        entry=_find_tradeplan_entry(tradeplan_entries, focus_plan_date),
+    )
     tradeplan_errors = {}
 
     edit_item_id = (request.GET.get("edit") or "").strip()
@@ -570,8 +931,17 @@ def index(request):
             active_tab = "tradeplan"
             tradeplan_form = _build_tradeplan_form(request.POST)
             plan_date = _parse_plan_date(tradeplan_form["date"])
+            displayed_month = _resolve_tradeplan_calendar_month(
+                request.POST.get("calendar_year"),
+                request.POST.get("calendar_month"),
+                focus_date=plan_date,
+            )
             if plan_date is None:
                 tradeplan_errors["date"] = "日付を入力してください。"
+            elif not _is_tradeplan_date_in_range(plan_date):
+                tradeplan_errors["date"] = (
+                    "対象日は 2026-01-01 から 2028-12-31 の範囲で入力してください。"
+                )
             if not any(
                 tradeplan_form[lane_key]
                 for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES
@@ -583,7 +953,9 @@ def index(request):
             if not tradeplan_errors:
                 _save_tradeplan_entry(tradeplan_form)
                 return redirect(
-                    f"{reverse('outlook:index')}?tab=tradeplan&tradeplan_saved=1&plan_date={tradeplan_form['date']}"
+                    f"{reverse('outlook:index')}?tab=tradeplan"
+                    f"&tradeplan_saved=1&plan_date={tradeplan_form['date']}"
+                    f"&calendar_year={plan_date.year}&calendar_month={plan_date.month}"
                 )
 
         else:
@@ -643,16 +1015,14 @@ def index(request):
     items_by_tab = _load_items_by_tab()
     active_items = items_by_tab.get(active_tab, [])
     active_meta = TAB_META[active_tab]
-    tradeplan_entries = _load_tradeplan_entries()
-    focus_plan_date = _parse_plan_date(tradeplan_form["date"]) or _today_jst()
-    tradeplan_days, tradeplan_rows = _build_tradeplan_timeline(
+    selected_tradeplan_date = _parse_plan_date(tradeplan_form["date"])
+    if not _is_tradeplan_date_in_range(selected_tradeplan_date):
+        selected_tradeplan_date = None
+    active_count = len(active_items)
+    tradeplan_calendar = _build_tradeplan_calendar(
         tradeplan_entries,
-        focus_date=focus_plan_date,
-    )
-    active_count = (
-        _count_tradeplan_signals(tradeplan_entries)
-        if active_tab == "tradeplan"
-        else len(active_items)
+        displayed_month,
+        focus_date=selected_tradeplan_date,
     )
 
     context = {
@@ -665,15 +1035,21 @@ def index(request):
         "show_compose": active_tab in VALID_ITEM_TABS,
         "show_item_form": show_item_form,
         "saved": request.GET.get("saved") == "1",
-        "tradeplan_saved": request.GET.get("tradeplan_saved") == "1",
         "editing_item": bool(editing_item_id),
         "item_form": item_form,
         "item_errors": item_errors,
         "tab_choices": ITEM_TAB_CHOICES,
         "tradeplan_form": tradeplan_form,
-        "tradeplan_form_lanes": _build_tradeplan_form_lanes(tradeplan_form),
-        "tradeplan_errors": tradeplan_errors,
-        "tradeplan_days": tradeplan_days,
-        "tradeplan_rows": tradeplan_rows,
+        "tradeplan_calendar": tradeplan_calendar,
+        "tradeplan_positions": _visible_tradeplan_positions(
+            tradeplan_positions,
+            _parse_plan_date(tradeplan_calendar["grid_start"]),
+            _parse_plan_date(tradeplan_calendar["grid_end"]),
+        ),
+        "tradeplan_position_api_url": reverse("outlook:tradeplan_positions"),
+        "tradeplan_position_min_date": TRADEPLAN_MIN_DATE.isoformat(),
+        "tradeplan_position_max_date": TRADEPLAN_MAX_DATE.isoformat(),
+        "tradeplan_year_choices": TRADEPLAN_YEAR_CHOICES,
+        "tradeplan_month_choices": TRADEPLAN_MONTH_CHOICES,
     }
     return render(request, "outlook/index.html", context)
