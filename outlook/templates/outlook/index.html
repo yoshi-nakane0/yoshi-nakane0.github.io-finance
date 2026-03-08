@@ -41,6 +41,8 @@
                         data-grid-end="{{ tradeplan_calendar.grid_end }}"
                         data-min-date="{{ tradeplan_position_min_date }}"
                         data-max-date="{{ tradeplan_position_max_date }}"
+                        data-tradeplan-storage-mode="{{ tradeplan_position_storage_mode }}"
+                        data-tradeplan-storage-key="{{ tradeplan_position_storage_key }}"
                     >
                         <form class="tradeplan-calendar__toolbar" method="get">
                             <input type="hidden" name="tab" value="tradeplan">
@@ -135,6 +137,9 @@
                         {% csrf_token %}
                     </form>
                     <div class="notice-banner notice-banner-error" id="tradeplan-position-feedback" hidden aria-live="polite"></div>
+                    {% if tradeplan_position_storage_notice %}
+                    <div class="notice-banner notice-banner-muted">{{ tradeplan_position_storage_notice }}</div>
+                    {% endif %}
                     {{ tradeplan_positions|json_script:"tradeplan-position-data" }}
                 {% else %}
                     {% if saved %}

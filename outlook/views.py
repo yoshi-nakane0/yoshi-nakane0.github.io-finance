@@ -70,6 +70,7 @@ OUTLOOK_SYNC_INTERVAL_SEC = int(os.getenv("OUTLOOK_SYNC_INTERVAL_SEC", "60"))
 OUTLOOK_SYNC_TIMEOUT_SEC = int(os.getenv("OUTLOOK_SYNC_TIMEOUT_SEC", "10"))
 _SYNC_STATE = {"last_attempt": 0.0}
 CARD_PREVIEW_LIMIT = 30
+TRADEPLAN_POSITION_STORAGE_KEY = "outlook:tradeplan:positions:v1"
 
 
 def _now_jst():
@@ -82,6 +83,23 @@ def _today_jst():
 
 def _format_datetime(value):
     return value.strftime("%Y-%m-%d %H:%M")
+
+
+def _tradeplan_position_storage_mode():
+    if settings.DEBUG:
+        return "database"
+    if (os.getenv("DATABASE_URL") or "").strip():
+        return "database"
+    return "browser"
+
+
+def _tradeplan_position_storage_notice():
+    if _tradeplan_position_storage_mode() != "browser":
+        return ""
+    return (
+        "TradePlan の Long / Short はこのブラウザに保存されます。"
+        "別端末・別ブラウザには同期されません。"
+    )
 
 
 def _is_tradeplan_date_in_range(value):
@@ -1082,6 +1100,9 @@ def index(request):
         "tradeplan_position_api_url": reverse("outlook:tradeplan_positions"),
         "tradeplan_position_min_date": TRADEPLAN_MIN_DATE.isoformat(),
         "tradeplan_position_max_date": TRADEPLAN_MAX_DATE.isoformat(),
+        "tradeplan_position_storage_mode": _tradeplan_position_storage_mode(),
+        "tradeplan_position_storage_key": TRADEPLAN_POSITION_STORAGE_KEY,
+        "tradeplan_position_storage_notice": _tradeplan_position_storage_notice(),
         "tradeplan_year_choices": TRADEPLAN_YEAR_CHOICES,
         "tradeplan_month_choices": TRADEPLAN_MONTH_CHOICES,
     }

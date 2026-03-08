@@ -51,9 +51,12 @@
   var DEFAULT_TRACK_ROWS = 2;
   var TRACK_HEIGHT = 10;
   var TRACK_GAP = 6;
+  var storageMode = calendar.dataset.tradeplanStorageMode || "database";
+  var storageKey =
+    calendar.dataset.tradeplanStorageKey || "outlook:tradeplan:positions:v1";
 
   var state = {
-    positions: normalizePositions(parseJson(positionData.textContent)),
+    positions: [],
     pendingCreateDate: "",
     editingPositionId: "",
     editingDraft: null,
@@ -111,6 +114,76 @@
       start_date: startDate,
       end_date: endDate,
     };
+  }
+
+  function canUseBrowserStorage() {
+    try {
+      return (
+        storageMode === "browser" &&
+        typeof window.localStorage !== "undefined"
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function generatePositionId() {
+    if (
+      window.crypto &&
+      typeof window.crypto.randomUUID === "function"
+    ) {
+      return window.crypto.randomUUID().replace(/-/g, "");
+    }
+    return (
+      String(Date.now()) +
+      String(Math.random()).replace(".", "").slice(0, 12)
+    );
+  }
+
+  function loadBrowserStoredPositions() {
+    if (!canUseBrowserStorage()) {
+      return null;
+    }
+
+    try {
+      var storedValue = window.localStorage.getItem(storageKey);
+      if (storedValue === null) {
+        return null;
+      }
+      return normalizePositions(parseJson(storedValue));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function persistBrowserStoredPositions(positions) {
+    if (!canUseBrowserStorage()) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify(normalizePositions(positions))
+      );
+    } catch (error) {
+      setFeedback("このブラウザでは保存領域を利用できません。");
+    }
+  }
+
+  function initializePositions() {
+    var serverPositions = normalizePositions(parseJson(positionData.textContent));
+    var storedPositions = loadBrowserStoredPositions();
+
+    if (!canUseBrowserStorage()) {
+      return serverPositions;
+    }
+    if (storedPositions !== null) {
+      return storedPositions;
+    }
+
+    persistBrowserStoredPositions(serverPositions);
+    return serverPositions;
   }
 
   function clampDate(dateValue) {
@@ -372,6 +445,9 @@
 
   function setPositions(positions) {
     state.positions = normalizePositions(positions);
+    if (canUseBrowserStorage()) {
+      persistBrowserStoredPositions(state.positions);
+    }
   }
 
   function getCsrfToken() {
@@ -468,6 +544,20 @@
       return;
     }
 
+    if (canUseBrowserStorage()) {
+      clearFeedback();
+      var createdPosition = normalizePosition({
+        id: generatePositionId(),
+        type: positionType,
+        start_date: state.pendingCreateDate,
+        end_date: state.pendingCreateDate,
+      });
+      setPositions(state.positions.concat([createdPosition]));
+      closeCreateSheet();
+      enterEditMode(createdPosition.id);
+      return;
+    }
+
     requestPositions({
       action: "create",
       type: positionType,
@@ -508,6 +598,21 @@
       return;
     }
 
+    if (canUseBrowserStorage()) {
+      clearFeedback();
+      setPositions(
+        state.positions.map(function (position) {
+          if (position.id !== draftPosition.id) {
+            return position;
+          }
+          return clonePosition(draftPosition);
+        })
+      );
+      state.editingDraft = clonePosition(draftPosition);
+      renderPositions();
+      return;
+    }
+
     requestPositions({
       action: "update",
       id: draftPosition.id,
@@ -533,6 +638,19 @@
   function deleteEditingPosition() {
     var draftPosition = getEditingPosition();
     if (!draftPosition) {
+      return;
+    }
+
+    if (canUseBrowserStorage()) {
+      clearFeedback();
+      setPositions(
+        state.positions.filter(function (position) {
+          return position.id !== draftPosition.id;
+        })
+      );
+      state.editingPositionId = "";
+      state.editingDraft = null;
+      renderPositions();
       return;
     }
 
@@ -807,5 +925,6 @@
     closeEditor();
   });
 
+  state.positions = initializePositions();
   renderPositions();
 })();

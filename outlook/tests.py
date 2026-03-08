@@ -1,16 +1,19 @@
 import json
+import os
 import re
 import shutil
 import sqlite3
 import tempfile
+from unittest.mock import patch
 from datetime import date
 from pathlib import Path
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from myproject import settings as project_settings
 
+from . import views
 from .models import OutlookItem, TradePlanEntry, TradePlanPosition
 
 
@@ -173,10 +176,15 @@ class OutlookViewTests(TestCase):
 
     def test_tradeplan_page_renders_csrf_field_for_fetch_requests(self):
         response = self.client.get(reverse("outlook:index") + "?tab=tradeplan")
+        html = response.content.decode("utf-8")
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="tradeplan-csrf-form"')
         self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertIn(
+            f'data-tradeplan-storage-mode="{views._tradeplan_position_storage_mode()}"',
+            html,
+        )
 
     def test_tradeplan_position_api_accepts_csrf_token_rendered_in_page(self):
         client = self.client_class(enforce_csrf_checks=True, HTTP_HOST="localhost")
@@ -208,6 +216,25 @@ class OutlookViewTests(TestCase):
 
         self.assertEqual(create_response.status_code, 200)
         self.assertEqual(TradePlanPosition.objects.count(), 1)
+
+    @override_settings(DEBUG=False)
+    def test_tradeplan_storage_mode_uses_browser_without_database_url(self):
+        with patch.dict(os.environ, {"DATABASE_URL": ""}, clear=False):
+            self.assertEqual(views._tradeplan_position_storage_mode(), "browser")
+            self.assertIn(
+                "このブラウザに保存",
+                views._tradeplan_position_storage_notice(),
+            )
+
+    @override_settings(DEBUG=False)
+    def test_tradeplan_storage_mode_uses_database_with_database_url(self):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "postgresql://user:pass@example.com:5432/app"},
+            clear=False,
+        ):
+            self.assertEqual(views._tradeplan_position_storage_mode(), "database")
+            self.assertEqual(views._tradeplan_position_storage_notice(), "")
 
 
 class SqliteBootstrapTests(TestCase):

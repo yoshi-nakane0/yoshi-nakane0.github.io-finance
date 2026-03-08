@@ -504,6 +504,13 @@ body {
   color: #fecaca;
 }
 
+.notice-banner-muted {
+  margin-top: 12px;
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.46);
+  color: #cbd5e1;
+}
+
 .note-form-card {
   display: flex;
   flex-direction: column;
