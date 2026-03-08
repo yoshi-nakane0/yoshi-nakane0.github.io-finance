@@ -1,5 +1,7 @@
 import os
+import shutil
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,6 +18,54 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'default-development-key-never-use-in-production')
 
 DEBUG = env_bool('DEBUG', True)
+
+
+def build_database_from_url(database_url):
+    parsed = urlparse(database_url)
+    scheme = parsed.scheme.lower()
+
+    if scheme in {'postgres', 'postgresql', 'pgsql'}:
+        query_params = parse_qs(parsed.query)
+        sslmode = (query_params.get('sslmode') or ['require'])[0]
+        database_config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed.path.lstrip('/')),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or '',
+            'PORT': str(parsed.port or ''),
+        }
+        if sslmode:
+            database_config['OPTIONS'] = {'sslmode': sslmode}
+        return database_config
+
+    if scheme == 'sqlite':
+        sqlite_path = unquote(parsed.path or '')
+        if not sqlite_path or sqlite_path == '/':
+            sqlite_path = str(BASE_DIR / 'db.sqlite3')
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': Path(sqlite_path),
+        }
+
+    raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme}')
+
+
+def default_sqlite_database_path():
+    if DEBUG:
+        return BASE_DIR / 'db.sqlite3'
+    return Path(os.getenv('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
+
+
+def bootstrap_sqlite_database(sqlite_path):
+    sqlite_path = Path(sqlite_path)
+    bundled_sqlite_path = BASE_DIR / 'db.sqlite3'
+    if sqlite_path == bundled_sqlite_path:
+        return
+    if sqlite_path.exists() or not bundled_sqlite_path.exists():
+        return
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(bundled_sqlite_path, sqlite_path)
 
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
 
@@ -70,12 +120,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = (os.getenv('DATABASE_URL') or '').strip()
+if DATABASE_URL:
+    DATABASES = {'default': build_database_from_url(DATABASE_URL)}
+else:
+    sqlite_database_path = default_sqlite_database_path()
+    bootstrap_sqlite_database(sqlite_database_path)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': sqlite_database_path,
+        }
     }
-}
 
 # キャッシュ設定
 CACHES = {

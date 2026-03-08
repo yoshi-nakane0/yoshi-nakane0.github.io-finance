@@ -15,9 +15,8 @@ $PYTHON_BIN -m pip install --upgrade pip --no-warn-script-location
 $PYTHON_BIN -m pip install -r requirements-prod.txt --no-warn-script-location
 
 # DBマイグレーション
-# SQLiteをGit管理している場合、ローカルでマイグレーションを行いコミットすべきです。
-# Vercelのビルド環境で実行しても永続化されないためコメントアウトします。
-# $PYTHON_BIN manage.py migrate --noinput
+# DATABASE_URL がある場合は外部 DB へ、ない場合は同梱する SQLite を更新する。
+SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py migrate --noinput
 
 # 静的ファイルの収集
 $PYTHON_BIN manage.py collectstatic --noinput --clear

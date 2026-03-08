@@ -5,25 +5,21 @@ import os
 import time
 from datetime import date, datetime, timedelta
 from io import StringIO
-from pathlib import Path
 from urllib.parse import urljoin
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
-OUTLOOK_DATA_DIR = (
-    Path(__file__).resolve().parent.parent / "static" / "outlook" / "data"
-)
-OUTLOOK_DATA_PATH = OUTLOOK_DATA_DIR / "data.csv"
-TRADEPLAN_DATA_PATH = OUTLOOK_DATA_DIR / "tradeplan.json"
-TRADEPLAN_POSITION_DATA_PATH = OUTLOOK_DATA_DIR / "tradeplan_positions.json"
+from .models import OutlookItem, TradePlanEntry, TradePlanPosition
+
 OUTLOOK_CSV_FIELDS = ("id", "tab", "created_at", "title", "body", "watch_until")
 LEGACY_OUTLOOK_CSV_FIELDS = (
     ("tab", "created_at", "title", "body", "watch_until"),
@@ -242,6 +238,68 @@ def _normalize_tradeplan_positions_list(positions):
     return normalized_positions
 
 
+def _normalize_outlook_rows(rows):
+    normalized_rows = []
+    seen_ids = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        normalized_row = _normalize_item_row(row, default_tab="notes")
+        if normalized_row["tab"] not in VALID_ITEM_TABS:
+            continue
+
+        item_id = normalized_row["id"]
+        while item_id in seen_ids:
+            item_id = _generate_item_id()
+        normalized_row["id"] = item_id
+        seen_ids.add(item_id)
+        normalized_rows.append(normalized_row)
+
+    normalized_rows.sort(
+        key=lambda row: (
+            row["created_at"],
+            row["id"],
+            row["tab"],
+            row["title"],
+            row["body"],
+            row["watch_until"],
+        )
+    )
+    return normalized_rows
+
+
+def _serialize_outlook_item(item):
+    return {
+        "id": item.id,
+        "tab": item.tab,
+        "created_at": item.created_at,
+        "title": item.title,
+        "body": item.body,
+        "watch_until": item.watch_until.isoformat() if item.watch_until else "",
+    }
+
+
+def _serialize_tradeplan_entry(entry):
+    return {
+        "date": entry.plan_date.isoformat(),
+        "long": entry.long_text,
+        "long_continue": entry.long_continue,
+        "short": entry.short_text,
+        "short_continue": entry.short_continue,
+        "square": entry.square_text,
+        "square_continue": entry.square_continue,
+    }
+
+
+def _serialize_tradeplan_position(position):
+    return {
+        "id": position.id,
+        "type": position.position_type,
+        "start_date": position.start_date.isoformat(),
+        "end_date": position.end_date.isoformat(),
+    }
+
+
 def _resolve_outlook_sync_url(explicit_url, relative_path, sibling_name):
     if explicit_url:
         return explicit_url
@@ -306,13 +364,10 @@ def _sync_remote_outlook_csv(remote_url):
     if not remote_csv or not _remote_csv_is_valid(remote_csv):
         return
 
-    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if OUTLOOK_DATA_PATH.exists():
-        local_csv = OUTLOOK_DATA_PATH.read_text(encoding="utf-8")
-        if local_csv == remote_csv:
-            return
-
-    OUTLOOK_DATA_PATH.write_text(remote_csv, encoding="utf-8")
+    remote_rows = _normalize_outlook_rows(list(csv.DictReader(StringIO(remote_csv))))
+    if _read_outlook_rows() == remote_rows:
+        return
+    _replace_outlook_items(remote_rows)
 
 
 def _load_remote_json_list(remote_url):
@@ -371,90 +426,50 @@ def sync_local_outlook_data_from_remote(force=False):
         target["sync"](target["remote_url"])
 
 
-def _rewrite_outlook_csv(rows):
-    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with OUTLOOK_DATA_PATH.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=OUTLOOK_CSV_FIELDS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(_normalize_item_row(row, default_tab="notes"))
-
-
-def _ensure_outlook_csv():
-    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not OUTLOOK_DATA_PATH.exists():
-        _rewrite_outlook_csv([])
-        return
-
-    with OUTLOOK_DATA_PATH.open("r", newline="", encoding="utf-8") as csv_file:
-        reader = csv.DictReader(csv_file)
-        fieldnames = tuple(reader.fieldnames or ())
-        rows = list(reader)
-
-    if fieldnames == OUTLOOK_CSV_FIELDS:
-        if any(not (row.get("id") or "").strip() for row in rows):
-            _rewrite_outlook_csv(rows)
-        return
-
-    if fieldnames == LEGACY_OUTLOOK_CSV_FIELDS[0]:
-        _rewrite_outlook_csv(rows)
-        return
-
-    if fieldnames == LEGACY_OUTLOOK_CSV_FIELDS[1]:
-        _rewrite_outlook_csv(
-            [
-                {
-                    "tab": "notes",
-                    "created_at": row.get("created_at"),
-                    "title": row.get("title"),
-                    "body": row.get("body"),
-                    "watch_until": row.get("watch_until"),
-                }
-                for row in rows
-            ]
+def _replace_outlook_items(rows):
+    normalized_rows = _normalize_outlook_rows(rows)
+    replacement_items = [
+        OutlookItem(
+            id=row["id"],
+            tab=row["tab"],
+            created_at=row["created_at"],
+            title=row["title"],
+            body=row["body"],
+            watch_until=_parse_watch_until(row["watch_until"]),
         )
-        return
+        for row in normalized_rows
+    ]
 
-    normalized_rows = []
-    for row in rows:
-        normalized_rows.append(
-            {
-                "tab": row.get("tab") or "notes",
-                "created_at": row.get("created_at"),
-                "title": row.get("title"),
-                "body": row.get("body"),
-                "watch_until": row.get("watch_until"),
-            }
-        )
-    _rewrite_outlook_csv(normalized_rows)
-
-
-def _ensure_tradeplan_data():
-    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if TRADEPLAN_DATA_PATH.exists():
-        return
-    TRADEPLAN_DATA_PATH.write_text("[]\n", encoding="utf-8")
+    with transaction.atomic():
+        OutlookItem.objects.all().delete()
+        OutlookItem.objects.bulk_create(replacement_items)
 
 
 def _rewrite_tradeplan_data(entries):
-    _ensure_tradeplan_data()
     normalized_entries = _normalize_tradeplan_entries(entries)
-    TRADEPLAN_DATA_PATH.write_text(
-        json.dumps(normalized_entries, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    replacement_entries = [
+        TradePlanEntry(
+            plan_date=_parse_plan_date(entry["date"]),
+            long_text=entry["long"],
+            long_continue=entry["long_continue"],
+            short_text=entry["short"],
+            short_continue=entry["short_continue"],
+            square_text=entry["square"],
+            square_continue=entry["square_continue"],
+        )
+        for entry in normalized_entries
+    ]
+
+    with transaction.atomic():
+        TradePlanEntry.objects.all().delete()
+        TradePlanEntry.objects.bulk_create(replacement_entries)
 
 
 def _load_tradeplan_entries():
-    _ensure_tradeplan_data()
-    try:
-        loaded = json.loads(TRADEPLAN_DATA_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        loaded = []
-
-    if not isinstance(loaded, list):
-        loaded = []
-    return _normalize_tradeplan_entries(loaded)
+    return [
+        _serialize_tradeplan_entry(entry)
+        for entry in TradePlanEntry.objects.all().order_by("plan_date")
+    ]
 
 
 def _save_tradeplan_entry(tradeplan_form):
@@ -472,38 +487,49 @@ def _save_tradeplan_entry(tradeplan_form):
             "square_continue": tradeplan_form["square_continue"],
         }
     )
-    entries_by_date[normalized_entry["date"]] = normalized_entry
-    _rewrite_tradeplan_data(entries_by_date.values())
-
-
-def _ensure_tradeplan_position_data():
-    OUTLOOK_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if TRADEPLAN_POSITION_DATA_PATH.exists():
+    plan_date = _parse_plan_date(normalized_entry["date"])
+    if plan_date is None:
         return
-    TRADEPLAN_POSITION_DATA_PATH.write_text("[]\n", encoding="utf-8")
-
-
-def _rewrite_tradeplan_positions(positions):
-    _ensure_tradeplan_position_data()
-    normalized_positions = _normalize_tradeplan_positions_list(positions)
-    TRADEPLAN_POSITION_DATA_PATH.write_text(
-        json.dumps(normalized_positions, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
+    TradePlanEntry.objects.update_or_create(
+        plan_date=plan_date,
+        defaults={
+            "long_text": normalized_entry["long"],
+            "long_continue": normalized_entry["long_continue"],
+            "short_text": normalized_entry["short"],
+            "short_continue": normalized_entry["short_continue"],
+            "square_text": normalized_entry["square"],
+            "square_continue": normalized_entry["square_continue"],
+        },
     )
 
 
-def _load_tradeplan_positions():
-    _ensure_tradeplan_position_data()
-    try:
-        loaded = json.loads(
-            TRADEPLAN_POSITION_DATA_PATH.read_text(encoding="utf-8")
+def _rewrite_tradeplan_positions(positions):
+    normalized_positions = _normalize_tradeplan_positions_list(positions)
+    replacement_positions = [
+        TradePlanPosition(
+            id=position["id"],
+            position_type=position["type"],
+            start_date=_parse_plan_date(position["start_date"]),
+            end_date=_parse_plan_date(position["end_date"]),
         )
-    except (json.JSONDecodeError, OSError):
-        loaded = []
+        for position in normalized_positions
+    ]
 
-    if not isinstance(loaded, list):
-        loaded = []
-    return _normalize_tradeplan_positions_list(loaded)
+    with transaction.atomic():
+        TradePlanPosition.objects.all().delete()
+        TradePlanPosition.objects.bulk_create(replacement_positions)
+
+
+def _load_tradeplan_positions():
+    return [
+        _serialize_tradeplan_position(position)
+        for position in TradePlanPosition.objects.all().order_by(
+            "start_date",
+            "end_date",
+            "position_type",
+            "id",
+        )
+    ]
 
 
 def _position_overlaps_range(position, start_date, end_date):
@@ -548,54 +574,53 @@ def _parse_plan_date(value):
 
 
 def _append_item(item_row):
-    _ensure_outlook_csv()
-    with OUTLOOK_DATA_PATH.open("a", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=OUTLOOK_CSV_FIELDS)
-        writer.writerow(_normalize_item_row(item_row, default_tab="notes"))
+    normalized_row = _normalize_item_row(item_row, default_tab="notes")
+    if normalized_row["tab"] not in VALID_ITEM_TABS:
+        return
+    OutlookItem.objects.create(
+        id=normalized_row["id"],
+        tab=normalized_row["tab"],
+        created_at=normalized_row["created_at"],
+        title=normalized_row["title"],
+        body=normalized_row["body"],
+        watch_until=_parse_watch_until(normalized_row["watch_until"]),
+    )
 
 
 def _read_outlook_rows():
-    _ensure_outlook_csv()
-    with OUTLOOK_DATA_PATH.open("r", newline="", encoding="utf-8") as csv_file:
-        return list(csv.DictReader(csv_file))
+    return _normalize_outlook_rows(
+        [
+            _serialize_outlook_item(item)
+            for item in OutlookItem.objects.all().order_by(
+                "created_at",
+                "id",
+                "tab",
+            )
+        ]
+    )
 
 
 def _get_item_by_id(item_id):
-    for row in _read_outlook_rows():
-        normalized_row = _normalize_item_row(row, default_tab="notes")
-        if normalized_row["id"] != item_id:
-            continue
-        if normalized_row["tab"] not in VALID_ITEM_TABS:
-            return None
-        return normalized_row
-    return None
+    try:
+        item = OutlookItem.objects.get(id=item_id)
+    except OutlookItem.DoesNotExist:
+        return None
+
+    if item.tab not in VALID_ITEM_TABS:
+        return None
+    return _serialize_outlook_item(item)
 
 
 def _update_item(item_id, item_row):
-    updated_rows = []
-    item_updated = False
-
-    for row in _read_outlook_rows():
-        normalized_row = _normalize_item_row(row, default_tab="notes")
-        if normalized_row["id"] == item_id:
-            updated_rows.append(
-                {
-                    "id": item_id,
-                    "tab": item_row["tab"],
-                    "created_at": item_row["created_at"],
-                    "title": item_row["title"],
-                    "body": item_row["body"],
-                    "watch_until": item_row["watch_until"],
-                }
-            )
-            item_updated = True
-            continue
-        updated_rows.append(normalized_row)
-
-    if item_updated:
-        _rewrite_outlook_csv(updated_rows)
-
-    return item_updated
+    return bool(
+        OutlookItem.objects.filter(id=item_id).update(
+            tab=item_row["tab"],
+            created_at=item_row["created_at"],
+            title=item_row["title"],
+            body=item_row["body"],
+            watch_until=_parse_watch_until(item_row["watch_until"]),
+        )
+    )
 
 
 def _delete_items_by_ids(item_ids):
@@ -603,16 +628,7 @@ def _delete_items_by_ids(item_ids):
     if not target_ids:
         return 0
 
-    remaining_rows = []
-    deleted_count = 0
-    for row in _read_outlook_rows():
-        if (row.get("id") or "").strip() in target_ids:
-            deleted_count += 1
-            continue
-        remaining_rows.append(row)
-
-    if deleted_count:
-        _rewrite_outlook_csv(remaining_rows)
+    deleted_count, _details = OutlookItem.objects.filter(id__in=target_ids).delete()
     return deleted_count
 
 
@@ -639,27 +655,25 @@ def _item_status(watch_until_value):
 
 
 def _load_items_by_tab():
-    _ensure_outlook_csv()
     items_by_tab = {tab: [] for tab in VALID_ITEM_TABS}
 
-    for row in _read_outlook_rows():
-        normalized_row = _normalize_item_row(row, default_tab="notes")
-        title = normalized_row["title"]
-        body = normalized_row["body"]
+    for item in OutlookItem.objects.filter(tab__in=VALID_ITEM_TABS).order_by(
+        "-created_at",
+        "-id",
+    ):
+        title = item.title.strip()
+        body = item.body.strip()
         if not title and not body:
             continue
 
-        tab = normalized_row["tab"]
-        if tab not in VALID_ITEM_TABS:
-            continue
-
-        created_at = normalized_row["created_at"]
-        watch_until = normalized_row["watch_until"]
+        tab = item.tab
+        created_at = item.created_at
+        watch_until = item.watch_until.isoformat() if item.watch_until else ""
         status_label, status_class = _item_status(watch_until)
 
         items_by_tab[tab].append(
             {
-                "id": normalized_row["id"],
+                "id": item.id,
                 "tab": tab,
                 "created_at": created_at,
                 "title": title,
