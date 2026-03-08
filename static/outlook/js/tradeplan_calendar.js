@@ -353,7 +353,6 @@
             "tradeplan-calendar__line-segment is-" + assignment.position.type;
           segment.style.gridRow = String(assignment.trackIndex + 1);
           segment.dataset.positionId = assignment.position.id;
-          segment.dataset.positionType = assignment.position.type;
           segment.dataset.tradeplanDate = dayDate;
 
           if (assignment.visibleStart === assignment.visibleEnd) {
@@ -795,10 +794,6 @@
     var dayButton = target.closest("[data-tradeplan-day]");
 
     if (!segment && !dayButton) {
-      return;
-    }
-
-    if (segment && segment.closest("[data-tradeplan-handle]")) {
       return;
     }
 

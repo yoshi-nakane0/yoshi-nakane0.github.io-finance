@@ -35,20 +35,10 @@ ITEM_TAB_CHOICES = (
     ("watch", "Watch"),
     ("notes", "Notes"),
 )
-TRADEPLAN_LANE_CHOICES = (
-    ("long", "Long", "tradeplan-dot-long", "上昇シナリオを入力"),
-    ("short", "Short", "tradeplan-dot-short", "下落シナリオを入力"),
-    ("square", "Square", "tradeplan-dot-square", "様子見 / 手仕舞いを入力"),
-)
+TRADEPLAN_LANE_KEYS = ("long", "short", "square")
 TRADEPLAN_POSITION_TYPES = {"long", "short"}
-TAB_LABELS = dict(TAB_CHOICES)
-VALID_TABS = set(TAB_LABELS)
+VALID_TABS = {value for value, _label in TAB_CHOICES}
 VALID_ITEM_TABS = {value for value, _label in ITEM_TAB_CHOICES}
-TAB_META = {
-    "tradeplan": {"eyebrow": "", "title": "TradePlan"},
-    "watch": {"eyebrow": "Priority Monitor", "title": "Watch"},
-    "notes": {"eyebrow": "", "title": "Notes"},
-}
 CALENDAR_WEEKDAY_LABELS = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 TRADEPLAN_MIN_DATE = date(2026, 1, 1)
 TRADEPLAN_MAX_DATE = date(2028, 12, 31)
@@ -56,7 +46,6 @@ TRADEPLAN_YEAR_CHOICES = tuple(
     range(TRADEPLAN_MIN_DATE.year, TRADEPLAN_MAX_DATE.year + 1)
 )
 TRADEPLAN_MONTH_CHOICES = tuple((month, f"{month}月") for month in range(1, 13))
-TRADEPLAN_TEXT_PREVIEW_LIMIT = 22
 OUTLOOK_SYNC_BASE_URL = (os.getenv("OUTLOOK_SYNC_BASE_URL") or "").strip()
 OUTLOOK_SYNC_URL = (os.getenv("OUTLOOK_SYNC_URL") or "").strip()
 OUTLOOK_SYNC_DATA_URL = (
@@ -195,7 +184,7 @@ def _normalize_item_row(row, default_tab="notes"):
 def _normalize_tradeplan_entry(entry):
     plan_date = _parse_plan_date(entry.get("date")) or _today_jst()
     normalized_entry = {"date": plan_date.isoformat()}
-    for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
+    for lane_key in TRADEPLAN_LANE_KEYS:
         normalized_entry[lane_key] = (entry.get(lane_key) or "").strip()
         normalized_entry[f"{lane_key}_continue"] = _as_bool(
             entry.get(f"{lane_key}_continue")
@@ -491,9 +480,6 @@ def _load_tradeplan_entries():
 
 
 def _save_tradeplan_entry(tradeplan_form):
-    entries_by_date = {
-        entry["date"]: entry for entry in _load_tradeplan_entries()
-    }
     normalized_entry = _normalize_tradeplan_entry(
         {
             "date": tradeplan_form["date"],
@@ -548,6 +534,16 @@ def _load_tradeplan_positions():
             "id",
         )
     ]
+
+
+def _update_tradeplan_position(position):
+    normalized_position = _normalize_tradeplan_position(position)
+    TradePlanPosition.objects.filter(id=normalized_position["id"]).update(
+        position_type=normalized_position["type"],
+        start_date=_parse_plan_date(normalized_position["start_date"]),
+        end_date=_parse_plan_date(normalized_position["end_date"]),
+    )
+    return normalized_position
 
 
 def _position_overlaps_range(position, start_date, end_date):
@@ -701,13 +697,8 @@ def _load_items_by_tab():
                 "watch_until": watch_until,
                 "status_label": status_label,
                 "status_class": status_class,
-                "created_at_sort": _parse_created_at(created_at)
-                or datetime.min,
             }
         )
-
-    for items in items_by_tab.values():
-        items.sort(key=lambda item: item["created_at_sort"], reverse=True)
 
     return items_by_tab
 
@@ -747,30 +738,9 @@ def _build_item_form(post_data=None, default_tab="watch"):
     }
 
 
-def _find_tradeplan_entry(entries, plan_date):
-    if plan_date is None:
-        return None
-    target_date = plan_date.isoformat()
-    for entry in entries:
-        if entry.get("date") == target_date:
-            return entry
-    return None
-
-
-def _build_tradeplan_form(post_data=None, default_date=None, entry=None):
-    parsed_default_date = _resolve_tradeplan_date(default_date)
-    tradeplan_form = {"date": parsed_default_date.isoformat()}
-    for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
-        tradeplan_form[lane_key] = (entry or {}).get(lane_key, "").strip()
-        tradeplan_form[f"{lane_key}_continue"] = _as_bool(
-            (entry or {}).get(f"{lane_key}_continue")
-        )
-
-    if not post_data:
-        return tradeplan_form
-
-    tradeplan_form["date"] = (post_data.get("plan_date") or "").strip()
-    for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
+def _build_tradeplan_form(post_data):
+    tradeplan_form = {"date": (post_data.get("plan_date") or "").strip()}
+    for lane_key in TRADEPLAN_LANE_KEYS:
         tradeplan_form[lane_key] = (post_data.get(lane_key) or "").strip()
         tradeplan_form[f"{lane_key}_continue"] = _as_bool(
             post_data.get(f"{lane_key}_continue")
@@ -778,31 +748,7 @@ def _build_tradeplan_form(post_data=None, default_date=None, entry=None):
     return tradeplan_form
 
 
-def _build_tradeplan_calendar_signals(entry):
-    signals = []
-    if not entry:
-        return signals
-
-    for lane_key, label, dot_class, _placeholder in TRADEPLAN_LANE_CHOICES:
-        text = (entry.get(lane_key) or "").strip()
-        if not text:
-            continue
-        text_display = _build_text_display(text, limit=TRADEPLAN_TEXT_PREVIEW_LIMIT)
-        signals.append(
-            {
-                "key": lane_key,
-                "label": label,
-                "dot_class": dot_class,
-                "text": text_display["preview"],
-                "full_text": text_display["full"],
-                "is_truncated": text_display["is_truncated"],
-                "continues": _as_bool(entry.get(f"{lane_key}_continue")),
-            }
-        )
-    return signals
-
-
-def _build_tradeplan_calendar(entries, displayed_month, focus_date=None):
+def _build_tradeplan_calendar(displayed_month, focus_date=None):
     displayed_month = _month_start(displayed_month)
     first_day = displayed_month
     last_day = date(
@@ -812,15 +758,11 @@ def _build_tradeplan_calendar(entries, displayed_month, focus_date=None):
     )
     grid_start = first_day - timedelta(days=(first_day.weekday() + 1) % 7)
     grid_end = last_day + timedelta(days=(5 - last_day.weekday()) % 7)
-    entries_by_date = {entry["date"]: entry for entry in entries}
     focus_date = _parse_plan_date(focus_date)
     calendar_days = []
     current_date = grid_start
 
     while current_date <= grid_end:
-        signals = _build_tradeplan_calendar_signals(
-            entries_by_date.get(current_date.isoformat())
-        )
         is_in_range = _is_tradeplan_date_in_range(current_date)
         calendar_days.append(
             {
@@ -833,7 +775,6 @@ def _build_tradeplan_calendar(entries, displayed_month, focus_date=None):
                 "is_today": current_date == _today_jst(),
                 "is_focus": current_date == focus_date,
                 "is_in_range": is_in_range,
-                "signals": signals if is_in_range else [],
             }
         )
         current_date += timedelta(days=1)
@@ -864,15 +805,18 @@ def tradeplan_positions(request):
         return JsonResponse({"ok": False, "error": "invalid_json"}, status=400)
 
     action = str(payload.get("action") or "").strip().lower()
-    positions = _load_tradeplan_positions()
 
     if action == "create":
         if str(payload.get("type") or "").strip().lower() not in TRADEPLAN_POSITION_TYPES:
             return JsonResponse({"ok": False, "error": "invalid_type"}, status=400)
 
         created_position = _normalize_tradeplan_position(payload)
-        positions.append(created_position)
-        _rewrite_tradeplan_positions(positions)
+        TradePlanPosition.objects.create(
+            id=created_position["id"],
+            position_type=created_position["type"],
+            start_date=_parse_plan_date(created_position["start_date"]),
+            end_date=_parse_plan_date(created_position["end_date"]),
+        )
         return JsonResponse(
             {
                 "ok": True,
@@ -886,24 +830,25 @@ def tradeplan_positions(request):
         if not position_id:
             return JsonResponse({"ok": False, "error": "missing_id"}, status=400)
 
-        updated_position = None
-        for index, position in enumerate(positions):
-            if position["id"] != position_id:
-                continue
-            merged_position = {
-                "id": position_id,
-                "type": payload.get("type", position["type"]),
-                "start_date": payload.get("start_date", position["start_date"]),
-                "end_date": payload.get("end_date", position["end_date"]),
-            }
-            updated_position = _normalize_tradeplan_position(merged_position)
-            positions[index] = updated_position
-            break
-
-        if updated_position is None:
+        try:
+            current_position = TradePlanPosition.objects.get(id=position_id)
+        except TradePlanPosition.DoesNotExist:
             return JsonResponse({"ok": False, "error": "not_found"}, status=404)
 
-        _rewrite_tradeplan_positions(positions)
+        updated_position = _update_tradeplan_position(
+            {
+                "id": position_id,
+                "type": payload.get("type", current_position.position_type),
+                "start_date": payload.get(
+                    "start_date",
+                    current_position.start_date.isoformat(),
+                ),
+                "end_date": payload.get(
+                    "end_date",
+                    current_position.end_date.isoformat(),
+                ),
+            }
+        )
         return JsonResponse(
             {
                 "ok": True,
@@ -917,13 +862,10 @@ def tradeplan_positions(request):
         if not position_id:
             return JsonResponse({"ok": False, "error": "missing_id"}, status=400)
 
-        remaining_positions = [
-            position for position in positions if position["id"] != position_id
-        ]
-        if len(remaining_positions) == len(positions):
+        deleted_count, _details = TradePlanPosition.objects.filter(id=position_id).delete()
+        if not deleted_count:
             return JsonResponse({"ok": False, "error": "not_found"}, status=404)
 
-        _rewrite_tradeplan_positions(remaining_positions)
         return JsonResponse(
             {"ok": True, "positions": _load_tradeplan_positions()}
         )
@@ -942,7 +884,6 @@ def index(request):
     )
     item_form = _build_item_form(default_tab=default_item_tab)
     item_errors = {}
-    tradeplan_entries = _load_tradeplan_entries()
     tradeplan_positions = _load_tradeplan_positions()
     requested_plan_date = _parse_plan_date(request.GET.get("plan_date"))
     requested_calendar_year = request.GET.get("calendar_year")
@@ -958,10 +899,7 @@ def index(request):
         focus_plan_date = _resolve_tradeplan_date(displayed_month)
     else:
         focus_plan_date = _resolve_tradeplan_date(_today_jst())
-    tradeplan_form = _build_tradeplan_form(
-        default_date=focus_plan_date,
-        entry=_find_tradeplan_entry(tradeplan_entries, focus_plan_date),
-    )
+    selected_tradeplan_date = focus_plan_date
     tradeplan_errors = {}
 
     edit_item_id = (request.GET.get("edit") or "").strip()
@@ -983,6 +921,7 @@ def index(request):
                 request.POST.get("calendar_month"),
                 focus_date=plan_date,
             )
+            selected_tradeplan_date = plan_date
             if plan_date is None:
                 tradeplan_errors["date"] = "日付を入力してください。"
             elif not _is_tradeplan_date_in_range(plan_date):
@@ -991,7 +930,7 @@ def index(request):
                 )
             if not any(
                 tradeplan_form[lane_key]
-                for lane_key, _label, _dot_class, _placeholder in TRADEPLAN_LANE_CHOICES
+                for lane_key in TRADEPLAN_LANE_KEYS
             ):
                 tradeplan_errors["non_field"] = (
                     "Long / Short / Square のいずれかを入力してください。"
@@ -1001,7 +940,7 @@ def index(request):
                 _save_tradeplan_entry(tradeplan_form)
                 return redirect(
                     f"{reverse('outlook:index')}?tab=tradeplan"
-                    f"&tradeplan_saved=1&plan_date={tradeplan_form['date']}"
+                    f"&plan_date={tradeplan_form['date']}"
                     f"&calendar_year={plan_date.year}&calendar_month={plan_date.month}"
                 )
 
@@ -1065,13 +1004,9 @@ def index(request):
 
     items_by_tab = _load_items_by_tab()
     active_items = items_by_tab.get(active_tab, [])
-    active_meta = TAB_META[active_tab]
-    selected_tradeplan_date = _parse_plan_date(tradeplan_form["date"])
     if not _is_tradeplan_date_in_range(selected_tradeplan_date):
         selected_tradeplan_date = None
-    active_count = len(active_items)
     tradeplan_calendar = _build_tradeplan_calendar(
-        tradeplan_entries,
         displayed_month,
         focus_date=selected_tradeplan_date,
     )
@@ -1079,10 +1014,6 @@ def index(request):
     context = {
         "active_tab": active_tab,
         "active_items": active_items,
-        "active_count": active_count,
-        "active_count_label": "signals" if active_tab == "tradeplan" else "items",
-        "active_tab_eyebrow": active_meta["eyebrow"],
-        "active_tab_title": active_meta["title"],
         "show_compose": active_tab in VALID_ITEM_TABS,
         "show_item_form": show_item_form,
         "saved": request.GET.get("saved") == "1",
@@ -1090,7 +1021,6 @@ def index(request):
         "item_form": item_form,
         "item_errors": item_errors,
         "tab_choices": ITEM_TAB_CHOICES,
-        "tradeplan_form": tradeplan_form,
         "tradeplan_calendar": tradeplan_calendar,
         "tradeplan_positions": _visible_tradeplan_positions(
             tradeplan_positions,
