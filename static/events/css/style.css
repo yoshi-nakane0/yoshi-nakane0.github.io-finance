@@ -104,14 +104,22 @@ body {
 .events-table-container {
     overflow-x: auto;
     width: 100%;
+    max-width: 100%;
 }
 
 /* テーブル本体 */
 .events-table {
     width: 100%;
+    max-width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
     background-color: rgba(41, 45, 53, 0.5); /* style1の色合いを薄くしてテーブル背景に */
+}
+
+.events-table,
+.events-table th,
+.events-table td {
+    box-sizing: border-box;
 }
 
 /* テーブルヘッダー */
@@ -176,6 +184,41 @@ table.events-table td.impact-cell.important-impact {
 .events-table td:nth-child(4)
 {
     text-align: center;
+}
+
+@media (max-width: 480px) {
+    .events-table-container {
+        overflow-x: hidden;
+    }
+
+    .events-table th,
+    .events-table td {
+        padding: 2px;
+        font-size: 12px;
+    }
+
+    .events-table th:nth-child(1),
+    .events-table td:nth-child(1) { /* 時間 */
+        width: 16%;
+    }
+
+    .events-table th:nth-child(2),
+    .events-table td:nth-child(2) { /* 国 */
+        width: 14%;
+    }
+
+    .events-table th:nth-child(3),
+    .events-table td:nth-child(3) { /* 指標 */
+        width: 52%;
+    }
+
+    .events-table th:nth-child(4),
+    .events-table td:nth-child(4) { /* 重要度 */
+        width: 18%;
+        font-size: 11px;
+        padding-left: 1px;
+        padding-right: 1px;
+    }
 }
 
 /* Back to top button styles */
