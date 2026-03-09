@@ -1,0 +1,31 @@
+{% if grouped_entries %}
+    {% for group in grouped_entries %}
+        <div class="events-date">
+            <h2 class="events-date-title">{{ group.date }}</h2>
+            <div class="events-table-container">
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>国</th>
+                            <th>指標</th>
+                            <th>重要度</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in group.items %}
+                            <tr data-impact="{{ item.impact }}">
+                                <td>{{ item.time }}</td>
+                                <td>{{ item.currency }}</td>
+                                <td class="event-cell{% if item.is_important %} important-event{% endif %}">{{ item.display_event }}</td>
+                                <td class="impact-cell{% if item.is_important %} important-impact{% endif %}">{{ item.impact }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="events-empty">該当するイベントはありません。</div>
+{% endif %}

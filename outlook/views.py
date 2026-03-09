@@ -646,13 +646,8 @@ def _delete_items_by_ids(item_ids):
     return deleted_count
 
 
-def _build_text_display(text, limit=CARD_PREVIEW_LIMIT):
-    normalized_text = (text or "").strip()
-    return {
-        "full": normalized_text,
-        "preview": normalized_text[:limit],
-        "is_truncated": len(normalized_text) > limit,
-    }
+def _is_text_truncated(text, limit=CARD_PREVIEW_LIMIT):
+    return len((text or "").strip()) > limit
 
 
 def _item_status(watch_until_value):
@@ -668,10 +663,12 @@ def _item_status(watch_until_value):
     return "監視中", "status-chip-active"
 
 
-def _load_items_by_tab():
-    items_by_tab = {tab: [] for tab in VALID_ITEM_TABS}
+def _load_items_for_tab(active_tab):
+    if active_tab not in VALID_ITEM_TABS:
+        return []
 
-    for item in OutlookItem.objects.filter(tab__in=VALID_ITEM_TABS).order_by(
+    items = []
+    for item in OutlookItem.objects.filter(tab=active_tab).order_by(
         "-created_at",
         "-id",
     ):
@@ -685,22 +682,22 @@ def _load_items_by_tab():
         watch_until = item.watch_until.isoformat() if item.watch_until else ""
         status_label, status_class = _item_status(watch_until)
 
-        items_by_tab[tab].append(
+        items.append(
             {
                 "id": item.id,
                 "tab": tab,
                 "created_at": created_at,
                 "title": title,
-                "title_display": _build_text_display(title),
+                "title_is_truncated": _is_text_truncated(title),
                 "body": body,
-                "body_display": _build_text_display(body),
+                "body_is_truncated": _is_text_truncated(body),
                 "watch_until": watch_until,
                 "status_label": status_label,
                 "status_class": status_class,
             }
         )
 
-    return items_by_tab
+    return items
 
 
 def _build_item_form(post_data=None, default_tab="watch"):
@@ -875,7 +872,6 @@ def tradeplan_positions(request):
 
 @ensure_csrf_cookie
 def index(request):
-    sync_local_outlook_data_from_remote()
     active_tab = _normalize_tab(request.GET.get("tab"))
     default_item_tab = active_tab if active_tab in VALID_ITEM_TABS else "watch"
     editing_item_id = ""
@@ -884,23 +880,27 @@ def index(request):
     )
     item_form = _build_item_form(default_tab=default_item_tab)
     item_errors = {}
-    tradeplan_positions = _load_tradeplan_positions()
-    requested_plan_date = _parse_plan_date(request.GET.get("plan_date"))
-    requested_calendar_year = request.GET.get("calendar_year")
-    requested_calendar_month = request.GET.get("calendar_month")
-    displayed_month = _resolve_tradeplan_calendar_month(
-        requested_calendar_year,
-        requested_calendar_month,
-        focus_date=requested_plan_date or _today_jst(),
-    )
-    if _is_tradeplan_date_in_range(requested_plan_date):
-        focus_plan_date = requested_plan_date
-    elif requested_calendar_year or requested_calendar_month:
-        focus_plan_date = _resolve_tradeplan_date(displayed_month)
-    else:
-        focus_plan_date = _resolve_tradeplan_date(_today_jst())
-    selected_tradeplan_date = focus_plan_date
+    tradeplan_positions = None
+    tradeplan_calendar = None
+    displayed_month = None
+    selected_tradeplan_date = None
     tradeplan_errors = {}
+
+    if active_tab == "tradeplan":
+        requested_plan_date = _parse_plan_date(request.GET.get("plan_date"))
+        requested_calendar_year = request.GET.get("calendar_year")
+        requested_calendar_month = request.GET.get("calendar_month")
+        displayed_month = _resolve_tradeplan_calendar_month(
+            requested_calendar_year,
+            requested_calendar_month,
+            focus_date=requested_plan_date or _today_jst(),
+        )
+        if _is_tradeplan_date_in_range(requested_plan_date):
+            selected_tradeplan_date = requested_plan_date
+        elif requested_calendar_year or requested_calendar_month:
+            selected_tradeplan_date = _resolve_tradeplan_date(displayed_month)
+        else:
+            selected_tradeplan_date = _resolve_tradeplan_date(_today_jst())
 
     edit_item_id = (request.GET.get("edit") or "").strip()
     if request.method != "POST" and active_tab in VALID_ITEM_TABS and edit_item_id:
@@ -914,6 +914,7 @@ def index(request):
     if request.method == "POST":
         if request.POST.get("tradeplan_action") == "save":
             active_tab = "tradeplan"
+            tradeplan_positions = _load_tradeplan_positions()
             tradeplan_form = _build_tradeplan_form(request.POST)
             plan_date = _parse_plan_date(tradeplan_form["date"])
             displayed_month = _resolve_tradeplan_calendar_month(
@@ -1002,14 +1003,29 @@ def index(request):
                     f"{reverse('outlook:index')}?tab={item_form['tab']}&saved=1"
                 )
 
-    items_by_tab = _load_items_by_tab()
-    active_items = items_by_tab.get(active_tab, [])
-    if not _is_tradeplan_date_in_range(selected_tradeplan_date):
-        selected_tradeplan_date = None
-    tradeplan_calendar = _build_tradeplan_calendar(
-        displayed_month,
-        focus_date=selected_tradeplan_date,
-    )
+    active_items = []
+    visible_tradeplan_positions = []
+    if active_tab in VALID_ITEM_TABS:
+        active_items = _load_items_for_tab(active_tab)
+
+    if active_tab == "tradeplan":
+        if not _is_tradeplan_date_in_range(selected_tradeplan_date):
+            selected_tradeplan_date = None
+        if displayed_month is None:
+            displayed_month = _resolve_tradeplan_calendar_month(
+                focus_date=_today_jst(),
+            )
+        if tradeplan_positions is None:
+            tradeplan_positions = _load_tradeplan_positions()
+        tradeplan_calendar = _build_tradeplan_calendar(
+            displayed_month,
+            focus_date=selected_tradeplan_date,
+        )
+        visible_tradeplan_positions = _visible_tradeplan_positions(
+            tradeplan_positions,
+            _parse_plan_date(tradeplan_calendar["grid_start"]),
+            _parse_plan_date(tradeplan_calendar["grid_end"]),
+        )
 
     context = {
         "active_tab": active_tab,
@@ -1022,11 +1038,7 @@ def index(request):
         "item_errors": item_errors,
         "tab_choices": ITEM_TAB_CHOICES,
         "tradeplan_calendar": tradeplan_calendar,
-        "tradeplan_positions": _visible_tradeplan_positions(
-            tradeplan_positions,
-            _parse_plan_date(tradeplan_calendar["grid_start"]),
-            _parse_plan_date(tradeplan_calendar["grid_end"]),
-        ),
+        "tradeplan_positions": visible_tradeplan_positions,
         "tradeplan_position_api_url": reverse("outlook:tradeplan_positions"),
         "tradeplan_position_min_date": TRADEPLAN_MIN_DATE.isoformat(),
         "tradeplan_position_max_date": TRADEPLAN_MAX_DATE.isoformat(),

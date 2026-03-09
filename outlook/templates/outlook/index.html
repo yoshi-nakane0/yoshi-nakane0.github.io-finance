@@ -7,8 +7,6 @@
     <title>Outlook</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'outlook/css/style.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
 </head>
 <body class="bg-dark">
     <div class="app-container outlook-page">
@@ -22,7 +20,10 @@
             </nav>
             {% if show_compose %}
             <a class="compose-link" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;compose=1" aria-label="項目を追加">
-                <span class="material-symbols-outlined">add</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                </svg>
             </a>
             {% else %}
             <div class="tab-toolbar__spacer" aria-hidden="true"></div>
@@ -50,11 +51,15 @@
                             <div class="tradeplan-calendar__selectors">
                                 {% if tradeplan_calendar.previous_month %}
                                 <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.previous_month.year }}&amp;calendar_month={{ tradeplan_calendar.previous_month.month }}" aria-label="前の月">
-                                    <span class="material-symbols-outlined">chevron_left</span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
                                 </a>
                                 {% else %}
                                 <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev is-disabled" aria-hidden="true">
-                                    <span class="material-symbols-outlined">chevron_left</span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
                                 </span>
                                 {% endif %}
                                 <label class="tradeplan-calendar__selector">
@@ -75,11 +80,15 @@
                                 </label>
                                 {% if tradeplan_calendar.next_month %}
                                 <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.next_month.year }}&amp;calendar_month={{ tradeplan_calendar.next_month.month }}" aria-label="次の月">
-                                    <span class="material-symbols-outlined">chevron_right</span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 6l6 6-6 6"></path>
+                                    </svg>
                                 </a>
                                 {% else %}
                                 <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next is-disabled" aria-hidden="true">
-                                    <span class="material-symbols-outlined">chevron_right</span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 6l6 6-6 6"></path>
+                                    </svg>
                                 </span>
                                 {% endif %}
                             </div>
@@ -214,7 +223,10 @@
                             {% for item in active_items %}
                             <article class="item-card js-selectable-card" data-item-id="{{ item.id }}" tabindex="0">
                                 <div class="item-card__selection-indicator" aria-hidden="true">
-                                    <span class="material-symbols-outlined">check_circle</span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="8"></circle>
+                                        <path d="M9 12.5l2 2 4-4"></path>
+                                    </svg>
                                 </div>
                                 <div class="item-card__top">
                                     <span class="item-meta">{{ item.created_at }}</span>
@@ -223,25 +235,32 @@
                                         <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
                                         {% endif %}
                                         <a class="icon-action-button item-card__single-action" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;edit={{ item.id }}" aria-label="このカードを編集">
-                                            <span class="material-symbols-outlined">edit</span>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 20h4l10-10-4-4L4 16v4z"></path>
+                                                <path d="M12.5 7.5l4 4"></path>
+                                            </svg>
                                         </a>
                                         <button class="icon-action-button icon-action-button-danger item-card__single-action" type="submit" name="delete_id" value="{{ item.id }}" aria-label="このカードを削除">
-                                            <span class="material-symbols-outlined">delete</span>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M5 7h14"></path>
+                                                <path d="M9 7V5h6v2"></path>
+                                                <path d="M8 7l1 12h6l1-12"></path>
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>
-                                {% if item.title_display.is_truncated %}
-                                <button class="item-title collapsible-text collapsible-text--title" type="button" data-collapsible-root data-preview="{{ item.title_display.preview }}" data-full="{{ item.title_display.full }}" aria-expanded="false">
-                                    <span class="collapsible-text__content">{{ item.title_display.preview }}</span>
-                                    <span class="collapsible-text__hint">タップして展開</span>
+                                {% if item.title_is_truncated %}
+                                <button class="item-title collapsible-text collapsible-text--title is-clamped" type="button" data-expandable-text aria-expanded="false">
+                                    <span class="collapsible-text__content">{{ item.title }}</span>
+                                    <span class="collapsible-text__hint" data-collapsible-hint>タップして展開</span>
                                 </button>
                                 {% else %}
                                 <h3 class="item-title">{{ item.title }}</h3>
                                 {% endif %}
-                                {% if item.body_display.is_truncated %}
-                                <button class="item-text note-body collapsible-text" type="button" data-collapsible-root data-preview="{{ item.body_display.preview }}" data-full="{{ item.body_display.full }}" aria-expanded="false">
-                                    <span class="collapsible-text__content">{{ item.body_display.preview }}</span>
-                                    <span class="collapsible-text__hint">タップして展開</span>
+                                {% if item.body_is_truncated %}
+                                <button class="item-text note-body collapsible-text is-clamped" type="button" data-expandable-text aria-expanded="false">
+                                    <span class="collapsible-text__content">{{ item.body }}</span>
+                                    <span class="collapsible-text__hint" data-collapsible-hint>タップして展開</span>
                                 </button>
                                 {% else %}
                                 <p class="item-text note-body">{{ item.body }}</p>
@@ -266,237 +285,10 @@
             </section>
         </main>
     </div>
-    <script>
-        (function () {
-            var cardForm = document.getElementById("outlook-card-list-form");
-            var selectionToolbar = document.getElementById("outlook-selection-toolbar");
-            var selectionCount = document.getElementById("outlook-selection-count");
-            var selectionDelete = document.getElementById("outlook-selection-delete");
-            var selectionCancel = document.getElementById("outlook-selection-cancel");
-            var selectionInputs = document.getElementById("outlook-selection-inputs");
-            var cards = cardForm
-                ? Array.prototype.slice.call(
-                    cardForm.querySelectorAll(".js-selectable-card")
-                )
-                : [];
-            var collapsibleItems = Array.prototype.slice.call(
-                document.querySelectorAll("[data-collapsible-root]")
-            );
-
-            function setupCollapsibleText() {
-                collapsibleItems.forEach(function (item) {
-                    var content = item.querySelector(".collapsible-text__content");
-                    var hint = item.querySelector(".collapsible-text__hint");
-
-                    if (!content || !hint) {
-                        return;
-                    }
-
-                    function syncCollapsedState(expanded) {
-                        item.setAttribute("aria-expanded", expanded ? "true" : "false");
-                        content.textContent = expanded
-                            ? item.dataset.full
-                            : item.dataset.preview;
-                        hint.textContent = expanded
-                            ? "タップして折りたたむ"
-                            : "タップして展開";
-                        item.classList.toggle("is-expanded", expanded);
-                    }
-
-                    item.addEventListener("click", function () {
-                        syncCollapsedState(
-                            item.getAttribute("aria-expanded") !== "true"
-                        );
-                    });
-                    syncCollapsedState(false);
-                });
-            }
-
-            function setupItemFormTabState() {
-                var itemTab = document.getElementById("outlook-item-tab");
-                var watchUntilField = document.getElementById("watch-until-field");
-                var watchUntilInput = watchUntilField
-                    ? watchUntilField.querySelector('input[name="watch_until"]')
-                    : null;
-
-                if (!itemTab || !watchUntilField || !watchUntilInput) {
-                    return;
-                }
-
-                function syncItemFormTabState() {
-                    var isWatchTab = itemTab.value === "watch";
-                    watchUntilField.hidden = !isWatchTab;
-                    watchUntilInput.disabled = !isWatchTab;
-                    if (!isWatchTab) {
-                        watchUntilInput.value = "";
-                    }
-                }
-
-                itemTab.addEventListener("change", syncItemFormTabState);
-                syncItemFormTabState();
-            }
-
-            function setupSelectionMode() {
-                var selectionMode = false;
-                var selectedIds = new Set();
-                var pressTimer = null;
-                var pressCard = null;
-                var pressPoint = null;
-                var longPressCard = null;
-
-                if (!cardForm || !selectionToolbar || !selectionCount || !selectionDelete || !selectionCancel || !selectionInputs || !cards.length) {
-                    return;
-                }
-
-                function syncSelectionInputs() {
-                    selectionInputs.innerHTML = "";
-                    Array.from(selectedIds).forEach(function (itemId) {
-                        var input = document.createElement("input");
-                        input.type = "hidden";
-                        input.name = "selected_ids";
-                        input.value = itemId;
-                        selectionInputs.appendChild(input);
-                    });
-                }
-
-                function syncSelectionUi() {
-                    var selectedCountValue = selectedIds.size;
-                    cardForm.classList.toggle("is-selection-mode", selectionMode);
-                    selectionToolbar.hidden = !selectionMode;
-                    selectionDelete.disabled = selectedCountValue === 0;
-                    selectionCount.textContent = selectedCountValue + "件選択中";
-                    cards.forEach(function (card) {
-                        card.classList.toggle(
-                            "is-selected",
-                            selectedIds.has(card.dataset.itemId)
-                        );
-                    });
-                    syncSelectionInputs();
-                }
-
-                function enterSelectionMode(initialCard) {
-                    selectionMode = true;
-                    if (initialCard) {
-                        selectedIds.add(initialCard.dataset.itemId);
-                    }
-                    syncSelectionUi();
-                }
-
-                function clearSelectionMode() {
-                    selectionMode = false;
-                    selectedIds.clear();
-                    syncSelectionUi();
-                }
-
-                function toggleCardSelection(card) {
-                    var itemId = card.dataset.itemId;
-                    if (selectedIds.has(itemId)) {
-                        selectedIds.delete(itemId);
-                    } else {
-                        selectedIds.add(itemId);
-                    }
-                    syncSelectionUi();
-                }
-
-                function clearPressTimer() {
-                    if (pressTimer) {
-                        window.clearTimeout(pressTimer);
-                        pressTimer = null;
-                    }
-                    pressCard = null;
-                    pressPoint = null;
-                }
-
-                function shouldIgnorePress(event) {
-                    return Boolean(
-                        event.target.closest(
-                            "button, a, input, textarea, select, label"
-                        )
-                    );
-                }
-
-                cards.forEach(function (card) {
-                    card.addEventListener("pointerdown", function (event) {
-                        if (selectionMode || shouldIgnorePress(event)) {
-                            return;
-                        }
-
-                        if (event.pointerType === "mouse" && event.button !== 0) {
-                            return;
-                        }
-
-                        pressCard = card;
-                        pressPoint = { x: event.clientX, y: event.clientY };
-                        longPressCard = null;
-                        pressTimer = window.setTimeout(function () {
-                            longPressCard = card;
-                            enterSelectionMode(card);
-                            clearPressTimer();
-                        }, 420);
-                    });
-
-                    card.addEventListener("pointermove", function (event) {
-                        if (!pressTimer || pressCard !== card || !pressPoint) {
-                            return;
-                        }
-
-                        if (
-                            Math.abs(event.clientX - pressPoint.x) > 10 ||
-                            Math.abs(event.clientY - pressPoint.y) > 10
-                        ) {
-                            clearPressTimer();
-                        }
-                    });
-
-                    ["pointerup", "pointerleave", "pointercancel"].forEach(function (eventName) {
-                        card.addEventListener(eventName, function () {
-                            clearPressTimer();
-                        });
-                    });
-
-                    card.addEventListener("click", function (event) {
-                        if (longPressCard === card) {
-                            longPressCard = null;
-                            event.preventDefault();
-                            event.stopPropagation();
-                            return;
-                        }
-
-                        if (!selectionMode || shouldIgnorePress(event)) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        toggleCardSelection(card);
-                    });
-
-                    card.addEventListener("keydown", function (event) {
-                        if (!selectionMode) {
-                            return;
-                        }
-
-                        if (event.key !== "Enter" && event.key !== " ") {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        toggleCardSelection(card);
-                    });
-                });
-
-                selectionCancel.addEventListener("click", clearSelectionMode);
-                document.addEventListener("keydown", function (event) {
-                    if (event.key === "Escape" && selectionMode) {
-                        clearSelectionMode();
-                    }
-                });
-                syncSelectionUi();
-            }
-            setupItemFormTabState();
-            setupCollapsibleText();
-            setupSelectionMode();
-        })();
-    </script>
-    <script src="{% static 'outlook/js/tradeplan_calendar.js' %}"></script>
+    {% if active_tab == 'tradeplan' %}
+    <script defer src="{% static 'outlook/js/tradeplan_calendar.js' %}"></script>
+    {% else %}
+    <script defer src="{% static 'outlook/js/card_list.js' %}"></script>
+    {% endif %}
 </body>
 </html>

@@ -1,6 +1,7 @@
 body {
   margin: 0;
-  font-family: "Manrope", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -89,6 +90,20 @@ body {
 .compose-link:focus-visible {
   filter: brightness(1.05);
   transform: translateY(-1px);
+}
+
+.compose-link svg,
+.tradeplan-calendar__nav-button svg,
+.item-card__selection-indicator svg,
+.icon-action-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
 .outlook-main {
@@ -769,6 +784,25 @@ select.form-input {
 
 .collapsible-text__content {
   display: block;
+}
+
+.collapsible-text.is-clamped .collapsible-text__content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.collapsible-text--title.is-clamped .collapsible-text__content {
+  -webkit-line-clamp: 2;
+}
+
+.collapsible-text.is-clamped:not(.collapsible-text--title) .collapsible-text__content {
+  -webkit-line-clamp: 3;
+}
+
+.collapsible-text.is-expanded .collapsible-text__content {
+  display: block;
+  overflow: visible;
 }
 
 .collapsible-text__hint {

@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.shortcuts import render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.gzip import gzip_page
+from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,8 @@ STATUS_CLASS_MAP = {
     'flat': 'status-flat',
     'down': 'status-down',
 }
+
+CACHE_TTL = 86400
 
 
 def parse_float(value):
@@ -172,6 +175,102 @@ def fetch_earnings_from_csv(csv_path):
         return []
 
 
+def enrich_item(item):
+    risk_value = item.get('risk_value')
+
+    fundamental = item.get('fundamental')
+    direction = item.get('direction')
+    sentiment = item.get('sentiment')
+
+    summary_text = item.get('summary') or '要約未取得'
+
+    item.update({
+        'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
+        'risk_class': risk_class(risk_value),
+        'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
+        'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
+        'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
+        'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
+        'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
+        'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
+        'summary': summary_text,
+        'fiscal_period': item.get('fiscal_period') or '—',
+    })
+
+
+def group_by_date(items, is_past=False):
+    grouped = []
+    if not items:
+        return grouped
+
+    try:
+        current_date = None
+        current_companies = []
+
+        for item in items:
+            if current_date != item['date']:
+                if current_date is not None:
+                    grouped.append({
+                        'date': current_date,
+                        'companies': current_companies,
+                        'is_past': is_past,
+                    })
+                current_date = item['date']
+                current_companies = []
+            current_companies.append(item)
+
+        if current_date is not None:
+            grouped.append({
+                'date': current_date,
+                'companies': current_companies,
+                'is_past': is_past,
+            })
+    except Exception as e:
+        logger.warning("Error grouping data: %s", e)
+        for item in items:
+            grouped.append({
+                'date': item['date'],
+                'companies': [item],
+                'is_past': is_past,
+            })
+    return grouped
+
+
+def get_csv_path():
+    return settings.BASE_DIR / 'static' / 'earning' / 'data' / 'data.csv'
+
+
+def build_grouped_payload(today, csv_path):
+    earnings_data = fetch_earnings_from_csv(csv_path)
+
+    future_earnings = []
+    completed_earnings = []
+    for item in earnings_data:
+        item_date = item.get('date_obj')
+        if item_date is None:
+            future_earnings.append(item)
+        elif item_date >= today:
+            future_earnings.append(item)
+        else:
+            completed_earnings.append(item)
+
+    try:
+        future_earnings.sort(key=lambda x: (x.get('date_obj') is None, x.get('date_obj') or date.max))
+        completed_earnings.sort(key=lambda x: x.get('date_obj') or date.min, reverse=True)
+    except Exception as e:
+        logger.warning("Error sorting data: %s", e)
+
+    for item in future_earnings:
+        enrich_item(item)
+    for item in completed_earnings:
+        enrich_item(item)
+
+    return {
+        'upcoming': group_by_date(future_earnings, is_past=False),
+        'completed': group_by_date(completed_earnings, is_past=True),
+    }
+
+
 def build_cache_key(today, csv_path):
     """
     「日付」と「CSV更新」で自動的に無効化されるキャッシュキー。
@@ -184,6 +283,20 @@ def build_cache_key(today, csv_path):
     return f'earnings_data_grouped_v4:{today.isoformat()}:{mtime_ns}'
 
 
+def load_grouped_earnings(today=None):
+    target_date = today or date.today()
+    csv_path = get_csv_path()
+    cache_key = build_cache_key(target_date, csv_path)
+    cached_payload = cache.get(cache_key)
+
+    if cached_payload is None:
+        cached_payload = build_grouped_payload(target_date, csv_path)
+        cache.set(cache_key, cached_payload, CACHE_TTL)
+
+    return cached_payload
+
+
+@require_GET
 @cache_control(public=True, max_age=0, s_maxage=300, stale_while_revalidate=86400)
 @gzip_page
 def index(request):
@@ -191,113 +304,26 @@ def index(request):
     決算カレンダーページの表示
     """
     today = date.today()
-    csv_path = settings.BASE_DIR / 'static' / 'earning' / 'data' / 'data.csv'
+    grouped_payload = load_grouped_earnings(today)
+    grouped_earnings = grouped_payload.get('upcoming', [])
+    past_earnings_data = grouped_payload.get('completed', [])
 
-    cache_key = build_cache_key(today, csv_path)
-    cached_payload = cache.get(cache_key)
-
-    if cached_payload is None:
-        earnings_data = fetch_earnings_from_csv(csv_path)
-
-        future_earnings = []
-        completed_earnings = []
-        for item in earnings_data:
-            item_date = item.get('date_obj')
-            if item_date is None:
-                future_earnings.append(item)
-            else:
-                if item_date >= today:
-                    future_earnings.append(item)
-                else:
-                    completed_earnings.append(item)
-
-        try:
-            future_earnings.sort(key=lambda x: (x.get('date_obj') is None, x.get('date_obj') or date.max))
-            completed_earnings.sort(key=lambda x: x.get('date_obj') or date.min, reverse=True)
-        except Exception as e:
-            logger.warning("Error sorting data: %s", e)
-
-        def enrich_item(item):
-            risk_value = item.get('risk_value')
-
-            fundamental = item.get('fundamental')
-            direction = item.get('direction')
-            sentiment = item.get('sentiment')
-
-            summary_text = item.get('summary') or '要約未取得'
-
-            item.update({
-                'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
-                'risk_class': risk_class(risk_value),
-                'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
-                'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
-                'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
-                'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
-                'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
-                'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
-                'summary': summary_text,
-                'fiscal_period': item.get('fiscal_period') or '—',
-            })
-
-        for item in future_earnings:
-            enrich_item(item)
-        for item in completed_earnings:
-            enrich_item(item)
-
-        def group_by_date(items, is_past=False):
-            grouped = []
-            if not items:
-                return grouped
-            try:
-                current_date = None
-                current_companies = []
-
-                for item in items:
-                    if current_date != item['date']:
-                        if current_date is not None:
-                            grouped.append({
-                                'date': current_date,
-                                'companies': current_companies,
-                                'is_past': is_past,
-                            })
-                        current_date = item['date']
-                        current_companies = []
-                    current_companies.append(item)
-
-                if current_date is not None:
-                    grouped.append({
-                        'date': current_date,
-                        'companies': current_companies,
-                        'is_past': is_past,
-                    })
-            except Exception as e:
-                logger.warning("Error grouping data: %s", e)
-                for item in items:
-                    grouped.append({
-                        'date': item['date'],
-                        'companies': [item],
-                        'is_past': is_past,
-                    })
-            return grouped
-
-        grouped_earnings = group_by_date(future_earnings, is_past=False)
-        past_earnings_data = group_by_date(completed_earnings, is_past=True)
-
-        cache_payload = {
-            'upcoming': grouped_earnings,
-            'completed': past_earnings_data,
-        }
-        cache.set(cache_key, cache_payload, 86400)
-    else:
-        grouped_earnings = cached_payload.get('upcoming', [])
-        past_earnings_data = cached_payload.get('completed', [])
-
-    combined_earnings_data = grouped_earnings + past_earnings_data
     context = {
-        'earnings_data': combined_earnings_data,
+        'earnings_data': grouped_earnings,
         'has_past_earnings': bool(past_earnings_data),
         'past_group_count': len(past_earnings_data),
         'updated_date': today.strftime('%Y.%m.%d'),
     }
 
     return render(request, 'earning/index.html', context)
+
+
+@require_GET
+@cache_control(public=True, max_age=0, s_maxage=300, stale_while_revalidate=86400)
+@gzip_page
+def completed(request):
+    grouped_payload = load_grouped_earnings()
+    context = {
+        'earnings_data': grouped_payload.get('completed', []),
+    }
+    return render(request, 'earning/_date_groups.html', context)

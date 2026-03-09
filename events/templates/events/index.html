@@ -6,162 +6,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Events</title>
-    
-    <!-- Bootstrap CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
-    
-    <!-- style.cssの読み込み -->
+
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'events/css/style.css' %}">
 </head>
 
-<body class="bg-dark">
-    <!-- コンテンツ -->
+<body>
     <div class="app-container">
         {% include "common/app_header.html" with page_title="Events" page_slug="events" %}
         <div class="events-container">
-            <div class="status-bar justify-content-center rounded-pill border-0 px-2 py-2 mx-2 gap-2">
-                <button class="status-bar-item flex-fill ms-0" id="toggle-past-events">切替</button>
-                <button class="status-bar-item flex-fill ms-0" onclick="window.open('https://www.forexfactory.com/calendar', '_blank')">指標</button>
-                <button class="status-bar-item flex-fill ms-0" onclick="window.open('https://www.investing.com/central-banks/fed-rate-monitor', '_blank')">金利</button>
+            <div class="status-bar">
+                <button
+                    class="status-bar-item status-bar-item--fill"
+                    id="toggle-past-events"
+                    type="button"
+                    data-past-url="{{ past_events_url }}"
+                    data-has-past-events="{{ has_past_events|yesno:'true,false' }}"
+                    aria-pressed="false"
+                >
+                    切替
+                </button>
+                <button class="status-bar-item status-bar-item--fill" type="button" onclick="window.open('https://www.forexfactory.com/calendar', '_blank')">指標</button>
+                <button class="status-bar-item status-bar-item--fill" type="button" onclick="window.open('https://www.investing.com/central-banks/fed-rate-monitor', '_blank')">金利</button>
             </div>
             <div class="meta-info">Updated: 2026.03.06</div>
             <div class="events-content">
-                <!-- JavaScriptでここにデータを挿入 -->
+                <div id="past-events-container" class="events-group events-group--past" hidden></div>
+                <div class="events-group events-group--future">
+                    {% include "events/_event_sections.html" with grouped_entries=future_groups %}
+                </div>
             </div>
         </div>
 
-        <!-- トップに戻るボタン -->
         <button id="back-to-top" title="Go to top">
             <span aria-hidden="true">↑</span>
         </button>
 
         <script>
-            let groupedEntries = [];
-
-            async function fetchAndParseCSV() {
-                const response = await fetch("{% static 'events/data.csv' %}", { cache: 'force-cache' });
-                const csvText = await response.text();
-                return parseCSV(csvText);
-            }
-
-            function parseCSV(csvText) {
-                const rows = [];
-                let isHeader = true;
-
-                for (const rawLine of csvText.split(/\r?\n/)) {
-                    const line = rawLine.trim();
-                    if (!line) continue;
-                    if (isHeader) {
-                        isHeader = false;
-                        continue;
-                    }
-
-                    const cols = line.split(',');
-                    rows.push({
-                        date: cols[0] || '',
-                        time: cols[1] || '',
-                        currency: cols[2] || '',
-                        event: cols[3] || '',
-                        impact: cols[4] || ''
-                    });
-                }
-
-                return rows;
-            }
-
-            function groupByDate(items) {
-                const map = new Map();
-                for (const item of items) {
-                    let list = map.get(item.date);
-                    if (!list) {
-                        list = [];
-                        map.set(item.date, list);
-                    }
-                    list.push(item);
-                }
-                return Array.from(map.entries());
-            }
-
-            let showPastEvents = false;
-            const eventsContent = document.querySelector('.events-content');
             const toggleButton = document.getElementById('toggle-past-events');
+            const pastEventsContainer = document.getElementById('past-events-container');
+            const hasPastEvents = toggleButton.dataset.hasPastEvents === 'true';
+            const pastEventsUrl = toggleButton.dataset.pastUrl;
+            let showPastEvents = false;
+            let pastEventsLoaded = false;
+            let pastEventsLoading = false;
 
-            function renderEvents() {
-                const today = new Date().toISOString().slice(0, 10);
-                const fragment = document.createDocumentFragment();
-
-                for (const [date, events] of groupedEntries) {
-                    if (!showPastEvents && date < today) continue;
-
-                    const dateDiv = document.createElement('div');
-                    dateDiv.className = 'events-date';
-
-                    const dateTitle = document.createElement('h2');
-                    dateTitle.className = 'events-date-title';
-                    dateTitle.textContent = date;
-                    dateDiv.appendChild(dateTitle);
-
-                    const tableContainer = document.createElement('div');
-                    tableContainer.className = 'events-table-container';
-
-                    const rowsHtml = events.map(item => {
-                        const isImportant = item.impact === '★★★';
-                        const eventText = item.event.length > 30 ? item.event.substring(0, 30) + "..." : item.event;
-                        return `
-                                <tr data-impact="${item.impact}">
-                                    <td>${item.time || '-'}</td>
-                                    <td>${item.currency || '-'}</td>
-                                    <td class="event-cell${isImportant ? ' important-event' : ''}">
-                                        ${eventText}
-                                    </td>
-                                    <td class="impact-cell${isImportant ? ' important-impact' : ''}">
-                                        ${item.impact || '-'}
-                                    </td>
-                                </tr>
-                            `;
-                    }).join('');
-
-                    const table = document.createElement('table');
-                    table.className = 'events-table';
-                    table.innerHTML = `
-                            <thead>
-                                <tr>
-                                    <th>時間</th>
-                                    <th>国</th>
-                                    <th>指標</th>
-                                    <th>重要度</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            ${rowsHtml}
-                            </tbody>
-                        `;
-
-                    tableContainer.appendChild(table);
-                    dateDiv.appendChild(tableContainer);
-                    fragment.appendChild(dateDiv);
+            async function ensurePastEventsLoaded() {
+                if (!hasPastEvents || pastEventsLoaded || pastEventsLoading) {
+                    return pastEventsLoaded;
                 }
 
-                eventsContent.replaceChildren(fragment);
+                pastEventsLoading = true;
+                toggleButton.disabled = true;
+
+                try {
+                    const response = await fetch(pastEventsUrl, { cache: 'force-cache' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    pastEventsContainer.innerHTML = await response.text();
+                    pastEventsLoaded = true;
+                    return true;
+                } catch (error) {
+                    console.error('過去イベントの読み込みでエラー:', error);
+                    return false;
+                } finally {
+                    pastEventsLoading = false;
+                    toggleButton.disabled = !hasPastEvents;
+                }
             }
 
+            function setPastEventsVisibility(visible) {
+                showPastEvents = visible;
+                pastEventsContainer.hidden = !visible;
+                toggleButton.setAttribute('aria-pressed', String(visible));
+            }
 
-            toggleButton.addEventListener('click', () => {
-                showPastEvents = !showPastEvents;
-                renderEvents();
+            toggleButton.disabled = !hasPastEvents;
+            toggleButton.addEventListener('click', async () => {
+                if (showPastEvents) {
+                    setPastEventsVisibility(false);
+                    return;
+                }
+
+                const loaded = await ensurePastEventsLoaded();
+                if (!loaded) {
+                    return;
+                }
+
+                setPastEventsVisibility(true);
             });
 
-            fetchAndParseCSV()
-              .then(parsedData => {
-                  groupedEntries = groupByDate(parsedData);
-                  renderEvents();
-              })
-              .catch(error => {
-                  console.error("CSVの読み込みでエラー:", error);
-              });
-
-            // Back to top button script
             const backToTopButton = document.getElementById("back-to-top");
 
             let scrollTicking = false;

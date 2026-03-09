@@ -28,6 +28,13 @@ class OutlookViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
+    def test_index_does_not_trigger_request_time_sync(self):
+        with patch.object(views, "sync_local_outlook_data_from_remote") as sync_mock:
+            response = self.client.get(reverse("outlook:index"))
+
+        self.assertEqual(response.status_code, 200)
+        sync_mock.assert_not_called()
+
     def test_create_watch_item_persists_to_database(self):
         response = self.client.post(
             reverse("outlook:index"),
@@ -185,6 +192,31 @@ class OutlookViewTests(TestCase):
             f'data-tradeplan-storage-mode="{views._tradeplan_position_storage_mode()}"',
             html,
         )
+        self.assertIn("outlook/js/tradeplan_calendar.js", html)
+        self.assertNotIn("outlook/js/card_list.js", html)
+
+    def test_watch_page_loads_card_script_without_external_font_urls(self):
+        response = self.client.get(reverse("outlook:index") + "?tab=watch")
+        html = response.content.decode("utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("outlook/js/card_list.js", html)
+        self.assertNotIn("outlook/js/tradeplan_calendar.js", html)
+        self.assertNotIn("fonts.googleapis.com", html)
+
+    def test_tradeplan_page_skips_item_loading(self):
+        with patch.object(views, "_load_items_for_tab") as load_items_mock:
+            response = self.client.get(reverse("outlook:index") + "?tab=tradeplan")
+
+        self.assertEqual(response.status_code, 200)
+        load_items_mock.assert_not_called()
+
+    def test_watch_page_skips_tradeplan_position_loading(self):
+        with patch.object(views, "_load_tradeplan_positions") as load_positions_mock:
+            response = self.client.get(reverse("outlook:index") + "?tab=watch")
+
+        self.assertEqual(response.status_code, 200)
+        load_positions_mock.assert_not_called()
 
     def test_tradeplan_position_api_accepts_csrf_token_rendered_in_page(self):
         client = self.client_class(enforce_csrf_checks=True, HTTP_HOST="localhost")
@@ -216,6 +248,15 @@ class OutlookViewTests(TestCase):
 
         self.assertEqual(create_response.status_code, 200)
         self.assertEqual(TradePlanPosition.objects.count(), 1)
+
+    def test_outlook_html_response_supports_gzip(self):
+        response = self.client.get(
+            reverse("outlook:index") + "?tab=tradeplan",
+            HTTP_ACCEPT_ENCODING="gzip",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get("Content-Encoding"), "gzip")
 
     @override_settings(DEBUG=False)
     def test_tradeplan_storage_mode_uses_browser_without_database_url(self):

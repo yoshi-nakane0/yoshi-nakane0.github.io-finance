@@ -5,6 +5,6 @@ from . import views
 app_name = 'earning'
 
 urlpatterns = [
+    path('completed/', views.completed, name='completed'),
     path('', views.index, name='index'),
-    # 将来的に必要なページ(例: detail, editなど)を追加
 ]

@@ -6,5 +6,5 @@ app_name = 'events'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    # 将来的に必要なページ(例: detail, editなど)を追加
+    path('past/', views.past_events, name='past_events'),
 ]

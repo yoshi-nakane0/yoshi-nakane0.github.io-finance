@@ -60,6 +60,13 @@ body {
   margin-bottom: 3rem;
 }
 
+@supports (content-visibility: auto) {
+  .dashboard-page .dashboard-section--deferred {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 280px;
+  }
+}
+
 .section-title {
   font-size: 0.9rem;
   font-weight: 800;
@@ -149,19 +156,16 @@ body {
   justify-content: center;
   text-decoration: none;
   color: var(--text-primary);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+    border-color 0.3s ease;
   position: relative;
   overflow: hidden;
+  contain: layout;
   
   /* 影を濃くして浮き出し効果を強調 */
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px);
-  /* ホバー時はさらに影を濃く */
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  z-index: 10;
 }
 
 /* Icons */
@@ -173,13 +177,13 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 1.25rem;
-  transition: all 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
   background: rgba(0, 0, 0, 0.2); /* アイコン背景を少し暗くしてコントラスト確保 */
   border: 2px solid transparent; /* アイコン枠も太く */
-}
-
-.dashboard-card:hover .icon-wrapper {
-  transform: scale(1.1);
 }
 
 .icon-wrapper svg {
@@ -189,7 +193,7 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
-  transition: all 0.3s ease;
+  transition: stroke 0.3s ease;
   stroke: var(--text-primary);
 }
 
@@ -351,10 +355,6 @@ body {
   border-color: rgba(192, 165, 195, 0.47);
 }
 
-.dashboard-card:hover {
-  border-color: rgba(255, 255, 255, 0.7);
-}
-
 .dashboard-card .icon-wrapper {
   background: linear-gradient(165deg, #403e3e 0%, #686a6d 36%, #4d4d4d 100% 100%);
   border-color: rgb(211 69 69 / 22%);
@@ -381,6 +381,33 @@ body {
   filter:
     drop-shadow(0 2px 0 rgba(15, 23, 42, 0.45))
     drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-card,
+  .dashboard-card .icon-wrapper {
+    will-change: transform;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+
+  .dashboard-card:hover .icon-wrapper {
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-card,
+  .icon-wrapper,
+  .icon-wrapper svg,
+  .card-title {
+    transition: none;
+  }
 }
 
 

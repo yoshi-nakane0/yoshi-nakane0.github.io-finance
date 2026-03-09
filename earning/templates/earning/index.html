@@ -7,10 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earnings Calendar</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
     <link rel="stylesheet" href="{% static 'earning/css/style.css' %}">
 </head>
 
@@ -18,7 +16,7 @@
     <div class="app-container">
         {% include "common/app_header.html" with page_title="Earnings" page_slug="earning" %}
 
-        <div class="meta-info">Updated: 2026.02.03</div>
+        <div class="meta-info">Updated: {{ updated_date }}</div>
 
         <div class="schedule-container">
 
@@ -32,6 +30,11 @@
                     <button id="toggle-completed-btn"
                             type="button"
                             class="toggle-completed-btn"
+                            data-load-url="{% url 'earning:completed' %}"
+                            data-default-label="決算済みを表示（{{ past_group_count }}日分）"
+                            data-hide-label="決算済みを非表示"
+                            data-loading-label="決算済みを読み込み中..."
+                            data-error-label="決算済みの読込に失敗"
                             {% if not has_past_earnings %}disabled{% endif %}>
                         {% if has_past_earnings %}
                         決算済みを表示（{{ past_group_count }}日分）
@@ -43,112 +46,8 @@
             </div>
 
             <div class="schedule-date">
-                <div class="earnings-container">
-                    {% for date_group in earnings_data %}
-                    <div class="date-group{% if date_group.is_past %} date-group-past{% endif %}"
-                         data-period="{% if date_group.is_past %}completed{% else %}upcoming{% endif %}">
-                        <div class="date-header">
-                            <h3 class="date-title">{{ date_group.date }}</h3>
-                            <span class="date-count">{{ date_group.companies|length }}件</span>
-                        </div>
-                        <div class="companies-list">
-                            {% for company in date_group.companies %}
-                            <div class="company-card"
-                                 data-market="{{ company.market }}">
-                                <div class="company-header">
-                                    <div class="company-identity">
-                                        <div class="company-name" title="{{ company.company }}">{{ company.company }}</div>
-                                        <div class="company-sub">
-                                            <span class="industry-label">{{ company.industry }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="company-badges">
-                                        <div class="company-identity">
-                                            <span class="industry-label">{{ company.fiscal_period }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="financial-table-wrapper">
-                                    <table class="financial-table">
-                                        <tbody>
-                                            <tr>
-                                                <th>EPS</th>
-                                                <td><span class="cell-val">{{ company.eps_forecast }}</span></td>
-                                                <td><span class="cell-val">{{ company.eps_4q_ago }}</span></td>
-                                                <td><span class="cell-val">{{ company.eps_current }}</span></td>
-                                                <td><span class="cell-val">{{ company.eps_4q_prior_period }}</span></td>
-                                            </tr>
-                                            <tr>
-                                                <th>SURP(E)</th>
-                                                <td><span class="cell-val">{{ company.surp_eps_forecast|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_eps_4q_ago|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_eps_current|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_eps_4q_prior_period|default:"-" }}</span></td>
-                                            </tr>
-                                            <tr>
-                                                <th>REV</th>
-                                                <td><span class="cell-val">{{ company.sales_forecast }}</span></td>
-                                                <td><span class="cell-val">{{ company.sales_4q_ago }}</span></td>
-                                                <td><span class="cell-val">{{ company.sales_current }}</span></td>
-                                                <td><span class="cell-val">{{ company.sales_4q_prior_period }}</span></td>
-                                            </tr>
-                                            <tr>
-                                                <th>SURP(R)</th>
-                                                <td><span class="cell-val">{{ company.surp_forecast|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_4q_ago|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_current|default:"-" }}</span></td>
-                                                <td><span class="cell-val">{{ company.surp_4q_prior_period|default:"-" }}</span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="table-caption">※ 左から予想、4期前、直近、直近4期前</div>
-                                </div>
-
-                                <div class="forecast-grid fixed-4-cols">
-                                    <div class="metric-card" style="gap: 2px;">
-                                        <span class="metric-abbrev">Fund.</span>
-                                        <div class="metric-icon {{ company.fundamental_class }}">
-                                            <i class="bi {{ company.fundamental_icon }}"></i>
-                                        </div>
-                                    </div>
-                                    <div class="metric-card" style="gap: 2px;">
-                                        <span class="metric-abbrev">Dir.</span>
-                                        <div class="metric-icon {{ company.direction_class }}">
-                                            <i class="bi {{ company.direction_icon }}"></i>
-                                        </div>
-                                    </div>
-                                    <div class="metric-card" style="gap: 2px;">
-                                        <span class="metric-abbrev">Sent.</span>
-                                        <div class="metric-icon {{ company.sentiment_class }}">
-                                            <i class="bi {{ company.sentiment_icon }}"></i>
-                                        </div>
-                                    </div>
-                                    <div class="metric-card" style="gap: 2px;">
-                                        <span class="metric-abbrev">Risk</span>
-                                        <span class="risk-indicator {{ company.risk_class }}">{{ company.risk_display }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="summary-row">
-                                    <p class="company-summary">{{ company.summary }}</p>
-                                </div>
-
-                                <div class="company-actions">
-                                    {% if company.market and company.symbol %}
-                                    <a href="https://jp.tradingview.com/symbols/{{ company.market }}-{{ company.symbol }}/financials-earnings/?earnings-period=FQ&revenues-period=FQ"
-                                       target="_blank"
-                                       class="analysis-link">
-                                        <i class="bi bi-graph-up-arrow"></i>
-                                        詳細
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endfor %}
+                <div class="earnings-container" id="earnings-groups">
+                    {% include "earning/_date_groups.html" with earnings_data=earnings_data %}
                 </div>
             </div>
         </div>
@@ -188,15 +87,88 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const filterButtons = document.querySelectorAll('.filter-btn');
-            const dateGroups = document.querySelectorAll('.date-group');
             const toggleCompletedButton = document.getElementById('toggle-completed-btn');
+            const groupsContainer = document.getElementById('earnings-groups');
+            const dateGroups = [];
             const groupCards = new Map();
             let showCompleted = false;
             let marketFilter = 'all';
+            let completedLoaded = false;
+            let completedLoading = false;
 
-            dateGroups.forEach(group => {
-                groupCards.set(group, Array.from(group.querySelectorAll('.company-card')));
-            });
+            const registerGroups = root => {
+                root.querySelectorAll('.date-group').forEach(group => {
+                    if (groupCards.has(group)) {
+                        return;
+                    }
+                    dateGroups.push(group);
+                    groupCards.set(group, Array.from(group.querySelectorAll('.company-card')));
+                });
+            };
+
+            const updateCompletedButtonState = () => {
+                if (!toggleCompletedButton) {
+                    return;
+                }
+                toggleCompletedButton.classList.toggle('active', showCompleted);
+                toggleCompletedButton.setAttribute('aria-expanded', String(showCompleted));
+                toggleCompletedButton.textContent = showCompleted
+                    ? (toggleCompletedButton.dataset.hideLabel || '決算済みを非表示')
+                    : (toggleCompletedButton.dataset.defaultLabel || '');
+            };
+
+            const loadCompletedGroups = async () => {
+                if (!toggleCompletedButton || completedLoaded || completedLoading) {
+                    return completedLoaded;
+                }
+
+                const loadUrl = toggleCompletedButton.dataset.loadUrl || '';
+                if (!loadUrl) {
+                    return false;
+                }
+
+                completedLoading = true;
+                toggleCompletedButton.disabled = true;
+                toggleCompletedButton.classList.add('is-loading');
+                toggleCompletedButton.setAttribute('aria-busy', 'true');
+                toggleCompletedButton.textContent = toggleCompletedButton.dataset.loadingLabel || '決算済みを読み込み中...';
+
+                try {
+                    const response = await fetch(loadUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const responseHtml = await response.text();
+                    if (responseHtml.trim()) {
+                        const fragment = document.createRange().createContextualFragment(responseHtml);
+                        groupsContainer.appendChild(fragment);
+                        registerGroups(groupsContainer);
+                    }
+
+                    completedLoaded = true;
+                    return true;
+                } catch (error) {
+                    console.error('Failed to load completed earnings.', error);
+                    toggleCompletedButton.textContent = toggleCompletedButton.dataset.errorLabel || '決算済みの読込に失敗';
+                    return false;
+                } finally {
+                    completedLoading = false;
+                    toggleCompletedButton.disabled = false;
+                    toggleCompletedButton.classList.remove('is-loading');
+                    toggleCompletedButton.removeAttribute('aria-busy');
+                    if (completedLoaded) {
+                        updateCompletedButtonState();
+                    }
+                }
+            };
+
+            registerGroups(groupsContainer);
 
             const applyFilters = () => {
                 dateGroups.forEach(group => {
@@ -243,12 +215,19 @@
             });
 
             if (toggleCompletedButton && !toggleCompletedButton.disabled) {
-                toggleCompletedButton.addEventListener('click', () => {
+                updateCompletedButtonState();
+                toggleCompletedButton.addEventListener('click', async () => {
+                    if (completedLoading) {
+                        return;
+                    }
+                    if (!showCompleted) {
+                        const loaded = await loadCompletedGroups();
+                        if (!loaded) {
+                            return;
+                        }
+                    }
                     showCompleted = !showCompleted;
-                    toggleCompletedButton.classList.toggle('active', showCompleted);
-                    toggleCompletedButton.textContent = showCompleted
-                        ? '決算済みを非表示'
-                        : '決算済みを表示（{{ past_group_count }}日分）';
+                    updateCompletedButtonState();
                     applyFilters();
                 });
             }
