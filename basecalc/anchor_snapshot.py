@@ -2,7 +2,11 @@ import datetime
 import json
 import logging
 
-from .nikkei_bias import NIKKEI_PER_DATA_PATH, calculate_bias
+from .nikkei_bias import (
+    NIKKEI_PER_DATA_PATH,
+    calculate_bias,
+    load_nikkei_per_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +255,7 @@ def _extract_anchor_config(payload):
     return config
 
 
-def load_anchor_snapshot(path=NIKKEI_PER_DATA_PATH):
+def _load_anchor_payload_from_path(path):
     try:
         with open(path, "r", encoding="utf-8") as handle:
             payload = json.load(handle)
@@ -260,11 +264,26 @@ def load_anchor_snapshot(path=NIKKEI_PER_DATA_PATH):
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning("Failed to load anchor config (%s): %s", path, exc)
         return None
+    if not isinstance(payload, dict):
+        logger.warning("Invalid anchor payload (%s)", path)
+        return None
+    return payload
+
+
+def load_anchor_snapshot(path=None):
+    payload = (
+        _load_anchor_payload_from_path(path)
+        if path
+        else load_nikkei_per_payload()
+    )
+    source = path or NIKKEI_PER_DATA_PATH
+    if payload is None:
+        return None
     config = _extract_anchor_config(payload)
     if config is None:
         return None
     if not is_valid_anchor_config(config):
-        logger.warning("Invalid anchor config (%s)", path)
+        logger.warning("Invalid anchor config (%s)", source)
         return None
     forward_per = config.get("forward_per")
     if forward_per is None and isinstance(payload, dict):
@@ -294,6 +313,6 @@ def load_anchor_snapshot(path=NIKKEI_PER_DATA_PATH):
         as_of_date=config.get("anchor_date"),
     )
     if not snapshot or not is_valid_anchor_snapshot(snapshot):
-        logger.warning("Failed to build anchor snapshot (%s)", path)
+        logger.warning("Failed to build anchor snapshot (%s)", source)
         return None
     return snapshot

@@ -38,7 +38,9 @@ jobs:
           fi
       - name: Update Nikkei PER data
         run: python scripts/update_nikkei_per_data.py
-      - name: Commit data file
+      - name: Publish data file
+        env:
+          DATA_BRANCH: codex/nikkei-per-data
         run: |
           if git diff --quiet -- basecalc/data/nikkei_per.json; then
             echo "No changes to commit."
@@ -46,6 +48,12 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$DATA_BRANCH"
           git add basecalc/data/nikkei_per.json
           git commit -m "Update Nikkei PER data"
-          git push
+          if git ls-remote --exit-code --heads origin "$DATA_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$DATA_BRANCH"
+            git push --force-with-lease origin "HEAD:$DATA_BRANCH"
+            exit 0
+          fi
+          git push origin "HEAD:$DATA_BRANCH"

@@ -25,12 +25,20 @@ HTTP_SILENT_STATUS = {403, 404, 429}
 MOF_JGB10Y_CSV_URL = (
     "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
 )
+DEFAULT_NIKKEI_PER_DATA_URL = (
+    "https://raw.githubusercontent.com/"
+    "yoshi-nakane0/yoshi-nakane0.github.io-finance/"
+    "codex/nikkei-per-data/basecalc/data/nikkei_per.json"
+)
 NIKKEI_PER_DATA_PATH = os.path.join(
     os.path.dirname(__file__),
     "data",
     "nikkei_per.json",
 )
-NIKKEI_PER_DATA_URL = os.getenv("NIKKEI_PER_DATA_URL")
+NIKKEI_PER_DATA_URL = os.getenv(
+    "NIKKEI_PER_DATA_URL",
+    DEFAULT_NIKKEI_PER_DATA_URL,
+)
 GROWTH_CORE_WIDTH_DEFAULT = 0.005
 GROWTH_WIDE_WIDTH_DEFAULT = 0.01
 GROWTH_CORE_RATIO_BASE = 0.1
@@ -290,7 +298,7 @@ def _extract_nikkei_per_values_from_payload(payload):
         result["dividend_yield_index_based"] = dividend_index_val
     return result
 
-def _load_nikkei_per_data_file(path):
+def _load_nikkei_per_payload_file(path):
     try:
         with open(path, "r", encoding="utf-8") as handle:
             payload = json.load(handle)
@@ -299,6 +307,15 @@ def _load_nikkei_per_data_file(path):
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning("Failed to read Nikkei PER data file (%s): %s", path, exc)
         return None
+    if not isinstance(payload, dict):
+        logger.warning("Invalid Nikkei PER payload (%s)", path)
+        return None
+    return payload
+
+def _load_nikkei_per_data_file(path):
+    payload = _load_nikkei_per_payload_file(path)
+    if not payload:
+        return None
     return _extract_nikkei_per_values_from_payload(payload)
 
 def _load_nikkei_per_data_url(url):
@@ -306,6 +323,13 @@ def _load_nikkei_per_data_url(url):
     if not payload:
         return None
     return _extract_nikkei_per_values_from_payload(payload)
+
+def load_nikkei_per_payload():
+    if NIKKEI_PER_DATA_URL:
+        payload = _get_json(NIKKEI_PER_DATA_URL)
+        if isinstance(payload, dict):
+            return payload
+    return _load_nikkei_per_payload_file(NIKKEI_PER_DATA_PATH)
 
 def _merge_nikkei_per_values(primary, fallback):
     if not primary:
