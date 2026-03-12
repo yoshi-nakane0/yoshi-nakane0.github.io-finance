@@ -1,6 +1,6 @@
 """
 コードの説明
-このコードは、Seleniumを使用してTradingViewのチャートページにアクセスし、異なる時間足のスクリーンショットを取得してDropbox APIへアップロードするPythonスクリプトです。ログイン状態を確認した後、指定された時間足のチャートを表示し、生成した画像4枚をDropboxへ上書き保存します。
+このコードは、Seleniumを使用してTradingViewのチャートページにアクセスし、異なる時間足のスクリーンショットを取得してDropbox APIへアップロードするPythonスクリプトです。refresh token を優先して短命 access token を都度取得し、生成した画像4枚をDropboxへ上書き保存します。
 """
 # -*- coding: utf-8 -*-
 import json
@@ -18,19 +18,37 @@ from selenium.webdriver.chrome.options import Options
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DROPBOX_API_URL = "https://api.dropboxapi.com/2/files/create_folder_v2"
 DROPBOX_CONTENT_API_URL = "https://content.dropboxapi.com/2/files/upload"
+DROPBOX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token"
 DEFAULT_DROPBOX_UPLOAD_DIR = "/trade/AI/ChartData"
-DROPBOX_UPLOAD_DIR = os.environ.get("DROPBOX_UPLOAD_DIR", DEFAULT_DROPBOX_UPLOAD_DIR)
-DROPBOX_ACCESS_TOKEN = os.environ.get("DROPBOX_ACCESS_TOKEN")
 DEFAULT_USER_DATA_DIR = os.path.join(BASE_DIR, "chrome_profile")
-USER_DATA_DIR = os.environ.get("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
-EMAIL = os.environ.get("TRADINGVIEW_EMAIL", "n22_y01@yahoo.co.jp")
-PASSWORD = os.environ.get("TRADINGVIEW_PASSWORD", "NakaYos912")
+DROPBOX_REQUEST_TIMEOUT = 60
+DROPBOX_MAX_ATTEMPTS = 3
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 TIMEFRAMES = [
     {"name": "1時間", "data_value": "60", "filename": "View_1hour.png"},
     {"name": "4時間", "data_value": "240", "filename": "View_4hour.png"},
     {"name": "日足", "data_value": "1D", "filename": "View_daily.png"},
     {"name": "週足", "data_value": "1W", "filename": "View_weekly.png"},
 ]
+DROPBOX_TOKEN_CACHE = {"access_token": None, "expires_at": 0.0}
+
+def getenv_str(name, default=None):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    value = value.strip()
+    if not value:
+        return default
+    return value
+
+DROPBOX_UPLOAD_DIR = getenv_str("DROPBOX_UPLOAD_DIR", DEFAULT_DROPBOX_UPLOAD_DIR)
+DROPBOX_ACCESS_TOKEN = getenv_str("DROPBOX_ACCESS_TOKEN")
+DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN")
+DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY")
+DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET")
+USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
+EMAIL = getenv_str("TRADINGVIEW_EMAIL", "n22_y01@yahoo.co.jp")
+PASSWORD = getenv_str("TRADINGVIEW_PASSWORD", "NakaYos912")
 
 def normalize_dropbox_dir(path):
     normalized = (path or DEFAULT_DROPBOX_UPLOAD_DIR).strip()
@@ -38,17 +56,103 @@ def normalize_dropbox_dir(path):
         normalized = f"/{normalized}"
     return normalized.rstrip("/")
 
-def dropbox_api_headers():
-    if not DROPBOX_ACCESS_TOKEN:
-        raise RuntimeError("DROPBOX_ACCESS_TOKEN is not set.")
-    return {"Authorization": f"Bearer {DROPBOX_ACCESS_TOKEN}"}
+def request_dropbox_access_token():
+    if not DROPBOX_REFRESH_TOKEN:
+        if DROPBOX_ACCESS_TOKEN:
+            return DROPBOX_ACCESS_TOKEN
+        raise RuntimeError("Dropbox credentials are not set.")
+    if not DROPBOX_APP_KEY or not DROPBOX_APP_SECRET:
+        raise RuntimeError(
+            "DROPBOX_APP_KEY and DROPBOX_APP_SECRET are required with DROPBOX_REFRESH_TOKEN."
+        )
+    response = None
+    for attempt in range(1, DROPBOX_MAX_ATTEMPTS + 1):
+        try:
+            response = requests.post(
+                DROPBOX_TOKEN_URL,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": DROPBOX_REFRESH_TOKEN,
+                    "client_id": DROPBOX_APP_KEY,
+                    "client_secret": DROPBOX_APP_SECRET,
+                },
+                timeout=DROPBOX_REQUEST_TIMEOUT,
+            )
+        except requests.RequestException:
+            if attempt == DROPBOX_MAX_ATTEMPTS:
+                raise
+            time.sleep(attempt)
+            continue
+        if response.status_code in RETRYABLE_STATUS_CODES and attempt < DROPBOX_MAX_ATTEMPTS:
+            time.sleep(attempt)
+            continue
+        response.raise_for_status()
+        break
+    payload = response.json()
+    access_token = payload.get("access_token")
+    expires_in = payload.get("expires_in", 0)
+    if not access_token:
+        raise RuntimeError("Dropbox token response did not include access_token.")
+    DROPBOX_TOKEN_CACHE["access_token"] = access_token
+    DROPBOX_TOKEN_CACHE["expires_at"] = time.time() + max(int(expires_in) - 60, 0)
+    return access_token
+
+def get_dropbox_access_token(force_refresh=False):
+    if DROPBOX_REFRESH_TOKEN:
+        if not force_refresh:
+            cached_access_token = DROPBOX_TOKEN_CACHE["access_token"]
+            if cached_access_token and time.time() < DROPBOX_TOKEN_CACHE["expires_at"]:
+                return cached_access_token
+        return request_dropbox_access_token()
+    if DROPBOX_ACCESS_TOKEN:
+        return DROPBOX_ACCESS_TOKEN
+    raise RuntimeError(
+        "Configure DROPBOX_REFRESH_TOKEN with DROPBOX_APP_KEY and DROPBOX_APP_SECRET, "
+        "or set DROPBOX_ACCESS_TOKEN."
+    )
+
+def dropbox_api_headers(force_refresh=False):
+    return {"Authorization": f"Bearer {get_dropbox_access_token(force_refresh=force_refresh)}"}
+
+def dropbox_post(url, *, headers=None, json_body=None, data=None):
+    last_error = None
+    force_refresh = False
+    for attempt in range(1, DROPBOX_MAX_ATTEMPTS + 1):
+        request_headers = dropbox_api_headers(force_refresh=force_refresh)
+        if headers:
+            request_headers.update(headers)
+        try:
+            response = requests.post(
+                url,
+                headers=request_headers,
+                json=json_body,
+                data=data,
+                timeout=DROPBOX_REQUEST_TIMEOUT,
+            )
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt == DROPBOX_MAX_ATTEMPTS:
+                raise
+            time.sleep(attempt)
+            continue
+        if response.status_code == 401 and DROPBOX_REFRESH_TOKEN and not force_refresh:
+            DROPBOX_TOKEN_CACHE["access_token"] = None
+            DROPBOX_TOKEN_CACHE["expires_at"] = 0.0
+            force_refresh = True
+            continue
+        if response.status_code in RETRYABLE_STATUS_CODES and attempt < DROPBOX_MAX_ATTEMPTS:
+            time.sleep(attempt)
+            force_refresh = False
+            continue
+        return response
+    if last_error:
+        raise last_error
+    raise RuntimeError("Dropbox request failed without a response.")
 
 def create_dropbox_folder(path):
-    response = requests.post(
+    response = dropbox_post(
         DROPBOX_API_URL,
-        headers=dropbox_api_headers(),
-        json={"path": path, "autorename": False},
-        timeout=30,
+        json_body={"path": path, "autorename": False},
     )
     if response.ok:
         return
@@ -71,21 +175,21 @@ def ensure_dropbox_directory(path):
 def upload_screenshot_to_dropbox(driver, filename):
     dropbox_dir = normalize_dropbox_dir(DROPBOX_UPLOAD_DIR)
     dropbox_path = f"{dropbox_dir}/{filename}"
-    headers = dropbox_api_headers()
-    headers["Content-Type"] = "application/octet-stream"
-    headers["Dropbox-API-Arg"] = json.dumps(
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Dropbox-API-Arg": json.dumps(
         {
             "path": dropbox_path,
             "mode": "overwrite",
             "autorename": False,
             "mute": True,
         }
-    )
-    response = requests.post(
+        ),
+    }
+    response = dropbox_post(
         DROPBOX_CONTENT_API_URL,
         headers=headers,
         data=driver.get_screenshot_as_png(),
-        timeout=60,
     )
     response.raise_for_status()
     print(f"Screenshot uploaded: {dropbox_path}")
@@ -117,6 +221,8 @@ def setup_driver():
     return driver
 
 def main():
+    failures = []
+    driver = None
     os.makedirs(USER_DATA_DIR, exist_ok=True)
     ensure_dropbox_directory(normalize_dropbox_dir(DROPBOX_UPLOAD_DIR))
     
@@ -163,7 +269,7 @@ def main():
                 print("Login form submitted.")
                 
                 # ログイン完了まで待機
-                time.sleep(5)
+                WebDriverWait(driver, 15).until(lambda d: "signin" not in d.current_url)
                 
             except Exception as e:
                 print(f"Login error: {e}")
@@ -205,17 +311,27 @@ def main():
                     # スクリーンショットをDropboxへアップロード
                     upload_screenshot_to_dropbox(driver, timeframe["filename"])
                 else:
-                    print(f"Could not find {timeframe['name']} button")
+                    message = f"Could not find {timeframe['name']} button"
+                    print(message)
+                    failures.append(message)
                 
             except Exception as e:
-                print(f"Error taking screenshot for {timeframe['name']}: {e}")
+                message = f"Error taking screenshot for {timeframe['name']}: {e}"
+                print(message)
+                failures.append(message)
+        if failures:
+            print("Chart upload failed.")
+            return 1
+        return 0
         
     except Exception as e:
         print(f"Error occurred: {e}")
+        return 1
     
     finally:
-        time.sleep(2)
-        driver.quit()
+        if driver is not None:
+            time.sleep(2)
+            driver.quit()
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

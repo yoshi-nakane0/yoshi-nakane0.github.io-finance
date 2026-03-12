@@ -8,12 +8,17 @@ on:
     - cron: "0 12 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: chart-dropbox-upload
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
 jobs:
   chart:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +46,23 @@ jobs:
           fi
           echo "Chrome not found" >&2
           exit 1
+      - name: Validate secrets
+        env:
+          TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
+          TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
+          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+        run: |
+          test -n "$TRADINGVIEW_EMAIL" || { echo "TRADINGVIEW_EMAIL is required." >&2; exit 1; }
+          test -n "$TRADINGVIEW_PASSWORD" || { echo "TRADINGVIEW_PASSWORD is required." >&2; exit 1; }
+          if [ -n "$DROPBOX_REFRESH_TOKEN" ]; then
+            test -n "$DROPBOX_APP_KEY" || { echo "DROPBOX_APP_KEY is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
+            test -n "$DROPBOX_APP_SECRET" || { echo "DROPBOX_APP_SECRET is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
+            exit 0
+          fi
+          test -n "$DROPBOX_ACCESS_TOKEN" || { echo "Set DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET, or set DROPBOX_ACCESS_TOKEN." >&2; exit 1; }
       - name: Upload chart screenshots to Dropbox
         env:
           CHART_HEADLESS: "1"
@@ -48,5 +70,8 @@ jobs:
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
         run: python scripts/Chart.py
