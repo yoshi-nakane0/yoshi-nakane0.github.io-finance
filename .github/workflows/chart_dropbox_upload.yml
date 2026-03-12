@@ -1,0 +1,52 @@
+name: Upload TradingView chart
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+    - cron: "0 3 * * *"
+    - cron: "0 6 * * *"
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Detect Chrome
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v google-chrome)" >> $GITHUB_ENV
+            exit 0
+          fi
+          if command -v chromium-browser >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v chromium-browser)" >> $GITHUB_ENV
+            exit 0
+          fi
+          if command -v chromium >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v chromium)" >> $GITHUB_ENV
+            exit 0
+          fi
+          echo "Chrome not found" >&2
+          exit 1
+      - name: Upload chart screenshots to Dropbox
+        env:
+          CHART_HEADLESS: "1"
+          CHART_USER_DATA_DIR: ${{ runner.temp }}/chart-profile
+          TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
+          TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
+          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
+          DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
+        run: python scripts/Chart.py
