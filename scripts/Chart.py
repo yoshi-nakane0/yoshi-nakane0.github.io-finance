@@ -30,7 +30,8 @@ DROPBOX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token"
 DEFAULT_DROPBOX_UPLOAD_DIR = "/trade/AI/ChartData"
 DEFAULT_USER_DATA_DIR = os.path.join(BASE_DIR, "chrome_profile")
 TRADINGVIEW_SIGNIN_URL = "https://jp.tradingview.com/accounts/signin/"
-TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
+DEFAULT_TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
+DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL = "https://jp.tradingview.com/chart/?symbol=SPREADEX%3ANIKKEI"
 DROPBOX_REQUEST_TIMEOUT = 60
 DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
@@ -92,6 +93,11 @@ DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET", getenv_str("APP_SECRET"))
 USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
 EMAIL = getenv_str("TRADINGVIEW_EMAIL")
 PASSWORD = getenv_str("TRADINGVIEW_PASSWORD")
+TRADINGVIEW_CHART_URL = getenv_str("TRADINGVIEW_CHART_URL", DEFAULT_TRADINGVIEW_CHART_URL)
+TRADINGVIEW_FALLBACK_CHART_URL = getenv_str(
+    "TRADINGVIEW_FALLBACK_CHART_URL",
+    DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL,
+)
 
 def normalize_dropbox_dir(path):
     normalized = (path or DEFAULT_DROPBOX_UPLOAD_DIR).strip()
@@ -555,6 +561,32 @@ def wait_for_chart_ready(driver):
     wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
 
 
+def open_chart_page(driver, chart_urls):
+    last_error = None
+    attempted_urls = set()
+
+    for chart_url in chart_urls:
+        if not chart_url or chart_url in attempted_urls:
+            continue
+        attempted_urls.add(chart_url)
+        print(f"Navigating to chart page: {chart_url}")
+        driver.get(chart_url)
+        wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
+        if is_on_signin_page(driver):
+            last_error = RuntimeError("TradingView redirected to sign-in.")
+            continue
+        try:
+            wait_for_chart_ready(driver)
+        except Exception as error:
+            last_error = error
+            continue
+        return chart_url
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("No TradingView chart URL is configured.")
+
+
 def is_active_timeframe_button(button):
     try:
         for attribute in ("aria-pressed", "aria-selected", "aria-checked", "data-active"):
@@ -652,10 +684,30 @@ def main():
     driver = setup_driver()
     
     try:
-        login_if_needed(driver, email, password)
-        print("Navigating to chart page...")
-        driver.get(TRADINGVIEW_CHART_URL)
-        wait_for_chart_ready(driver)
+        chart_error = None
+        try:
+            open_chart_page(driver, [TRADINGVIEW_CHART_URL])
+        except Exception as error:
+            chart_error = error
+            print(f"Primary chart page unavailable before login: {error}")
+
+        if chart_error is not None:
+            login_error = None
+            try:
+                login_if_needed(driver, email, password)
+            except Exception as error:
+                login_error = error
+                print(f"Login failed, trying fallback chart: {error}")
+
+            try:
+                open_chart_page(
+                    driver,
+                    [TRADINGVIEW_CHART_URL, TRADINGVIEW_FALLBACK_CHART_URL],
+                )
+            except Exception as error:
+                if login_error is not None:
+                    raise login_error
+                raise error
         
         for timeframe in TIMEFRAMES:
             try:
