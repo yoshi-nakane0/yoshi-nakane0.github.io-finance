@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import time
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 from selenium import webdriver
@@ -46,10 +47,30 @@ CHART_NOT_FOUND_TEXTS = (
 CHART_RENDER_STABLE_POLLS = 3
 CHART_RENDER_POLL_INTERVAL = 0.5
 TIMEFRAMES = [
-    {"name": "1時間", "data_value": "60", "filename": "View_1hour.png"},
-    {"name": "4時間", "data_value": "240", "filename": "View_4hour.png"},
-    {"name": "日足", "data_value": "1D", "filename": "View_daily.png"},
-    {"name": "週足", "data_value": "1W", "filename": "View_weekly.png"},
+    {
+        "name": "1時間",
+        "labels": ("1時間",),
+        "data_value": "60",
+        "filename": "View_1hour.png",
+    },
+    {
+        "name": "4時間",
+        "labels": ("4時間",),
+        "data_value": "240",
+        "filename": "View_4hour.png",
+    },
+    {
+        "name": "日足",
+        "labels": ("日足", "1日"),
+        "data_value": "1D",
+        "filename": "View_daily.png",
+    },
+    {
+        "name": "週足",
+        "labels": ("週足", "1週"),
+        "data_value": "1W",
+        "filename": "View_weekly.png",
+    },
 ]
 DROPBOX_TOKEN_CACHE = {"access_token": None, "expires_at": 0.0}
 LOGIN_INPUT_LOCATORS = [
@@ -419,12 +440,31 @@ def session_can_access_chart(driver):
     return True
 
 
+def timeframe_labels(timeframe):
+    labels = timeframe.get("labels")
+    if labels:
+        return tuple(labels)
+    return (timeframe["name"],)
+
+
 def build_timeframe_locators(timeframe):
-    return [
+    locators = [
         (By.CSS_SELECTOR, f"button[data-value='{timeframe['data_value']}']"),
         (By.XPATH, f"//button[@data-value='{timeframe['data_value']}']"),
-        (By.XPATH, f"//button[contains(@aria-label, '{timeframe['name']}')]"),
     ]
+    for label in timeframe_labels(timeframe):
+        locators.extend(
+            [
+                (By.XPATH, f"//button[contains(@aria-label, '{label}')]"),
+                (By.XPATH, f"//button[normalize-space()='{label}']"),
+                (
+                    By.XPATH,
+                    "//*[@data-qa-id='title-wrapper legend-source-interval' "
+                    f"and normalize-space()='{label}']",
+                ),
+            ]
+        )
+    return locators
 
 
 def build_all_timeframe_locators():
@@ -587,6 +627,23 @@ def open_chart_page(driver, chart_urls):
     raise RuntimeError("No TradingView chart URL is configured.")
 
 
+def chart_url_without_interval(chart_url):
+    parts = urlsplit(chart_url)
+    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
+
+
+def build_chart_url_with_interval(chart_url, interval):
+    parts = urlsplit(chart_url)
+    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
+    query_items.append(("interval", interval))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
+
+
+def uses_url_interval_navigation(chart_url):
+    return chart_url_without_interval(chart_url) == chart_url_without_interval(TRADINGVIEW_FALLBACK_CHART_URL)
+
+
 def is_active_timeframe_button(button):
     try:
         for attribute in ("aria-pressed", "aria-selected", "aria-checked", "data-active"):
@@ -620,6 +677,43 @@ def wait_for_timeframe_selected(driver, timeframe, timeout):
         timeframe_selected,
         message=f"Timed out waiting for {timeframe['name']} to become active.",
     )
+
+
+def current_timeframe_label(driver):
+    candidates = [
+        (By.CSS_SELECTOR, "button[aria-label='時間足の変更']"),
+        (By.CSS_SELECTOR, "[data-qa-id='title-wrapper legend-source-interval']"),
+    ]
+    for by, value in candidates:
+        for element in driver.find_elements(by, value):
+            try:
+                if not element.is_displayed():
+                    continue
+                label = (element.text or "").strip()
+                if label:
+                    return label
+            except StaleElementReferenceException:
+                continue
+    return ""
+
+
+def wait_for_timeframe_label(driver, timeframe, timeout):
+    labels = set(timeframe_labels(timeframe))
+
+    def timeframe_visible(current_driver):
+        return current_timeframe_label(current_driver) in labels
+
+    WebDriverWait(driver, timeout).until(
+        timeframe_visible,
+        message=f"Timed out waiting for the timeframe label for {timeframe['name']}.",
+    )
+
+
+def capture_timeframe_via_url(driver, chart_url, timeframe):
+    open_chart_page(driver, [build_chart_url_with_interval(chart_url, timeframe["data_value"])])
+    wait_for_timeframe_label(driver, timeframe, CHART_LOAD_TIMEOUT)
+    wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
+    upload_screenshot_to_dropbox(driver, timeframe["filename"])
 
 
 def login_if_needed(driver, email, password):
@@ -685,8 +779,9 @@ def main():
     
     try:
         chart_error = None
+        active_chart_url = None
         try:
-            open_chart_page(driver, [TRADINGVIEW_CHART_URL])
+            active_chart_url = open_chart_page(driver, [TRADINGVIEW_CHART_URL])
         except Exception as error:
             chart_error = error
             print(f"Primary chart page unavailable before login: {error}")
@@ -700,7 +795,7 @@ def main():
                 print(f"Login failed, trying fallback chart: {error}")
 
             try:
-                open_chart_page(
+                active_chart_url = open_chart_page(
                     driver,
                     [TRADINGVIEW_CHART_URL, TRADINGVIEW_FALLBACK_CHART_URL],
                 )
@@ -711,6 +806,9 @@ def main():
         
         for timeframe in TIMEFRAMES:
             try:
+                if uses_url_interval_navigation(active_chart_url):
+                    capture_timeframe_via_url(driver, active_chart_url, timeframe)
+                    continue
                 button = wait_for_timeframe_button(driver, timeframe, CHART_LOAD_TIMEOUT)
                 was_active = is_active_timeframe_button(button)
                 previous_signature = get_chart_render_signature(driver)
