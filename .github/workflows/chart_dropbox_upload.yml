@@ -1,4 +1,4 @@
-name: Upload TradingView chart
+name: Capture TradingView chart
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: chart-dropbox-upload
+  group: chart-capture
   cancel-in-progress: false
 
 permissions:
@@ -45,77 +45,16 @@ jobs:
           "$PYTHON_BIN" -m pip install -r requirements.txt
       - name: Set up Chrome
         if: runner.os == 'Linux'
-        id: setup-chrome
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
           install-chromedriver: true
           install-dependencies: true
-      - name: Validate secrets
+      - name: Run TradingView chart capture
         env:
-          TRADINGVIEW_PROFILE_SOURCE_DIR: ${{ vars.TRADINGVIEW_PROFILE_DIR }}
-          TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
-          TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
-          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN || secrets.REFRESH_TOKEN }}
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
-        run: |
-          if [ -z "$TRADINGVIEW_PROFILE_SOURCE_DIR" ]; then
-            test -n "$TRADINGVIEW_EMAIL" || { echo "TRADINGVIEW_EMAIL is required." >&2; exit 1; }
-            test -n "$TRADINGVIEW_PASSWORD" || { echo "TRADINGVIEW_PASSWORD is required." >&2; exit 1; }
-          fi
-          if [ -n "$DROPBOX_REFRESH_TOKEN" ]; then
-            test -n "$DROPBOX_APP_KEY" || { echo "DROPBOX_APP_KEY is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
-            test -n "$DROPBOX_APP_SECRET" || { echo "DROPBOX_APP_SECRET is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
-            curl -fsS https://api.dropboxapi.com/oauth2/token \
-              --data-urlencode "grant_type=refresh_token" \
-              --data-urlencode "refresh_token=$DROPBOX_REFRESH_TOKEN" \
-              --data-urlencode "client_id=$DROPBOX_APP_KEY" \
-              --data-urlencode "client_secret=$DROPBOX_APP_SECRET" \
-              -o /dev/null || {
-                echo "DROPBOX_REFRESH_TOKEN authentication failed. Check DROPBOX_REFRESH_TOKEN / DROPBOX_APP_KEY / DROPBOX_APP_SECRET." >&2
-                exit 1
-              }
-            exit 0
-          fi
-          test -n "$DROPBOX_ACCESS_TOKEN" || { echo "Set DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET, or set DROPBOX_ACCESS_TOKEN." >&2; exit 1; }
-          curl -fsS -X POST https://api.dropboxapi.com/2/users/get_current_account \
-            -H "Authorization: Bearer $DROPBOX_ACCESS_TOKEN" \
-            -o /dev/null || {
-              echo "DROPBOX_ACCESS_TOKEN is invalid or expired. Update the GitHub Secret or configure DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET." >&2
-              exit 1
-            }
-      - name: Upload chart screenshots to Dropbox
-        env:
-          CHART_HEADLESS: ${{ runner.os == 'Linux' && '0' || '1' }}
-          CHART_REQUIRE_CONFIRMATION: "0"
-          CHART_USER_DATA_DIR: ${{ github.workspace }}/.chart-profile-ci
-          CHROME_BIN: ${{ runner.os == 'Linux' && steps.setup-chrome.outputs.chrome-path || '' }}
           PYTHONUNBUFFERED: "1"
           TZ: Asia/Tokyo
-          TRADINGVIEW_PROFILE_SOURCE_DIR: ${{ vars.TRADINGVIEW_PROFILE_DIR }}
-          TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE: "0"
-          TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
-          TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
-          DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN || secrets.REFRESH_TOKEN }}
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
-          DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
         run: |
-          if [ -n "$TRADINGVIEW_PROFILE_SOURCE_DIR" ]; then
-            if [ "$RUNNER_OS" = "Linux" ]; then
-              rm -rf "$CHART_USER_DATA_DIR"
-              mkdir -p "$CHART_USER_DATA_DIR"
-              cp -R "$TRADINGVIEW_PROFILE_SOURCE_DIR"/. "$CHART_USER_DATA_DIR"/
-            else
-              export CHART_USER_DATA_DIR="$TRADINGVIEW_PROFILE_SOURCE_DIR"
-              unset CHROME_BIN
-            fi
-            export TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE=1
-          fi
-          mkdir -p "$CHART_USER_DATA_DIR"
           if [ "$RUNNER_OS" = "Linux" ]; then
             xvfb-run -a --server-args="-screen 0 1920x1080x24" "$PYTHON_BIN" scripts/Chart.py
           else
