@@ -70,9 +70,11 @@ jobs:
             }
       - name: Upload chart screenshots to Dropbox
         env:
-          CHART_HEADLESS: "1"
-          CHART_USER_DATA_DIR: ${{ runner.temp }}/chart-profile
+          CHART_HEADLESS: "0"
+          CHART_REQUIRE_CONFIRMATION: "0"
+          CHART_USER_DATA_DIR: ${{ github.workspace }}/.chart-profile-ci
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+          TZ: Asia/Tokyo
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
@@ -80,4 +82,6 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
           DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
-        run: python scripts/Chart.py
+        run: |
+          mkdir -p "$CHART_USER_DATA_DIR"
+          xvfb-run -a --server-args="-screen 0 1920x1080x24" python scripts/Chart.py

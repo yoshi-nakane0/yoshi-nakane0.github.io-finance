@@ -8,7 +8,6 @@ import os
 import re
 import sys
 import time
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 from selenium import webdriver
@@ -32,7 +31,6 @@ DEFAULT_DROPBOX_UPLOAD_DIR = "/trade/AI/ChartData"
 DEFAULT_USER_DATA_DIR = os.path.join(BASE_DIR, "chrome_profile")
 TRADINGVIEW_SIGNIN_URL = "https://jp.tradingview.com/accounts/signin/"
 DEFAULT_TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
-DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL = "https://jp.tradingview.com/chart/?symbol=SPREADEX%3ANIKKEI"
 DROPBOX_REQUEST_TIMEOUT = 60
 DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
@@ -48,6 +46,12 @@ CHART_NOT_FOUND_TEXTS = (
 CHART_RENDER_STABLE_POLLS = 3
 CHART_RENDER_POLL_INTERVAL = 0.5
 TIMEFRAMES = [
+    {
+        "name": "15分",
+        "labels": ("15分",),
+        "data_value": "15",
+        "filename": "View_15min.png",
+    },
     {
         "name": "1時間",
         "labels": ("1時間",),
@@ -65,12 +69,6 @@ TIMEFRAMES = [
         "labels": ("日足", "1日"),
         "data_value": "1D",
         "filename": "View_daily.png",
-    },
-    {
-        "name": "週足",
-        "labels": ("週足", "1週"),
-        "data_value": "1W",
-        "filename": "View_weekly.png",
     },
 ]
 DROPBOX_TOKEN_CACHE = {"access_token": None, "expires_at": 0.0}
@@ -107,6 +105,13 @@ def getenv_str(name, default=None):
         return default
     return value
 
+
+def getenv_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 DROPBOX_UPLOAD_DIR = getenv_str("DROPBOX_UPLOAD_DIR", DEFAULT_DROPBOX_UPLOAD_DIR)
 DROPBOX_ACCESS_TOKEN = getenv_str("DROPBOX_ACCESS_TOKEN")
 DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN", getenv_str("REFRESH_TOKEN"))
@@ -116,9 +121,9 @@ USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
 EMAIL = getenv_str("TRADINGVIEW_EMAIL")
 PASSWORD = getenv_str("TRADINGVIEW_PASSWORD")
 TRADINGVIEW_CHART_URL = getenv_str("TRADINGVIEW_CHART_URL", DEFAULT_TRADINGVIEW_CHART_URL)
-TRADINGVIEW_FALLBACK_CHART_URL = getenv_str(
-    "TRADINGVIEW_FALLBACK_CHART_URL",
-    DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL,
+REQUIRE_CHART_CONFIRMATION = getenv_bool(
+    "CHART_REQUIRE_CONFIRMATION",
+    default=sys.stdin.isatty() and os.environ.get("CHART_HEADLESS") != "1",
 )
 
 def normalize_dropbox_dir(path):
@@ -289,13 +294,19 @@ def upload_screenshot_to_dropbox(driver, filename):
     print(f"Screenshot uploaded: {dropbox_path}")
 
 def setup_driver():
-    chrome_options = Options()    
+    chrome_options = Options()
     chrome_options.add_argument(f"--user-data-dir={USER_DATA_DIR}")
-    chrome_options.add_argument("--start-maximized")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--lang=ja-JP")
+    chrome_options.add_argument("--force-device-scale-factor=1")
+    chrome_options.add_argument("--high-dpi-support=1")
+    chrome_options.add_argument("--force-color-profile=srgb")
+    chrome_options.add_argument("--disable-background-timer-throttling")
+    chrome_options.add_argument("--disable-renderer-backgrounding")
+    chrome_options.add_argument("--disable-backgrounding-occluded-windows")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     if os.environ.get("CHART_HEADLESS") == "1":
         chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--window-size=1920,1080")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
@@ -605,6 +616,15 @@ def wait_for_chart_page_display():
     time.sleep(CHART_PAGE_DISPLAY_WAIT_SECONDS)
 
 
+def wait_for_user_chart_confirmation(driver):
+    if not REQUIRE_CHART_CONFIRMATION:
+        return
+    if not sys.stdin.isatty():
+        return
+    print(f"Chart ready for confirmation: {driver.current_url}")
+    input("TradingViewの表示内容を確認したら Enter を押してください...")
+
+
 def open_chart_page(driver, chart_urls):
     last_error = None
     attempted_urls = set()
@@ -629,23 +649,6 @@ def open_chart_page(driver, chart_urls):
     if last_error:
         raise last_error
     raise RuntimeError("No TradingView chart URL is configured.")
-
-
-def chart_url_without_interval(chart_url):
-    parts = urlsplit(chart_url)
-    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
-
-
-def build_chart_url_with_interval(chart_url, interval):
-    parts = urlsplit(chart_url)
-    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
-    query_items.append(("interval", interval))
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
-
-
-def uses_url_interval_navigation(chart_url):
-    return chart_url_without_interval(chart_url) == chart_url_without_interval(TRADINGVIEW_FALLBACK_CHART_URL)
 
 
 def is_active_timeframe_button(button):
@@ -681,44 +684,6 @@ def wait_for_timeframe_selected(driver, timeframe, timeout):
         timeframe_selected,
         message=f"Timed out waiting for {timeframe['name']} to become active.",
     )
-
-
-def current_timeframe_label(driver):
-    candidates = [
-        (By.CSS_SELECTOR, "button[aria-label='時間足の変更']"),
-        (By.CSS_SELECTOR, "[data-qa-id='title-wrapper legend-source-interval']"),
-    ]
-    for by, value in candidates:
-        for element in driver.find_elements(by, value):
-            try:
-                if not element.is_displayed():
-                    continue
-                label = (element.text or "").strip()
-                if label:
-                    return label
-            except StaleElementReferenceException:
-                continue
-    return ""
-
-
-def wait_for_timeframe_label(driver, timeframe, timeout):
-    labels = set(timeframe_labels(timeframe))
-
-    def timeframe_visible(current_driver):
-        return current_timeframe_label(current_driver) in labels
-
-    WebDriverWait(driver, timeout).until(
-        timeframe_visible,
-        message=f"Timed out waiting for the timeframe label for {timeframe['name']}.",
-    )
-
-
-def capture_timeframe_via_url(driver, chart_url, timeframe):
-    open_chart_page(driver, [build_chart_url_with_interval(chart_url, timeframe["data_value"])])
-    wait_for_timeframe_label(driver, timeframe, CHART_LOAD_TIMEOUT)
-    wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
-    wait_for_chart_page_display()
-    upload_screenshot_to_dropbox(driver, timeframe["filename"])
 
 
 def login_if_needed(driver, email, password):
@@ -784,9 +749,8 @@ def main():
     
     try:
         chart_error = None
-        active_chart_url = None
         try:
-            active_chart_url = open_chart_page(driver, [TRADINGVIEW_CHART_URL])
+            open_chart_page(driver, [TRADINGVIEW_CHART_URL])
         except Exception as error:
             chart_error = error
             print(f"Primary chart page unavailable before login: {error}")
@@ -797,26 +761,20 @@ def main():
                 login_if_needed(driver, email, password)
             except Exception as error:
                 login_error = error
-                print(f"Login failed, trying fallback chart: {error}")
+                print(f"Login failed, retrying private chart: {error}")
 
             try:
-                active_chart_url = open_chart_page(
-                    driver,
-                    [TRADINGVIEW_CHART_URL, TRADINGVIEW_FALLBACK_CHART_URL],
-                )
+                open_chart_page(driver, [TRADINGVIEW_CHART_URL])
             except Exception as error:
                 if login_error is not None:
                     raise login_error
                 raise error
 
-        if not uses_url_interval_navigation(active_chart_url):
-            wait_for_chart_page_display()
+        wait_for_chart_page_display()
+        wait_for_user_chart_confirmation(driver)
         
         for timeframe in TIMEFRAMES:
             try:
-                if uses_url_interval_navigation(active_chart_url):
-                    capture_timeframe_via_url(driver, active_chart_url, timeframe)
-                    continue
                 button = wait_for_timeframe_button(driver, timeframe, CHART_LOAD_TIMEOUT)
                 was_active = is_active_timeframe_button(button)
                 previous_signature = get_chart_render_signature(driver)
