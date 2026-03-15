@@ -21,57 +21,63 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.9"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Detect Chrome
-        run: |
-          if command -v google-chrome >/dev/null 2>&1; then
-            echo "CHROME_BIN=$(command -v google-chrome)" >> $GITHUB_ENV
-            exit 0
-          fi
-          if command -v chromium-browser >/dev/null 2>&1; then
-            echo "CHROME_BIN=$(command -v chromium-browser)" >> $GITHUB_ENV
-            exit 0
-          fi
-          if command -v chromium >/dev/null 2>&1; then
-            echo "CHROME_BIN=$(command -v chromium)" >> $GITHUB_ENV
-            exit 0
-          fi
-          echo "Chrome not found" >&2
-          exit 1
+      - name: Set up Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-chromedriver: true
       - name: Validate secrets
         env:
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN || secrets.REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
         run: |
           test -n "$TRADINGVIEW_EMAIL" || { echo "TRADINGVIEW_EMAIL is required." >&2; exit 1; }
           test -n "$TRADINGVIEW_PASSWORD" || { echo "TRADINGVIEW_PASSWORD is required." >&2; exit 1; }
           if [ -n "$DROPBOX_REFRESH_TOKEN" ]; then
             test -n "$DROPBOX_APP_KEY" || { echo "DROPBOX_APP_KEY is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
             test -n "$DROPBOX_APP_SECRET" || { echo "DROPBOX_APP_SECRET is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
+            curl -fsS https://api.dropboxapi.com/oauth2/token \
+              --data-urlencode "grant_type=refresh_token" \
+              --data-urlencode "refresh_token=$DROPBOX_REFRESH_TOKEN" \
+              --data-urlencode "client_id=$DROPBOX_APP_KEY" \
+              --data-urlencode "client_secret=$DROPBOX_APP_SECRET" \
+              -o /dev/null || {
+                echo "DROPBOX_REFRESH_TOKEN authentication failed. Check DROPBOX_REFRESH_TOKEN / DROPBOX_APP_KEY / DROPBOX_APP_SECRET." >&2
+                exit 1
+              }
             exit 0
           fi
           test -n "$DROPBOX_ACCESS_TOKEN" || { echo "Set DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET, or set DROPBOX_ACCESS_TOKEN." >&2; exit 1; }
+          curl -fsS -X POST https://api.dropboxapi.com/2/users/get_current_account \
+            -H "Authorization: Bearer $DROPBOX_ACCESS_TOKEN" \
+            -o /dev/null || {
+              echo "DROPBOX_ACCESS_TOKEN is invalid or expired. Update the GitHub Secret or configure DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET." >&2
+              exit 1
+            }
       - name: Upload chart screenshots to Dropbox
         env:
           CHART_HEADLESS: "1"
           CHART_USER_DATA_DIR: ${{ runner.temp }}/chart-profile
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN || secrets.REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
           DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
         run: python scripts/Chart.py

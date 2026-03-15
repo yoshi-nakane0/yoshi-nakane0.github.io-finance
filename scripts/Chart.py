@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import time
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 from selenium import webdriver
@@ -15,6 +16,7 @@ from selenium.common.exceptions import (
     JavascriptException,
     NoSuchElementException,
     StaleElementReferenceException,
+    TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
@@ -29,21 +31,47 @@ DROPBOX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token"
 DEFAULT_DROPBOX_UPLOAD_DIR = "/trade/AI/ChartData"
 DEFAULT_USER_DATA_DIR = os.path.join(BASE_DIR, "chrome_profile")
 TRADINGVIEW_SIGNIN_URL = "https://jp.tradingview.com/accounts/signin/"
-TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
+DEFAULT_TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
+DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL = "https://jp.tradingview.com/chart/?symbol=SPREADEX%3ANIKKEI"
 DROPBOX_REQUEST_TIMEOUT = 60
 DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
-LOGIN_TIMEOUT = 30
+LOGIN_TIMEOUT = 60
 CHART_LOAD_TIMEOUT = 30
 CHART_PAGE_DISPLAY_WAIT_SECONDS = 30
+LOGIN_MAX_ATTEMPTS = 2
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
+CHART_NOT_FOUND_TEXTS = (
+    "このチャートレイアウトを開くことができません",
+    "Chart Not Found",
+)
 CHART_RENDER_STABLE_POLLS = 3
 CHART_RENDER_POLL_INTERVAL = 0.5
 TIMEFRAMES = [
-    {"name": "1時間", "data_value": "60", "filename": "View_1hour.png"},
-    {"name": "4時間", "data_value": "240", "filename": "View_4hour.png"},
-    {"name": "日足", "data_value": "1D", "filename": "View_daily.png"},
-    {"name": "週足", "data_value": "1W", "filename": "View_weekly.png"},
+    {
+        "name": "1時間",
+        "labels": ("1時間",),
+        "data_value": "60",
+        "filename": "View_1hour.png",
+    },
+    {
+        "name": "4時間",
+        "labels": ("4時間",),
+        "data_value": "240",
+        "filename": "View_4hour.png",
+    },
+    {
+        "name": "日足",
+        "labels": ("日足", "1日"),
+        "data_value": "1D",
+        "filename": "View_daily.png",
+    },
+    {
+        "name": "週足",
+        "labels": ("週足", "1週"),
+        "data_value": "1W",
+        "filename": "View_weekly.png",
+    },
 ]
 DROPBOX_TOKEN_CACHE = {"access_token": None, "expires_at": 0.0}
 LOGIN_INPUT_LOCATORS = [
@@ -81,12 +109,17 @@ def getenv_str(name, default=None):
 
 DROPBOX_UPLOAD_DIR = getenv_str("DROPBOX_UPLOAD_DIR", DEFAULT_DROPBOX_UPLOAD_DIR)
 DROPBOX_ACCESS_TOKEN = getenv_str("DROPBOX_ACCESS_TOKEN")
-DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN")
-DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY")
-DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET")
+DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN", getenv_str("REFRESH_TOKEN"))
+DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY", getenv_str("APP_KEY"))
+DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET", getenv_str("APP_SECRET"))
 USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
 EMAIL = getenv_str("TRADINGVIEW_EMAIL")
 PASSWORD = getenv_str("TRADINGVIEW_PASSWORD")
+TRADINGVIEW_CHART_URL = getenv_str("TRADINGVIEW_CHART_URL", DEFAULT_TRADINGVIEW_CHART_URL)
+TRADINGVIEW_FALLBACK_CHART_URL = getenv_str(
+    "TRADINGVIEW_FALLBACK_CHART_URL",
+    DEFAULT_TRADINGVIEW_FALLBACK_CHART_URL,
+)
 
 def normalize_dropbox_dir(path):
     normalized = (path or DEFAULT_DROPBOX_UPLOAD_DIR).strip()
@@ -205,6 +238,11 @@ def create_dropbox_folder(path):
         DROPBOX_API_URL,
         json_body={"path": path, "autorename": False},
     )
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Dropbox authentication failed. Update DROPBOX_ACCESS_TOKEN or configure "
+            "DROPBOX_REFRESH_TOKEN with DROPBOX_APP_KEY and DROPBOX_APP_SECRET."
+        )
     if response.ok:
         return
     payload = {}
@@ -242,6 +280,11 @@ def upload_screenshot_to_dropbox(driver, filename):
         headers=headers,
         data=driver.get_screenshot_as_png(),
     )
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Dropbox authentication failed. Update DROPBOX_ACCESS_TOKEN or configure "
+            "DROPBOX_REFRESH_TOKEN with DROPBOX_APP_KEY and DROPBOX_APP_SECRET."
+        )
     response.raise_for_status()
     print(f"Screenshot uploaded: {dropbox_path}")
 
@@ -335,6 +378,12 @@ def login_form_is_visible(driver):
     return email_input is not None and password_input is not None
 
 
+def open_signin_page(driver):
+    driver.get(TRADINGVIEW_SIGNIN_URL)
+    wait_for_document_ready(driver, LOGIN_TIMEOUT)
+    print(f"Current URL: {driver.current_url}")
+
+
 def open_email_login_form(driver):
     if login_form_is_visible(driver):
         return
@@ -383,12 +432,40 @@ def wait_for_login_complete(driver):
     )
 
 
+def session_can_access_chart(driver):
+    driver.get(TRADINGVIEW_CHART_URL)
+    wait_for_document_ready(driver, LOGIN_TIMEOUT)
+    if is_on_signin_page(driver):
+        return False
+    ensure_chart_page_available(driver)
+    return True
+
+
+def timeframe_labels(timeframe):
+    labels = timeframe.get("labels")
+    if labels:
+        return tuple(labels)
+    return (timeframe["name"],)
+
+
 def build_timeframe_locators(timeframe):
-    return [
+    locators = [
         (By.CSS_SELECTOR, f"button[data-value='{timeframe['data_value']}']"),
         (By.XPATH, f"//button[@data-value='{timeframe['data_value']}']"),
-        (By.XPATH, f"//button[contains(@aria-label, '{timeframe['name']}')]"),
     ]
+    for label in timeframe_labels(timeframe):
+        locators.extend(
+            [
+                (By.XPATH, f"//button[contains(@aria-label, '{label}')]"),
+                (By.XPATH, f"//button[normalize-space()='{label}']"),
+                (
+                    By.XPATH,
+                    "//*[@data-qa-id='title-wrapper legend-source-interval' "
+                    f"and normalize-space()='{label}']",
+                ),
+            ]
+        )
+    return locators
 
 
 def build_all_timeframe_locators():
@@ -504,8 +581,18 @@ def wait_for_chart_render_complete(driver, timeout, previous_signature=None, req
     raise RuntimeError("Timed out waiting for the TradingView chart render to stabilize.")
 
 
+def ensure_chart_page_available(driver):
+    page_text = driver.find_element(By.TAG_NAME, "body").text
+    title = driver.title or ""
+    if any(text in page_text or text in title for text in CHART_NOT_FOUND_TEXTS):
+        raise RuntimeError(
+            "TradingView chart layout is not accessible. Login may have failed or the layout requires owner access."
+        )
+
+
 def wait_for_chart_ready(driver):
     wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
+    ensure_chart_page_available(driver)
     wait_for_visible_element(
         driver,
         build_all_timeframe_locators(),
@@ -514,9 +601,51 @@ def wait_for_chart_ready(driver):
     )
     wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
 
-
 def wait_for_chart_page_display():
     time.sleep(CHART_PAGE_DISPLAY_WAIT_SECONDS)
+
+
+def open_chart_page(driver, chart_urls):
+    last_error = None
+    attempted_urls = set()
+
+    for chart_url in chart_urls:
+        if not chart_url or chart_url in attempted_urls:
+            continue
+        attempted_urls.add(chart_url)
+        print(f"Navigating to chart page: {chart_url}")
+        driver.get(chart_url)
+        wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
+        if is_on_signin_page(driver):
+            last_error = RuntimeError("TradingView redirected to sign-in.")
+            continue
+        try:
+            wait_for_chart_ready(driver)
+        except Exception as error:
+            last_error = error
+            continue
+        return chart_url
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("No TradingView chart URL is configured.")
+
+
+def chart_url_without_interval(chart_url):
+    parts = urlsplit(chart_url)
+    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
+
+
+def build_chart_url_with_interval(chart_url, interval):
+    parts = urlsplit(chart_url)
+    query_items = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key != "interval"]
+    query_items.append(("interval", interval))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query_items), parts.fragment))
+
+
+def uses_url_interval_navigation(chart_url):
+    return chart_url_without_interval(chart_url) == chart_url_without_interval(TRADINGVIEW_FALLBACK_CHART_URL)
 
 
 def is_active_timeframe_button(button):
@@ -554,45 +683,95 @@ def wait_for_timeframe_selected(driver, timeframe, timeout):
     )
 
 
+def current_timeframe_label(driver):
+    candidates = [
+        (By.CSS_SELECTOR, "button[aria-label='時間足の変更']"),
+        (By.CSS_SELECTOR, "[data-qa-id='title-wrapper legend-source-interval']"),
+    ]
+    for by, value in candidates:
+        for element in driver.find_elements(by, value):
+            try:
+                if not element.is_displayed():
+                    continue
+                label = (element.text or "").strip()
+                if label:
+                    return label
+            except StaleElementReferenceException:
+                continue
+    return ""
+
+
+def wait_for_timeframe_label(driver, timeframe, timeout):
+    labels = set(timeframe_labels(timeframe))
+
+    def timeframe_visible(current_driver):
+        return current_timeframe_label(current_driver) in labels
+
+    WebDriverWait(driver, timeout).until(
+        timeframe_visible,
+        message=f"Timed out waiting for the timeframe label for {timeframe['name']}.",
+    )
+
+
+def capture_timeframe_via_url(driver, chart_url, timeframe):
+    open_chart_page(driver, [build_chart_url_with_interval(chart_url, timeframe["data_value"])])
+    wait_for_timeframe_label(driver, timeframe, CHART_LOAD_TIMEOUT)
+    wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
+    wait_for_chart_page_display()
+    upload_screenshot_to_dropbox(driver, timeframe["filename"])
+
+
 def login_if_needed(driver, email, password):
-    driver.get(TRADINGVIEW_SIGNIN_URL)
-    wait_for_document_ready(driver, LOGIN_TIMEOUT)
-    print(f"Current URL: {driver.current_url}")
+    open_signin_page(driver)
     if not is_on_signin_page(driver):
         print("Already logged in! Navigating to chart page...")
         return
 
-    print("Need to login...")
-    try:
-        open_email_login_form(driver)
-        email_input = wait_for_visible_element(
-            driver,
-            LOGIN_INPUT_LOCATORS,
-            LOGIN_TIMEOUT,
-            "TradingView email input",
-        )
-        password_input = wait_for_visible_element(
-            driver,
-            PASSWORD_INPUT_LOCATORS,
-            LOGIN_TIMEOUT,
-            "TradingView password input",
-        )
-        email_input.clear()
-        email_input.send_keys(email)
-        print("Email entered.")
-        password_input.clear()
-        password_input.send_keys(password)
-        print("Password entered.")
-        submit_login_form(driver, password_input)
-        print("Login form submitted.")
-        wait_for_login_complete(driver)
-    except Exception as error:
-        print(f"Login error: {error}")
-        if sys.stdin.isatty():
-            print("Please login manually...")
-            input("After login completed, press Enter key...")
-            return
-        raise RuntimeError("Interactive login is required, but no terminal is available.") from error
+    last_error = None
+    for attempt in range(1, LOGIN_MAX_ATTEMPTS + 1):
+        print(f"Need to login... ({attempt}/{LOGIN_MAX_ATTEMPTS})")
+        try:
+            if attempt > 1:
+                open_signin_page(driver)
+            open_email_login_form(driver)
+            email_input = wait_for_visible_element(
+                driver,
+                LOGIN_INPUT_LOCATORS,
+                LOGIN_TIMEOUT,
+                "TradingView email input",
+            )
+            password_input = wait_for_visible_element(
+                driver,
+                PASSWORD_INPUT_LOCATORS,
+                LOGIN_TIMEOUT,
+                "TradingView password input",
+            )
+            email_input.clear()
+            email_input.send_keys(email)
+            print("Email entered.")
+            password_input.clear()
+            password_input.send_keys(password)
+            print("Password entered.")
+            submit_login_form(driver, password_input)
+            print("Login form submitted.")
+            try:
+                wait_for_login_complete(driver)
+                return
+            except TimeoutException as error:
+                print(f"Login redirect timed out: {error}")
+                if session_can_access_chart(driver):
+                    print("Authenticated session confirmed via chart page.")
+                    return
+                raise RuntimeError("TradingView sign-in did not complete.") from error
+        except Exception as error:
+            last_error = error
+            print(f"Login attempt {attempt} failed: {error}")
+
+    if sys.stdin.isatty():
+        print("Please login manually...")
+        input("After login completed, press Enter key...")
+        return
+    raise RuntimeError("Interactive login is required, but no terminal is available.") from last_error
 
 def main():
     failures = []
@@ -604,14 +783,40 @@ def main():
     driver = setup_driver()
     
     try:
-        login_if_needed(driver, email, password)
-        print("Navigating to chart page...")
-        driver.get(TRADINGVIEW_CHART_URL)
-        wait_for_chart_ready(driver)
-        wait_for_chart_page_display()
+        chart_error = None
+        active_chart_url = None
+        try:
+            active_chart_url = open_chart_page(driver, [TRADINGVIEW_CHART_URL])
+        except Exception as error:
+            chart_error = error
+            print(f"Primary chart page unavailable before login: {error}")
+
+        if chart_error is not None:
+            login_error = None
+            try:
+                login_if_needed(driver, email, password)
+            except Exception as error:
+                login_error = error
+                print(f"Login failed, trying fallback chart: {error}")
+
+            try:
+                active_chart_url = open_chart_page(
+                    driver,
+                    [TRADINGVIEW_CHART_URL, TRADINGVIEW_FALLBACK_CHART_URL],
+                )
+            except Exception as error:
+                if login_error is not None:
+                    raise login_error
+                raise error
+
+        if not uses_url_interval_navigation(active_chart_url):
+            wait_for_chart_page_display()
         
         for timeframe in TIMEFRAMES:
             try:
+                if uses_url_interval_navigation(active_chart_url):
+                    capture_timeframe_via_url(driver, active_chart_url, timeframe)
+                    continue
                 button = wait_for_timeframe_button(driver, timeframe, CHART_LOAD_TIMEOUT)
                 was_active = is_active_timeframe_button(button)
                 previous_signature = get_chart_render_signature(driver)
