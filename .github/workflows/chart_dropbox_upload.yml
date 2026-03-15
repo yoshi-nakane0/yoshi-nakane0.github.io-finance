@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   chart:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CHART_RUNNER_LABEL != '' && vars.CHART_RUNNER_LABEL || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - name: Checkout
