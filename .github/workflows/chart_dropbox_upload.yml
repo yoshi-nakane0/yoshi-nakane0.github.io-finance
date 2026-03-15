@@ -44,6 +44,7 @@ jobs:
           "$PYTHON_BIN" -m pip install --upgrade pip
           "$PYTHON_BIN" -m pip install -r requirements.txt
       - name: Set up Chrome
+        if: runner.os == 'Linux'
         id: setup-chrome
         uses: browser-actions/setup-chrome@v2
         with:
@@ -90,7 +91,8 @@ jobs:
           CHART_HEADLESS: ${{ runner.os == 'Linux' && '0' || '1' }}
           CHART_REQUIRE_CONFIRMATION: "0"
           CHART_USER_DATA_DIR: ${{ github.workspace }}/.chart-profile-ci
-          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+          CHROME_BIN: ${{ runner.os == 'Linux' && steps.setup-chrome.outputs.chrome-path || '' }}
+          PYTHONUNBUFFERED: "1"
           TZ: Asia/Tokyo
           TRADINGVIEW_PROFILE_SOURCE_DIR: ${{ vars.TRADINGVIEW_PROFILE_DIR }}
           TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE: "0"
@@ -103,9 +105,14 @@ jobs:
           DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
         run: |
           if [ -n "$TRADINGVIEW_PROFILE_SOURCE_DIR" ]; then
-            rm -rf "$CHART_USER_DATA_DIR"
-            mkdir -p "$CHART_USER_DATA_DIR"
-            cp -R "$TRADINGVIEW_PROFILE_SOURCE_DIR"/. "$CHART_USER_DATA_DIR"/
+            if [ "$RUNNER_OS" = "Linux" ]; then
+              rm -rf "$CHART_USER_DATA_DIR"
+              mkdir -p "$CHART_USER_DATA_DIR"
+              cp -R "$TRADINGVIEW_PROFILE_SOURCE_DIR"/. "$CHART_USER_DATA_DIR"/
+            else
+              export CHART_USER_DATA_DIR="$TRADINGVIEW_PROFILE_SOURCE_DIR"
+              unset CHROME_BIN
+            fi
             export TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE=1
           fi
           mkdir -p "$CHART_USER_DATA_DIR"
