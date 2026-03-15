@@ -36,6 +36,7 @@ DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 LOGIN_TIMEOUT = 60
 CHART_LOAD_TIMEOUT = 30
+LOGIN_MAX_ATTEMPTS = 2
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
 CHART_NOT_FOUND_TEXTS = (
     "このチャートレイアウトを開くことができません",
@@ -349,6 +350,12 @@ def login_form_is_visible(driver):
     return email_input is not None and password_input is not None
 
 
+def open_signin_page(driver):
+    driver.get(TRADINGVIEW_SIGNIN_URL)
+    wait_for_document_ready(driver, LOGIN_TIMEOUT)
+    print(f"Current URL: {driver.current_url}")
+
+
 def open_email_login_form(driver):
     if login_form_is_visible(driver):
         return
@@ -584,51 +591,56 @@ def wait_for_timeframe_selected(driver, timeframe, timeout):
 
 
 def login_if_needed(driver, email, password):
-    driver.get(TRADINGVIEW_SIGNIN_URL)
-    wait_for_document_ready(driver, LOGIN_TIMEOUT)
-    print(f"Current URL: {driver.current_url}")
+    open_signin_page(driver)
     if not is_on_signin_page(driver):
         print("Already logged in! Navigating to chart page...")
         return
 
-    print("Need to login...")
-    try:
-        open_email_login_form(driver)
-        email_input = wait_for_visible_element(
-            driver,
-            LOGIN_INPUT_LOCATORS,
-            LOGIN_TIMEOUT,
-            "TradingView email input",
-        )
-        password_input = wait_for_visible_element(
-            driver,
-            PASSWORD_INPUT_LOCATORS,
-            LOGIN_TIMEOUT,
-            "TradingView password input",
-        )
-        email_input.clear()
-        email_input.send_keys(email)
-        print("Email entered.")
-        password_input.clear()
-        password_input.send_keys(password)
-        print("Password entered.")
-        submit_login_form(driver, password_input)
-        print("Login form submitted.")
+    last_error = None
+    for attempt in range(1, LOGIN_MAX_ATTEMPTS + 1):
+        print(f"Need to login... ({attempt}/{LOGIN_MAX_ATTEMPTS})")
         try:
-            wait_for_login_complete(driver)
-        except TimeoutException as error:
-            print(f"Login redirect timed out: {error}")
-            if session_can_access_chart(driver):
-                print("Authenticated session confirmed via chart page.")
+            if attempt > 1:
+                open_signin_page(driver)
+            open_email_login_form(driver)
+            email_input = wait_for_visible_element(
+                driver,
+                LOGIN_INPUT_LOCATORS,
+                LOGIN_TIMEOUT,
+                "TradingView email input",
+            )
+            password_input = wait_for_visible_element(
+                driver,
+                PASSWORD_INPUT_LOCATORS,
+                LOGIN_TIMEOUT,
+                "TradingView password input",
+            )
+            email_input.clear()
+            email_input.send_keys(email)
+            print("Email entered.")
+            password_input.clear()
+            password_input.send_keys(password)
+            print("Password entered.")
+            submit_login_form(driver, password_input)
+            print("Login form submitted.")
+            try:
+                wait_for_login_complete(driver)
                 return
-            raise
-    except Exception as error:
-        print(f"Login error: {error}")
-        if sys.stdin.isatty():
-            print("Please login manually...")
-            input("After login completed, press Enter key...")
-            return
-        raise RuntimeError("Interactive login is required, but no terminal is available.") from error
+            except TimeoutException as error:
+                print(f"Login redirect timed out: {error}")
+                if session_can_access_chart(driver):
+                    print("Authenticated session confirmed via chart page.")
+                    return
+                raise RuntimeError("TradingView sign-in did not complete.") from error
+        except Exception as error:
+            last_error = error
+            print(f"Login attempt {attempt} failed: {error}")
+
+    if sys.stdin.isatty():
+        print("Please login manually...")
+        input("After login completed, press Enter key...")
+        return
+    raise RuntimeError("Interactive login is required, but no terminal is available.") from last_error
 
 def main():
     failures = []
