@@ -89,11 +89,17 @@ LOGIN_SUBMIT_BUTTON_LOCATORS = [
     (By.CSS_SELECTOR, "input[type='submit']"),
 ]
 LOGIN_ERROR_LOCATORS = [
-    (By.CSS_SELECTOR, "[role='alert']"),
-    (By.CSS_SELECTOR, "[aria-live='assertive']"),
     (By.CSS_SELECTOR, "[data-qa-id*='error']"),
     (By.CSS_SELECTOR, "[data-qa-id*='alert']"),
+    (By.CSS_SELECTOR, "[role='alert']"),
 ]
+IGNORED_LOGIN_MESSAGE_TEXTS = {
+    "パスワードを忘れました、またはログインできません",
+    "Forgot password or can't login",
+    "Forgot password or can’t login",
+    "Forgot password or can't log in",
+    "Forgot password or can’t log in",
+}
 EMAIL_LOGIN_TRIGGER_LOCATORS = [
     (By.CSS_SELECTOR, "[data-name='email']"),
     (By.CSS_SELECTOR, "button[name='email']"),
@@ -492,6 +498,15 @@ def extract_visible_text(driver, locators):
     return ""
 
 
+def extract_login_error_message(driver):
+    text = extract_visible_text(driver, LOGIN_ERROR_LOCATORS)
+    if not text:
+        return ""
+    if text in IGNORED_LOGIN_MESSAGE_TEXTS:
+        return ""
+    return text
+
+
 def submit_login_form(driver, password_input):
     submit_button = None
     try:
@@ -536,9 +551,6 @@ def submit_login_form(driver, password_input):
 
 def wait_for_login_complete(driver):
     def login_complete(current_driver):
-        error_text = extract_visible_text(current_driver, LOGIN_ERROR_LOCATORS)
-        if error_text:
-            raise RuntimeError(f"TradingView sign-in failed: {error_text}")
         return not is_on_signin_page(current_driver) or not login_form_is_visible(current_driver)
 
     WebDriverWait(driver, LOGIN_TIMEOUT).until(
@@ -826,6 +838,9 @@ def login_if_needed(driver, email, password):
                 return
             except TimeoutException as error:
                 print(f"Login redirect timed out: {error}")
+                error_text = extract_login_error_message(driver)
+                if error_text:
+                    raise RuntimeError(f"TradingView sign-in failed: {error_text}") from error
                 if session_can_access_chart(driver):
                     print("Authenticated session confirmed via chart page.")
                     return
