@@ -15,6 +15,7 @@ from selenium.common.exceptions import (
     JavascriptException,
     NoSuchElementException,
     StaleElementReferenceException,
+    TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
@@ -33,7 +34,7 @@ TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREA
 DROPBOX_REQUEST_TIMEOUT = 60
 DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
-LOGIN_TIMEOUT = 30
+LOGIN_TIMEOUT = 60
 CHART_LOAD_TIMEOUT = 30
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
 CHART_NOT_FOUND_TEXTS = (
@@ -396,6 +397,15 @@ def wait_for_login_complete(driver):
     )
 
 
+def session_can_access_chart(driver):
+    driver.get(TRADINGVIEW_CHART_URL)
+    wait_for_document_ready(driver, LOGIN_TIMEOUT)
+    if is_on_signin_page(driver):
+        return False
+    ensure_chart_page_available(driver)
+    return True
+
+
 def build_timeframe_locators(timeframe):
     return [
         (By.CSS_SELECTOR, f"button[data-value='{timeframe['data_value']}']"),
@@ -604,7 +614,14 @@ def login_if_needed(driver, email, password):
         print("Password entered.")
         submit_login_form(driver, password_input)
         print("Login form submitted.")
-        wait_for_login_complete(driver)
+        try:
+            wait_for_login_complete(driver)
+        except TimeoutException as error:
+            print(f"Login redirect timed out: {error}")
+            if session_can_access_chart(driver):
+                print("Authenticated session confirmed via chart page.")
+                return
+            raise
     except Exception as error:
         print(f"Login error: {error}")
         if sys.stdin.isatty():
