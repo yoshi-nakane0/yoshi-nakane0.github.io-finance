@@ -36,6 +36,10 @@ RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 LOGIN_TIMEOUT = 30
 CHART_LOAD_TIMEOUT = 30
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
+CHART_NOT_FOUND_TEXTS = (
+    "このチャートレイアウトを開くことができません",
+    "Chart Not Found",
+)
 CHART_RENDER_STABLE_POLLS = 3
 CHART_RENDER_POLL_INTERVAL = 0.5
 TIMEFRAMES = [
@@ -80,9 +84,9 @@ def getenv_str(name, default=None):
 
 DROPBOX_UPLOAD_DIR = getenv_str("DROPBOX_UPLOAD_DIR", DEFAULT_DROPBOX_UPLOAD_DIR)
 DROPBOX_ACCESS_TOKEN = getenv_str("DROPBOX_ACCESS_TOKEN")
-DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN")
-DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY")
-DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET")
+DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN", getenv_str("REFRESH_TOKEN"))
+DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY", getenv_str("APP_KEY"))
+DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET", getenv_str("APP_SECRET"))
 USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
 EMAIL = getenv_str("TRADINGVIEW_EMAIL")
 PASSWORD = getenv_str("TRADINGVIEW_PASSWORD")
@@ -204,6 +208,11 @@ def create_dropbox_folder(path):
         DROPBOX_API_URL,
         json_body={"path": path, "autorename": False},
     )
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Dropbox authentication failed. Update DROPBOX_ACCESS_TOKEN or configure "
+            "DROPBOX_REFRESH_TOKEN with DROPBOX_APP_KEY and DROPBOX_APP_SECRET."
+        )
     if response.ok:
         return
     payload = {}
@@ -241,6 +250,11 @@ def upload_screenshot_to_dropbox(driver, filename):
         headers=headers,
         data=driver.get_screenshot_as_png(),
     )
+    if response.status_code == 401:
+        raise RuntimeError(
+            "Dropbox authentication failed. Update DROPBOX_ACCESS_TOKEN or configure "
+            "DROPBOX_REFRESH_TOKEN with DROPBOX_APP_KEY and DROPBOX_APP_SECRET."
+        )
     response.raise_for_status()
     print(f"Screenshot uploaded: {dropbox_path}")
 
@@ -503,8 +517,18 @@ def wait_for_chart_render_complete(driver, timeout, previous_signature=None, req
     raise RuntimeError("Timed out waiting for the TradingView chart render to stabilize.")
 
 
+def ensure_chart_page_available(driver):
+    page_text = driver.find_element(By.TAG_NAME, "body").text
+    title = driver.title or ""
+    if any(text in page_text or text in title for text in CHART_NOT_FOUND_TEXTS):
+        raise RuntimeError(
+            "TradingView chart layout is not accessible. Login may have failed or the layout requires owner access."
+        )
+
+
 def wait_for_chart_ready(driver):
     wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
+    ensure_chart_page_available(driver)
     wait_for_visible_element(
         driver,
         build_all_timeframe_locators(),
