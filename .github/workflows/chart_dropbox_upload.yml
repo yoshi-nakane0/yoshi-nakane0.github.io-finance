@@ -87,7 +87,7 @@ jobs:
             }
       - name: Upload chart screenshots to Dropbox
         env:
-          CHART_HEADLESS: "0"
+          CHART_HEADLESS: ${{ runner.os == 'Linux' && '0' || '1' }}
           CHART_REQUIRE_CONFIRMATION: "0"
           CHART_USER_DATA_DIR: ${{ github.workspace }}/.chart-profile-ci
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
