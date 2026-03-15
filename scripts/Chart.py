@@ -295,6 +295,7 @@ def upload_screenshot_to_dropbox(driver, filename):
 
 def setup_driver():
     chrome_options = Options()
+    running_in_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
     chrome_options.add_argument(f"--user-data-dir={USER_DATA_DIR}")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--lang=ja-JP")
@@ -305,11 +306,12 @@ def setup_driver():
     chrome_options.add_argument("--disable-renderer-backgrounding")
     chrome_options.add_argument("--disable-backgrounding-occluded-windows")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    if os.environ.get("CHART_HEADLESS") == "1":
-        chrome_options.add_argument("--headless=new")
+    if running_in_github_actions:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
+    if os.environ.get("CHART_HEADLESS") == "1":
+        chrome_options.add_argument("--headless=new")
     chrome_bin = os.environ.get("CHROME_BIN")
     if chrome_bin:
         chrome_options.binary_location = chrome_bin
