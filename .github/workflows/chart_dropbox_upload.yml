@@ -96,4 +96,8 @@ jobs:
             export TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE=1
           fi
           mkdir -p "$CHART_USER_DATA_DIR"
-          xvfb-run -a --server-args="-screen 0 1920x1080x24" python scripts/Chart.py
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a --server-args="-screen 0 1920x1080x24" python scripts/Chart.py
+          else
+            python scripts/Chart.py
+          fi
