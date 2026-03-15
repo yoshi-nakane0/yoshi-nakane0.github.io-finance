@@ -36,6 +36,8 @@ RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 LOGIN_TIMEOUT = 30
 CHART_LOAD_TIMEOUT = 30
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
+CHART_RENDER_STABLE_POLLS = 3
+CHART_RENDER_POLL_INTERVAL = 0.5
 TIMEFRAMES = [
     {"name": "1時間", "data_value": "60", "filename": "View_1hour.png"},
     {"name": "4時間", "data_value": "240", "filename": "View_4hour.png"},
@@ -419,26 +421,97 @@ def wait_for_visible_chart_canvas(driver, timeout):
     )
 
 
-def wait_for_chart_repaint(driver, timeout):
+def get_chart_render_signature(driver):
+    try:
+        return driver.execute_script(
+            """
+            return Array.from(document.querySelectorAll("canvas"))
+                .map((canvas) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const style = window.getComputedStyle(canvas);
+                    if (
+                        rect.width <= 0 ||
+                        rect.height <= 0 ||
+                        style.display === "none" ||
+                        style.visibility === "hidden"
+                    ) {
+                        return null;
+                    }
+
+                    const area = rect.width * rect.height;
+                    return { area, canvas };
+                })
+                .filter(Boolean)
+                .sort((left, right) => right.area - left.area)
+                .slice(0, 4)
+                .map(({ canvas }) => {
+                    try {
+                        const image = canvas.toDataURL("image/png");
+                        return [
+                            canvas.width,
+                            canvas.height,
+                            image.length,
+                            image.slice(0, 64),
+                            image.slice(-64),
+                        ].join(":");
+                    } catch (error) {
+                        return [
+                            canvas.width,
+                            canvas.height,
+                            canvas.childElementCount,
+                        ].join(":");
+                    }
+                })
+                .join("|");
+            """
+        )
+    except JavascriptException:
+        return ""
+
+
+def wait_for_chart_render_complete(driver, timeout, previous_signature=None, require_change=False):
     wait_for_visible_chart_canvas(driver, timeout)
-    driver.set_script_timeout(timeout)
-    driver.execute_async_script(
-        """
-        const done = arguments[arguments.length - 1];
-        requestAnimationFrame(() => requestAnimationFrame(() => done(true)));
-        """
-    )
+    deadline = time.time() + timeout
+    last_signature = None
+    stable_polls = 0
+    chart_changed = previous_signature is None or not require_change
+
+    while time.time() < deadline:
+        signature = get_chart_render_signature(driver)
+        if not signature:
+            last_signature = None
+            stable_polls = 0
+            time.sleep(CHART_RENDER_POLL_INTERVAL)
+            continue
+
+        if previous_signature is not None and signature != previous_signature:
+            chart_changed = True
+
+        if chart_changed:
+            if signature == last_signature:
+                stable_polls += 1
+            else:
+                stable_polls = 1
+            if stable_polls >= CHART_RENDER_STABLE_POLLS:
+                return signature
+        else:
+            stable_polls = 0
+
+        last_signature = signature
+        time.sleep(CHART_RENDER_POLL_INTERVAL)
+
+    raise RuntimeError("Timed out waiting for the TradingView chart render to stabilize.")
 
 
 def wait_for_chart_ready(driver):
     wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
-    wait_for_chart_repaint(driver, CHART_LOAD_TIMEOUT)
     wait_for_visible_element(
         driver,
         build_all_timeframe_locators(),
         CHART_LOAD_TIMEOUT,
         "TradingView timeframe button",
     )
+    wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
 
 
 def is_active_timeframe_button(button):
@@ -534,9 +607,16 @@ def main():
         for timeframe in TIMEFRAMES:
             try:
                 button = wait_for_timeframe_button(driver, timeframe, CHART_LOAD_TIMEOUT)
+                was_active = is_active_timeframe_button(button)
+                previous_signature = get_chart_render_signature(driver)
                 click_element(driver, button)
                 wait_for_timeframe_selected(driver, timeframe, CHART_LOAD_TIMEOUT)
-                wait_for_chart_repaint(driver, CHART_LOAD_TIMEOUT)
+                wait_for_chart_render_complete(
+                    driver,
+                    CHART_LOAD_TIMEOUT,
+                    previous_signature=previous_signature,
+                    require_change=not was_active,
+                )
                 upload_screenshot_to_dropbox(driver, timeframe["filename"])
             except Exception as error:
                 message = f"Error taking screenshot for {timeframe['name']}: {error}"
