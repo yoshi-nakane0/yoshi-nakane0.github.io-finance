@@ -35,6 +35,7 @@ DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 LOGIN_TIMEOUT = 30
 CHART_LOAD_TIMEOUT = 30
+CHART_PAGE_DISPLAY_WAIT_SECONDS = 30
 ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
 CHART_RENDER_STABLE_POLLS = 3
 CHART_RENDER_POLL_INTERVAL = 0.5
@@ -514,6 +515,10 @@ def wait_for_chart_ready(driver):
     wait_for_chart_render_complete(driver, CHART_LOAD_TIMEOUT)
 
 
+def wait_for_chart_page_display():
+    time.sleep(CHART_PAGE_DISPLAY_WAIT_SECONDS)
+
+
 def is_active_timeframe_button(button):
     try:
         for attribute in ("aria-pressed", "aria-selected", "aria-checked", "data-active"):
@@ -603,6 +608,7 @@ def main():
         print("Navigating to chart page...")
         driver.get(TRADINGVIEW_CHART_URL)
         wait_for_chart_ready(driver)
+        wait_for_chart_page_display()
         
         for timeframe in TIMEFRAMES:
             try:
@@ -617,6 +623,7 @@ def main():
                     previous_signature=previous_signature,
                     require_change=not was_active,
                 )
+                wait_for_chart_page_display()
                 upload_screenshot_to_dropbox(driver, timeframe["filename"])
             except Exception as error:
                 message = f"Error taking screenshot for {timeframe['name']}: {error}"
