@@ -83,6 +83,17 @@ PASSWORD_INPUT_LOCATORS = [
     (By.CSS_SELECTOR, "input[name='password']"),
     (By.CSS_SELECTOR, "input[type='password']"),
 ]
+LOGIN_SUBMIT_BUTTON_LOCATORS = [
+    (By.CSS_SELECTOR, "button[type='submit']"),
+    (By.CSS_SELECTOR, "button:not([type='button'])"),
+    (By.CSS_SELECTOR, "input[type='submit']"),
+]
+LOGIN_ERROR_LOCATORS = [
+    (By.CSS_SELECTOR, "[role='alert']"),
+    (By.CSS_SELECTOR, "[aria-live='assertive']"),
+    (By.CSS_SELECTOR, "[data-qa-id*='error']"),
+    (By.CSS_SELECTOR, "[data-qa-id*='alert']"),
+]
 EMAIL_LOGIN_TRIGGER_LOCATORS = [
     (By.CSS_SELECTOR, "[data-name='email']"),
     (By.CSS_SELECTOR, "button[name='email']"),
@@ -321,6 +332,28 @@ def setup_driver():
     chrome_options.add_experimental_option('useAutomationExtension', False)
     
     driver = webdriver.Chrome(options=chrome_options)
+    try:
+        driver.execute_cdp_cmd(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {
+                "source": """
+                    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                    Object.defineProperty(navigator, 'languages', { get: () => ['ja-JP', 'ja', 'en-US', 'en'] });
+                    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+                    window.chrome = window.chrome || { runtime: {} };
+                    const originalQuery = window.navigator.permissions && window.navigator.permissions.query;
+                    if (originalQuery) {
+                        window.navigator.permissions.query = (parameters) => (
+                            parameters && parameters.name === 'notifications'
+                                ? Promise.resolve({ state: Notification.permission })
+                                : originalQuery.call(window.navigator.permissions, parameters)
+                        );
+                    }
+                """,
+            },
+        )
+    except WebDriverException:
+        pass
     
     # webdriverプロパティを隠す
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -416,27 +449,96 @@ def open_email_login_form(driver):
     )
 
 
-def submit_login_form(driver, password_input):
+def set_input_value(driver, element, value, description):
     try:
-        form = password_input.find_element(By.XPATH, "./ancestor::form[1]")
         driver.execute_script(
             """
-            const form = arguments[0];
-            if (typeof form.requestSubmit === "function") {
-                form.requestSubmit();
+            const input = arguments[0];
+            const nextValue = arguments[1];
+            const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
+            input.focus();
+            if (descriptor && typeof descriptor.set === "function") {
+                descriptor.set.call(input, nextValue);
             } else {
-                form.submit();
+                input.value = nextValue;
             }
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.dispatchEvent(new Event("change", { bubbles: true }));
             """,
-            form,
+            element,
+            value,
         )
+    except JavascriptException:
+        element.clear()
+        element.send_keys(value)
+
+    WebDriverWait(driver, LOGIN_TIMEOUT).until(
+        lambda _driver: (element.get_attribute("value") or "") == value,
+        message=f"Timed out waiting for {description} value to be applied.",
+    )
+
+
+def extract_visible_text(driver, locators):
+    for by, value in locators:
+        for element in driver.find_elements(by, value):
+            try:
+                if not element.is_displayed():
+                    continue
+                text = " ".join(element.text.split())
+                if text:
+                    return text
+            except StaleElementReferenceException:
+                continue
+    return ""
+
+
+def submit_login_form(driver, password_input):
+    submit_button = None
+    try:
+        form = password_input.find_element(By.XPATH, "./ancestor::form[1]")
+        for by, value in LOGIN_SUBMIT_BUTTON_LOCATORS:
+            for candidate in form.find_elements(by, value):
+                try:
+                    if not candidate.is_displayed() or not candidate.is_enabled():
+                        continue
+                    submit_button = candidate
+                    break
+                except StaleElementReferenceException:
+                    continue
+            if submit_button is not None:
+                break
+    except NoSuchElementException:
+        form = None
+
+    if submit_button is not None:
+        click_element(driver, submit_button)
         return
-    except (JavascriptException, NoSuchElementException, WebDriverException):
-        password_input.send_keys(Keys.ENTER)
+
+    if form is not None:
+        try:
+            driver.execute_script(
+                """
+                const form = arguments[0];
+                if (typeof form.requestSubmit === "function") {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+                """,
+                form,
+            )
+            return
+        except (JavascriptException, WebDriverException):
+            pass
+
+    password_input.send_keys(Keys.ENTER)
 
 
 def wait_for_login_complete(driver):
     def login_complete(current_driver):
+        error_text = extract_visible_text(current_driver, LOGIN_ERROR_LOCATORS)
+        if error_text:
+            raise RuntimeError(f"TradingView sign-in failed: {error_text}")
         return not is_on_signin_page(current_driver) or not login_form_is_visible(current_driver)
 
     WebDriverWait(driver, LOGIN_TIMEOUT).until(
@@ -713,11 +815,9 @@ def login_if_needed(driver, email, password):
                 LOGIN_TIMEOUT,
                 "TradingView password input",
             )
-            email_input.clear()
-            email_input.send_keys(email)
+            set_input_value(driver, email_input, email, "TradingView email input")
             print("Email entered.")
-            password_input.clear()
-            password_input.send_keys(password)
+            set_input_value(driver, password_input, password, "TradingView password input")
             print("Password entered.")
             submit_login_form(driver, password_input)
             print("Login form submitted.")
