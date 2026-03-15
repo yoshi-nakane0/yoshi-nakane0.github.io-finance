@@ -19,9 +19,14 @@ jobs:
   chart:
     runs-on: ${{ vars.CHART_RUNNER_LABEL != '' && vars.CHART_RUNNER_LABEL || 'ubuntu-latest' }}
     timeout-minutes: 20
+    env:
+      AGENT_TOOLSDIRECTORY: ${{ github.workspace }}/.toolcache
+      RUNNER_TOOL_CACHE: ${{ github.workspace }}/.toolcache
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Prepare toolcache
+        run: mkdir -p "$GITHUB_WORKSPACE/.toolcache"
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
