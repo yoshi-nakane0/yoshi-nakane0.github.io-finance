@@ -5,15 +5,22 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import re
 import sys
 import time
 
 import requests
 from selenium import webdriver
+from selenium.common.exceptions import (
+    JavascriptException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DROPBOX_API_URL = "https://api.dropboxapi.com/2/files/create_folder_v2"
@@ -21,9 +28,14 @@ DROPBOX_CONTENT_API_URL = "https://content.dropboxapi.com/2/files/upload"
 DROPBOX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token"
 DEFAULT_DROPBOX_UPLOAD_DIR = "/trade/AI/ChartData"
 DEFAULT_USER_DATA_DIR = os.path.join(BASE_DIR, "chrome_profile")
+TRADINGVIEW_SIGNIN_URL = "https://jp.tradingview.com/accounts/signin/"
+TRADINGVIEW_CHART_URL = "https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI"
 DROPBOX_REQUEST_TIMEOUT = 60
 DROPBOX_MAX_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+LOGIN_TIMEOUT = 30
+CHART_LOAD_TIMEOUT = 30
+ACTIVE_CLASS_PATTERN = re.compile(r"(^|[\s_-])(active|selected|checked|isactive)([\s_-]|$)")
 TIMEFRAMES = [
     {"name": "1時間", "data_value": "60", "filename": "View_1hour.png"},
     {"name": "4時間", "data_value": "240", "filename": "View_4hour.png"},
@@ -31,6 +43,29 @@ TIMEFRAMES = [
     {"name": "週足", "data_value": "1W", "filename": "View_weekly.png"},
 ]
 DROPBOX_TOKEN_CACHE = {"access_token": None, "expires_at": 0.0}
+LOGIN_INPUT_LOCATORS = [
+    (By.CSS_SELECTOR, "input#id_username"),
+    (By.CSS_SELECTOR, "input[name='username']"),
+    (By.CSS_SELECTOR, "input[name='email']"),
+    (By.CSS_SELECTOR, "input[type='email']"),
+]
+PASSWORD_INPUT_LOCATORS = [
+    (By.CSS_SELECTOR, "input#id_password"),
+    (By.CSS_SELECTOR, "input[name='password']"),
+    (By.CSS_SELECTOR, "input[type='password']"),
+]
+EMAIL_LOGIN_TRIGGER_LOCATORS = [
+    (By.CSS_SELECTOR, "[data-name='email']"),
+    (By.CSS_SELECTOR, "button[name='email']"),
+    (By.CSS_SELECTOR, "button[aria-label*='mail']"),
+    (By.CSS_SELECTOR, "button[title*='mail']"),
+    (
+        By.XPATH,
+        "//button[contains(translate(normalize-space(.), "
+        "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'email')]",
+    ),
+    (By.XPATH, "//button[contains(normalize-space(.), 'Eメール')]"),
+]
 
 def getenv_str(name, default=None):
     value = os.environ.get(name)
@@ -47,14 +82,27 @@ DROPBOX_REFRESH_TOKEN = getenv_str("DROPBOX_REFRESH_TOKEN")
 DROPBOX_APP_KEY = getenv_str("DROPBOX_APP_KEY")
 DROPBOX_APP_SECRET = getenv_str("DROPBOX_APP_SECRET")
 USER_DATA_DIR = getenv_str("CHART_USER_DATA_DIR", DEFAULT_USER_DATA_DIR)
-EMAIL = getenv_str("TRADINGVIEW_EMAIL", "n22_y01@yahoo.co.jp")
-PASSWORD = getenv_str("TRADINGVIEW_PASSWORD", "NakaYos912")
+EMAIL = getenv_str("TRADINGVIEW_EMAIL")
+PASSWORD = getenv_str("TRADINGVIEW_PASSWORD")
 
 def normalize_dropbox_dir(path):
     normalized = (path or DEFAULT_DROPBOX_UPLOAD_DIR).strip()
     if not normalized.startswith("/"):
         normalized = f"/{normalized}"
     return normalized.rstrip("/")
+
+
+def require_env_value(name, value):
+    if value:
+        return value
+    raise RuntimeError(f"{name} is required.")
+
+
+def require_tradingview_credentials():
+    return (
+        require_env_value("TRADINGVIEW_EMAIL", EMAIL),
+        require_env_value("TRADINGVIEW_PASSWORD", PASSWORD),
+    )
 
 def request_dropbox_access_token():
     if not DROPBOX_REFRESH_TOKEN:
@@ -220,103 +268,278 @@ def setup_driver():
     
     return driver
 
+
+def wait_for_document_ready(driver, timeout):
+    def document_ready(current_driver):
+        try:
+            return current_driver.execute_script("return document.readyState") == "complete"
+        except JavascriptException:
+            return False
+
+    WebDriverWait(driver, timeout).until(document_ready)
+
+
+def find_first_visible_element(driver, locators, *, require_enabled=False):
+    for by, value in locators:
+        for element in driver.find_elements(by, value):
+            try:
+                if not element.is_displayed():
+                    continue
+                if require_enabled and not element.is_enabled():
+                    continue
+                return element
+            except StaleElementReferenceException:
+                continue
+    return None
+
+
+def wait_for_visible_element(driver, locators, timeout, description):
+    def locate(current_driver):
+        element = find_first_visible_element(current_driver, locators)
+        return element if element is not None else False
+
+    return WebDriverWait(driver, timeout).until(
+        locate,
+        message=f"Timed out waiting for {description}.",
+    )
+
+
+def wait_for_clickable_element(driver, locators, timeout, description):
+    def locate(current_driver):
+        element = find_first_visible_element(current_driver, locators, require_enabled=True)
+        return element if element is not None else False
+
+    return WebDriverWait(driver, timeout).until(
+        locate,
+        message=f"Timed out waiting for {description}.",
+    )
+
+
+def click_element(driver, element):
+    try:
+        element.click()
+    except WebDriverException:
+        driver.execute_script("arguments[0].click();", element)
+
+
+def is_on_signin_page(driver):
+    return "/accounts/signin" in driver.current_url
+
+
+def login_form_is_visible(driver):
+    email_input = find_first_visible_element(driver, LOGIN_INPUT_LOCATORS)
+    password_input = find_first_visible_element(driver, PASSWORD_INPUT_LOCATORS)
+    return email_input is not None and password_input is not None
+
+
+def open_email_login_form(driver):
+    if login_form_is_visible(driver):
+        return
+    trigger = wait_for_clickable_element(
+        driver,
+        EMAIL_LOGIN_TRIGGER_LOCATORS,
+        LOGIN_TIMEOUT,
+        "TradingView email login trigger",
+    )
+    click_element(driver, trigger)
+    wait_for_visible_element(driver, LOGIN_INPUT_LOCATORS, LOGIN_TIMEOUT, "TradingView email input")
+    wait_for_visible_element(
+        driver,
+        PASSWORD_INPUT_LOCATORS,
+        LOGIN_TIMEOUT,
+        "TradingView password input",
+    )
+
+
+def submit_login_form(driver, password_input):
+    try:
+        form = password_input.find_element(By.XPATH, "./ancestor::form[1]")
+        driver.execute_script(
+            """
+            const form = arguments[0];
+            if (typeof form.requestSubmit === "function") {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+            """,
+            form,
+        )
+        return
+    except (JavascriptException, NoSuchElementException, WebDriverException):
+        password_input.send_keys(Keys.ENTER)
+
+
+def wait_for_login_complete(driver):
+    def login_complete(current_driver):
+        return not is_on_signin_page(current_driver) or not login_form_is_visible(current_driver)
+
+    WebDriverWait(driver, LOGIN_TIMEOUT).until(
+        login_complete,
+        message="Timed out waiting for TradingView sign-in to complete.",
+    )
+
+
+def build_timeframe_locators(timeframe):
+    return [
+        (By.CSS_SELECTOR, f"button[data-value='{timeframe['data_value']}']"),
+        (By.XPATH, f"//button[@data-value='{timeframe['data_value']}']"),
+        (By.XPATH, f"//button[contains(@aria-label, '{timeframe['name']}')]"),
+    ]
+
+
+def build_all_timeframe_locators():
+    locators = []
+    for timeframe in TIMEFRAMES:
+        locators.extend(build_timeframe_locators(timeframe))
+    return locators
+
+
+def wait_for_visible_chart_canvas(driver, timeout):
+    def canvas_visible(current_driver):
+        try:
+            return current_driver.execute_script(
+                """
+                return Array.from(document.querySelectorAll("canvas")).some((canvas) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const style = window.getComputedStyle(canvas);
+                    return rect.width > 0 &&
+                        rect.height > 0 &&
+                        style.display !== "none" &&
+                        style.visibility !== "hidden";
+                });
+                """
+            )
+        except JavascriptException:
+            return False
+
+    WebDriverWait(driver, timeout).until(
+        canvas_visible,
+        message="Timed out waiting for the TradingView chart canvas.",
+    )
+
+
+def wait_for_chart_repaint(driver, timeout):
+    wait_for_visible_chart_canvas(driver, timeout)
+    driver.set_script_timeout(timeout)
+    driver.execute_async_script(
+        """
+        const done = arguments[arguments.length - 1];
+        requestAnimationFrame(() => requestAnimationFrame(() => done(true)));
+        """
+    )
+
+
+def wait_for_chart_ready(driver):
+    wait_for_document_ready(driver, CHART_LOAD_TIMEOUT)
+    wait_for_chart_repaint(driver, CHART_LOAD_TIMEOUT)
+    wait_for_visible_element(
+        driver,
+        build_all_timeframe_locators(),
+        CHART_LOAD_TIMEOUT,
+        "TradingView timeframe button",
+    )
+
+
+def is_active_timeframe_button(button):
+    try:
+        for attribute in ("aria-pressed", "aria-selected", "aria-checked", "data-active"):
+            if (button.get_attribute(attribute) or "").lower() == "true":
+                return True
+        if (button.get_attribute("data-state") or "").lower() in {"active", "selected", "checked"}:
+            return True
+        class_name = (button.get_attribute("class") or "").lower()
+        return ACTIVE_CLASS_PATTERN.search(class_name) is not None
+    except StaleElementReferenceException:
+        return False
+
+
+def wait_for_timeframe_button(driver, timeframe, timeout):
+    return wait_for_clickable_element(
+        driver,
+        build_timeframe_locators(timeframe),
+        timeout,
+        f"TradingView timeframe button for {timeframe['name']}",
+    )
+
+
+def wait_for_timeframe_selected(driver, timeframe, timeout):
+    locators = build_timeframe_locators(timeframe)
+
+    def timeframe_selected(current_driver):
+        button = find_first_visible_element(current_driver, locators, require_enabled=True)
+        return is_active_timeframe_button(button) if button is not None else False
+
+    WebDriverWait(driver, timeout).until(
+        timeframe_selected,
+        message=f"Timed out waiting for {timeframe['name']} to become active.",
+    )
+
+
+def login_if_needed(driver, email, password):
+    driver.get(TRADINGVIEW_SIGNIN_URL)
+    wait_for_document_ready(driver, LOGIN_TIMEOUT)
+    print(f"Current URL: {driver.current_url}")
+    if not is_on_signin_page(driver):
+        print("Already logged in! Navigating to chart page...")
+        return
+
+    print("Need to login...")
+    try:
+        open_email_login_form(driver)
+        email_input = wait_for_visible_element(
+            driver,
+            LOGIN_INPUT_LOCATORS,
+            LOGIN_TIMEOUT,
+            "TradingView email input",
+        )
+        password_input = wait_for_visible_element(
+            driver,
+            PASSWORD_INPUT_LOCATORS,
+            LOGIN_TIMEOUT,
+            "TradingView password input",
+        )
+        email_input.clear()
+        email_input.send_keys(email)
+        print("Email entered.")
+        password_input.clear()
+        password_input.send_keys(password)
+        print("Password entered.")
+        submit_login_form(driver, password_input)
+        print("Login form submitted.")
+        wait_for_login_complete(driver)
+    except Exception as error:
+        print(f"Login error: {error}")
+        if sys.stdin.isatty():
+            print("Please login manually...")
+            input("After login completed, press Enter key...")
+            return
+        raise RuntimeError("Interactive login is required, but no terminal is available.") from error
+
 def main():
     failures = []
     driver = None
+    email, password = require_tradingview_credentials()
     os.makedirs(USER_DATA_DIR, exist_ok=True)
     ensure_dropbox_directory(normalize_dropbox_dir(DROPBOX_UPLOAD_DIR))
     
     driver = setup_driver()
     
     try:
-        # ステップ1: ログインページにアクセスしてログイン状態を確認
-        driver.get("https://jp.tradingview.com/accounts/signin/")
-        time.sleep(3)
-        
-        # 現在のURLを確認してログイン状態をチェック
-        current_url = driver.current_url
-        print(f"Current URL: {current_url}")
-        
-        if "signin" not in current_url:
-            # 既にログイン済み、直接チャートページへ移動
-            print("Already logged in! Navigating to chart page...")
-        else:
-            # ログインが必要
-            print("Need to login...")
-            wait = WebDriverWait(driver, 15)
-            
-            try:
-                # Eメールボタンをクリック
-                email_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Eメール') or @name='Eメール']")))
-                email_button.click()
-                print("Email button clicked.")
-                
-                # Eメール入力欄に入力
-                email_input = wait.until(EC.presence_of_element_located((By.ID, "id_username")))
-                email_input.clear()
-                email_input.send_keys(EMAIL)
-                print("Email entered.")
-                
-                # パスワード入力欄に入力
-                password_input = driver.find_element(By.ID, "id_password")
-                password_input.clear()
-                password_input.send_keys(PASSWORD)
-                print("Password entered.")
-                
-                # ログインボタンをクリック
-                login_submit_button = driver.find_element(By.XPATH, "//button[contains(@class, 'submitButton-LQwxK8Bm')]")
-                login_submit_button.click()
-                print("Login form submitted.")
-                
-                # ログイン完了まで待機
-                WebDriverWait(driver, 15).until(lambda d: "signin" not in d.current_url)
-                
-            except Exception as e:
-                print(f"Login error: {e}")
-                if sys.stdin.isatty():
-                    print("Please login manually...")
-                    input("After login completed, press Enter key...")
-                else:
-                    raise RuntimeError("Interactive login is required, but no terminal is available.") from e
-        
-        # チャートページに移動
+        login_if_needed(driver, email, password)
         print("Navigating to chart page...")
-        driver.get("https://jp.tradingview.com/chart/pnyZf6WV/?symbol=SPREADEX%3ANIKKEI")
-        time.sleep(3)
+        driver.get(TRADINGVIEW_CHART_URL)
+        wait_for_chart_ready(driver)
         
-        # 異なる時間足でスクリーンショットを撮影
         for timeframe in TIMEFRAMES:
             try:
-                # 時間足ボタンを検索
-                button = None
-                try:
-                    button = driver.find_element(By.XPATH, f"//button[@data-value='{timeframe['data_value']}']")
-                except:
-                    try:
-                        button = driver.find_element(By.XPATH, f"//button[contains(@aria-label, '{timeframe['name']}')]")
-                    except:
-                        pass
-                
-                if button:
-                    # ボタンをクリック
-                    try:
-                        button.click()
-                    except:
-                        # 通常のクリックが失敗した場合はJavaScriptクリックを試行
-                        driver.execute_script("arguments[0].click();", button)
-                    
-                    # チャートの更新を待機
-                    time.sleep(2)
-                    
-                    # スクリーンショットをDropboxへアップロード
-                    upload_screenshot_to_dropbox(driver, timeframe["filename"])
-                else:
-                    message = f"Could not find {timeframe['name']} button"
-                    print(message)
-                    failures.append(message)
-                
-            except Exception as e:
-                message = f"Error taking screenshot for {timeframe['name']}: {e}"
+                button = wait_for_timeframe_button(driver, timeframe, CHART_LOAD_TIMEOUT)
+                click_element(driver, button)
+                wait_for_timeframe_selected(driver, timeframe, CHART_LOAD_TIMEOUT)
+                wait_for_chart_repaint(driver, CHART_LOAD_TIMEOUT)
+                upload_screenshot_to_dropbox(driver, timeframe["filename"])
+            except Exception as error:
+                message = f"Error taking screenshot for {timeframe['name']}: {error}"
                 print(message)
                 failures.append(message)
         if failures:
@@ -330,7 +553,6 @@ def main():
     
     finally:
         if driver is not None:
-            time.sleep(2)
             driver.quit()
 
 if __name__ == "__main__":
