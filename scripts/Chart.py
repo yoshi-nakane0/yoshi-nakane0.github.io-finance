@@ -142,6 +142,7 @@ REQUIRE_CHART_CONFIRMATION = getenv_bool(
     "CHART_REQUIRE_CONFIRMATION",
     default=sys.stdin.isatty() and os.environ.get("CHART_HEADLESS") != "1",
 )
+REQUIRE_AUTHENTICATED_PROFILE = getenv_bool("TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE", default=False)
 
 def normalize_dropbox_dir(path):
     normalized = (path or DEFAULT_DROPBOX_UPLOAD_DIR).strip()
@@ -150,17 +151,21 @@ def normalize_dropbox_dir(path):
     return normalized.rstrip("/")
 
 
-def require_env_value(name, value):
-    if value:
-        return value
-    raise RuntimeError(f"{name} is required.")
+def get_tradingview_credentials():
+    if bool(EMAIL) != bool(PASSWORD):
+        raise RuntimeError(
+            "Set both TRADINGVIEW_EMAIL and TRADINGVIEW_PASSWORD, or leave both unset when "
+            "using an authenticated TradingView profile."
+        )
+    return EMAIL or "", PASSWORD or ""
 
 
-def require_tradingview_credentials():
-    return (
-        require_env_value("TRADINGVIEW_EMAIL", EMAIL),
-        require_env_value("TRADINGVIEW_PASSWORD", PASSWORD),
-    )
+def has_tradingview_credentials(email, password):
+    return bool(email and password)
+
+
+def can_prompt_for_manual_login():
+    return sys.stdin.isatty() and os.environ.get("CHART_HEADLESS") != "1"
 
 def request_dropbox_access_token():
     if not DROPBOX_REFRESH_TOKEN:
@@ -741,6 +746,14 @@ def wait_for_user_chart_confirmation(driver):
     input("TradingViewの表示内容を確認したら Enter を押してください...")
 
 
+def prompt_for_manual_login(driver):
+    open_signin_page(driver)
+    if not is_on_signin_page(driver):
+        return
+    print("Please login manually in the opened browser...")
+    input("TradingView にログインし、チャートへ戻ったら Enter を押してください...")
+
+
 def open_chart_page(driver, chart_urls):
     last_error = None
     attempted_urls = set()
@@ -808,6 +821,15 @@ def login_if_needed(driver, email, password):
         print("Already logged in! Navigating to chart page...")
         return
 
+    if not has_tradingview_credentials(email, password):
+        if can_prompt_for_manual_login():
+            prompt_for_manual_login(driver)
+            return
+        raise RuntimeError(
+            "TradingView credentials are not set. Configure TRADINGVIEW_EMAIL and "
+            "TRADINGVIEW_PASSWORD, or use a logged-in CHART_USER_DATA_DIR profile."
+        )
+
     last_error = None
     for attempt in range(1, LOGIN_MAX_ATTEMPTS + 1):
         print(f"Need to login... ({attempt}/{LOGIN_MAX_ATTEMPTS})")
@@ -849,16 +871,15 @@ def login_if_needed(driver, email, password):
             last_error = error
             print(f"Login attempt {attempt} failed: {error}")
 
-    if sys.stdin.isatty():
-        print("Please login manually...")
-        input("After login completed, press Enter key...")
+    if can_prompt_for_manual_login():
+        prompt_for_manual_login(driver)
         return
     raise RuntimeError("Interactive login is required, but no terminal is available.") from last_error
 
 def main():
     failures = []
     driver = None
-    email, password = require_tradingview_credentials()
+    email, password = get_tradingview_credentials()
     os.makedirs(USER_DATA_DIR, exist_ok=True)
     ensure_dropbox_directory(normalize_dropbox_dir(DROPBOX_UPLOAD_DIR))
     
@@ -873,6 +894,11 @@ def main():
             print(f"Primary chart page unavailable before login: {error}")
 
         if chart_error is not None:
+            if REQUIRE_AUTHENTICATED_PROFILE:
+                raise RuntimeError(
+                    "TradingView chart layout is not accessible with the current profile. "
+                    "Configure CHART_USER_DATA_DIR with a logged-in TradingView profile."
+                ) from chart_error
             login_error = None
             try:
                 login_if_needed(driver, email, password)

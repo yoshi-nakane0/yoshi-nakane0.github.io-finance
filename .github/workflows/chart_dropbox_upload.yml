@@ -39,6 +39,7 @@ jobs:
           install-dependencies: true
       - name: Validate secrets
         env:
+          TRADINGVIEW_PROFILE_SOURCE_DIR: ${{ vars.TRADINGVIEW_PROFILE_DIR }}
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
@@ -46,8 +47,10 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
         run: |
-          test -n "$TRADINGVIEW_EMAIL" || { echo "TRADINGVIEW_EMAIL is required." >&2; exit 1; }
-          test -n "$TRADINGVIEW_PASSWORD" || { echo "TRADINGVIEW_PASSWORD is required." >&2; exit 1; }
+          if [ -z "$TRADINGVIEW_PROFILE_SOURCE_DIR" ]; then
+            test -n "$TRADINGVIEW_EMAIL" || { echo "TRADINGVIEW_EMAIL is required." >&2; exit 1; }
+            test -n "$TRADINGVIEW_PASSWORD" || { echo "TRADINGVIEW_PASSWORD is required." >&2; exit 1; }
+          fi
           if [ -n "$DROPBOX_REFRESH_TOKEN" ]; then
             test -n "$DROPBOX_APP_KEY" || { echo "DROPBOX_APP_KEY is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
             test -n "$DROPBOX_APP_SECRET" || { echo "DROPBOX_APP_SECRET is required with DROPBOX_REFRESH_TOKEN." >&2; exit 1; }
@@ -76,6 +79,8 @@ jobs:
           CHART_USER_DATA_DIR: ${{ github.workspace }}/.chart-profile-ci
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
           TZ: Asia/Tokyo
+          TRADINGVIEW_PROFILE_SOURCE_DIR: ${{ vars.TRADINGVIEW_PROFILE_DIR }}
+          TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE: "0"
           TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
           TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
           DROPBOX_ACCESS_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
@@ -84,5 +89,11 @@ jobs:
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
           DROPBOX_UPLOAD_DIR: /trade/AI/ChartData
         run: |
+          if [ -n "$TRADINGVIEW_PROFILE_SOURCE_DIR" ]; then
+            rm -rf "$CHART_USER_DATA_DIR"
+            mkdir -p "$CHART_USER_DATA_DIR"
+            cp -R "$TRADINGVIEW_PROFILE_SOURCE_DIR"/. "$CHART_USER_DATA_DIR"/
+            export TRADINGVIEW_REQUIRE_AUTHENTICATED_PROFILE=1
+          fi
           mkdir -p "$CHART_USER_DATA_DIR"
           xvfb-run -a --server-args="-screen 0 1920x1080x24" python scripts/Chart.py
