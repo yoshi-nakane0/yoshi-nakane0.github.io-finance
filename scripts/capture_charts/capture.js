@@ -112,3 +112,24 @@ await Promise.all(
 console.log(
   `Uploaded ${screenshots.length} screenshots to /TradingView/${dateStr}/ (${hhmm} JST)`
 );
+
+const RETENTION_DAYS = 3;
+try {
+  const cutoff = new Date(jst);
+  cutoff.setUTCDate(cutoff.getUTCDate() - (RETENTION_DAYS - 1));
+  const cutoffStr = `${cutoff.getUTCFullYear()}-${pad(cutoff.getUTCMonth() + 1)}-${pad(cutoff.getUTCDate())}`;
+  const list = await dbx.filesListFolder({ path: "/TradingView" });
+  const oldFolders = list.result.entries.filter(
+    (e) =>
+      e[".tag"] === "folder" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(e.name) &&
+      e.name < cutoffStr
+  );
+  for (const folder of oldFolders) {
+    await dbx.filesDeleteV2({ path: folder.path_lower });
+    console.log(`Deleted old folder: ${folder.name}`);
+  }
+  console.log(`Retention: kept ${cutoffStr} onwards, deleted ${oldFolders.length} old folders`);
+} catch (err) {
+  console.warn(`Retention cleanup failed: ${err.message}`);
+}

@@ -3,9 +3,8 @@ name: Capture TradingView chart
 on:
   schedule:
     - cron: "0 22 * * *" # JST 07:00
-    - cron: "0 3 * * *"  # JST 12:00
     - cron: "0 8 * * *"  # JST 17:00
-    - cron: "0 12 * * *" # JST 21:00
+    - cron: "0 13 * * *" # JST 22:00
   workflow_dispatch:
 
 concurrency:
