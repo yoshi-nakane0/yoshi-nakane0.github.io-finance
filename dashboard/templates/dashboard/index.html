@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center</title>
+
+  <!-- style.cssの読み込み -->
+  <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+  <link rel="icon" type="image/png" href="{% static 'images/ico/favicon.png' %}">
+</head>
+
+<body class="dashboard-page">
+  <div class="app-container">
+    <!-- Group: Key Events & Earnings -->
+    <section class="dashboard-section">
+      <h3 class="section-title">Key Events & Earnings</h3>
+      <div class="grid-container grid-cols-2">
+
+        <!-- 0. Outlook -->
+        <a href="{% url 'outlook:index' %}" class="dashboard-card category-market type-outlook grid-span-2">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 12h18"></path>
+              <path d="M7 16l-4-4 4-4"></path>
+              <path d="M17 8l4 4-4 4"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Outlook</h2>
+            <span class="card-subtitle">Market View</span>
+          </div>
+        </a>
+
+        <!-- 1. Earnings -->
+        <a href="{% url 'earning:index' %}" class="dashboard-card category-analysis type-earnings">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Earnings</h2>
+            <span class="card-subtitle">Reports & Data</span>
+          </div>
+        </a>
+
+        <!-- 2. Events -->
+        <a href="/calendar/" class="dashboard-card category-market type-events">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Events</h2>
+            <span class="card-subtitle">Indicator</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Group: Live Stock Trends -->
+    <section class="dashboard-section dashboard-section--deferred">
+      <h3 class="section-title">Live Stock Trends</h3>
+      <div class="grid-container grid-cols-2">
+        
+        <!-- basecalc -->
+        <a href="{% url 'basecalc:index' %}" class="dashboard-card category-admin type-basecalc">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">basecalc</h2>
+            <span class="card-subtitle">Nikkei Bias</span>
+          </div>
+        </a>
+
+        <!-- Sector -->
+        <a href="/sector/" class="dashboard-card category-analysis type-sector">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+              <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Sector</h2>
+            <span class="card-subtitle">Market Segments</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Group: Market Forecast Reports -->
+    <section class="dashboard-section dashboard-section--deferred">
+      <h3 class="section-title">Market Forecast</h3>
+      <div class="grid-container grid-cols-3 grid-compact">
+        
+        <!-- 4. Prediction -->
+        <a href="{% url 'prediction:index' %}" class="dashboard-card category-ai type-prediction">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v8m-4-4h8"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Prediction</h2>
+            <span class="card-subtitle">AI Forecasts</span>
+          </div>
+        </a>
+
+        <!-- 5. Person -->
+        <a href="{% url 'person:index' %}" class="dashboard-card category-market type-person">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Person</h2>
+            <span class="card-subtitle">Key Figures</span>
+          </div>
+        </a>
+
+        <!-- 6. Explanation -->
+        <a href="{% url 'explanation:index' %}" class="dashboard-card category-market type-explanation">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Explanation</h2>
+            <span class="card-subtitle">Indicators</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+        <!-- Group: Related -->
+        <section class="dashboard-section dashboard-section--deferred">
+          <h3 class="section-title">Related</h3>
+          <div class="grid-container grid-cols-4">
+            
+            <!-- 7. Prompt -->
+            <a href="{% url 'prompt:index' %}" class="dashboard-card category-ai type-prompt">
+              <div class="icon-wrapper">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </div>
+              <div class="text-wrapper">
+                <h2 class="card-title">Prompt</h2>
+                <span class="card-subtitle">Management</span>
+              </div>
+            </a>
+    
+            <!-- 9. Settings -->
+            <a href="#" class="dashboard-card category-admin type-settings">
+              <div class="icon-wrapper">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </div>
+              <div class="text-wrapper">
+                <h2 class="card-title">Settings</h2>
+                <span class="card-subtitle">Config</span>
+              </div>
+            </a>
+    
+          </div>
+        </section>
+  </div>
+</body>
+</html>

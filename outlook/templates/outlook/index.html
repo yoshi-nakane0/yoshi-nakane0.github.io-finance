@@ -1,0 +1,294 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Outlook</title>
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'outlook/css/style.css' %}">
+</head>
+<body class="bg-dark">
+    <div class="app-container outlook-page">
+        {% include "common/app_header.html" with page_title="Outlook" page_slug="outlook" %}
+
+        <div class="tab-toolbar">
+            <nav class="tab-nav" aria-label="Sections">
+                <a class="tab-link{% if active_tab == 'tradeplan' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=tradeplan">TradePlan</a>
+                <a class="tab-link{% if active_tab == 'watch' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=watch">Watch</a>
+                <a class="tab-link{% if active_tab == 'notes' %} is-active{% endif %}" href="{% url 'outlook:index' %}?tab=notes">Notes</a>
+            </nav>
+            {% if show_compose %}
+            <a class="compose-link" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;compose=1" aria-label="項目を追加">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                </svg>
+            </a>
+            {% else %}
+            <div class="tab-toolbar__spacer" aria-hidden="true"></div>
+            {% endif %}
+        </div>
+
+        <main class="outlook-main">
+            <section class="panel-section">
+                {% if active_tab == 'tradeplan' %}
+                    <section
+                        class="tradeplan-calendar"
+                        aria-label="TradePlan calendar"
+                        data-tradeplan-calendar
+                        data-position-api-url="{{ tradeplan_position_api_url }}"
+                        data-grid-start="{{ tradeplan_calendar.grid_start }}"
+                        data-grid-end="{{ tradeplan_calendar.grid_end }}"
+                        data-min-date="{{ tradeplan_position_min_date }}"
+                        data-max-date="{{ tradeplan_position_max_date }}"
+                        data-tradeplan-storage-mode="{{ tradeplan_position_storage_mode }}"
+                        data-tradeplan-storage-key="{{ tradeplan_position_storage_key }}"
+                    >
+                        <form class="tradeplan-calendar__toolbar" method="get">
+                            <input type="hidden" name="tab" value="tradeplan">
+                            <h3 class="tradeplan-calendar__title">{{ tradeplan_calendar.month_title }}</h3>
+                            <div class="tradeplan-calendar__selectors">
+                                {% if tradeplan_calendar.previous_month %}
+                                <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.previous_month.year }}&amp;calendar_month={{ tradeplan_calendar.previous_month.month }}" aria-label="前の月">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
+                                </a>
+                                {% else %}
+                                <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--prev is-disabled" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                                <label class="tradeplan-calendar__selector">
+                                    <span>Year</span>
+                                    <select class="form-input" name="calendar_year" onchange="this.form.submit()">
+                                        {% for year in tradeplan_year_choices %}
+                                        <option value="{{ year }}"{% if tradeplan_calendar.year == year %} selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                <label class="tradeplan-calendar__selector">
+                                    <span>Month</span>
+                                    <select class="form-input" name="calendar_month" onchange="this.form.submit()">
+                                        {% for month_value, month_label in tradeplan_month_choices %}
+                                        <option value="{{ month_value }}"{% if tradeplan_calendar.month == month_value %} selected{% endif %}>{{ month_label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                                {% if tradeplan_calendar.next_month %}
+                                <a class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next" href="{% url 'outlook:index' %}?tab=tradeplan&amp;calendar_year={{ tradeplan_calendar.next_month.year }}&amp;calendar_month={{ tradeplan_calendar.next_month.month }}" aria-label="次の月">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 6l6 6-6 6"></path>
+                                    </svg>
+                                </a>
+                                {% else %}
+                                <span class="tradeplan-calendar__nav-button tradeplan-calendar__nav-button--next is-disabled" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 6l6 6-6 6"></path>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </form>
+
+                        <div class="tradeplan-calendar__body">
+                            <div class="tradeplan-calendar__weekdays" aria-hidden="true">
+                                {% for weekday in tradeplan_calendar.weekday_labels %}
+                                <span class="tradeplan-calendar__weekday{% if forloop.first %} is-sunday{% endif %}{% if forloop.last %} is-saturday{% endif %}">{{ weekday }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="tradeplan-calendar__grid">
+                                {% for day in tradeplan_calendar.days %}
+                                <article class="tradeplan-calendar__cell{% if not day.is_current_month %} is-outside{% endif %}{% if day.is_focus %} is-focus{% endif %}{% if day.is_today %} is-today{% endif %}"{% if day.is_in_range %} data-tradeplan-cell data-tradeplan-date="{{ day.iso }}"{% endif %}>
+                                    {% if day.is_in_range %}
+                                    <button class="tradeplan-calendar__daybutton" type="button" data-tradeplan-day data-tradeplan-date="{{ day.iso }}">
+                                        <span class="tradeplan-calendar__dayhead">
+                                            <span class="tradeplan-calendar__daynumber">{{ day.day }}</span>
+                                        </span>
+                                        <span class="tradeplan-calendar__line-layer" data-tradeplan-line-layer aria-hidden="true"></span>
+                                    </button>
+                                    {% else %}
+                                    <div class="tradeplan-calendar__daybutton is-disabled">
+                                        <span class="tradeplan-calendar__dayhead">
+                                            <span class="tradeplan-calendar__daynumber">{{ day.day }}</span>
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </article>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="tradeplan-calendar__sheet" id="tradeplan-position-sheet" hidden>
+                            <div class="tradeplan-calendar__sheet-card">
+                                <p class="tradeplan-calendar__sheet-title" id="tradeplan-position-sheet-title">ポジション種別を選択</p>
+                                <div class="tradeplan-calendar__sheet-actions">
+                                    <button class="tradeplan-calendar__sheet-button tradeplan-calendar__sheet-button--long" type="button" data-tradeplan-create="long">Long</button>
+                                    <button class="tradeplan-calendar__sheet-button tradeplan-calendar__sheet-button--short" type="button" data-tradeplan-create="short">Short</button>
+                                </div>
+                                <button class="secondary-button tradeplan-calendar__sheet-cancel" type="button" data-tradeplan-sheet-close>キャンセル</button>
+                            </div>
+                        </div>
+
+                        <div class="tradeplan-calendar__editor-bar" id="tradeplan-position-editor" hidden>
+                            <p class="tradeplan-calendar__editor-text" id="tradeplan-position-editor-text">端のハンドルをドラッグして期間を調整</p>
+                            <div class="tradeplan-calendar__editor-actions">
+                                <button class="secondary-button danger-button" type="button" data-tradeplan-delete>削除</button>
+                                <button class="secondary-button" type="button" data-tradeplan-edit-close>完了</button>
+                            </div>
+                        </div>
+                    </section>
+                    <form id="tradeplan-csrf-form" hidden aria-hidden="true">
+                        {% csrf_token %}
+                    </form>
+                    <div class="notice-banner notice-banner-error" id="tradeplan-position-feedback" hidden aria-live="polite"></div>
+                    {% if tradeplan_position_storage_notice %}
+                    <div class="notice-banner notice-banner-muted">{{ tradeplan_position_storage_notice }}</div>
+                    {% endif %}
+                    {{ tradeplan_positions|json_script:"tradeplan-position-data" }}
+                {% else %}
+                    {% if saved %}
+                    <div class="notice-banner">項目を保存しました。</div>
+                    {% endif %}
+
+                    {% if show_item_form %}
+                    <form class="item-card note-form-card" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="edit_id" value="{{ item_form.edit_id }}">
+                        <div class="form-row">
+                            <label class="form-field">
+                                <span class="form-label">表示タブ</span>
+                                <select class="form-input" id="outlook-item-tab" name="tab">
+                                    {% for tab_value, tab_label in tab_choices %}
+                                    <option value="{{ tab_value }}"{% if item_form.tab == tab_value %} selected{% endif %}>{{ tab_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="form-grid" id="outlook-meta-row">
+                            <label class="form-field">
+                                <span class="form-label">作成日時</span>
+                                <input class="form-input" type="text" name="created_at" value="{{ item_form.created_at }}" readonly>
+                            </label>
+                            <label class="form-field" id="watch-until-field"{% if item_form.tab != 'watch' %} hidden{% endif %}>
+                                <span class="form-label">監視期限</span>
+                                <input class="form-input{% if item_errors.watch_until %} has-error{% endif %}" type="date" name="watch_until" value="{{ item_form.watch_until }}"{% if item_form.tab != 'watch' %} disabled{% endif %}>
+                                {% if item_errors.watch_until %}
+                                <span class="form-error">{{ item_errors.watch_until }}</span>
+                                {% endif %}
+                            </label>
+                        </div>
+
+                        <label class="form-field">
+                            <span class="form-label">タイトル</span>
+                            <input class="form-input{% if item_errors.title %} has-error{% endif %}" type="text" name="title" value="{{ item_form.title }}" placeholder="表示タイトルを入力">
+                            {% if item_errors.title %}
+                            <span class="form-error">{{ item_errors.title }}</span>
+                            {% endif %}
+                        </label>
+
+                        <label class="form-field">
+                            <span class="form-label">本文</span>
+                            <textarea class="form-textarea{% if item_errors.body %} has-error{% endif %}" name="body" rows="6" placeholder="内容を入力">{{ item_form.body }}</textarea>
+                            {% if item_errors.body %}
+                            <span class="form-error">{{ item_errors.body }}</span>
+                            {% endif %}
+                        </label>
+
+                        <div class="form-actions">
+                            <button class="primary-button" type="submit">{% if editing_item %}更新する{% else %}保存する{% endif %}</button>
+                            <a class="secondary-link" href="{% url 'outlook:index' %}?tab={{ active_tab }}">閉じる</a>
+                        </div>
+                    </form>
+                    {% endif %}
+
+                    {% if active_items %}
+                    <form class="card-list-form" id="outlook-card-list-form" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="active_tab" value="{{ active_tab }}">
+                        <div class="selection-toolbar" id="outlook-selection-toolbar" hidden>
+                            <span class="selection-toolbar__count" id="outlook-selection-count">0件選択中</span>
+                            <div class="selection-toolbar__actions">
+                                <button class="secondary-button" id="outlook-selection-cancel" type="button">キャンセル</button>
+                                <button class="secondary-button danger-button" id="outlook-selection-delete" type="submit" name="action" value="delete_selected" disabled>選択したカードを削除</button>
+                            </div>
+                        </div>
+                        <div class="selection-inputs" id="outlook-selection-inputs"></div>
+                        <div class="card-list" id="outlook-card-list">
+                            {% for item in active_items %}
+                            <article class="item-card js-selectable-card" data-item-id="{{ item.id }}" tabindex="0">
+                                <div class="item-card__selection-indicator" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="8"></circle>
+                                        <path d="M9 12.5l2 2 4-4"></path>
+                                    </svg>
+                                </div>
+                                <div class="item-card__top">
+                                    <span class="item-meta">{{ item.created_at }}</span>
+                                    <div class="item-card__top-actions">
+                                        {% if item.tab == 'watch' and item.watch_until %}
+                                        <span class="status-chip {{ item.status_class }}">{{ item.status_label }}</span>
+                                        {% endif %}
+                                        <a class="icon-action-button item-card__single-action" href="{% url 'outlook:index' %}?tab={{ active_tab }}&amp;edit={{ item.id }}" aria-label="このカードを編集">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M4 20h4l10-10-4-4L4 16v4z"></path>
+                                                <path d="M12.5 7.5l4 4"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-action-button icon-action-button-danger item-card__single-action" type="submit" name="delete_id" value="{{ item.id }}" aria-label="このカードを削除">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M5 7h14"></path>
+                                                <path d="M9 7V5h6v2"></path>
+                                                <path d="M8 7l1 12h6l1-12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% if item.title_is_truncated %}
+                                <button class="item-title collapsible-text collapsible-text--title is-clamped" type="button" data-expandable-text aria-expanded="false">
+                                    <span class="collapsible-text__content">{{ item.title }}</span>
+                                    <span class="collapsible-text__hint" data-collapsible-hint>タップして展開</span>
+                                </button>
+                                {% else %}
+                                <h3 class="item-title">{{ item.title }}</h3>
+                                {% endif %}
+                                {% if item.body_is_truncated %}
+                                <button class="item-text note-body collapsible-text is-clamped" type="button" data-expandable-text aria-expanded="false">
+                                    <span class="collapsible-text__content">{{ item.body }}</span>
+                                    <span class="collapsible-text__hint" data-collapsible-hint>タップして展開</span>
+                                </button>
+                                {% else %}
+                                <p class="item-text note-body">{{ item.body }}</p>
+                                {% endif %}
+                                {% if item.tab == 'watch' and item.watch_until %}
+                                <div class="item-footer">
+                                    <span class="item-label">Watch Until</span>
+                                    <strong class="item-value">{{ item.watch_until }}</strong>
+                                </div>
+                                {% endif %}
+                            </article>
+                            {% endfor %}
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="empty-state">
+                        <h3 class="empty-state__title">データはまだありません。</h3>
+                        <p class="empty-state__text">右上の + ボタンから追加し、表示タブを選択してください。</p>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </section>
+        </main>
+    </div>
+    {% if active_tab == 'tradeplan' %}
+    <script defer src="{% static 'outlook/js/tradeplan_calendar.js' %}"></script>
+    {% else %}
+    <script defer src="{% static 'outlook/js/card_list.js' %}"></script>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>実質GDP詳細 - Control</title>
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Style -->
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'explanation/css/style.css' %}">
+    <style>
+        /* Additional styles for detail page */
+        .accordion-item {
+            background-color: transparent;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .accordion-header {
+            margin-bottom: 0;
+        }
+        .accordion-button {
+            background-color: rgba(41, 45, 53, 0.7);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 5px !important;
+            box-shadow: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(70, 70, 120, 0.8);
+            color: #ffffff;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(100, 100, 255, 0.25);
+            border-color: rgba(100, 100, 255, 0.5);
+        }
+        .accordion-button::after {
+            filter: invert(1); /* Make default arrow white */
+        }
+        .accordion-body {
+            background-color: rgba(0, 0, 0, 0.2);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            font-size: 15px;
+            line-height: 1.6;
+            padding: 7px;
+        }
+        .detail-subtitle {
+            font-weight: bold;
+            color: #a0a0ff;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-left: 3px solid #a0a0ff;
+            padding-left: 10px;
+        }
+        .detail-subtitle:first-child {
+            margin-top: 0;
+        }
+        .detail-list {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        .detail-list li {
+            margin-bottom: 5px;
+        }
+        .highlight-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #4CAF50;
+        }
+        .highlight-text {
+            color: #FFD700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Real GDP" page_slug="explanation" %}
+        <div class="schedule-container">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-bar-right">
+                    <a href="{% url 'explanation:index' %}?view={{ request.GET.from_view|default:'us' }}" class="status-bar-item" style="text-decoration: none; display: inline-block;">⬅ 戻る</a>
+                </div>
+            </div>
+
+            <!-- Title Header -->
+            <div class="earnings-container">
+                <div class="date-header">
+                    <h3 class="date-title">🇺🇸 Real GDP (Quarterly)</h3>
+                </div>
+                <div style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 5px; padding-left: 5px;">
+                    実質GDP (四半期)
+                </div>
+            </div>
+
+            <!-- Content Accordion -->
+            <div class="accordion" id="gdpAccordion">
+                
+                <!-- Section 0: Latest Status -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingLatest">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLatest" aria-expanded="false" aria-controls="collapseLatest">
+                            📢 GDPの最新状況の評価
+                        </button>
+                    </h2>
+                    <div id="collapseLatest" class="accordion-collapse collapse" aria-labelledby="headingLatest" data-bs-parent="#gdpAccordion">
+                        <div class="accordion-body">
+                            <!-- 1. 評価 -->
+                            <div style="margin-bottom: 15px;">
+                                <span style="font-weight: bold; margin-right: 10px;">5段階評価:</span>
+                                <span class="badge-neutral" style="font-size: 13px; padding: 4px 8px;">[3] 中立：横ばい</span>
+                            </div>
+
+                            <!-- 2. 結論 -->
+                            <div class="detail-subtitle">結論</div>
+                            <ul class="detail-list">
+                                <li>基調成長は2.4〜2.5%台相当で横ばい。</li>
+                                <li>ヘッドラインGDPは貿易・在庫の振れで上下しているが、民間最終需要の“芯”は大きく崩れていない。</li>
+                                <li>ただし住宅は弱く、物価は直近で再加速気味（デフレーター上振れ）で持続性には注意。</li>
+                            </ul>
+
+                            <!-- 3. トレンド推定 -->
+                            <div class="detail-subtitle">トレンド推定（基調成長）</div>
+                            <p class="small text-muted" style="margin-bottom: 5px;">※GDP−在庫−純輸出−政府（ppt）</p>
+                            
+                            <div class="highlight-box">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>長期 <small class="text-muted">(12Q平均)</small></span>
+                                    <strong>+2.40</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>中期 <small class="text-muted">(4Q平均)</small></span>
+                                    <strong>+2.23</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>短期 <small class="text-muted">(2Q平均)</small></span>
+                                    <strong style="color: #FFD700;">+2.48</strong>
+                                </div>
+                                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; font-size: 13px;">
+                                    中期で一度弱含んだ後、直近は持ち直し。ただし長期平均との差はごく小さく“加速”というより“平常運転”。
+                                </div>
+                            </div>
+
+                            <!-- 参考 -->
+                            <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; font-size: 12px; color: #ccc;">
+                                <strong style="color: #fff;">参考（直近四半期）:</strong><br>
+                                2025Q2：+2.42ppt / 2025Q3：+2.54ppt
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            📊 推移把握「適切な調査期間」
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#gdpAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">A. 見るべき単位は「四半期」＋「同一四半期の複数vintage（通常3回）」</div>
+                            <p>米国GDPは1四半期あたり3回更新されます。</p>
+                            <div class="detail-subtitle">B. 調査期間の目安（目的別）</div>
+                            <ul class="detail-list">
+                                <li>
+                                    <strong>景気循環・中期予測：</strong><br>
+                                    <span class="highlight-text">最低10年（40四半期）</span><br>
+                                    景気後退・回復局面を含めるため。
+                                </li>
+                                <li>
+                                    <strong>投資・短期見通し：</strong><br>
+                                    <span class="highlight-text">過去3〜5年</span> ＋ 直近の高頻度指標<br>
+                                    現在のインフレ・金利局面の影響を重視するため。
+                                </li>
+                                <li>
+                                    <strong>足元トレンド確認：</strong><br>
+                                    <span class="highlight-text">直近8〜12四半期（2〜3年）</span><br>
+                                    季節性や在庫のブレを除いてトレンドを見るため。
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            📈 変動時の「具体的な経済的影響」
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#gdpAccordion">
+                        <div class="accordion-body">
+                            <p>GDPは結果そのものより、「需要の質（何が原因か）」で影響が変わります。</p>
+
+                            <div class="detail-subtitle">🚀 GDPが上振れ（加速）時</div>
+                            <ul class="detail-list">
+                                <li><strong>雇用・賃金：</strong>採用増、失業率低下、賃金上昇圧力</li>
+                                <li><strong>企業業績：</strong>売上・利益増（特に景気敏感株）</li>
+                                <li><strong>インフレ：</strong>需要増で物価上昇圧力</li>
+                                <li><strong>金融政策：</strong>利下げ遠のく / <span style="color:#ff6b6b;">金利上昇</span>懸念</li>
+                                <li><strong>為替：</strong>ドル高要因になりやすい</li>
+                            </ul>
+
+                            <div class="detail-subtitle">📉 GDPが下振れ（減速）時</div>
+                            <ul class="detail-list">
+                                <li><strong>雇用：</strong>採用停止、レイオフ、失業率上昇</li>
+                                <li><strong>企業業績：</strong>需要減で利益下押し</li>
+                                <li><strong>金融政策：</strong>利下げ期待 → <span style="color:#4CAF50;">金利低下</span><br><small>※ただしスタグフレーション時は株に逆風</small></li>
+                                <li><strong>信用環境：</strong>スプレッド拡大、調達コスト上昇</li>
+                            </ul>
+                            <p class="small text-muted">「成長が強いのに物価も高い」か、「成長が弱く物価も落ちる」かで市場反応が変わります。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            ⏱ 株価への影響タイミング
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#gdpAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">結論：発表の瞬間は「即時」、GDP自体は「遅行」</div>
+                            <p>株価は<strong>「予想に対するサプライズ」</strong>に即座に反応します。しかし、GDPは過去の四半期集計であるため、経済の現状に対しては遅行指標です。</p>
+
+                            <div class="detail-subtitle">⚡ 反応が強く出やすい条件</div>
+                            <ul class="detail-list">
+                                <li>サプライズ（予想との乖離）が大きい</li>
+                                <li>金融政策の見通しを変える（利下げ確率の変化）</li>
+                                <li>物価指標（GDP Price Index）も同時にブレる</li>
+                            </ul>
+
+                            <div class="detail-subtitle">⏳ 時間軸</div>
+                            <ul class="detail-list">
+                                <li><strong>数秒〜数分：</strong>先物・指数が反応</li>
+                                <li><strong>当日〜数日：</strong>金利・ドル・セクターローテーション</li>
+                                <li><strong>数週間〜数か月：</strong>業績見通し修正、FRB姿勢変化への波及</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Prompt -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingPrompt">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrompt" aria-expanded="false" aria-controls="collapsePrompt">
+                            🤖 入力プロンプト
+                        </button>
+                    </h2>
+                    <div id="collapsePrompt" class="accordion-collapse collapse" aria-labelledby="headingPrompt" data-bs-parent="#gdpAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">AI分析用プロンプト例</div>
+                            <div class="highlight-box" style="font-family: monospace; font-size: 12px; color: #ddd;">
+                                直近の米国実質GDP（速報値/改定値）の内訳を分析してください。<br>
+                                特に個人消費（PCE）、設備投資、在庫変動の寄与度に注目し、<br>
+                                今回の結果がFRBの金融政策（利下げ/利上げ）に与える影響について考察してください。
+                            </div>
+                            <p class="small text-muted">※上記のテキストをコピーしてAIに入力してください。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 50px;"></div> <!-- Bottom spacer -->
+        </div>
+        
+        <!-- Top Button -->
+        <button id="back-to-top" title="Go to top"><span aria-hidden="true">↑</span></button>
+    </div>
+
+    <!-- Bootstrap Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Back to top
+        const backToTopButton = document.getElementById("back-to-top");
+        if (backToTopButton) {
+            const toggleBackToTop = () => {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    backToTopButton.style.display = "block";
+                } else {
+                    backToTopButton.style.display = "none";
+                }
+            };
+            window.addEventListener("scroll", toggleBackToTop);
+            backToTopButton.addEventListener("click", () => {
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            });
+            toggleBackToTop();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "builds": [
+    {
+      "src": "myproject/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.12",
+        "excludeFiles": "{.actions-runner-chart/**,.chart-profile-ci/**,.claude/**,.git/**,.github/**,.toolcache/**,.vercel/**,chrome_profile/**,node_modules/**,staticfiles/**,**/__pycache__/**,*.pyc,.DS_Store,.env,.venv/**,env/**,venv/**}",
+        "buildCommand": "bash build_files.sh",
+        "environment": {
+          "SECRET_KEY": "${SECRET_KEY}",
+          "DEBUG": "False",
+          "WHITENOISE_MANIFEST_STRICT": "False",
+          "DJANGO_SETTINGS_MODULE": "myproject.settings"
+        }
+      }
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "staticfiles/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/staticfiles/index.html"
+    },
+    {
+      "source": "/static/(.*)",
+      "destination": "/staticfiles/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/static/images/ico/favicon.png"
+    },
+    {
+      "source": "/favicon.png",
+      "destination": "/static/images/ico/favicon.png"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/myproject/wsgi.py"
+    }
+  ]
+}

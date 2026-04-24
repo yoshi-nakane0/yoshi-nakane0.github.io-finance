@@ -1,0 +1,19 @@
+{
+  "name": "capture-charts",
+  "version": "1.0.0",
+  "description": "TradingView chart screenshot capture and Dropbox upload",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "login": "node login.js",
+    "capture": "node capture.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dropbox": "^10.34.0",
+    "playwright": "^1.48.0",
+    "undici": "^6.19.0"
+  }
+}

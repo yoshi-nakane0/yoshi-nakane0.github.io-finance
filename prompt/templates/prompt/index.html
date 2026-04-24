@@ -1,0 +1,147 @@
+{# index.html #}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロンプト</title>
+    <!-- CSS フレームワークとアイコン -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- カスタムCSS -->
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'prompt/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark">
+    <!-- アプリコンテナ -->
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Prompt" page_slug="prompt" %}
+        <div class="prompt-container">
+            <!-- メインコンテンツ -->
+            <div class="container-fluid mt-3 px-1">
+
+                 <!-- 検索ボックス -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div class="search-container">
+                    <input type="text" class="form-control form-control-sm search-input" placeholder="検索...">
+                    <i class="bi bi-search search-icon"></i>
+                  </div>
+                </div>
+
+                <!-- フィルターバー -->
+                <div class="filter-bar mb-4">
+                    <button class="filter-btn active" data-filter="all">すべて</button>
+                    <button class="filter-btn" data-filter="ChatGPT">ChatGPT</button>
+                    <button class="filter-btn" data-filter="Google AI Studio">Google AI Studio</button>
+                    <button class="filter-btn" data-filter="Genspark">Genspark</button>
+                    <!-- 他のフィルターボタンもここに追加可能 -->
+                </div>
+
+                <!-- 上部ページネーションと表示件数選択 -->
+                <nav class="mt-0 mb-4 pagination-controls d-flex justify-content-center align-items-center flex-wrap" aria-label="Page navigation top">
+                    <div class="pagination-container d-flex align-items-center">
+                        <ul class="pagination pagination-sm mb-0 me-3" id="pagination-list-top">
+                            <!-- ここはJavaScriptで動的に生成されます -->
+                        </ul>
+                        <div class="items-per-page-selector">
+                            <select class="form-select form-select-sm" id="items-per-page-top">
+                                <option value="5">5件</option>
+                                <option value="10">10件</option>
+                                <option value="20" selected>20件</option>
+                                <option value="50">50件</option>
+                            </select>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- プロンプトカード -->
+                <div class="prompt-cards">
+                    {% for prompt in prompt_data %}
+                    <div class="card mb-3 bg-dark text-light prompt-card"
+                         id="prompt-{{ forloop.counter }}"
+                         data-category="{{ prompt.category }}"
+                         data-usage="{{ prompt.usage }}"
+                         data-model="{{ prompt.target_ai }}"
+                         draggable="false">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="prompt-icon" data-drag-handle>
+                                    {% if prompt.target_ai == 'ChatGPT' %}
+                                        <i class="bi bi-chat-dots"></i>
+                                    {% elif prompt.target_ai == 'Google AI Studio' %}
+                                        <i class="bi bi-google"></i>
+                                    {% elif prompt.target_ai == 'Genspark' %}
+                                        <i class="bi bi-lightbulb"></i>
+                                    {% else %}
+                                        <i class="bi bi-box"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="text-primary mb-0 me-2">{{ prompt.summary }}</h5>
+                            </div>
+                            <div class="card-actions">
+                                <span class="category-emoji me-2">{{ prompt.category_emoji }}</span>
+                                <button class="btn btn-icon toggle-btn"
+                                        data-full-prompt="{{ prompt.jp_prompt }}"
+                                        data-truncated-prompt="{{ prompt.truncated_jp_prompt }}"
+                                        title="全文表示">
+                                    <i class="bi bi-arrows-expand"></i>
+                                </button>
+                                <button class="btn btn-icon translate-btn"
+                                        data-jp-prompt="{{ prompt.jp_prompt }}"
+                                        data-en-prompt="{{ prompt.en_prompt }}"
+                                        title="英語に翻訳">
+                                    <i class="bi bi-translate"></i>
+                                </button>
+                                <button class="btn btn-icon copy-btn"
+                                        data-prompt="{{ prompt.truncated_jp_prompt }}"
+                                        title="コピー">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="prompt-content"
+                               data-lang="jp"
+                               data-full-jp="{{ prompt.jp_prompt }}"
+                               data-truncated-jp="{{ prompt.truncated_jp_prompt }}"
+                               data-full-en="{{ prompt.en_prompt }}"
+                               >{{ prompt.truncated_jp_prompt }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted no-results-placeholder">
+                        <i class="bi bi-search me-2"></i>プロンプトデータがありません。
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 下部ページネーションと表示件数選択 -->
+                <nav class="mt-4 pagination-controls d-flex justify-content-center align-items-center flex-wrap" aria-label="Page navigation bottom">
+                     <div class="pagination-container d-flex align-items-center">
+                        <ul class="pagination pagination-sm mb-0 me-3" id="pagination-list-bottom">
+                            <!-- ここはJavaScriptで動的に生成されます -->
+                        </ul>
+                        <div class="items-per-page-selector">
+                            <select class="form-select form-select-sm" id="items-per-page-bottom">
+                                <option value="5">5件</option>
+                                <option value="10">10件</option>
+                                <option value="20" selected>20件</option>
+                                <option value="50">50件</option>
+                            </select>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{% static 'prompt/js/script.js' %}"></script>
+</body>
+</html>

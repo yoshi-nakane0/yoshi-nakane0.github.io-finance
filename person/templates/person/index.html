@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person</title>
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'person/css/style.css' %}">
+</head>
+<body class="bg-dark">
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Person" page_slug="person" %}
+
+        <div class="content scrollable-content">
+            
+            <div class="summary-section">
+                {% for summary in domain_summaries %}
+                <div class="summary-card">
+                    <h5 class="summary-title">{{ summary.domain }}</h5>
+                    <div class="chart-container">
+                        <div class="donut-chart" style="background: {{ summary.gradient }};">
+                            <div class="donut-inner">
+                                <span class="chart-value">{{ summary.average }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Common Legend -->
+            <div class="common-legend">
+                <span class="legend-item legend-1">1</span>
+                <span class="legend-item legend-2">2</span>
+                <span class="legend-item legend-3">3</span>
+                <span class="legend-item legend-4">4</span>
+                <span class="legend-item legend-5">5</span>
+            </div>
+
+            {% for group in domain_groups %}
+            <div class="category-section">
+                <h4 class="category-title">{{ group.domain }}</h4>
+                <div class="analyst-list">
+                    {% for person in group.people %}
+                    <div class="analyst-card_wrapper">
+                        <!-- Header (Trigger) -->
+                        <div class="analyst-item" onclick="toggleAccordion(this)">
+                            <div class="analyst-info">
+                                <div class="analyst-name">
+                                    {{ person.name }}
+                                </div>
+                                <div class="analyst-affil">{{ person.affiliation }}</div>
+                            </div>
+                            
+                            <div class="analyst-meta">
+                                <div class="analyst-score {{ person.latest_evaluation_class }}">
+                                    {{ person.latest_evaluation }}
+                                </div>
+                                <svg class="accordion-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Body (Content) -->
+                        <div class="analyst-body">
+                            {% if person.articles %}
+                            <div class="article-list">
+                                {% for article in person.articles %}
+                                <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" class="article-item">
+                                    <div class="article-title">{{ article.title }}</div>
+                                    <div class="article-meta">
+                                        <span class="article-date">{{ article.date }}</span>
+                                        <span class="article-badge {{ article.evaluation_class }}">Score: {{ article.evaluation }}</span>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-state">表示できる記事がありません</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+        </div>
+    </div>
+
+    <script>
+        function toggleAccordion(element) {
+            const wrapper = element.parentElement;
+            wrapper.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

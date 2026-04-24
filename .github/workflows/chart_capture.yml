@@ -1,0 +1,47 @@
+name: Capture TradingView chart
+
+on:
+  schedule:
+    - cron: "0 22 * * *" # JST 07:00
+    - cron: "0 3 * * *"  # JST 12:00
+    - cron: "0 8 * * *"  # JST 17:00
+    - cron: "0 12 * * *" # JST 21:00
+  workflow_dispatch:
+
+concurrency:
+  group: chart-capture
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: scripts/capture_charts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run capture script
+        env:
+          TZ: Asia/Tokyo
+          TRADINGVIEW_STORAGE_STATE: ${{ secrets.TRADINGVIEW_STORAGE_STATE }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+        run: node capture.js

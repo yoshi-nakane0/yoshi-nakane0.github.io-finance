@@ -1,0 +1,59 @@
+name: Update Nikkei PER data
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Detect Chrome
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v google-chrome)" >> $GITHUB_ENV
+            exit 0
+          fi
+          if command -v chromium-browser >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v chromium-browser)" >> $GITHUB_ENV
+            exit 0
+          fi
+          if command -v chromium >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v chromium)" >> $GITHUB_ENV
+            exit 0
+          fi
+      - name: Update Nikkei PER data
+        run: python scripts/update_nikkei_per_data.py
+      - name: Publish data file
+        env:
+          DATA_BRANCH: codex/nikkei-per-data
+        run: |
+          if git diff --quiet -- basecalc/data/nikkei_per.json; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$DATA_BRANCH"
+          git add basecalc/data/nikkei_per.json
+          git commit -m "Update Nikkei PER data"
+          if git ls-remote --exit-code --heads origin "$DATA_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$DATA_BRANCH"
+            git push --force-with-lease origin "HEAD:$DATA_BRANCH"
+            exit 0
+          fi
+          git push origin "HEAD:$DATA_BRANCH"

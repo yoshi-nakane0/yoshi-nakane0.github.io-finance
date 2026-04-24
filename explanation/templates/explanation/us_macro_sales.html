@@ -1,0 +1,246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Sales</title>
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Style -->
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'explanation/css/style.css' %}">
+    <style>
+        /* Additional styles for detail page */
+        .accordion-item {
+            background-color: transparent;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .accordion-header {
+            margin-bottom: 0;
+        }
+        .accordion-button {
+            background-color: rgba(41, 45, 53, 0.7);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 5px !important;
+            box-shadow: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(70, 70, 120, 0.8);
+            color: #ffffff;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(100, 100, 255, 0.25);
+            border-color: rgba(100, 100, 255, 0.5);
+        }
+        .accordion-button::after {
+            filter: invert(1); /* Make default arrow white */
+        }
+        .accordion-body {
+            background-color: rgba(0, 0, 0, 0.2);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 7px;
+        }
+        .detail-subtitle {
+            font-weight: bold;
+            color: #a0a0ff;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-left: 3px solid #a0a0ff;
+            padding-left: 10px;
+        }
+        .detail-subtitle:first-child {
+            margin-top: 0;
+        }
+        .detail-list {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        .detail-list li {
+            margin-bottom: 5px;
+        }
+        .highlight-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #2196F3;
+        }
+        .highlight-text {
+            color: #FFD700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Retail Sales" page_slug="explanation" %}
+        <div class="schedule-container">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-bar-right">
+                    <a href="{% url 'explanation:index' %}?view={{ request.GET.from_view|default:'us' }}" class="status-bar-item" style="text-decoration: none; display: inline-block;">⬅ 戻る</a>
+                </div>
+            </div>
+
+            <!-- Title Header -->
+            <div class="earnings-container">
+                <div class="date-header">
+                    <h3 class="date-title">🇺🇸 Retail Sales</h3>
+                </div>
+                <div style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 5px; padding-left: 5px;">
+                    小売売上高
+                </div>
+            </div>
+
+            <!-- Content Accordion -->
+            <div class="accordion" id="pmiAccordion">
+                
+                <!-- Section 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            📊 推移把握「適切な調査期間」
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#pmiAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">景気循環・中期予測（リセッション/構造変化）</div>
+                            <ul class="detail-list">
+                                <li>1992年〜最新（推奨）</li>
+                            </ul>
+
+                            <div class="detail-subtitle">投資判断・短期見通し（予想比/次回Fed影響）</div>
+                            <ul class="detail-list">
+                                <li>サプライズ分布・モデル用＝直近10〜15年（できれば初報ビンテージも）</li>
+                                <li>次回FOMCの含意＝直近24〜36か月</li>
+                            </ul>
+
+                            <div class="detail-subtitle">足元トレンド確認（ノイズ除去/モメンタム）</div>
+                            <ul class="detail-list">
+                                <li>直近18〜36か月（基本24か月）。3か月/6か月平滑化や3m/3mでモメンタムを見る。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">補足（超重要）</div>
+                            <div class="highlight-box">
+                                <strong>Retail Salesは名目で改定もあるので、短期でも実質（デフレ後）と初報vs改定の両方を意識。</strong>
+                            </div>
+                            <ul class="detail-list">
+                                <li>
+                                    <strong>名目（Nominal）：</strong>「売上の金額そのまま」。<br>
+                                    → 物価が上がると、モノが同じだけ売れてても金額だけ増えるので、“景気が良い”と勘違いしやすい。<br>
+                                    ⇒ だから <strong>実質（Real）</strong>＝「物価の影響を取り除いた売上」も一緒に見る（＝本当に買う量が増えたか確認）。
+                                </li>
+                                <li>
+                                    <strong>改定（Revision）：</strong>最初に出た数字（初報）が、あとで修正されること。<br>
+                                    → 発表直後に市場が反応するのは初報、後から数字が変わることがある。<br>
+                                    ⇒ 短期分析では「初報でどう動くか」と「後で直る（変わる）か」の両方を意識。
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            📈 変動時の「具体的な経済的影響」
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#pmiAccordion">
+                        <div class="accordion-body">
+                            <p>50を分岐点（拡大/縮小）とし、特に「新規受注」と「価格」の含意が大きいです。</p>
+
+                            <div class="detail-subtitle">🏭 Manufacturing PMI（製造業）上昇時</div>
+                            <ul class="detail-list">
+                                <li><strong>経済：</strong>受注増 → 生産増 → 在庫積増 / 稼働率上昇。設備投資や素材需要も増加。</li>
+                                <li><strong>企業収益：</strong>資本財、素材、工業、輸送関連に追い風。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">🏨 Services PMI（サービス）上昇時</div>
+                            <ul class="detail-list">
+                                <li><strong>経済：</strong>雇用・賃金・消費の粘りに直結しやすい。</li>
+                                <li><strong>物価面：</strong>賃金・価格転嫁が残りやすく、インフレ懸念（金利上昇要因）になりやすい。</li>
+                            </ul>
+
+                            <div class="detail-subtitle">⚠ 注意点</div>
+                            <p class="small text-muted">PMI上昇は景気にプラスでも、「インフレ/金利上昇」を連想させると株価（特にグロース）にはマイナスになる可能性があります。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            ⏱ 株価への影響タイミング
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#pmiAccordion">
+                        <div class="accordion-body">
+                            <div class="detail-subtitle">⚡ ① 即時性：発表“瞬間”</div>
+                            <p>予想（Forecast）からの乖離（サプライズ）に反応します。</p>
+                            <ul class="detail-list">
+                                <li><strong>Flashの方が動きやすい：</strong>情報の新規性が高いため。</li>
+                                <li><strong>反応順：</strong>金利（米国債）/ 為替（ドル） → 株価指数先物</li>
+                            </ul>
+
+                            <div class="detail-subtitle">⏳ ② 遅行性：業績・金融政策経路</div>
+                            <p>PMIが示す「需要・価格・雇用」の方向感は、二段階で波及します。</p>
+                            <ul class="detail-list">
+                                <li><strong>数週間〜数か月後：</strong>決算見通し（ガイダンス）の修正</li>
+                                <li><strong>金融政策：</strong>FRBの利下げ/利上げ観測の変化</li>
+                            </ul>
+                            <p class="small text-muted">その後、セクター（景気敏感/ディフェンシブ、バリュー/グロース）間のローテーションとして現れます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height: 50px;"></div> <!-- Bottom spacer -->
+        </div>
+        
+        <!-- Top Button -->
+        <button id="back-to-top" title="Go to top"><span aria-hidden="true">↑</span></button>
+    </div>
+
+    <!-- Bootstrap Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Clickable items
+        document.querySelectorAll('[data-url]').forEach((item) => {
+            item.addEventListener('click', () => {
+                const targetUrl = item.getAttribute('data-url');
+                if (targetUrl) {
+                    location.href = targetUrl;
+                }
+            });
+        });
+
+        // Back to top
+        const backToTopButton = document.getElementById("back-to-top");
+        window.onscroll = function() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.style.display = "block";
+            } else {
+                backToTopButton.style.display = "none";
+            }
+        };
+        backToTopButton.addEventListener("click", () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        });
+    </script>
+</body>
+</html>

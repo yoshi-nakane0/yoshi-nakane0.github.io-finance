@@ -1,0 +1,239 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earnings Calendar</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'dashboard/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'earning/css/style.css' %}">
+</head>
+
+<body class="bg-dark">
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Earnings" page_slug="earning" %}
+
+        <div class="meta-info">Updated: 2026.04.20</div>
+
+        <div class="schedule-container">
+
+            <div class="filter-panel">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">ALL</button>
+                    <button class="filter-btn" data-filter="en">US / Global</button>
+                    <button class="filter-btn" data-filter="jp">Japan</button>
+                </div>
+                <div class="history-toggle-wrap">
+                    <button id="toggle-completed-btn"
+                            type="button"
+                            class="toggle-completed-btn"
+                            data-load-url="{% url 'earning:completed' %}"
+                            data-default-label="決算済みを表示（{{ past_group_count }}日分）"
+                            data-hide-label="決算済みを非表示"
+                            data-loading-label="決算済みを読み込み中..."
+                            data-error-label="決算済みの読込に失敗"
+                            {% if not has_past_earnings %}disabled{% endif %}>
+                        {% if has_past_earnings %}
+                        決算済みを表示（{{ past_group_count }}日分）
+                        {% else %}
+                        決算済みデータなし
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="schedule-date">
+                <div class="earnings-container" id="earnings-groups">
+                    {% include "earning/_date_groups.html" with earnings_data=earnings_data %}
+                </div>
+            </div>
+        </div>
+
+        <button id="back-to-top" title="Go to top">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+    </div>
+
+    <script>
+        const backToTopButton = document.getElementById("back-to-top");
+
+        let backToTopVisible = false;
+        let scrollTicking = false;
+
+        const updateBackToTopVisibility = () => {
+            const shouldShow = document.body.scrollTop > 20 || document.documentElement.scrollTop > 20;
+            if (shouldShow !== backToTopVisible) {
+                backToTopVisible = shouldShow;
+                backToTopButton.style.display = shouldShow ? "flex" : "none";
+            }
+            scrollTicking = false;
+        };
+
+        window.addEventListener("scroll", () => {
+            if (scrollTicking) {
+                return;
+            }
+            scrollTicking = true;
+            window.requestAnimationFrame(updateBackToTopVisibility);
+        }, { passive: true });
+
+        backToTopButton.addEventListener("click", () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const toggleCompletedButton = document.getElementById('toggle-completed-btn');
+            const groupsContainer = document.getElementById('earnings-groups');
+            const dateGroups = [];
+            const groupCards = new Map();
+            let showCompleted = false;
+            let marketFilter = 'all';
+            let completedLoaded = false;
+            let completedLoading = false;
+
+            const registerGroups = root => {
+                root.querySelectorAll('.date-group').forEach(group => {
+                    if (groupCards.has(group)) {
+                        return;
+                    }
+                    dateGroups.push(group);
+                    groupCards.set(group, Array.from(group.querySelectorAll('.company-card')));
+                });
+            };
+
+            const updateCompletedButtonState = () => {
+                if (!toggleCompletedButton) {
+                    return;
+                }
+                toggleCompletedButton.classList.toggle('active', showCompleted);
+                toggleCompletedButton.setAttribute('aria-expanded', String(showCompleted));
+                toggleCompletedButton.textContent = showCompleted
+                    ? (toggleCompletedButton.dataset.hideLabel || '決算済みを非表示')
+                    : (toggleCompletedButton.dataset.defaultLabel || '');
+            };
+
+            const loadCompletedGroups = async () => {
+                if (!toggleCompletedButton || completedLoaded || completedLoading) {
+                    return completedLoaded;
+                }
+
+                const loadUrl = toggleCompletedButton.dataset.loadUrl || '';
+                if (!loadUrl) {
+                    return false;
+                }
+
+                completedLoading = true;
+                toggleCompletedButton.disabled = true;
+                toggleCompletedButton.classList.add('is-loading');
+                toggleCompletedButton.setAttribute('aria-busy', 'true');
+                toggleCompletedButton.textContent = toggleCompletedButton.dataset.loadingLabel || '決算済みを読み込み中...';
+
+                try {
+                    const response = await fetch(loadUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const responseHtml = await response.text();
+                    if (responseHtml.trim()) {
+                        const fragment = document.createRange().createContextualFragment(responseHtml);
+                        groupsContainer.appendChild(fragment);
+                        registerGroups(groupsContainer);
+                    }
+
+                    completedLoaded = true;
+                    return true;
+                } catch (error) {
+                    console.error('Failed to load completed earnings.', error);
+                    toggleCompletedButton.textContent = toggleCompletedButton.dataset.errorLabel || '決算済みの読込に失敗';
+                    return false;
+                } finally {
+                    completedLoading = false;
+                    toggleCompletedButton.disabled = false;
+                    toggleCompletedButton.classList.remove('is-loading');
+                    toggleCompletedButton.removeAttribute('aria-busy');
+                    if (completedLoaded) {
+                        updateCompletedButtonState();
+                    }
+                }
+            };
+
+            registerGroups(groupsContainer);
+
+            const applyFilters = () => {
+                dateGroups.forEach(group => {
+                    const isCompletedGroup = group.getAttribute('data-period') === 'completed';
+                    if (showCompleted && !isCompletedGroup) {
+                        group.style.display = 'none';
+                        return;
+                    }
+                    if (!showCompleted && isCompletedGroup) {
+                        group.style.display = 'none';
+                        return;
+                    }
+
+                    const cards = groupCards.get(group) || [];
+                    let visibleCount = 0;
+
+                    cards.forEach(card => {
+                        const market = card.dataset.market;
+
+                        let visible = true;
+                        if (marketFilter === 'jp') {
+                            visible = market === 'TSE';
+                        } else if (marketFilter === 'en') {
+                            visible = market !== 'TSE';
+                        }
+
+                        card.style.display = visible ? '' : 'none';
+                        if (visible) {
+                            visibleCount += 1;
+                        }
+                    });
+
+                    group.style.display = visibleCount > 0 ? '' : 'none';
+                });
+            };
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    marketFilter = this.dataset.filter || 'all';
+                    applyFilters();
+                });
+            });
+
+            if (toggleCompletedButton && !toggleCompletedButton.disabled) {
+                updateCompletedButtonState();
+                toggleCompletedButton.addEventListener('click', async () => {
+                    if (completedLoading) {
+                        return;
+                    }
+                    if (!showCompleted) {
+                        const loaded = await loadCompletedGroups();
+                        if (!loaded) {
+                            return;
+                        }
+                    }
+                    showCompleted = !showCompleted;
+                    updateCompletedButtonState();
+                    applyFilters();
+                });
+            }
+
+            applyFilters();
+        });
+    </script>
+</body>
+</html>

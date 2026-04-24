@@ -1,0 +1,124 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'events/css/style.css' %}">
+</head>
+
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Events" page_slug="events" %}
+        <div class="events-container">
+            <div class="status-bar">
+                <button
+                    class="status-bar-item status-bar-item--fill"
+                    id="toggle-past-events"
+                    type="button"
+                    data-past-url="{{ past_events_url }}"
+                    data-has-past-events="{{ has_past_events|yesno:'true,false' }}"
+                    aria-pressed="false"
+                >
+                    切替
+                </button>
+                <button class="status-bar-item status-bar-item--fill" type="button" onclick="window.open('https://www.forexfactory.com/calendar', '_blank')">指標</button>
+                <button class="status-bar-item status-bar-item--fill" type="button" onclick="window.open('https://www.investing.com/central-banks/fed-rate-monitor', '_blank')">金利</button>
+            </div>
+            <div class="meta-info">Updated: 2026.04.20</div>
+            <div class="events-content">
+                <div id="past-events-container" class="events-group events-group--past" hidden></div>
+                <div class="events-group events-group--future">
+                    {% include "events/_event_sections.html" with grouped_entries=future_groups %}
+                </div>
+            </div>
+        </div>
+
+        <button id="back-to-top" title="Go to top">
+            <span aria-hidden="true">↑</span>
+        </button>
+
+        <script>
+            const toggleButton = document.getElementById('toggle-past-events');
+            const pastEventsContainer = document.getElementById('past-events-container');
+            const hasPastEvents = toggleButton.dataset.hasPastEvents === 'true';
+            const pastEventsUrl = toggleButton.dataset.pastUrl;
+            let showPastEvents = false;
+            let pastEventsLoaded = false;
+            let pastEventsLoading = false;
+
+            async function ensurePastEventsLoaded() {
+                if (!hasPastEvents || pastEventsLoaded || pastEventsLoading) {
+                    return pastEventsLoaded;
+                }
+
+                pastEventsLoading = true;
+                toggleButton.disabled = true;
+
+                try {
+                    const response = await fetch(pastEventsUrl, { cache: 'force-cache' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    pastEventsContainer.innerHTML = await response.text();
+                    pastEventsLoaded = true;
+                    return true;
+                } catch (error) {
+                    console.error('過去イベントの読み込みでエラー:', error);
+                    return false;
+                } finally {
+                    pastEventsLoading = false;
+                    toggleButton.disabled = !hasPastEvents;
+                }
+            }
+
+            function setPastEventsVisibility(visible) {
+                showPastEvents = visible;
+                pastEventsContainer.hidden = !visible;
+                toggleButton.setAttribute('aria-pressed', String(visible));
+            }
+
+            toggleButton.disabled = !hasPastEvents;
+            toggleButton.addEventListener('click', async () => {
+                if (showPastEvents) {
+                    setPastEventsVisibility(false);
+                    return;
+                }
+
+                const loaded = await ensurePastEventsLoaded();
+                if (!loaded) {
+                    return;
+                }
+
+                setPastEventsVisibility(true);
+            });
+
+            const backToTopButton = document.getElementById("back-to-top");
+
+            let scrollTicking = false;
+            function updateBackToTopVisibility() {
+                scrollTicking = false;
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                backToTopButton.style.display = scrollTop > 20 ? "block" : "none";
+            }
+
+            window.addEventListener('scroll', () => {
+                if (scrollTicking) return;
+                scrollTicking = true;
+                requestAnimationFrame(updateBackToTopVisibility);
+            }, { passive: true });
+
+            backToTopButton.addEventListener("click", () => {
+                document.body.scrollTop = 0; // For Safari
+                document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+            });
+
+        </script>
+    </div>
+</body>
+</html>
