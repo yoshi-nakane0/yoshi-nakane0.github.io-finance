@@ -29,8 +29,8 @@ const CHART_URL =
 const TIMEFRAMES = [
   { label: "1h", interval: "60" },
   { label: "4h", interval: "240" },
-  { label: "1D", interval: "D" },
-  { label: "1W", interval: "W" },
+  { label: "1D", interval: "1D" },
+  { label: "1W", interval: "1W" },
 ];
 
 const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
