@@ -1,0 +1,701 @@
+:root {
+    --macro-bg: #0F172A;
+    --macro-card-bg: #1E293B;
+    --macro-card-border: rgba(148, 163, 184, 0.25);
+    --macro-text-primary: #F8FAFC;
+    --macro-text-secondary: #94A3B8;
+    --macro-accent: #38BDF8;
+    --macro-accent-soft: rgba(56, 189, 248, 0.15);
+    --macro-good: #34D399;
+    --macro-warn: #FBBF24;
+    --macro-bad: #F87171;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--macro-bg);
+    color: var(--macro-text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+}
+
+.macro-container {
+    padding: 0.75rem 1rem 2rem;
+    max-width: 720px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* レジームバー（固定的に上部に配置） */
+.macro-regime-bar {
+    background: var(--macro-card-bg);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.macro-regime-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.macro-regime-main {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--macro-text-primary);
+}
+
+.macro-regime-sub {
+    font-size: 0.95rem;
+    color: var(--macro-text-secondary);
+    font-weight: 500;
+}
+
+.macro-regime-confidence {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.macro-regime-confidence-text {
+    font-size: 0.78rem;
+    color: var(--macro-text-secondary);
+    min-width: 4.5rem;
+}
+
+.macro-regime-confidence-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.macro-regime-confidence-fill {
+    height: 100%;
+    background: var(--macro-accent);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.macro-regime-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--macro-text-secondary);
+}
+
+.macro-refresh-button {
+    background: var(--macro-accent-soft);
+    color: var(--macro-accent);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 8px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.macro-refresh-button:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.25);
+}
+
+.macro-refresh-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.macro-refresh-form {
+    margin: 0;
+}
+
+/* メッセージ */
+.macro-messages {
+    list-style: none;
+    margin: 0 0 0.85rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.macro-message {
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    border: 1px solid var(--macro-card-border);
+    background: var(--macro-card-bg);
+}
+
+.macro-message--success {
+    border-color: rgba(52, 211, 153, 0.55);
+    color: var(--macro-good);
+}
+
+.macro-message--warning {
+    border-color: rgba(251, 191, 36, 0.55);
+    color: var(--macro-warn);
+}
+
+.macro-message--error {
+    border-color: rgba(248, 113, 113, 0.55);
+    color: var(--macro-bad);
+}
+
+/* 現状サマリ（自動コメント） */
+.macro-overview {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.10), rgba(56, 189, 248, 0.02));
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.macro-overview .macro-section-title {
+    color: var(--macro-accent);
+    border-left-color: var(--macro-accent);
+    margin-bottom: 0.5rem;
+}
+
+.macro-overview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.macro-overview-item {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--macro-text-primary);
+    padding-left: 1rem;
+    position: relative;
+}
+
+.macro-overview-item::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--macro-accent);
+    font-size: 0.85rem;
+}
+
+/* セクション内の使い方解説ブロック */
+.macro-help {
+    background: rgba(255, 255, 255, 0.025);
+    border-left: 2px solid rgba(148, 163, 184, 0.4);
+    padding: 0.5rem 0.7rem;
+    margin: 0 0 0.7rem 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.macro-help-text {
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--macro-text-secondary);
+    margin: 0;
+}
+
+.macro-help-summary {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--macro-text-primary);
+    margin: 0.4rem 0 0 0;
+    font-weight: 600;
+}
+
+/* 各セクション */
+.macro-section {
+    background: var(--macro-card-bg);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.macro-section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--macro-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 0.6rem 0;
+    padding-left: 0.5rem;
+    border-left: 3px solid var(--macro-accent);
+}
+
+.macro-placeholder {
+    color: var(--macro-text-secondary);
+    font-size: 0.9rem;
+    margin: 0.4rem 0 0;
+}
+
+/* type-macro カード（ダッシュボード側で使用） */
+.type-macro {
+    border-color: rgba(56, 189, 248, 0.5);
+}
+.type-macro .icon-wrapper {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.5);
+}
+.type-macro svg { stroke: var(--macro-accent); }
+
+/* 共通カラーヘルパー */
+.macro-pos { color: var(--macro-good); }
+.macro-neg { color: var(--macro-bad); }
+
+/* 戻るリンク */
+.macro-back-link {
+    display: inline-block;
+    margin: 0 0 0.85rem 0;
+    color: var(--macro-text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+.macro-back-link:hover { color: var(--macro-accent); }
+
+/* 指標カードのリスト */
+.macro-card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.6rem;
+}
+.macro-card-list--secondary {
+    margin-top: 0.5rem;
+}
+
+/* 指標カード */
+.macro-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 12px;
+    padding: 0.65rem 0.7rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+.macro-card:hover {
+    border-color: var(--macro-accent);
+    background: rgba(56, 189, 248, 0.05);
+}
+.macro-card--a { border-color: rgba(56, 189, 248, 0.5); }
+.macro-card--b { border-color: rgba(148, 163, 184, 0.35); }
+.macro-card--c { border-color: rgba(148, 163, 184, 0.2); opacity: 0.85; }
+
+.macro-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+}
+.macro-card-name {
+    font-size: 0.78rem;
+    color: var(--macro-text-secondary);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.macro-card-arrow {
+    font-size: 0.95rem;
+    color: var(--macro-accent);
+    font-weight: 700;
+}
+.macro-card-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--macro-text-primary);
+    line-height: 1.2;
+}
+.macro-card-unit {
+    font-size: 0.7rem;
+    color: var(--macro-text-secondary);
+    margin-left: 0.2rem;
+    font-weight: 400;
+}
+.macro-card-stats {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.72rem;
+    color: var(--macro-text-secondary);
+}
+.macro-card-sparkline {
+    margin-top: 0.2rem;
+    height: 28px;
+    line-height: 0;
+}
+.macro-card-sparkline svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.macro-card-date {
+    font-size: 0.66rem;
+    color: var(--macro-text-secondary);
+    opacity: 0.7;
+    text-align: right;
+}
+
+/* 「もっと見る」 */
+.macro-more {
+    margin-top: 0.6rem;
+}
+.macro-more > summary {
+    cursor: pointer;
+    color: var(--macro-accent);
+    font-size: 0.82rem;
+    padding: 0.4rem 0;
+    list-style: none;
+}
+.macro-more > summary::-webkit-details-marker { display: none; }
+.macro-more > summary:before {
+    content: "▶ ";
+    font-size: 0.7rem;
+    margin-right: 0.3rem;
+}
+.macro-more[open] > summary:before { content: "▼ "; }
+
+/* 過去類似局面 */
+.macro-similar-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.macro-similar-item { padding: 0; }
+.macro-similar-link {
+    display: block;
+    padding: 0.6rem 0.7rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+.macro-similar-link:hover {
+    border-color: var(--macro-accent);
+    background: rgba(56, 189, 248, 0.05);
+}
+.macro-similar-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+}
+.macro-similar-rank {
+    font-size: 0.78rem;
+    color: var(--macro-accent);
+    font-weight: 700;
+    min-width: 2rem;
+}
+.macro-similar-month {
+    font-size: 0.95rem;
+    font-weight: 700;
+    flex: 1;
+}
+.macro-similar-distance {
+    font-size: 0.7rem;
+    color: var(--macro-text-secondary);
+}
+.macro-similar-metrics {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--macro-text-secondary);
+    flex-wrap: wrap;
+    margin-bottom: 0.3rem;
+}
+.macro-similar-returns {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* 連動マップ */
+.macro-linkage-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: linkage-rank;
+}
+.macro-linkage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.84rem;
+    counter-increment: linkage-rank;
+}
+.macro-linkage-item::before {
+    content: counter(linkage-rank);
+    color: var(--macro-accent);
+    font-weight: 700;
+    min-width: 1.6rem;
+}
+.macro-linkage-item:last-child { border-bottom: none; }
+.macro-linkage-relation { flex: 1; line-height: 1.3; }
+.macro-linkage-corr { font-weight: 700; min-width: 3rem; text-align: right; }
+
+/* イベントリスト */
+.macro-event-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.macro-event-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.82rem;
+    align-items: baseline;
+}
+.macro-event-item:last-child { border-bottom: none; }
+.macro-event-date { color: var(--macro-warn); font-weight: 700; }
+.macro-event-time { color: var(--macro-text-secondary); font-size: 0.75rem; }
+.macro-event-currency { color: var(--macro-accent); font-weight: 600; font-size: 0.75rem; }
+.macro-event-impact { color: var(--macro-warn); font-size: 0.75rem; }
+.macro-event-name { flex: 1 1 100%; line-height: 1.3; }
+.macro-event-link {
+    display: inline-block;
+    margin-top: 0.4rem;
+    color: var(--macro-accent);
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+.macro-event-link:hover { text-decoration: underline; }
+
+/* 詳細ヘッダー */
+.macro-detail-head {
+    margin-bottom: 0.85rem;
+}
+.macro-detail-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem 0;
+    line-height: 1.2;
+}
+.macro-detail-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--macro-text-secondary);
+    margin-bottom: 0.45rem;
+}
+.macro-detail-id { font-family: 'Menlo', 'Consolas', monospace; }
+.macro-detail-cat { color: var(--macro-accent); }
+.macro-detail-importance { background: rgba(56, 189, 248, 0.12); color: var(--macro-accent); padding: 0.05rem 0.4rem; border-radius: 6px; font-weight: 600; }
+.macro-detail-desc {
+    color: var(--macro-text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* 詳細チャート */
+.macro-detail-chart {
+    width: 100%;
+    height: 130px;
+    line-height: 0;
+    margin: 0.4rem 0 0.6rem;
+}
+.macro-detail-chart svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.macro-detail-latest {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: var(--macro-text-secondary);
+}
+
+/* 統計リスト */
+.macro-stat-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.4rem 0.7rem;
+}
+.macro-stat-list li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    border-bottom: 1px dotted rgba(148, 163, 184, 0.18);
+    padding: 0.25rem 0;
+}
+.macro-stat-label { color: var(--macro-text-secondary); }
+.macro-stat-value { color: var(--macro-text-primary); font-weight: 600; }
+
+/* 突出した過去月 */
+.macro-extreme-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.macro-extreme-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.82rem;
+}
+.macro-extreme-list li:last-child { border-bottom: none; }
+.macro-extreme-date { color: var(--macro-text-secondary); font-family: monospace; }
+.macro-extreme-value { font-weight: 600; }
+.macro-extreme-dev { font-weight: 700; min-width: 4rem; text-align: right; }
+
+/* 相関リスト */
+.macro-corr-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.macro-corr-list li { padding: 0.35rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.macro-corr-list li:last-child { border-bottom: none; }
+.macro-corr-link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.85rem;
+}
+.macro-corr-name { flex: 1; }
+.macro-corr-lag { color: var(--macro-text-secondary); font-size: 0.74rem; }
+.macro-corr-value { font-weight: 700; min-width: 3rem; text-align: right; }
+
+/* 類似局面詳細の指標行 */
+.macro-detail-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.macro-detail-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.macro-detail-row:last-child { border-bottom: none; }
+.macro-detail-row-link {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.3rem 0.6rem;
+    padding: 0.5rem 0;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.82rem;
+}
+.macro-detail-row-link:hover { background: rgba(56, 189, 248, 0.03); }
+.macro-detail-row-name {
+    font-weight: 600;
+    grid-column: 1 / 2;
+}
+.macro-detail-row-cat {
+    grid-column: 2 / 3;
+    text-align: right;
+    color: var(--macro-text-secondary);
+    font-size: 0.7rem;
+}
+.macro-detail-row-value {
+    grid-column: 1 / 2;
+    color: var(--macro-text-primary);
+}
+.macro-detail-row-yoy {
+    grid-column: 2 / 3;
+    text-align: right;
+    color: var(--macro-text-secondary);
+    font-size: 0.74rem;
+}
+.macro-detail-row-dev {
+    grid-column: 1 / 2;
+    color: var(--macro-text-secondary);
+    font-size: 0.72rem;
+}
+.macro-detail-row-date {
+    grid-column: 2 / 3;
+    text-align: right;
+    color: var(--macro-text-secondary);
+    font-size: 0.7rem;
+    font-family: monospace;
+}
+
+/* テーブル */
+.macro-similar-table { overflow-x: auto; }
+.macro-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+.macro-table th, .macro-table td {
+    padding: 0.5rem 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: right;
+}
+.macro-table th:first-child, .macro-table td:first-child {
+    text-align: left;
+}
+.macro-table th {
+    color: var(--macro-text-secondary);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+.macro-table tbody tr:last-child td { border-bottom: none; }
+
+@media (max-width: 600px) {
+    .macro-container {
+        padding: 0.5rem 0.75rem 2rem;
+    }
+    .macro-regime-main {
+        font-size: 1.15rem;
+    }
+    .macro-card-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .macro-card-value {
+        font-size: 1.05rem;
+    }
+    .macro-detail-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .macro-card-list {
+        grid-template-columns: 1fr;
+    }
+}

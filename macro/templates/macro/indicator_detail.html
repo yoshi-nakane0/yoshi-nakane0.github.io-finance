@@ -1,0 +1,106 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ indicator.name_ja }} | Macro</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}">
+</head>
+
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title=indicator.name_ja page_slug="macro" %}
+
+        <div class="macro-container">
+            <a href="{% url 'macro:index' %}" class="macro-back-link">← Macro トップへ</a>
+
+            <section class="macro-detail-head">
+                <h1 class="macro-detail-title">{{ indicator.name_ja }}</h1>
+                <div class="macro-detail-sub">
+                    <span class="macro-detail-id">{{ indicator.fred_series_id }}</span>
+                    <span class="macro-detail-cat">{{ indicator.get_category_display }}</span>
+                    <span class="macro-detail-importance">{{ indicator.get_importance_display }}</span>
+                </div>
+                {% if indicator.description %}
+                    <p class="macro-detail-desc">{{ indicator.description }}</p>
+                {% endif %}
+            </section>
+
+            {% if has_data %}
+                <section class="macro-section">
+                    <h2 class="macro-section-title">時系列（月次）</h2>
+                    <div class="macro-detail-chart">{{ chart_svg|safe }}</div>
+                    <div class="macro-detail-latest">
+                        <span>最新 {{ latest_date|date:"Y-m-d" }}: <strong>{{ latest_value_display }}</strong>{% if indicator.unit %} <span class="macro-card-unit">{{ indicator.unit }}</span>{% endif %}</span>
+                        <span>YoY {{ yoy_display }}</span>
+                        <span>σ {{ deviation_display }}</span>
+                    </div>
+                </section>
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">統計サマリ</h2>
+                    <ul class="macro-stat-list">
+                        <li><span class="macro-stat-label">サンプル数</span><span class="macro-stat-value">{{ stats.count }}</span></li>
+                        <li><span class="macro-stat-label">平均</span><span class="macro-stat-value">{{ stats.mean_display }}</span></li>
+                        <li><span class="macro-stat-label">標準偏差</span><span class="macro-stat-value">{{ stats.std_display }}</span></li>
+                        <li><span class="macro-stat-label">最小</span><span class="macro-stat-value">{{ stats.min_display }}</span></li>
+                        <li><span class="macro-stat-label">最大</span><span class="macro-stat-value">{{ stats.max_display }}</span></li>
+                        <li><span class="macro-stat-label">対象期間</span><span class="macro-stat-value">{{ stats.first_date|date:"Y-m-d" }} 〜 {{ stats.last_date|date:"Y-m-d" }}</span></li>
+                    </ul>
+                </section>
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">突出した過去月（高値）</h2>
+                    {% if high_months %}
+                        <ul class="macro-extreme-list">
+                            {% for m in high_months %}
+                                <li><span class="macro-extreme-date">{{ m.date }}</span><span class="macro-extreme-value">{{ m.value_display }}</span><span class="macro-extreme-dev macro-pos">σ {{ m.deviation_display }}</span></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="macro-placeholder">データ不足</p>
+                    {% endif %}
+                </section>
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">突出した過去月（安値）</h2>
+                    {% if low_months %}
+                        <ul class="macro-extreme-list">
+                            {% for m in low_months %}
+                                <li><span class="macro-extreme-date">{{ m.date }}</span><span class="macro-extreme-value">{{ m.value_display }}</span><span class="macro-extreme-dev macro-neg">σ {{ m.deviation_display }}</span></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="macro-placeholder">データ不足</p>
+                    {% endif %}
+                </section>
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">関係の強い指標</h2>
+                    {% if correlations %}
+                        <ul class="macro-corr-list">
+                            {% for c in correlations %}
+                                <li>
+                                    <a href="{% url 'macro:indicator_detail' series_id=c.other_id %}" class="macro-corr-link">
+                                        <span class="macro-corr-name">{{ c.other_name }}</span>
+                                        <span class="macro-corr-lag">{{ c.lag_label }}</span>
+                                        <span class="macro-corr-value {% if c.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ c.correlation_display }}</span>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="macro-placeholder">十分なデータがないため計算不可</p>
+                    {% endif %}
+                </section>
+            {% else %}
+                <p class="macro-placeholder">この指標のデータはまだ取得されていません。トップ画面の「更新」ボタンで取得してください。</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

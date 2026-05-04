@@ -1,0 +1,21 @@
+{# Indicator Card partial — card は build_indicator_cards から渡される dict #}
+<a href="{% url 'macro:indicator_detail' series_id=card.series_id %}" class="macro-card macro-card--{{ card.importance|lower }}">
+    <div class="macro-card-header">
+        <span class="macro-card-name">{{ card.name_ja }}</span>
+        <span class="macro-card-arrow">{{ card.direction_arrow }}</span>
+    </div>
+    <div class="macro-card-value">
+        {{ card.value_display }}
+        {% if card.unit %}<span class="macro-card-unit">{{ card.unit }}</span>{% endif %}
+    </div>
+    <div class="macro-card-stats">
+        <span class="macro-card-stat" title="前年同月比">YoY {{ card.yoy_display }}</span>
+        <span class="macro-card-stat" title="長期平均からの偏差">σ {{ card.deviation_display }}</span>
+    </div>
+    {% if card.sparkline_svg %}
+        <div class="macro-card-sparkline">{{ card.sparkline_svg|safe }}</div>
+    {% endif %}
+    {% if card.latest_date %}
+        <div class="macro-card-date">{{ card.latest_date|date:"Y-m-d" }}</div>
+    {% endif %}
+</a>

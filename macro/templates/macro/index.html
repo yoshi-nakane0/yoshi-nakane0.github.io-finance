@@ -1,0 +1,170 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}">
+</head>
+
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Macro" page_slug="macro" %}
+
+        <div class="macro-container">
+            {% if messages %}
+                <ul class="macro-messages">
+                    {% for message in messages %}
+                        <li class="macro-message macro-message--{{ message.tags|default:'info' }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <section class="macro-regime-bar">
+                <div class="macro-regime-label">
+                    <span class="macro-regime-main">{{ regime_label }}</span>
+                    <span class="macro-regime-sub">×&nbsp;{{ inflation_flag }}</span>
+                </div>
+                <div class="macro-regime-confidence">
+                    <span class="macro-regime-confidence-text">確度 {{ confidence_pct }}%</span>
+                    <div class="macro-regime-confidence-bar" aria-hidden="true">
+                        <div class="macro-regime-confidence-fill" style="width: {{ confidence_pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="macro-regime-meta">
+                    <span class="macro-regime-updated">更新: {{ last_updated }}</span>
+                    <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
+                        {% csrf_token %}
+                        <button class="macro-refresh-button" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>更新</button>
+                    </form>
+                </div>
+            </section>
+
+            {# 現状サマリ（自動生成コメント） #}
+            {% if overview_commentary and overview_commentary.sentences %}
+                <section class="macro-overview">
+                    <h2 class="macro-section-title">現状サマリ</h2>
+                    <ul class="macro-overview-list">
+                        {% for s in overview_commentary.sentences %}
+                            <li class="macro-overview-item">{{ s }}</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+
+            {# 指標サマリ #}
+            <section class="macro-section">
+                <h2 class="macro-section-title">指標サマリ</h2>
+                {% if has_observations %}
+                    <div class="macro-card-list">
+                        {% for card in indicator_cards %}
+                            {% if card.importance == 'A' %}
+                                {% include "macro/_partials/indicator_card.html" with card=card %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <details class="macro-more">
+                        <summary>その他の指標を表示</summary>
+                        <div class="macro-card-list macro-card-list--secondary">
+                            {% for card in indicator_cards %}
+                                {% if card.importance != 'A' %}
+                                    {% include "macro/_partials/indicator_card.html" with card=card %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% else %}
+                    <p class="macro-placeholder">指標データがまだ取得されていません。「更新」ボタンを押して取得してください。</p>
+                {% endif %}
+            </section>
+
+            {# 過去類似局面 #}
+            <section class="macro-section">
+                <h2 class="macro-section-title">過去類似局面</h2>
+                {% if similar_commentary %}
+                    <div class="macro-help">
+                        <p class="macro-help-text">{{ similar_commentary.help }}</p>
+                        {% if similar_commentary.summary %}
+                            <p class="macro-help-summary">{{ similar_commentary.summary }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if similar_periods %}
+                    <ol class="macro-similar-list">
+                        {% for period in similar_periods %}
+                            <li class="macro-similar-item">
+                                <a href="{% url 'macro:similar_detail' month=period.month_start %}" class="macro-similar-link">
+                                    <div class="macro-similar-head">
+                                        <span class="macro-similar-rank">#{{ forloop.counter }}</span>
+                                        <span class="macro-similar-month">{{ period.month_label }}</span>
+                                        <span class="macro-similar-distance">距離 {{ period.distance_display }}</span>
+                                    </div>
+                                    <div class="macro-similar-metrics">
+                                        <span>Core PCE {{ period.core_pce_display }}</span>
+                                        <span>INDPRO {{ period.indpro_display }}</span>
+                                        <span>2-10 {{ period.spread_display }}</span>
+                                    </div>
+                                    <div class="macro-similar-returns">
+                                        <span class="macro-similar-return {% if period.nikkei_return_pos %}macro-pos{% else %}macro-neg{% endif %}">日経 {{ period.nikkei_return_display }}</span>
+                                        <span class="macro-similar-return {% if period.spx_return_pos %}macro-pos{% else %}macro-neg{% endif %}">S&P {{ period.spx_return_display }}</span>
+                                    </div>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
+                {% endif %}
+            </section>
+
+            {# 連動マップ #}
+            <section class="macro-section">
+                <h2 class="macro-section-title">連動マップ トップ10</h2>
+                {% if linkage_commentary %}
+                    <div class="macro-help">
+                        <p class="macro-help-text">{{ linkage_commentary.help }}</p>
+                        {% if linkage_commentary.summary %}
+                            <p class="macro-help-summary">{{ linkage_commentary.summary }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if linkages %}
+                    <ol class="macro-linkage-list">
+                        {% for link in linkages %}
+                            <li class="macro-linkage-item">
+                                <span class="macro-linkage-relation">{{ link.relation_text }}</span>
+                                <span class="macro-linkage-corr {% if link.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ link.correlation_display }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="macro-placeholder">{% if has_observations %}連動分析に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
+                {% endif %}
+            </section>
+
+            {# 直近イベント予定 #}
+            <section class="macro-section">
+                <h2 class="macro-section-title">直近イベント予定</h2>
+                {% if upcoming_events %}
+                    <ul class="macro-event-list">
+                        {% for ev in upcoming_events %}
+                            <li class="macro-event-item">
+                                <span class="macro-event-date">{{ ev.date_label }}</span>
+                                <span class="macro-event-time">{{ ev.time }}</span>
+                                <span class="macro-event-currency">{{ ev.currency }}</span>
+                                <span class="macro-event-name">{{ ev.event }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="macro-placeholder">直近1週間に★★★イベントはありません。</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</body>
+</html>

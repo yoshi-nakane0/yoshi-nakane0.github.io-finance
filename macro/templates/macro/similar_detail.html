@@ -1,0 +1,99 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ month_label }} | Macro</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}">
+</head>
+
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title=month_label page_slug="macro" %}
+
+        <div class="macro-container">
+            <a href="{% url 'macro:index' %}" class="macro-back-link">← Macro トップへ</a>
+
+            <section class="macro-detail-head">
+                <h1 class="macro-detail-title">{{ month_label }}</h1>
+                <p class="macro-detail-desc">この月の指標値・市場反応・主要イベントの詳細です。</p>
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">市場反応（指数の終値ベース）</h2>
+                <div class="macro-similar-table">
+                    <table class="macro-table">
+                        <thead>
+                            <tr>
+                                <th>銘柄</th>
+                                <th>+1ヶ月</th>
+                                <th>+3ヶ月</th>
+                                <th>+6ヶ月</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>日経225</td>
+                                <td>{{ nikkei_returns.r1m }}</td>
+                                <td>{{ nikkei_returns.r3m }}</td>
+                                <td>{{ nikkei_returns.r6m }}</td>
+                            </tr>
+                            <tr>
+                                <td>S&P 500</td>
+                                <td>{{ spx_returns.r1m }}</td>
+                                <td>{{ spx_returns.r3m }}</td>
+                                <td>{{ spx_returns.r6m }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">指標値（この月時点）</h2>
+                {% if indicator_rows %}
+                    <ul class="macro-detail-rows">
+                        {% for row in indicator_rows %}
+                            <li class="macro-detail-row">
+                                <a href="{% url 'macro:indicator_detail' series_id=row.series_id %}" class="macro-detail-row-link">
+                                    <span class="macro-detail-row-name">{{ row.name_ja }}</span>
+                                    <span class="macro-detail-row-cat">{{ row.category }}</span>
+                                    <span class="macro-detail-row-value">{{ row.value_display }}{% if row.unit %} {{ row.unit }}{% endif %}</span>
+                                    <span class="macro-detail-row-yoy">YoY {{ row.yoy_display }}</span>
+                                    <span class="macro-detail-row-dev">σ {{ row.deviation_display }}</span>
+                                    <span class="macro-detail-row-date">{{ row.date }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="macro-placeholder">この月の指標データはありません。</p>
+                {% endif %}
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">この月の重要イベント</h2>
+                {% if events %}
+                    <ul class="macro-event-list">
+                        {% for ev in events %}
+                            <li class="macro-event-item">
+                                <span class="macro-event-date">{{ ev.date }}</span>
+                                <span class="macro-event-time">{{ ev.time }}</span>
+                                <span class="macro-event-currency">{{ ev.currency }}</span>
+                                <span class="macro-event-impact">{{ ev.impact }}</span>
+                                <span class="macro-event-name">{{ ev.event }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="macro-placeholder">該当するイベントはありません。</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</body>
+</html>

@@ -12,7 +12,6 @@
   /* Vivid Accent Palette */
   --color-events: #F472B6;      /* Pink 400 */
   --color-earnings: #34D399;    /* Emerald 400 */
-  --color-outlook: #2DD4BF;     /* Teal 400 */
   --color-sector: #38BDF8;      /* Sky 400 */
   --color-prediction: #A78BFA;  /* Violet 400 */
   --color-person: #FBBF24;      /* Amber 400 */
@@ -36,7 +35,7 @@ body {
 }
 
 .app-container {
-  padding: 2rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   box-sizing: border-box;
 }
 
@@ -57,7 +56,7 @@ body {
 
 /* Section Styles */
 .dashboard-section {
-  margin-bottom: 3rem;
+  margin-bottom: 1.25rem;
 }
 
 @supports (content-visibility: auto) {
@@ -277,17 +276,6 @@ body {
     drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
 }
 
-/* Outlook */
-.type-outlook {
-  border-color: rgba(45, 212, 191, var(--card-border-opacity));
-}
-.type-outlook .icon-wrapper {
-  background: rgba(45, 212, 191, 0.1);
-  border-color: rgba(45, 212, 191, 0.5);
-}
-.type-outlook svg { stroke: var(--color-outlook); }
-
-
 /* Sector */
 .type-sector {
   border-color: rgba(56, 189, 248, var(--card-border-opacity));
@@ -420,7 +408,7 @@ body {
 
 @media (max-width: 600px) {
   .app-container {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
   }
   
   .section-title {
@@ -431,7 +419,7 @@ body {
   }
   
   .dashboard-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
 
   .grid-container {

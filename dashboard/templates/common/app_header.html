@@ -12,10 +12,10 @@
                 <div class="common-app-header__menu-title">Pages</div>
                 <div class="common-app-header__links">
                     <a href="{% url 'dashboard:index' %}" class="common-app-header__link{% if page_slug == 'dashboard' %} is-current{% endif %}">Dashboard</a>
-                    <a href="{% url 'outlook:index' %}" class="common-app-header__link{% if page_slug == 'outlook' %} is-current{% endif %}">Outlook</a>
                     <a href="{% url 'earning:index' %}" class="common-app-header__link{% if page_slug == 'earning' %} is-current{% endif %}">Earnings</a>
                     <a href="{% url 'events:index' %}" class="common-app-header__link{% if page_slug == 'events' %} is-current{% endif %}">Events</a>
                     <a href="{% url 'basecalc:index' %}" class="common-app-header__link{% if page_slug == 'basecalc' %} is-current{% endif %}">basecalc</a>
+                    <a href="{% url 'macro:index' %}" class="common-app-header__link{% if page_slug == 'macro' %} is-current{% endif %}">Macro</a>
                     <a href="{% url 'sector:index' %}" class="common-app-header__link{% if page_slug == 'sector' %} is-current{% endif %}">Sector</a>
                     <a href="{% url 'explanation:index' %}" class="common-app-header__link{% if page_slug == 'explanation' %} is-current{% endif %}">Explanation</a>
                     <a href="{% url 'person:index' %}" class="common-app-header__link{% if page_slug == 'person' %} is-current{% endif %}">Person</a>

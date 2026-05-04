@@ -19,35 +19,7 @@
       <h3 class="section-title">Key Events & Earnings</h3>
       <div class="grid-container grid-cols-2">
 
-        <!-- 0. Outlook -->
-        <a href="{% url 'outlook:index' %}" class="dashboard-card category-market type-outlook grid-span-2">
-          <div class="icon-wrapper">
-            <svg viewBox="0 0 24 24">
-              <path d="M3 12h18"></path>
-              <path d="M7 16l-4-4 4-4"></path>
-              <path d="M17 8l4 4-4 4"></path>
-            </svg>
-          </div>
-          <div class="text-wrapper">
-            <h2 class="card-title">Outlook</h2>
-            <span class="card-subtitle">Market View</span>
-          </div>
-        </a>
-
-        <!-- 1. Earnings -->
-        <a href="{% url 'earning:index' %}" class="dashboard-card category-analysis type-earnings">
-          <div class="icon-wrapper">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-          </div>
-          <div class="text-wrapper">
-            <h2 class="card-title">Earnings</h2>
-            <span class="card-subtitle">Reports & Data</span>
-          </div>
-        </a>
-
-        <!-- 2. Events -->
+        <!-- 1. Events -->
         <a href="/calendar/" class="dashboard-card category-market type-events">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
@@ -63,6 +35,19 @@
           </div>
         </a>
 
+        <!-- 2. Earnings -->
+        <a href="{% url 'earning:index' %}" class="dashboard-card category-analysis type-earnings">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Earnings</h2>
+            <span class="card-subtitle">Reports & Data</span>
+          </div>
+        </a>
+
       </div>
     </section>
 
@@ -70,20 +55,18 @@
     <section class="dashboard-section dashboard-section--deferred">
       <h3 class="section-title">Live Stock Trends</h3>
       <div class="grid-container grid-cols-2">
-        
-        <!-- basecalc -->
-        <a href="{% url 'basecalc:index' %}" class="dashboard-card category-admin type-basecalc">
+
+        <!-- Macro -->
+        <a href="{% url 'macro:index' %}" class="dashboard-card category-analysis type-macro grid-span-2">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
+              <path d="M3 3v18h18"></path>
+              <path d="M7 14l4-4 4 4 5-5"></path>
             </svg>
           </div>
           <div class="text-wrapper">
-            <h2 class="card-title">basecalc</h2>
-            <span class="card-subtitle">Nikkei Bias</span>
+            <h2 class="card-title">Macro</h2>
+            <span class="card-subtitle">Economic Regime</span>
           </div>
         </a>
 
@@ -98,6 +81,22 @@
           <div class="text-wrapper">
             <h2 class="card-title">Sector</h2>
             <span class="card-subtitle">Market Segments</span>
+          </div>
+        </a>
+
+        <!-- Basecal -->
+        <a href="{% url 'basecalc:index' %}" class="dashboard-card category-admin type-basecalc">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Basecal</h2>
+            <span class="card-subtitle">Nikkei Bias</span>
           </div>
         </a>
 
