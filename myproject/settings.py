@@ -2,7 +2,7 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import unquote, urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,21 +24,6 @@ DEBUG = env_bool('DEBUG', True)
 def build_database_from_url(database_url):
     parsed = urlparse(database_url)
     scheme = parsed.scheme.lower()
-
-    if scheme in {'postgres', 'postgresql', 'pgsql'}:
-        query_params = parse_qs(parsed.query)
-        sslmode = (query_params.get('sslmode') or ['require'])[0]
-        database_config = {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': unquote(parsed.path.lstrip('/')),
-            'USER': unquote(parsed.username or ''),
-            'PASSWORD': unquote(parsed.password or ''),
-            'HOST': parsed.hostname or '',
-            'PORT': str(parsed.port or ''),
-        }
-        if sslmode:
-            database_config['OPTIONS'] = {'sslmode': sslmode}
-        return database_config
 
     if scheme == 'sqlite':
         sqlite_path = unquote(parsed.path or '')
