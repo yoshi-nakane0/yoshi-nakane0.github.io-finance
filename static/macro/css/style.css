@@ -900,6 +900,65 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
+/* === LightGBM 予測カード === */
+.macro-lgbm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.macro-lgbm-card {
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.macro-lgbm-card--positive {
+    border-color: rgba(34, 197, 94, 0.45);
+    background: linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.02));
+}
+.macro-lgbm-card--neutral {
+    border-color: rgba(250, 204, 21, 0.45);
+    background: linear-gradient(180deg, rgba(250,204,21,0.10), rgba(250,204,21,0.02));
+}
+.macro-lgbm-card--warn {
+    border-color: rgba(251, 146, 60, 0.55);
+    background: linear-gradient(180deg, rgba(251,146,60,0.12), rgba(251,146,60,0.02));
+}
+.macro-lgbm-card--danger {
+    border-color: rgba(239, 68, 68, 0.65);
+    background: linear-gradient(180deg, rgba(239,68,68,0.15), rgba(239,68,68,0.04));
+}
+.macro-lgbm-horizon {
+    font-size: 0.75rem;
+    color: var(--macro-text-secondary);
+}
+.macro-lgbm-return {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--macro-text-primary);
+    line-height: 1.1;
+}
+.macro-lgbm-card--positive .macro-lgbm-return { color: #22c55e; }
+.macro-lgbm-card--neutral .macro-lgbm-return { color: #facc15; }
+.macro-lgbm-card--warn .macro-lgbm-return { color: #fb923c; }
+.macro-lgbm-card--danger .macro-lgbm-return { color: #ef4444; }
+.macro-lgbm-mae {
+    font-size: 0.68rem;
+    color: var(--macro-text-secondary);
+}
+.macro-lgbm-meta {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 0.66rem;
+    color: var(--macro-text-secondary);
+}
+
 /* === 歴史的クラッシュ局面 === */
 .macro-crash-history-list {
     list-style: none;

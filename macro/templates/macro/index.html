@@ -70,6 +70,27 @@
                 </section>
             {% endif %}
 
+            {# LightGBM 予測 #}
+            {% if lightgbm_prediction %}
+                <section class="macro-section macro-lgbm">
+                    <h2 class="macro-section-title">LightGBM 予測（SP500リターン）</h2>
+                    <div class="macro-lgbm-grid">
+                        {% for h in lightgbm_prediction.horizons %}
+                            <div class="macro-lgbm-card macro-lgbm-card--{{ h.level }}">
+                                <div class="macro-lgbm-horizon">{{ h.months }}ヶ月後</div>
+                                <div class="macro-lgbm-return">{{ h.predicted_return_display }}</div>
+                                <div class="macro-lgbm-mae">検証誤差 {{ h.validation_mae_display }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="macro-lgbm-meta">
+                        <span>学習日 {{ lightgbm_prediction.predicted_at }}</span>
+                        <span>サンプル {{ lightgbm_prediction.training_samples }} / 特徴量 {{ lightgbm_prediction.feature_count }}</span>
+                        <span>モデル {{ lightgbm_prediction.model_version }}</span>
+                    </div>
+                </section>
+            {% endif %}
+
             {# 歴史的クラッシュ局面との類似度 #}
             {% if historical_crash_similarity %}
                 <section class="macro-section">

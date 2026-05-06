@@ -24,6 +24,7 @@ from .services.dashboard import (
     build_similar_periods,
     build_upcoming_events,
     invalidate_caches,
+    load_lightgbm_prediction,
 )
 from .services.data_sync import (
     get_latest_observation_date,
@@ -62,6 +63,7 @@ def index(request):
         'historical_crash_similarity': (
             build_historical_crash_similarity() if has_observations else []
         ),
+        'lightgbm_prediction': load_lightgbm_prediction(),
         'similar_periods': similar_periods,
         'linkages': linkages,
         'upcoming_events': build_upcoming_events(),

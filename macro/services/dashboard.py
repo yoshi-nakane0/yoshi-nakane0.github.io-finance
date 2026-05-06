@@ -4,11 +4,14 @@ views.py を薄く保つために集約。
 重い計算（類似度・連動分析）はキャッシュして同一日内の再計算を避ける。
 """
 
+import json
 import logging
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -29,6 +32,8 @@ CACHE_KEY_SIMILARITY = 'macro_similar_periods_v1'
 CACHE_KEY_LINKAGE = 'macro_linkages_v1'
 
 SPARKLINE_MONTHS = 24
+
+LIGHTGBM_PREDICTION_PATH = Path('static') / 'macro' / 'lightgbm_prediction.json'
 
 
 def format_value(value: Optional[float], unit: str) -> str:
@@ -254,6 +259,58 @@ def build_crash_alert_context() -> Dict:
 def build_historical_crash_similarity(top_n: int = 3) -> List[Dict]:
     """歴史的クラッシュ月との類似度を返す。"""
     return find_similar_crash_months(top_n=top_n)
+
+
+def _classify_predicted_return(pct: float) -> str:
+    """予測リターン値からレベルを返す（CSSクラスに使う）。"""
+    if pct >= 0:
+        return 'positive'
+    if pct >= -3:
+        return 'neutral'
+    if pct >= -7:
+        return 'warn'
+    return 'danger'
+
+
+def load_lightgbm_prediction() -> Optional[Dict]:
+    """学習済みの予測 JSON を読み込んで表示用に整形する。
+
+    JSON が存在しない・壊れている場合は None を返す（画面ではセクション非表示）。
+    """
+    path = Path(settings.BASE_DIR) / LIGHTGBM_PREDICTION_PATH
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        logger.exception("LightGBM prediction JSON の読み込みに失敗")
+        return None
+
+    horizons = []
+    for h in raw.get('horizons', []):
+        pct = h.get('predicted_return_pct')
+        mae = h.get('validation_mae_pct')
+        if pct is None:
+            continue
+        horizons.append({
+            'months': h.get('months'),
+            'predicted_return_pct': pct,
+            'predicted_return_display': f'{pct:+.2f}%',
+            'validation_mae_pct': mae,
+            'validation_mae_display': f'±{mae:.2f}%' if mae is not None else '—',
+            'level': _classify_predicted_return(pct),
+        })
+
+    if not horizons:
+        return None
+
+    return {
+        'predicted_at': raw.get('predicted_at'),
+        'horizons': horizons,
+        'training_samples': raw.get('training_samples'),
+        'feature_count': raw.get('feature_count'),
+        'model_version': raw.get('model_version'),
+    }
 
 
 def build_upcoming_events(days_ahead: int = 7) -> List[Dict]:
