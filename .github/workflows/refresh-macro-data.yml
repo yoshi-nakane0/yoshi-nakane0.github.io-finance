@@ -49,6 +49,9 @@ jobs:
       - name: Refresh indicators
         run: python manage.py refresh_macro_data
 
+      - name: Precompute dashboard cache
+        run: python manage.py precompute_dashboard
+
       - name: Publish updated DB to data branch
         run: |
           cp db.sqlite3 /tmp/macro_db.sqlite3

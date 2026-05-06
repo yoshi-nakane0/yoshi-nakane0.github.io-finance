@@ -170,3 +170,14 @@ class PriceObservation(models.Model):
 
     def __str__(self):
         return f'{self.ticker} {self.observation_month}: {self.close_price}'
+
+
+class DashboardCache(models.Model):
+    """重い計算結果を JSON で保存し、ビューが高速に読めるようにする。"""
+
+    cache_key = models.CharField(max_length=64, unique=True)
+    payload = models.JSONField()
+    computed_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.cache_key} @ {self.computed_at:%Y-%m-%d %H:%M}'
