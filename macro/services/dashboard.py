@@ -6,13 +6,15 @@ views.py を薄く保つために集約。
 
 import json
 import logging
+from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Dict, List, Optional
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.core.cache import cache
+from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
@@ -26,10 +28,9 @@ from .upcoming_events import load_upcoming_high_impact_events
 
 logger = logging.getLogger(__name__)
 
-CACHE_TTL_SIMILARITY = 60 * 60 * 6  # 6時間
-CACHE_TTL_LINKAGE = 60 * 60 * 6
-CACHE_KEY_SIMILARITY = 'macro_similar_periods_v1'
-CACHE_KEY_LINKAGE = 'macro_linkages_v1'
+# 計算結果は DashboardCache（DB）に precompute_dashboard コマンドで焼き付ける方式に統一。
+# 以前ここにあった locmem キャッシュは Vercel サーバーレス（プロセスごとに揮発）では
+# 効かなかったため撤去。
 
 SPARKLINE_MONTHS = 24
 
@@ -71,42 +72,62 @@ def _direction_from(prev_value, current_value) -> str:
     return '→'
 
 
-def _monthly_values_for(indicator: Indicator, months_back: int) -> List[float]:
-    """月次バケットの最新値を時系列順で返す。"""
+def _bulk_load_monthly_values(
+    indicator_ids: List[int], months_back: int,
+) -> Dict[int, List[float]]:
+    """全指標分の月次値を 1 クエリで取得して指標 ID ごとに返す。"""
+    if not indicator_ids:
+        return {}
     today = timezone.localdate()
     cutoff = today.replace(day=1) - relativedelta(months=months_back)
-    qs = (
+    rows = (
         Observation.objects
-        .filter(indicator=indicator, observation_date__gte=cutoff)
-        .order_by('observation_date')
-        .values_list('observation_date', 'value')
+        .filter(indicator_id__in=indicator_ids, observation_date__gte=cutoff)
+        .order_by('indicator_id', 'observation_date')
+        .values_list('indicator_id', 'observation_date', 'value')
     )
-    if not qs:
-        return []
-    monthly: Dict[date, float] = {}
-    for d, v in qs:
-        key = d.replace(day=1)
-        monthly[key] = v
-    sorted_months = sorted(monthly.keys())
-    if len(sorted_months) > months_back:
-        sorted_months = sorted_months[-months_back:]
-    return [monthly[m] for m in sorted_months]
+    monthly_map: Dict[int, Dict[date, float]] = defaultdict(dict)
+    for ind_id, obs_date, value in rows:
+        key = obs_date.replace(day=1)
+        monthly_map[ind_id][key] = value
+    result: Dict[int, List[float]] = {}
+    for ind_id, month_dict in monthly_map.items():
+        sorted_months = sorted(month_dict.keys())
+        if len(sorted_months) > months_back:
+            sorted_months = sorted_months[-months_back:]
+        result[ind_id] = [month_dict[m] for m in sorted_months]
+    return result
 
 
 def build_indicator_cards() -> List[Dict]:
-    """全アクティブ指標のカード情報を作る。"""
-    indicators = list(
-        Indicator.objects.filter(is_active=True).order_by('display_order')
+    """全アクティブ指標のカード情報を作る。
+
+    最新観測値はサブクエリで 1 クエリ、スパークラインの月次値も 1 クエリでまとめて取得する。
+    """
+    latest_obs_qs = (
+        Observation.objects
+        .filter(indicator=OuterRef('pk'))
+        .order_by('-observation_date')
     )
+    indicators = list(
+        Indicator.objects
+        .filter(is_active=True)
+        .annotate(
+            latest_obs_date=Subquery(latest_obs_qs.values('observation_date')[:1]),
+            latest_value=Subquery(latest_obs_qs.values('value')[:1]),
+            latest_prev_value=Subquery(latest_obs_qs.values('prev_value')[:1]),
+            latest_yoy=Subquery(latest_obs_qs.values('yoy_change')[:1]),
+        )
+        .order_by('display_order')
+    )
+
+    monthly_by_id = _bulk_load_monthly_values(
+        [i.id for i in indicators], SPARKLINE_MONTHS,
+    )
+
     cards: List[Dict] = []
     for ind in indicators:
-        latest = (
-            Observation.objects
-            .filter(indicator=ind)
-            .order_by('-observation_date')
-            .first()
-        )
-        if latest is None:
+        if ind.latest_obs_date is None:
             cards.append({
                 'indicator': ind,
                 'series_id': ind.fred_series_id,
@@ -123,8 +144,14 @@ def build_indicator_cards() -> List[Dict]:
             })
             continue
 
-        monthly = _monthly_values_for(ind, SPARKLINE_MONTHS)
-        economic_stage, market_stage = evaluate_judgment(latest, ind.judgment_rule)
+        proxy_obs = SimpleNamespace(
+            value=ind.latest_value,
+            prev_value=ind.latest_prev_value,
+            yoy_change=ind.latest_yoy,
+        )
+        economic_stage, market_stage = evaluate_judgment(
+            proxy_obs, ind.judgment_rule,
+        )
         cards.append({
             'indicator': ind,
             'series_id': ind.fred_series_id,
@@ -132,13 +159,17 @@ def build_indicator_cards() -> List[Dict]:
             'category': ind.get_category_display(),
             'importance': ind.importance,
             'has_data': True,
-            'latest_date': latest.observation_date,
-            'yoy_display': format_pct(latest.yoy_change),
-            'yoy_value': latest.yoy_change,
+            'latest_date': ind.latest_obs_date,
+            'yoy_display': format_pct(ind.latest_yoy),
+            'yoy_value': ind.latest_yoy,
             'economic_stage': economic_stage,
             'market_stage': market_stage,
-            'direction_arrow': _direction_from(latest.prev_value, latest.value),
-            'sparkline_svg': generate_sparkline_svg(monthly),
+            'direction_arrow': _direction_from(
+                ind.latest_prev_value, ind.latest_value,
+            ),
+            'sparkline_svg': generate_sparkline_svg(
+                monthly_by_id.get(ind.id, []),
+            ),
         })
     return cards
 
@@ -150,11 +181,7 @@ def _name_lookup() -> Dict[str, str]:
     }
 
 
-def build_similar_periods(top_n: int = 5, force: bool = False) -> List[Dict]:
-    if not force:
-        cached = cache.get(CACHE_KEY_SIMILARITY)
-        if cached is not None:
-            return cached
+def build_similar_periods(top_n: int = 5) -> List[Dict]:
     try:
         raw = find_similar_months(top_n=top_n)
     except Exception:
@@ -180,15 +207,46 @@ def build_similar_periods(top_n: int = 5, force: bool = False) -> List[Dict]:
             'spx_return_pos': (spx_val or 0) >= 0,
             'spx_return_value': spx_val,
         })
-    cache.set(CACHE_KEY_SIMILARITY, results, CACHE_TTL_SIMILARITY)
     return results
 
 
-def build_linkages(top_n: int = 10, force: bool = False) -> List[Dict]:
-    if not force:
-        cached = cache.get(CACHE_KEY_LINKAGE)
-        if cached is not None:
-            return cached
+def _linkage_interpretation(
+    leader_name: str,
+    follower_name: str,
+    lag_months: int,
+    correlation: float,
+) -> str:
+    """各ペアの読み方を自然言語で返す。"""
+    abs_corr = abs(correlation)
+    if abs_corr >= 0.7:
+        strength = '強く'
+    elif abs_corr >= 0.4:
+        strength = ''
+    else:
+        strength = 'やや弱く'
+
+    if lag_months > 0:
+        if correlation >= 0:
+            return (
+                f'{leader_name}が上がると約{lag_months}ヶ月後に'
+                f'{follower_name}も{strength}上がりやすい関係。'
+            )
+        return (
+            f'{leader_name}が上がると約{lag_months}ヶ月後に'
+            f'{follower_name}は{strength}下がりやすい関係。'
+        )
+    if correlation >= 0:
+        return (
+            f'{leader_name}と{follower_name}は同時に'
+            f'{strength}同じ方向へ動きやすい関係。'
+        )
+    return (
+        f'{leader_name}と{follower_name}は同時に'
+        f'{strength}逆方向へ動きやすい関係。'
+    )
+
+
+def build_linkages(top_n: int = 10) -> List[Dict]:
     try:
         raw = compute_pair_relationships(top_n=top_n)
     except Exception:
@@ -201,24 +259,24 @@ def build_linkages(top_n: int = 10, force: bool = False) -> List[Dict]:
         follower_id = item['follower']
         lag = item['lag_months']
         corr = item['correlation']
+        leader_name = names.get(leader_id, leader_id)
+        follower_name = names.get(follower_id, follower_id)
         if lag > 0:
-            relation = f"{names.get(leader_id, leader_id)} → {names.get(follower_id, follower_id)}（約{lag}ヶ月先行）"
+            relation = f"{leader_name} → {follower_name}（約{lag}ヶ月先行）"
         else:
-            relation = f"{names.get(leader_id, leader_id)} ⇔ {names.get(follower_id, follower_id)}（同時連動）"
+            relation = f"{leader_name} ⇔ {follower_name}（同時連動）"
+        interpretation = _linkage_interpretation(
+            leader_name, follower_name, lag, corr,
+        )
         results.append({
             'relation_text': relation,
             'correlation': corr,
             'correlation_display': f'{corr:+.2f}',
             'lag_months': lag,
             'is_negative': corr < 0,
+            'interpretation': interpretation,
         })
-    cache.set(CACHE_KEY_LINKAGE, results, CACHE_TTL_LINKAGE)
     return results
-
-
-def invalidate_caches() -> None:
-    cache.delete(CACHE_KEY_SIMILARITY)
-    cache.delete(CACHE_KEY_LINKAGE)
 
 
 def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:

@@ -26,6 +26,8 @@ RECENT_EXCLUDE_MONTHS = 3
 DEFAULT_TOP_N = 5
 # ベクトルに含まれる必要のある最小指標数（不足月をスキップする閾値）
 MIN_VECTOR_SIZE_TOLERANCE = 2  # 11指標のうち2つまで欠損許容
+# 「本当に類似」と見なす距離の上限。これを超える月は採用しない。
+DISTANCE_THRESHOLD = 1.5
 
 
 def get_importance_a_indicators() -> List[Indicator]:
@@ -34,24 +36,32 @@ def get_importance_a_indicators() -> List[Indicator]:
     )
 
 
-def _build_observation_lookup(series_ids: List[str]):
-    """series_id -> (sorted_dates, sorted_deviations) のマップを作る。"""
-    obs_qs = (
-        Observation.objects
-        .filter(
-            indicator__fred_series_id__in=series_ids,
-            deviation_from_long_term__isnull=False,
-        )
-        .select_related('indicator')
-        .order_by('indicator', 'observation_date')
+def _build_observation_lookup(
+    series_ids: List[str],
+    cutoff_date: Optional[date] = None,
+):
+    """series_id -> (sorted_dates, sorted_deviations) のマップを作る。
+
+    cutoff_date 以降のみロードしてメモリ消費を抑える。Observation モデルでは
+    なく values_list でタプルだけ取り出して大量行のオブジェクト生成を回避。
+    """
+    qs = Observation.objects.filter(
+        indicator__fred_series_id__in=series_ids,
+        deviation_from_long_term__isnull=False,
+    )
+    if cutoff_date is not None:
+        qs = qs.filter(observation_date__gte=cutoff_date)
+    rows = qs.order_by('indicator', 'observation_date').values_list(
+        'indicator__fred_series_id', 'observation_date', 'deviation_from_long_term',
     )
     lookup: Dict[str, Tuple[List[date], List[float]]] = {}
-    for obs in obs_qs:
-        sid = obs.indicator.fred_series_id
-        if sid not in lookup:
-            lookup[sid] = ([], [])
-        lookup[sid][0].append(obs.observation_date)
-        lookup[sid][1].append(obs.deviation_from_long_term)
+    for sid, obs_date, dev in rows:
+        bucket = lookup.get(sid)
+        if bucket is None:
+            bucket = ([], [])
+            lookup[sid] = bucket
+        bucket[0].append(obs_date)
+        bucket[1].append(dev)
     return lookup
 
 
@@ -109,21 +119,27 @@ def find_similar_months(
     current_vector: Optional[Dict[str, float]] = None,
     top_n: int = DEFAULT_TOP_N,
     history_years: int = SEARCH_HISTORY_YEARS,
+    distance_threshold: Optional[float] = DISTANCE_THRESHOLD,
 ) -> List[Dict]:
     """現在ベクトルに最も近い過去月を返す。
 
     各要素: { 'month_start', 'distance', 'vector', 'main3' }
     main3 は表示用の主要3指標（Core PCE / INDPRO / 2-10スプレッド）の各月時点の値。
+    distance_threshold が指定された場合、距離がそれより大きい月は除外する。
     """
     indicators = get_importance_a_indicators()
     if not indicators:
         return []
     series_ids = [i.fred_series_id for i in indicators]
-    lookup = _build_observation_lookup(series_ids)
+
+    # 探索範囲＋少し余裕を持たせた cutoff（現在ベクトル算出のため余裕分）
+    today = timezone.localdate()
+    cutoff_date = today.replace(year=today.year - history_years - 1).replace(day=1)
+
+    lookup = _build_observation_lookup(series_ids, cutoff_date=cutoff_date)
     if not lookup:
         return []
 
-    today = timezone.localdate()
     if current_vector is None:
         current_vector = build_vector_at(today, lookup, series_ids)
     if not current_vector:
@@ -131,7 +147,7 @@ def find_similar_months(
 
     # 主要3指標も別途ロード（Core PCE / INDPRO / T10Y2Y）
     main3_ids = ['PCEPILFE', 'INDPRO', 'T10Y2Y']
-    main3_lookup = _build_observation_value_lookup(main3_ids)
+    main3_lookup = _build_observation_value_lookup(main3_ids, cutoff_date=cutoff_date)
 
     # 検索範囲
     earliest = today.replace(year=today.year - history_years).replace(day=1)
@@ -171,22 +187,28 @@ def find_similar_months(
         cur = cur + relativedelta(months=1)
 
     candidates.sort(key=lambda x: x['distance'])
+    if distance_threshold is not None:
+        candidates = [c for c in candidates if c['distance'] <= distance_threshold]
     return candidates[:top_n]
 
 
-def _build_observation_value_lookup(series_ids: List[str]):
+def _build_observation_value_lookup(
+    series_ids: List[str],
+    cutoff_date: Optional[date] = None,
+):
     """主要3指標の生値（標準化前）を取得するためのルックアップ。"""
-    obs_qs = (
-        Observation.objects
-        .filter(indicator__fred_series_id__in=series_ids)
-        .select_related('indicator')
-        .order_by('indicator', 'observation_date')
+    qs = Observation.objects.filter(indicator__fred_series_id__in=series_ids)
+    if cutoff_date is not None:
+        qs = qs.filter(observation_date__gte=cutoff_date)
+    rows = qs.order_by('indicator', 'observation_date').values_list(
+        'indicator__fred_series_id', 'observation_date', 'value',
     )
     lookup: Dict[str, Tuple[List[date], List[float]]] = {}
-    for obs in obs_qs:
-        sid = obs.indicator.fred_series_id
-        if sid not in lookup:
-            lookup[sid] = ([], [])
-        lookup[sid][0].append(obs.observation_date)
-        lookup[sid][1].append(obs.value)
+    for sid, obs_date, value in rows:
+        bucket = lookup.get(sid)
+        if bucket is None:
+            bucket = ([], [])
+            lookup[sid] = bucket
+        bucket[0].append(obs_date)
+        bucket[1].append(value)
     return lookup

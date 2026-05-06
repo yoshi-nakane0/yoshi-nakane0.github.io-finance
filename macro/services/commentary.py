@@ -5,7 +5,7 @@
 """
 
 import logging
-from statistics import mean
+from statistics import mean, median
 from typing import Dict, List, Optional
 
 from ..models import RegimeSnapshot
@@ -76,7 +76,7 @@ def _build_risk_flags() -> List[str]:
 
 
 def _aggregate_similar_returns(similar_periods: List[Dict]) -> Dict[str, Optional[float]]:
-    """類似局面リストから翌月リターン平均を集計する。"""
+    """類似局面リストから翌月リターン平均・中央値・上昇下落数を集計する。"""
     nikkei_vals = []
     spx_vals = []
     for p in similar_periods or []:
@@ -86,11 +86,34 @@ def _aggregate_similar_returns(similar_periods: List[Dict]) -> Dict[str, Optiona
             nikkei_vals.append(n)
         if isinstance(s, (int, float)):
             spx_vals.append(s)
+
+    nikkei_up = sum(1 for v in nikkei_vals if v >= 0)
+    nikkei_down = len(nikkei_vals) - nikkei_up
+    spx_up = sum(1 for v in spx_vals if v >= 0)
+    spx_down = len(spx_vals) - spx_up
+
     return {
         'nikkei_avg': mean(nikkei_vals) if nikkei_vals else None,
+        'nikkei_median': median(nikkei_vals) if nikkei_vals else None,
+        'nikkei_up': nikkei_up,
+        'nikkei_down': nikkei_down,
         'spx_avg': mean(spx_vals) if spx_vals else None,
+        'spx_median': median(spx_vals) if spx_vals else None,
+        'spx_up': spx_up,
+        'spx_down': spx_down,
         'count': max(len(nikkei_vals), len(spx_vals)),
     }
+
+
+def _confidence_label(count: int) -> str:
+    """類似局面の件数から参考度ラベルを返す。"""
+    if count >= 5:
+        return '高'
+    if count >= 3:
+        return '中'
+    if count >= 1:
+        return '低'
+    return 'なし'
 
 
 def _trend_word(value: Optional[float]) -> str:
@@ -155,31 +178,67 @@ def build_overview_commentary(
 
 
 def build_similar_explanation(similar_periods: List[Dict]) -> Dict:
-    """過去類似局面セクションの解説。"""
+    """過去類似局面セクションの解説と集約サマリ。"""
     help_text = (
-        '現在の指標構成と最も似ていた過去5ヶ月を距離が近い順に並べています。'
+        '現在の指標構成と「本当に似ていた」過去の月だけを距離が近い順に並べています。'
+        '距離が大きく離れた月は除外しているため件数が少ない場合は参考度を低めに見てください。'
         '各月の「翌月リターン」は当時の日経・S&Pが実際にどう動いたかの過去事実で、'
         '将来の上昇・下落を保証するものではありません。'
     )
     if not similar_periods:
-        return {'help': help_text, 'summary': ''}
+        return {
+            'help': help_text,
+            'summary': '今の指標構成と十分に似た過去局面は見つかりませんでした。参考度: なし',
+            'aggregate': None,
+        }
 
     agg = _aggregate_similar_returns(similar_periods)
     if agg['count'] == 0:
-        return {'help': help_text, 'summary': ''}
+        return {
+            'help': help_text,
+            'summary': '翌月リターンの集計に必要なデータが不足しています。',
+            'aggregate': None,
+        }
 
+    confidence = _confidence_label(agg['count'])
     nikkei_word = _trend_word(agg['nikkei_avg'])
     spx_word = _trend_word(agg['spx_avg'])
-    summary = (
+    summary_lines: List[str] = []
+    summary_lines.append(
         f'上位{agg["count"]}件の翌月平均: '
         f'日経 {_format_pct(agg["nikkei_avg"])} / '
         f'S&P {_format_pct(agg["spx_avg"])}。'
     )
+    summary_lines.append(
+        f'中央値: 日経 {_format_pct(agg["nikkei_median"])} / '
+        f'S&P {_format_pct(agg["spx_median"])}。'
+    )
+    summary_lines.append(
+        f'内訳: 日経 上昇{agg["nikkei_up"]}件・下落{agg["nikkei_down"]}件、'
+        f'S&P 上昇{agg["spx_up"]}件・下落{agg["spx_down"]}件。'
+    )
     if nikkei_word == spx_word and nikkei_word:
-        summary += f'日米とも{nikkei_word}の地合いでした。'
+        summary_lines.append(f'日米とも{nikkei_word}の地合いでした。')
     elif nikkei_word and spx_word:
-        summary += f'日経は{nikkei_word}、S&Pは{spx_word}でした。'
-    return {'help': help_text, 'summary': summary}
+        summary_lines.append(f'日経は{nikkei_word}、S&Pは{spx_word}でした。')
+    summary_lines.append(f'参考度: {confidence}（{agg["count"]}件）')
+
+    return {
+        'help': help_text,
+        'summary': ' '.join(summary_lines),
+        'aggregate': {
+            'count': agg['count'],
+            'confidence': confidence,
+            'nikkei_avg_display': _format_pct(agg['nikkei_avg']),
+            'nikkei_median_display': _format_pct(agg['nikkei_median']),
+            'nikkei_up': agg['nikkei_up'],
+            'nikkei_down': agg['nikkei_down'],
+            'spx_avg_display': _format_pct(agg['spx_avg']),
+            'spx_median_display': _format_pct(agg['spx_median']),
+            'spx_up': agg['spx_up'],
+            'spx_down': agg['spx_down'],
+        },
+    }
 
 
 def build_linkage_explanation(linkages: List[Dict]) -> Dict:

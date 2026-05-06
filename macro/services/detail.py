@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
+from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation
 from .dashboard import format_pct, format_signed, format_value
@@ -24,13 +25,49 @@ from .yfinance_client import get_monthly_close
 
 logger = logging.getLogger(__name__)
 
+# 詳細ページの表示期間オプション。'all' は全期間（=絞り込み無し）。
+RANGE_TO_YEARS = {
+    '1y': 1,
+    '3y': 3,
+    '5y': 5,
+    '10y': 10,
+    'all': None,
+}
+RANGE_OPTIONS = [
+    {'key': '1y', 'label': '1年'},
+    {'key': '3y', 'label': '3年'},
+    {'key': '5y', 'label': '5年'},
+    {'key': '10y', 'label': '10年'},
+    {'key': 'all', 'label': '全期間'},
+]
+DEFAULT_RANGE_PARAM = '10y'
 
-def _all_observations(indicator: Indicator) -> List[Observation]:
-    return list(
-        Observation.objects
-        .filter(indicator=indicator)
-        .order_by('observation_date')
-    )
+
+def normalize_range_param(value: Optional[str]) -> str:
+    if value in RANGE_TO_YEARS:
+        return value
+    return DEFAULT_RANGE_PARAM
+
+
+def _resolve_cutoff(range_param: str) -> Optional[date]:
+    years = RANGE_TO_YEARS.get(range_param)
+    if years is None:
+        return None
+    today = timezone.localdate()
+    try:
+        return today.replace(year=today.year - years)
+    except ValueError:
+        return today.replace(year=today.year - years, day=28)
+
+
+def _filtered_observations(
+    indicator: Indicator, range_param: str,
+) -> List[Observation]:
+    qs = Observation.objects.filter(indicator=indicator).order_by('observation_date')
+    cutoff = _resolve_cutoff(range_param)
+    if cutoff is not None:
+        qs = qs.filter(observation_date__gte=cutoff)
+    return list(qs)
 
 
 def _summary_stats(observations: List[Observation]) -> Dict:
@@ -117,8 +154,12 @@ def _top_correlations(target_indicator: Indicator, top: int = 5) -> List[Dict]:
     return results[:top]
 
 
-def build_indicator_detail_context(indicator: Indicator) -> Dict:
-    observations = _all_observations(indicator)
+def build_indicator_detail_context(
+    indicator: Indicator,
+    range_param: str = DEFAULT_RANGE_PARAM,
+) -> Dict:
+    range_param = normalize_range_param(range_param)
+    observations = _filtered_observations(indicator, range_param)
     if not observations:
         return {
             'indicator': indicator,

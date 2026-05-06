@@ -14,8 +14,8 @@ jobs:
     env:
       DATA_BRANCH: macro-data
       DJANGO_SETTINGS_MODULE: myproject.settings
-      DEBUG: "True"
-      SECRET_KEY: github-actions-build-only
+      DEBUG: "False"
+      SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
     steps:
       - name: Checkout main
@@ -48,6 +48,9 @@ jobs:
 
       - name: Refresh indicators
         run: python manage.py refresh_macro_data
+
+      - name: Purge old data
+        run: python manage.py purge_old_data
 
       - name: Precompute dashboard cache
         run: python manage.py precompute_dashboard

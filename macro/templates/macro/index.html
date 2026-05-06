@@ -152,10 +152,43 @@
                 {% if similar_commentary %}
                     <div class="macro-help">
                         <p class="macro-help-text">{{ similar_commentary.help }}</p>
-                        {% if similar_commentary.summary %}
-                            <p class="macro-help-summary">{{ similar_commentary.summary }}</p>
-                        {% endif %}
                     </div>
+                {% endif %}
+                {% if similar_commentary.aggregate %}
+                    {% with agg=similar_commentary.aggregate %}
+                    <div class="macro-similar-aggregate">
+                        <div class="macro-similar-aggregate-header">
+                            <span class="macro-similar-aggregate-title">類似{{ agg.count }}件の翌月リターン集約</span>
+                            <span class="macro-similar-aggregate-confidence macro-conf-{{ agg.confidence }}">参考度 {{ agg.confidence }}</span>
+                        </div>
+                        <table class="macro-similar-aggregate-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>平均</th>
+                                    <th>中央値</th>
+                                    <th>上昇 / 下落</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>日経</th>
+                                    <td>{{ agg.nikkei_avg_display }}</td>
+                                    <td>{{ agg.nikkei_median_display }}</td>
+                                    <td>{{ agg.nikkei_up }} / {{ agg.nikkei_down }}</td>
+                                </tr>
+                                <tr>
+                                    <th>S&amp;P</th>
+                                    <td>{{ agg.spx_avg_display }}</td>
+                                    <td>{{ agg.spx_median_display }}</td>
+                                    <td>{{ agg.spx_up }} / {{ agg.spx_down }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endwith %}
+                {% elif similar_commentary.summary %}
+                    <p class="macro-similar-empty">{{ similar_commentary.summary }}</p>
                 {% endif %}
                 {% if similar_periods %}
                     <ol class="macro-similar-list">
@@ -200,8 +233,13 @@
                     <ol class="macro-linkage-list">
                         {% for link in linkages %}
                             <li class="macro-linkage-item">
-                                <span class="macro-linkage-relation">{{ link.relation_text }}</span>
-                                <span class="macro-linkage-corr {% if link.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ link.correlation_display }}</span>
+                                <div class="macro-linkage-row">
+                                    <span class="macro-linkage-relation">{{ link.relation_text }}</span>
+                                    <span class="macro-linkage-corr {% if link.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ link.correlation_display }}</span>
+                                </div>
+                                {% if link.interpretation %}
+                                    <p class="macro-linkage-interpretation">{{ link.interpretation }}</p>
+                                {% endif %}
                             </li>
                         {% endfor %}
                     </ol>

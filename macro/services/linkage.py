@@ -71,25 +71,25 @@ def _load_monthly_data(history_years: int) -> Dict[str, Dict[date, float]]:
         year=timezone.localdate().year - history_years
     )
 
-    obs_qs = (
+    obs_rows = (
         Observation.objects
         .filter(
             indicator__fred_series_id__in=series_ids,
             observation_date__gte=cutoff,
             deviation_from_long_term__isnull=False,
         )
-        .select_related('indicator')
         .order_by('indicator', 'observation_date')
+        .values_list(
+            'indicator__fred_series_id',
+            'observation_date',
+            'deviation_from_long_term',
+        )
     )
 
-    raw: Dict[str, List[Tuple[date, float]]] = {sid: [] for sid in series_ids}
-    for obs in obs_qs:
-        sid = obs.indicator.fred_series_id
-        raw[sid].append((obs.observation_date, obs.deviation_from_long_term))
-
-    monthly_data: Dict[str, Dict[date, float]] = {}
-    for sid, points in raw.items():
-        monthly_data[sid] = _aggregate_to_monthly(points)
+    # 観測値の月内最終値だけを直接保持（中間 list を持たずメモリ節約）
+    monthly_data: Dict[str, Dict[date, float]] = {sid: {} for sid in series_ids}
+    for sid, obs_date, dev in obs_rows:
+        monthly_data[sid][_month_key(obs_date)] = dev
     return monthly_data
 
 

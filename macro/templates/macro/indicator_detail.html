@@ -33,6 +33,18 @@
             {% if has_data %}
                 <section class="macro-section">
                     <h2 class="macro-section-title">時系列（月次）</h2>
+                    {% if range_options %}
+                        <div class="macro-range-switch">
+                            <span class="macro-range-switch-label">表示期間:</span>
+                            {% for opt in range_options %}
+                                {% if opt.key == range_param %}
+                                    <span class="macro-range-switch-current">{{ opt.label }}</span>
+                                {% else %}
+                                    <a href="?range={{ opt.key }}" class="macro-range-switch-link">{{ opt.label }}</a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     <div class="macro-detail-chart">{{ chart_svg|safe }}</div>
                     <div class="macro-detail-latest">
                         <span>最新 {{ latest_date|date:"Y-m-d" }}: <strong>{{ latest_value_display }}</strong>{% if indicator.unit %} <span class="macro-card-unit">{{ indicator.unit }}</span>{% endif %}</span>

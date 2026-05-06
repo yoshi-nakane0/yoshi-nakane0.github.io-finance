@@ -19,7 +19,7 @@ def env_bool(key, default=False):
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'default-development-key-never-use-in-production')
+SECRET_KEY = os.getenv('SECRET_KEY') or 'default-development-key-never-use-in-production'
 
 DEBUG = env_bool('DEBUG', True)
 

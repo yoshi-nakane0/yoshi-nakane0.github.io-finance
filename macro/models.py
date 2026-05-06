@@ -54,6 +54,9 @@ class Indicator(models.Model):
     display_order = models.IntegerField(default=100)
     is_active = models.BooleanField(default=True)
     judgment_rule = models.JSONField(null=True, blank=True)
+    # 異常値検出用の許容範囲。設定があれば取得時にチェックし範囲外は弾く。
+    value_min = models.FloatField(null=True, blank=True)
+    value_max = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

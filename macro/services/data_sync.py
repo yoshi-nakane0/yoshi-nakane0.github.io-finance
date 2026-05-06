@@ -2,13 +2,15 @@
 
 手動更新ボタン押下時に呼ばれる。差分取得方式: 既存データがあれば
 最新日付の少し手前から今日までだけ FRED に問い合わせ、既存値とマージする。
+
+DB 更新は「既存行の UPDATE」と「新規行の INSERT」に分離し、全削除→再挿入は行わない。
 """
 
 import logging
 import math
 from bisect import bisect_left
 from datetime import date, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from django.db import transaction
 from django.utils import timezone
@@ -107,14 +109,49 @@ def _build_observation_rows(
     return rows
 
 
-def _load_existing_values(indicator: Indicator) -> Dict[date, float]:
-    """この指標について既にDBに保存されている (日付, 値) のマップを返す。"""
-    qs = (
-        Observation.objects
-        .filter(indicator=indicator)
-        .values_list('observation_date', 'value')
-    )
-    return {d: v for d, v in qs}
+def _load_existing_observations(indicator: Indicator) -> Dict[date, Observation]:
+    """既存の Observation を date -> Observation の辞書で返す（UPDATE対象の特定用）。"""
+    return {
+        o.observation_date: o
+        for o in Observation.objects.filter(indicator=indicator)
+    }
+
+
+def _is_value_in_range(indicator: Indicator, value: Optional[float]) -> bool:
+    """指標値が想定範囲内かを判定する。NaN/inf や指標固有の min/max 外は False。"""
+    if value is None:
+        return False
+    try:
+        fv = float(value)
+    except (TypeError, ValueError):
+        return False
+    if math.isnan(fv) or math.isinf(fv):
+        return False
+    if indicator.value_min is not None and fv < indicator.value_min:
+        return False
+    if indicator.value_max is not None and fv > indicator.value_max:
+        return False
+    return True
+
+
+def _filter_valid_observations(
+    indicator: Indicator,
+    raw: List[Tuple[date, float]],
+) -> Tuple[List[Tuple[date, float]], int]:
+    """異常値・無効値を除外する。除外した件数も返す。"""
+    valid: List[Tuple[date, float]] = []
+    skipped = 0
+    for d, v in raw:
+        if _is_value_in_range(indicator, v):
+            valid.append((d, v))
+        else:
+            skipped += 1
+            logger.warning(
+                "%s skipped invalid value: date=%s value=%r (range=[%s, %s])",
+                indicator.fred_series_id, d, v,
+                indicator.value_min, indicator.value_max,
+            )
+    return valid, skipped
 
 
 def _resolve_fetch_start(
@@ -179,30 +216,68 @@ def _fetch_for_source(
 def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) -> dict:
     """1指標を取得元から差分取得し、既存値とマージしてDBを更新する。
 
-    取得元は indicator.source（'fred' / 'cboe' / 'finra' / 'aaii' / 'naaim' / 'yfinance'）に応じて切替。
+    取得元は indicator.source に応じて切替。
+    DB 反映は既存日付の UPDATE と新規日付の INSERT に分離し、delete は行わない
+    （途中失敗時の一時的なデータ消失を防ぐため）。
     """
     today = timezone.localdate()
     start_date, is_initial = _resolve_fetch_start(indicator, today, history_years)
 
     raw_new = _fetch_for_source(indicator, start_date, today)
+    raw_new_valid, skipped_new = _filter_valid_observations(indicator, raw_new)
 
-    existing = _load_existing_values(indicator)
-    merged: Dict[date, float] = dict(existing)
-    for d, v in raw_new:
+    existing = _load_existing_observations(indicator)
+    merged: Dict[date, float] = {d: o.value for d, o in existing.items()}
+    for d, v in raw_new_valid:
         merged[d] = v
 
     merged_list: List[Tuple[date, float]] = sorted(merged.items())
-    rows = _build_observation_rows(indicator, merged_list)
+    new_rows = _build_observation_rows(indicator, merged_list)
+
+    updates: List[Observation] = []
+    creates: List[Observation] = []
+    for new_obs in new_rows:
+        existing_obs = existing.get(new_obs.observation_date)
+        if existing_obs is None:
+            creates.append(new_obs)
+            continue
+        # 値や派生値が変わったときだけ UPDATE する
+        if (
+            existing_obs.value != new_obs.value
+            or existing_obs.prev_value != new_obs.prev_value
+            or existing_obs.yoy_change != new_obs.yoy_change
+            or existing_obs.deviation_from_long_term != new_obs.deviation_from_long_term
+        ):
+            existing_obs.value = new_obs.value
+            existing_obs.prev_value = new_obs.prev_value
+            existing_obs.yoy_change = new_obs.yoy_change
+            existing_obs.deviation_from_long_term = new_obs.deviation_from_long_term
+            updates.append(existing_obs)
 
     with transaction.atomic():
-        Observation.objects.filter(indicator=indicator).delete()
-        Observation.objects.bulk_create(rows, batch_size=500)
+        if updates:
+            Observation.objects.bulk_update(
+                updates,
+                fields=[
+                    'value',
+                    'prev_value',
+                    'yoy_change',
+                    'deviation_from_long_term',
+                ],
+                batch_size=500,
+            )
+        if creates:
+            Observation.objects.bulk_create(creates, batch_size=500)
 
     return {
         'series_id': indicator.fred_series_id,
         'fetched': len(raw_new),
-        'stored': len(rows),
-        'latest_date': rows[-1].observation_date if rows else None,
+        'fetched_valid': len(raw_new_valid),
+        'skipped_invalid': skipped_new,
+        'updated': len(updates),
+        'created': len(creates),
+        'stored': len(new_rows),
+        'latest_date': new_rows[-1].observation_date if new_rows else None,
         'mode': 'initial' if is_initial else 'incremental',
     }
 

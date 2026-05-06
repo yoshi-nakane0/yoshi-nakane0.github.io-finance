@@ -23,16 +23,24 @@ from .services.dashboard import (
     build_regime_context,
     build_similar_periods,
     build_upcoming_events,
-    invalidate_caches,
     load_lightgbm_prediction,
+)
+from .services.dashboard_cache import (
+    invalidate_indicator_detail_caches,
+    invalidate_similar_detail_caches,
+    load_indicator_detail_payload,
+    load_similar_detail_payload,
 )
 from .services.data_sync import (
     get_latest_observation_date,
     sync_all_indicators,
 )
 from .services.detail import (
+    DEFAULT_RANGE_PARAM,
+    RANGE_OPTIONS,
     build_indicator_detail_context,
     build_similar_detail_context,
+    normalize_range_param,
 )
 from .services.fred_client import get_api_key
 from .services.regime import compute_current_regime
@@ -149,17 +157,32 @@ def refresh(request):
         messages.warning(request, "価格データ更新でエラー（ログを確認）")
 
     # キャッシュ無効化（次のページ表示で再計算）
-    invalidate_caches()
+    invalidate_indicator_detail_caches()
+    invalidate_similar_detail_caches()
 
     return redirect(reverse('macro:index'))
 
 
 def indicator_detail(request, series_id):
-    """指標詳細ページ"""
+    """指標詳細ページ。?range= で表示期間を切り替えられる。"""
     indicator = get_object_or_404(
         Indicator, fred_series_id=series_id, is_active=True
     )
-    context = build_indicator_detail_context(indicator)
+    range_param = normalize_range_param(request.GET.get('range'))
+
+    # デフォルト期間のときだけキャッシュを使う
+    context = None
+    if range_param == DEFAULT_RANGE_PARAM:
+        cached = load_indicator_detail_payload(series_id)
+        if cached is not None:
+            context = dict(cached)
+            context['indicator'] = indicator
+
+    if context is None:
+        context = build_indicator_detail_context(indicator, range_param=range_param)
+
+    context['range_param'] = range_param
+    context['range_options'] = RANGE_OPTIONS
     return render(request, 'macro/indicator_detail.html', context)
 
 
@@ -170,5 +193,12 @@ def similar_period_detail(request, month):
     except ValueError:
         raise Http404("Invalid month format")
     target = target.replace(day=1)
-    context = build_similar_detail_context(target)
+    month_iso = target.isoformat()
+
+    cached = load_similar_detail_payload(month_iso)
+    if cached is not None:
+        context = dict(cached)
+    else:
+        context = build_similar_detail_context(target)
+
     return render(request, 'macro/similar_detail.html', context)

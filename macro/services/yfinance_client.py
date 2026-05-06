@@ -135,38 +135,54 @@ def sync_price_history(
     ticker: str,
     years: int = DEFAULT_HISTORY_YEARS,
 ) -> dict:
-    """1銘柄の月次終値を Yahoo Finance から差分取得し既存とマージする。"""
+    """1銘柄の月次終値を Yahoo Finance から差分取得し既存とマージする。
+
+    既存月の終値が変わったものは UPDATE、新規月は INSERT する（delete はしない）。
+    """
     symbol = TICKER_TO_SYMBOL[ticker]
     start_date, is_initial = _resolve_price_fetch_start(ticker)
     history = fetch_monthly_history(symbol, years=years, start_date=start_date)
 
-    existing_qs = (
-        PriceObservation.objects
-        .filter(ticker=ticker)
-        .values_list('observation_month', 'close_price')
-    )
-    merged: Dict[date, float] = {m: c for m, c in existing_qs}
-    for month, close in history:
-        merged[month] = close
+    existing: Dict[date, PriceObservation] = {
+        po.observation_month: po
+        for po in PriceObservation.objects.filter(ticker=ticker)
+    }
 
-    rows = [
-        PriceObservation(
-            ticker=ticker,
-            observation_month=month,
-            close_price=close,
-        )
-        for month, close in sorted(merged.items())
-    ]
+    updates: List[PriceObservation] = []
+    creates: List[PriceObservation] = []
+    for month, close in history:
+        existing_po = existing.get(month)
+        if existing_po is None:
+            creates.append(
+                PriceObservation(
+                    ticker=ticker,
+                    observation_month=month,
+                    close_price=close,
+                )
+            )
+        elif existing_po.close_price != close:
+            existing_po.close_price = close
+            updates.append(existing_po)
 
     with transaction.atomic():
-        PriceObservation.objects.filter(ticker=ticker).delete()
-        PriceObservation.objects.bulk_create(rows, batch_size=500)
+        if updates:
+            PriceObservation.objects.bulk_update(
+                updates, fields=['close_price'], batch_size=500,
+            )
+        if creates:
+            PriceObservation.objects.bulk_create(creates, batch_size=500)
+
+    latest_month = None
+    if existing or creates:
+        all_months = list(existing.keys()) + [c.observation_month for c in creates]
+        latest_month = max(all_months) if all_months else None
 
     return {
         'ticker': ticker,
         'fetched': len(history),
-        'stored': len(rows),
-        'latest_month': rows[-1].observation_month if rows else None,
+        'updated': len(updates),
+        'created': len(creates),
+        'latest_month': latest_month,
         'mode': 'initial' if is_initial else 'incremental',
     }
 
