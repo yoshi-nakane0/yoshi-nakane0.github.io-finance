@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import sqlite3
@@ -6,6 +7,8 @@ from urllib.parse import unquote, urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def env_bool(key, default=False):
@@ -48,7 +51,16 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
     bundled_sqlite_path = Path(source_path) if source_path else BASE_DIR / 'db.sqlite3'
     if sqlite_path == bundled_sqlite_path:
         return
+    try:
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        logger.exception("Failed to ensure SQLite parent directory: %s", sqlite_path.parent)
+        return
     if not bundled_sqlite_path.exists():
+        logger.warning(
+            "Bundled SQLite database not found at %s; runtime DB will start empty.",
+            bundled_sqlite_path,
+        )
         return
     if sqlite_path.exists():
         try:
@@ -58,8 +70,14 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
                 return
         except sqlite3.Error:
             pass
-    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(bundled_sqlite_path, sqlite_path)
+    try:
+        shutil.copy2(bundled_sqlite_path, sqlite_path)
+    except OSError:
+        logger.exception(
+            "Failed to copy bundled SQLite database from %s to %s",
+            bundled_sqlite_path,
+            sqlite_path,
+        )
 
 
 def sqlite_schema_signature(sqlite_path):
