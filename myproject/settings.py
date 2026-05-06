@@ -40,10 +40,21 @@ def build_database_from_url(database_url):
     raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme}')
 
 
+def is_serverless_runtime():
+    """Vercel/AWS Lambda 等の読み取り専用ファイルシステム上で動いているかを判定。"""
+    return any(
+        os.getenv(name)
+        for name in ('VERCEL', 'AWS_LAMBDA_FUNCTION_NAME', 'LAMBDA_TASK_ROOT')
+    )
+
+
 def default_sqlite_database_path():
-    if DEBUG:
+    explicit_path = os.getenv('SQLITE_DB_PATH')
+    if explicit_path:
+        return Path(explicit_path)
+    if DEBUG and not is_serverless_runtime():
         return BASE_DIR / 'db.sqlite3'
-    return Path(os.getenv('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
+    return Path('/tmp/db.sqlite3')
 
 
 def bootstrap_sqlite_database(sqlite_path, source_path=None):
