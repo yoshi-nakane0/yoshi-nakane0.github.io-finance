@@ -10,6 +10,7 @@ from .models import Indicator, Observation, PriceObservation, RegimeSnapshot
 from .services import (
     crash_alert,
     dashboard,
+    detail_analysis,
     historical_crash,
     judgment,
     linkage,
@@ -364,6 +365,57 @@ class HistoricalCrashTest(TestCase):
     def test_crash_months_constant_size(self):
         # 定数リストが不正にならないこと（少なくとも数件登録されている）。
         self.assertGreaterEqual(len(historical_crash.HISTORICAL_CRASH_MONTHS), 5)
+
+
+class DetailAnalysisTest(TestCase):
+    """詳細ページ用分析ロジック。"""
+
+    def test_correlation_label_strong_positive(self):
+        self.assertEqual(detail_analysis.correlation_label(0.85), '強い正の連動')
+
+    def test_correlation_label_moderate_positive(self):
+        self.assertEqual(detail_analysis.correlation_label(0.5), '中程度の正の連動')
+
+    def test_correlation_label_weak(self):
+        self.assertEqual(detail_analysis.correlation_label(0.1), '弱い / 無相関')
+
+    def test_correlation_label_moderate_negative(self):
+        self.assertEqual(detail_analysis.correlation_label(-0.5), '中程度の逆連動')
+
+    def test_correlation_label_strong_negative(self):
+        self.assertEqual(detail_analysis.correlation_label(-0.85), '強い逆連動')
+
+    def test_correlation_label_none(self):
+        self.assertEqual(detail_analysis.correlation_label(None), 'データ不足')
+
+    def test_interpret_state_no_rule(self):
+        ind = Indicator.objects.create(
+            fred_series_id='TEST_NORULE',
+            name_ja='テスト',
+            category='inflation',
+            judgment_rule=None,
+        )
+        result = detail_analysis.interpret_state(ind, _ObsStub(value=1.0))
+        self.assertFalse(result['has_interpretation'])
+
+    def test_interpret_state_with_rule_generates_sentences(self):
+        ind = Indicator.objects.create(
+            fred_series_id='TEST_RULE',
+            name_ja='テスト2',
+            category='inflation',
+            judgment_rule={
+                'metric': 'level',
+                'economic': {'direction': 'lower_better', 'thresholds': [10, 20, 30, 40]},
+                'market':   {'direction': 'lower_better', 'thresholds': [10, 20, 30, 40]},
+            },
+        )
+        # 5 → 経済1段（最良）、市場1段
+        result = detail_analysis.interpret_state(ind, _ObsStub(value=5, prev_value=4))
+        self.assertTrue(result['has_interpretation'])
+        self.assertEqual(result['economic_stage'], 1)
+        self.assertEqual(result['market_stage'], 1)
+        # 解釈文は3つ（経済・市場・推移）
+        self.assertEqual(len(result['sentences']), 3)
 
 
 class IndicatorSeedingTest(TestCase):

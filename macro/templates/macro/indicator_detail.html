@@ -41,6 +41,44 @@
                     </div>
                 </section>
 
+                {% if state_interpretation.has_interpretation %}
+                    <section class="macro-section">
+                        <h2 class="macro-section-title">現在の状態</h2>
+                        <ul class="macro-state-list">
+                            {% for s in state_interpretation.sentences %}
+                                <li class="macro-state-item">{{ s }}</li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">SP500との連動性</h2>
+                    <div class="macro-corr-summary">
+                        <span class="macro-corr-summary-value {% if sp500_correlation.value is not None %}{% if sp500_correlation.is_positive %}macro-pos{% else %}macro-neg{% endif %}{% endif %}">{{ sp500_correlation.value_display }}</span>
+                        <span class="macro-corr-summary-label">{{ sp500_correlation.label }}</span>
+                        <span class="macro-corr-summary-note">過去24ヶ月のピアソン相関</span>
+                    </div>
+                </section>
+
+                <section class="macro-section">
+                    <h2 class="macro-section-title">過去のクラッシュ局面での値</h2>
+                    {% if crash_values %}
+                        <ul class="macro-crash-values-list">
+                            {% for r in crash_values %}
+                                <li class="macro-crash-values-item">
+                                    <span class="macro-crash-values-month">{{ r.month_label }}</span>
+                                    <span class="macro-crash-values-label">{{ r.crash_label }}</span>
+                                    <span class="macro-crash-values-value">{{ r.value_display }}</span>
+                                    <span class="macro-crash-values-yoy">YoY {{ r.yoy_display }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="macro-placeholder">該当データなし</p>
+                    {% endif %}
+                </section>
+
                 <section class="macro-section">
                     <h2 class="macro-section-title">統計サマリ</h2>
                     <ul class="macro-stat-list">

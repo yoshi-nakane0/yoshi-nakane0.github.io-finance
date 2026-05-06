@@ -823,6 +823,83 @@ body {
     text-align: right;
 }
 
+/* === 詳細ページ：現在の状態 === */
+.macro-state-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.macro-state-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    color: var(--macro-text-primary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* === 詳細ページ：SP500との連動性 === */
+.macro-corr-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.macro-corr-summary-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.macro-corr-summary-label {
+    font-size: 0.95rem;
+    color: var(--macro-text-primary);
+}
+.macro-corr-summary-note {
+    font-size: 0.7rem;
+    color: var(--macro-text-secondary);
+}
+
+/* === 詳細ページ：過去のクラッシュ局面での値 === */
+.macro-crash-values-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.macro-crash-values-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+}
+.macro-crash-values-month {
+    color: var(--macro-text-primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.macro-crash-values-label {
+    color: var(--macro-text-secondary);
+}
+.macro-crash-values-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.macro-crash-values-yoy {
+    color: var(--macro-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
 /* === 歴史的クラッシュ局面 === */
 .macro-crash-history-list {
     list-style: none;

@@ -12,6 +12,12 @@ from django.conf import settings
 
 from ..models import Indicator, Observation, PriceObservation
 from .dashboard import format_pct, format_signed, format_value
+from .detail_analysis import (
+    correlation_label,
+    correlation_with_sp500,
+    get_values_at_crash_months,
+    interpret_state,
+)
 from .linkage import LAG_CANDIDATES, _pearson, _shifted_series, _aggregate_to_monthly
 from .sparkline import generate_sparkline_svg
 from .yfinance_client import get_monthly_close
@@ -155,6 +161,25 @@ def build_indicator_detail_context(indicator: Indicator) -> Dict:
     } for c in correlations]
 
     latest = observations[-1]
+    state = interpret_state(indicator, latest)
+
+    crash_value_rows = []
+    for row in get_values_at_crash_months(indicator):
+        crash_value_rows.append({
+            'month_label': row['month_label'],
+            'crash_label': row['crash_label'],
+            'value_display': format_value(row['value'], indicator.unit),
+            'yoy_display': format_pct(row['yoy_change']),
+        })
+
+    sp500_corr = correlation_with_sp500(indicator)
+    sp500_corr_block = {
+        'value': sp500_corr,
+        'value_display': f'{sp500_corr:+.2f}' if sp500_corr is not None else '—',
+        'label': correlation_label(sp500_corr),
+        'is_positive': sp500_corr is not None and sp500_corr >= 0,
+    }
+
     return {
         'indicator': indicator,
         'has_data': True,
@@ -175,6 +200,9 @@ def build_indicator_detail_context(indicator: Indicator) -> Dict:
         'high_months': high_rows,
         'low_months': low_rows,
         'correlations': corr_rows,
+        'state_interpretation': state,
+        'crash_values': crash_value_rows,
+        'sp500_correlation': sp500_corr_block,
     }
 
 
