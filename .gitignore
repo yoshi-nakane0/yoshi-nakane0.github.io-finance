@@ -142,6 +142,7 @@ celerybeat.pid
 .env
 .venv
 env/
+docs/
 venv/
 ENV/
 env.bak/
@@ -184,3 +185,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .vercel
+.superpowers/

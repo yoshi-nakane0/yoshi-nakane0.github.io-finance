@@ -13,6 +13,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
+from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
 from .similarity import find_similar_months
 from .sparkline import generate_sparkline_svg
@@ -106,16 +107,17 @@ def build_indicator_cards() -> List[Dict]:
                 'category': ind.get_category_display(),
                 'importance': ind.importance,
                 'has_data': False,
-                'value_display': '—',
                 'yoy_display': '—',
-                'deviation_display': '—',
                 'direction_arrow': '—',
+                'economic_stage': None,
+                'market_stage': None,
                 'sparkline_svg': '',
                 'latest_date': None,
             })
             continue
 
         monthly = _monthly_values_for(ind, SPARKLINE_MONTHS)
+        economic_stage, market_stage = evaluate_judgment(latest, ind.judgment_rule)
         cards.append({
             'indicator': ind,
             'series_id': ind.fred_series_id,
@@ -124,12 +126,10 @@ def build_indicator_cards() -> List[Dict]:
             'importance': ind.importance,
             'has_data': True,
             'latest_date': latest.observation_date,
-            'value_display': format_value(latest.value, ind.unit),
-            'unit': ind.unit,
             'yoy_display': format_pct(latest.yoy_change),
             'yoy_value': latest.yoy_change,
-            'deviation_value': latest.deviation_from_long_term,
-            'deviation_display': format_signed(latest.deviation_from_long_term, 2),
+            'economic_stage': economic_stage,
+            'market_stage': market_stage,
             'direction_arrow': _direction_from(latest.prev_value, latest.value),
             'sparkline_svg': generate_sparkline_svg(monthly),
         })

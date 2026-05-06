@@ -40,6 +40,7 @@ class Indicator(models.Model):
     description = models.TextField(blank=True)
     display_order = models.IntegerField(default=100)
     is_active = models.BooleanField(default=True)
+    judgment_rule = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

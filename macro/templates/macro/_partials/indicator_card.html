@@ -4,13 +4,28 @@
         <span class="macro-card-name">{{ card.name_ja }}</span>
         <span class="macro-card-arrow">{{ card.direction_arrow }}</span>
     </div>
-    <div class="macro-card-value">
-        {{ card.value_display }}
-        {% if card.unit %}<span class="macro-card-unit">{{ card.unit }}</span>{% endif %}
-    </div>
-    <div class="macro-card-stats">
-        <span class="macro-card-stat" title="前年同月比">YoY {{ card.yoy_display }}</span>
-        <span class="macro-card-stat" title="長期平均からの偏差">σ {{ card.deviation_display }}</span>
+    <div class="macro-card-yoy">YoY {{ card.yoy_display }}</div>
+    <div class="macro-card-judgment">
+        <div class="judge-row">
+            <span class="judge-key">経</span>
+            <span class="judge-edge">良</span>
+            <div class="judge-dots">
+                {% for n in "12345" %}
+                    <span class="judge-dot{% if card.economic_stage|stringformat:'s' == n %} judge-dot--s{{ n }}{% endif %}"></span>
+                {% endfor %}
+            </div>
+            <span class="judge-edge">悪</span>
+        </div>
+        <div class="judge-row">
+            <span class="judge-key">市</span>
+            <span class="judge-edge">良</span>
+            <div class="judge-dots">
+                {% for n in "12345" %}
+                    <span class="judge-dot{% if card.market_stage|stringformat:'s' == n %} judge-dot--s{{ n }}{% endif %}"></span>
+                {% endfor %}
+            </div>
+            <span class="judge-edge">悪</span>
+        </div>
     </div>
     {% if card.sparkline_svg %}
         <div class="macro-card-sparkline">{{ card.sparkline_svg|safe }}</div>
