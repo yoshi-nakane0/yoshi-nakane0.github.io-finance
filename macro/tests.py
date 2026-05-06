@@ -7,7 +7,16 @@ from django.test.utils import override_settings
 from django.urls import reverse
 
 from .models import Indicator, Observation, PriceObservation, RegimeSnapshot
-from .services import dashboard, judgment, linkage, regime, similarity, sparkline
+from .services import (
+    crash_alert,
+    dashboard,
+    historical_crash,
+    judgment,
+    linkage,
+    regime,
+    similarity,
+    sparkline,
+)
 
 
 class _ObsStub:
@@ -307,15 +316,66 @@ class JudgmentTest(TestCase):
         self.assertIsNone(e)
 
 
+class CrashAlertTest(TestCase):
+    """クラッシュ警戒度のサブスコア・総合スコア計算。"""
+
+    def test_band_score_lowest(self):
+        bands = [(15, 0), (20, 25), (25, 50), (30, 75), (40, 90), (float('inf'), 100)]
+        self.assertEqual(crash_alert._band_score(10, bands), 0)
+
+    def test_band_score_middle(self):
+        bands = [(15, 0), (20, 25), (25, 50), (30, 75), (40, 90), (float('inf'), 100)]
+        self.assertEqual(crash_alert._band_score(22, bands), 50)
+
+    def test_band_score_highest(self):
+        bands = [(15, 0), (20, 25), (25, 50), (30, 75), (40, 90), (float('inf'), 100)]
+        self.assertEqual(crash_alert._band_score(60, bands), 100)
+
+    def test_classify_low(self):
+        level, _ = crash_alert._classify(10)
+        self.assertEqual(level, 'low')
+
+    def test_classify_medium(self):
+        level, _ = crash_alert._classify(45)
+        self.assertEqual(level, 'medium')
+
+    def test_classify_high(self):
+        level, _ = crash_alert._classify(70)
+        self.assertEqual(level, 'high')
+
+    def test_classify_extreme(self):
+        level, _ = crash_alert._classify(85)
+        self.assertEqual(level, 'extreme')
+
+    def test_compute_no_data_returns_unknown(self):
+        result = crash_alert.compute_crash_alert()
+        self.assertEqual(result['level'], 'unknown')
+        self.assertIsNone(result['total_score'])
+
+
+class HistoricalCrashTest(TestCase):
+    """歴史的クラッシュ月との類似度。"""
+
+    def test_no_data_returns_empty(self):
+        # シードされたインジケーターはあるが Observation がない状態。
+        result = historical_crash.find_similar_crash_months()
+        self.assertEqual(result, [])
+
+    def test_crash_months_constant_size(self):
+        # 定数リストが不正にならないこと（少なくとも数件登録されている）。
+        self.assertGreaterEqual(len(historical_crash.HISTORICAL_CRASH_MONTHS), 5)
+
+
 class IndicatorSeedingTest(TestCase):
-    """マイグレーションが23系列を登録していることを確認。"""
+    """マイグレーションが46系列を登録していることを確認。"""
 
     def test_seeded_count(self):
-        self.assertEqual(Indicator.objects.count(), 23)
+        self.assertEqual(Indicator.objects.count(), 46)
 
     def test_importance_a_count(self):
+        # Phase 1: 11 + Phase 2: SP500, T10Y3M = 13
         self.assertEqual(
-            Indicator.objects.filter(importance='A').count(), 11
+            Indicator.objects.filter(importance='A').count(), 13
         )
 
     def test_categories_present(self):

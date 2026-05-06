@@ -729,3 +729,136 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* === クラッシュ警戒度バナー === */
+.macro-crash-alert {
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--macro-card-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+.macro-crash-alert--low {
+    border-color: rgba(34, 197, 94, 0.45);
+    background: linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.02));
+}
+.macro-crash-alert--medium {
+    border-color: rgba(250, 204, 21, 0.5);
+    background: linear-gradient(180deg, rgba(250,204,21,0.10), rgba(250,204,21,0.02));
+}
+.macro-crash-alert--high {
+    border-color: rgba(251, 146, 60, 0.55);
+    background: linear-gradient(180deg, rgba(251,146,60,0.12), rgba(251,146,60,0.02));
+}
+.macro-crash-alert--extreme {
+    border-color: rgba(239, 68, 68, 0.65);
+    background: linear-gradient(180deg, rgba(239,68,68,0.15), rgba(239,68,68,0.04));
+}
+.macro-crash-banner {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+.macro-crash-score {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+.macro-crash-score-num {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--macro-text-primary);
+}
+.macro-crash-score-unit {
+    font-size: 0.85rem;
+    color: var(--macro-text-secondary);
+}
+.macro-crash-level {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--macro-text-primary);
+}
+.macro-crash-alert--low .macro-crash-level { color: #22c55e; }
+.macro-crash-alert--medium .macro-crash-level { color: #facc15; }
+.macro-crash-alert--high .macro-crash-level { color: #fb923c; }
+.macro-crash-alert--extreme .macro-crash-level { color: #ef4444; }
+.macro-crash-details {
+    margin-top: 0.6rem;
+}
+.macro-crash-details > summary {
+    cursor: pointer;
+    color: var(--macro-accent);
+    font-size: 0.78rem;
+    list-style: none;
+    padding: 0.2rem 0;
+}
+.macro-crash-details > summary::-webkit-details-marker { display: none; }
+.macro-crash-component-list {
+    list-style: none;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.macro-crash-component {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.6rem;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--macro-text-secondary);
+    padding: 0.2rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+.macro-crash-component:last-child { border-bottom: none; }
+.macro-crash-component-label { color: var(--macro-text-primary); }
+.macro-crash-component-value { font-variant-numeric: tabular-nums; }
+.macro-crash-component-score {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* === 歴史的クラッシュ局面 === */
+.macro-crash-history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.macro-crash-history-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.45rem 0.7rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--macro-card-border);
+    border-radius: 8px;
+    font-size: 0.82rem;
+}
+.macro-crash-history-rank {
+    color: var(--macro-accent);
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+.macro-crash-history-month {
+    color: var(--macro-text-primary);
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+.macro-crash-history-label {
+    color: var(--macro-text-secondary);
+    font-size: 0.78rem;
+}
+.macro-crash-history-distance {
+    color: var(--macro-text-secondary);
+    font-size: 0.74rem;
+    font-variant-numeric: tabular-nums;
+}

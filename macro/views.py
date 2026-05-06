@@ -16,6 +16,8 @@ from .services.commentary import (
     build_similar_explanation,
 )
 from .services.dashboard import (
+    build_crash_alert_context,
+    build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
     build_regime_context,
@@ -56,6 +58,10 @@ def index(request):
         ),
         'fred_key_present': fred_key_present,
         'indicator_cards': build_indicator_cards() if has_observations else [],
+        'crash_alert': build_crash_alert_context() if has_observations else None,
+        'historical_crash_similarity': (
+            build_historical_crash_similarity() if has_observations else []
+        ),
         'similar_periods': similar_periods,
         'linkages': linkages,
         'upcoming_events': build_upcoming_events(),

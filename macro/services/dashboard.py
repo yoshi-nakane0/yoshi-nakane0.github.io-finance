@@ -13,6 +13,8 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
+from .crash_alert import compute_crash_alert
+from .historical_crash import find_similar_crash_months
 from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
 from .similarity import find_similar_months
@@ -228,6 +230,30 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
         'confidence_pct': int(round(snapshot.confidence)),
         'snapshot_date': snapshot.snapshot_date,
     }
+
+
+def build_crash_alert_context() -> Dict:
+    """クラッシュ警戒度の表示用コンテキストを作る。"""
+    raw = compute_crash_alert()
+    components = []
+    for c in raw['components']:
+        components.append({
+            'series_id': c['series_id'],
+            'label': c['label'],
+            'value_display': format_value(c['value'], ''),
+            'score': c['score'],
+        })
+    return {
+        'total_score': raw['total_score'],
+        'level': raw['level'],
+        'level_label': raw['level_label'],
+        'components': components,
+    }
+
+
+def build_historical_crash_similarity(top_n: int = 3) -> List[Dict]:
+    """歴史的クラッシュ月との類似度を返す。"""
+    return find_similar_crash_months(top_n=top_n)
 
 
 def build_upcoming_events(days_ahead: int = 7) -> List[Dict]:

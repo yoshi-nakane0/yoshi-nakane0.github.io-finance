@@ -44,6 +44,49 @@
                 </div>
             </section>
 
+            {# クラッシュ警戒度 #}
+            {% if crash_alert and crash_alert.total_score is not None %}
+                <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}">
+                    <h2 class="macro-section-title">クラッシュ警戒度</h2>
+                    <div class="macro-crash-banner">
+                        <div class="macro-crash-score">
+                            <span class="macro-crash-score-num">{{ crash_alert.total_score }}</span>
+                            <span class="macro-crash-score-unit">/ 100</span>
+                        </div>
+                        <div class="macro-crash-level">{{ crash_alert.level_label }}</div>
+                    </div>
+                    <details class="macro-crash-details">
+                        <summary>サブスコア内訳</summary>
+                        <ul class="macro-crash-component-list">
+                            {% for c in crash_alert.components %}
+                                <li class="macro-crash-component">
+                                    <span class="macro-crash-component-label">{{ c.label }}</span>
+                                    <span class="macro-crash-component-value">{{ c.value_display }}</span>
+                                    <span class="macro-crash-component-score">{{ c.score }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                </section>
+            {% endif %}
+
+            {# 歴史的クラッシュ局面との類似度 #}
+            {% if historical_crash_similarity %}
+                <section class="macro-section">
+                    <h2 class="macro-section-title">過去のクラッシュ局面との類似度</h2>
+                    <ol class="macro-crash-history-list">
+                        {% for item in historical_crash_similarity %}
+                            <li class="macro-crash-history-item">
+                                <span class="macro-crash-history-rank">#{{ forloop.counter }}</span>
+                                <span class="macro-crash-history-month">{{ item.month_label }}</span>
+                                <span class="macro-crash-history-label">{{ item.label }}</span>
+                                <span class="macro-crash-history-distance">距離 {{ item.distance_display }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </section>
+            {% endif %}
+
             {# 現状サマリ（自動生成コメント） #}
             {% if overview_commentary and overview_commentary.sentences %}
                 <section class="macro-overview">
