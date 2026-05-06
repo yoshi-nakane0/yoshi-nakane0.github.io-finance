@@ -22,7 +22,20 @@ class Indicator(models.Model):
         MONTHLY = 'monthly', '月次'
         QUARTERLY = 'quarterly', '四半期'
 
+    class Source(models.TextChoices):
+        FRED = 'fred', 'FRED'
+        CBOE = 'cboe', 'Cboe'
+        FINRA = 'finra', 'FINRA'
+        AAII = 'aaii', 'AAII'
+        NAAIM = 'naaim', 'NAAIM'
+        YFINANCE = 'yfinance', 'Yahoo Finance'
+
     fred_series_id = models.CharField(max_length=64, unique=True)
+    source = models.CharField(
+        max_length=16,
+        choices=Source.choices,
+        default=Source.FRED,
+    )
     name_ja = models.CharField(max_length=128)
     name_en = models.CharField(max_length=128, blank=True)
     category = models.CharField(max_length=16, choices=Category.choices)

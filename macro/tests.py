@@ -441,16 +441,59 @@ class DetailAnalysisTest(TestCase):
 
 
 class IndicatorSeedingTest(TestCase):
-    """マイグレーションが46系列を登録していることを確認。"""
+    """マイグレーションが51系列を登録していることを確認（Phase 4で5系列追加）。"""
 
     def test_seeded_count(self):
-        self.assertEqual(Indicator.objects.count(), 46)
+        self.assertEqual(Indicator.objects.count(), 51)
 
     def test_importance_a_count(self):
-        # Phase 1: 11 + Phase 2: SP500, T10Y3M = 13
+        # Phase 1: 11 + Phase 2: SP500, T10Y3M = 13（Phase 4 は B のみ）
         self.assertEqual(
             Indicator.objects.filter(importance='A').count(), 13
         )
+
+    def test_external_sources_present(self):
+        sources = set(
+            Indicator.objects.values_list('source', flat=True).distinct()
+        )
+        for s in ['fred', 'cboe', 'finra', 'aaii', 'naaim', 'yfinance']:
+            self.assertIn(s, sources)
+
+
+class ExternalClientParseTest(TestCase):
+    """外部クライアントのCSVパースロジック（HTTPは投げない）。"""
+
+    def test_cboe_parse_csv(self):
+        from macro.services import cboe_client
+        text = "Date,SKEW\n2024-01-02,135.42\n2024-01-03,138.10\n"
+        rows = cboe_client._parse_csv(text)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0][1], 135.42)
+
+    def test_naaim_parse_csv(self):
+        from macro.services import naaim_client
+        text = "Date,NAAIM Exposure Index\n2024-01-03,75.5\n2024-01-10,80.0\n"
+        rows = naaim_client._parse_csv(text)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1][1], 80.0)
+
+    def test_aaii_parse_csv(self):
+        from macro.services import aaii_client
+        text = "Date,Bullish,Bearish,Neutral\n2024-01-03,42.5%,30.0%,27.5%\n"
+        rows = aaii_client._parse_csv(text)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][1], 42.5)
+
+    def test_finra_parse_csv(self):
+        from macro.services import finra_client
+        text = (
+            "Year-Month,Debit Balances in Customers' Securities Margin Accounts\n"
+            "2024-12,815523\n"
+            "2025-01,820100\n"
+        )
+        rows = finra_client._parse_csv(text)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1][1], 820100.0)
 
     def test_categories_present(self):
         for cat in ['inflation', 'employment', 'growth', 'rates', 'market']:

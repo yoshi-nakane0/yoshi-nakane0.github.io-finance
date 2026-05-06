@@ -14,7 +14,14 @@ from django.db import transaction
 from django.utils import timezone
 
 from ..models import Indicator, Observation
-from .fred_client import FredApiError, fetch_observations
+from . import (
+    aaii_client,
+    cboe_client,
+    external_yfinance_client,
+    finra_client,
+    naaim_client,
+)
+from .fred_client import FredApiError, fetch_observations as fetch_fred_observations
 
 logger = logging.getLogger(__name__)
 
@@ -134,20 +141,50 @@ def _resolve_fetch_start(
     return start, False
 
 
-def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) -> dict:
-    """1指標を FRED から差分取得し、既存値とマージしてDBを更新する。
+def _fetch_for_source(
+    indicator: Indicator,
+    start_date: date,
+    end_date: date,
+) -> List[Tuple[date, float]]:
+    """Indicator.source に応じて適切なクライアントから観測値を取得する。"""
+    source = getattr(indicator, 'source', 'fred') or 'fred'
+    sid = indicator.fred_series_id
+    if source == 'fred':
+        return fetch_fred_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    if source == 'cboe':
+        return cboe_client.fetch_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    if source == 'finra':
+        return finra_client.fetch_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    if source == 'aaii':
+        return aaii_client.fetch_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    if source == 'naaim':
+        return naaim_client.fetch_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    if source == 'yfinance':
+        return external_yfinance_client.fetch_monthly_index(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
+    raise FredApiError(f"未対応の source: {source}")
 
-    既にデータがあれば最新日付付近から今日までだけ取得（網羅的なフル取得は行わない）。
-    取得した新しい値は既存値とマージし、統計量は全期間を再計算してから保存する。
+
+def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) -> dict:
+    """1指標を取得元から差分取得し、既存値とマージしてDBを更新する。
+
+    取得元は indicator.source（'fred' / 'cboe' / 'finra' / 'aaii' / 'naaim' / 'yfinance'）に応じて切替。
     """
     today = timezone.localdate()
     start_date, is_initial = _resolve_fetch_start(indicator, today, history_years)
 
-    raw_new = fetch_observations(
-        indicator.fred_series_id,
-        observation_start=start_date,
-        observation_end=today,
-    )
+    raw_new = _fetch_for_source(indicator, start_date, today)
 
     existing = _load_existing_values(indicator)
     merged: Dict[date, float] = dict(existing)
@@ -182,12 +219,23 @@ def sync_all_indicators(*, history_years: int = HISTORY_YEARS) -> dict:
     }
 
     indicators = Indicator.objects.filter(is_active=True).order_by('display_order')
+    expected_errors = (
+        FredApiError,
+        cboe_client.CboeError,
+        finra_client.FinraError,
+        aaii_client.AaiiError,
+        naaim_client.NaaimError,
+        external_yfinance_client.ExternalYfinanceError,
+    )
     for indicator in indicators:
         try:
             summary = sync_indicator(indicator, history_years=history_years)
             results['success'].append(summary)
-        except FredApiError as exc:
-            logger.warning("FRED sync failed for %s: %s", indicator.fred_series_id, exc)
+        except expected_errors as exc:
+            logger.warning(
+                "%s sync failed for %s: %s",
+                indicator.source, indicator.fred_series_id, exc,
+            )
             results['failed'].append({
                 'series_id': indicator.fred_series_id,
                 'error': str(exc),

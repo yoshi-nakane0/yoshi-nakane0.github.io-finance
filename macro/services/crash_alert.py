@@ -42,6 +42,21 @@ COMPONENT_SPECS = [
         'series_id': 'STLFSI4', 'label': '金融ストレス', 'direction': 'higher',
         'bands': [(-1.0, 0), (0.0, 25), (0.5, 50), (1.5, 75), (2.5, 90), (float('inf'), 100)],
     },
+    # Phase 4 で追加（外部データ）
+    {
+        'series_id': 'CBOE_SKEW', 'label': 'SKEW（テール警戒）', 'direction': 'higher',
+        'bands': [(120, 0), (130, 25), (140, 50), (150, 75), (160, 90), (float('inf'), 100)],
+    },
+    {
+        'series_id': 'NAAIM_EXPOSURE', 'label': 'NAAIMエクスポージャー', 'direction': 'higher',
+        # プロが極端に強気（>90）な時はクラッシュ前兆とされる
+        'bands': [(50, 0), (70, 25), (85, 50), (95, 75), (105, 90), (float('inf'), 100)],
+    },
+    {
+        'series_id': 'AAII_BULLISH', 'label': 'AAII強気%', 'direction': 'higher',
+        # 個人が極端に楽観（>50%）の時は反転リスク
+        'bands': [(30, 0), (40, 25), (50, 50), (55, 75), (60, 90), (float('inf'), 100)],
+    },
 ]
 
 
