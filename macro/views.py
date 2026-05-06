@@ -43,14 +43,43 @@ logger = logging.getLogger(__name__)
 
 def index(request):
     """macro モジュールのトップ画面"""
+    import time
+    def _t(label, t0):
+        print(f"[macro.index] {label}: {time.perf_counter()-t0:.2f}s", flush=True)
+
+    t0 = time.perf_counter()
     latest_obs_date = get_latest_observation_date()
+    _t('latest_obs_date', t0)
+    t0 = time.perf_counter()
     latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
+    _t('latest_snapshot', t0)
 
     fred_key_present = bool(get_api_key())
     has_observations = latest_obs_date is not None
 
+    t0 = time.perf_counter()
     similar_periods = build_similar_periods() if has_observations else []
+    _t('similar_periods', t0)
+    t0 = time.perf_counter()
     linkages = build_linkages() if has_observations else []
+    _t('linkages', t0)
+    t0 = time.perf_counter()
+    indicator_cards = build_indicator_cards() if has_observations else []
+    _t('indicator_cards', t0)
+    t0 = time.perf_counter()
+    crash_alert = build_crash_alert_context() if has_observations else None
+    _t('crash_alert', t0)
+    t0 = time.perf_counter()
+    historical_crash_similarity = (
+        build_historical_crash_similarity() if has_observations else []
+    )
+    _t('historical_crash_similarity', t0)
+    t0 = time.perf_counter()
+    lightgbm_prediction = load_lightgbm_prediction()
+    _t('lightgbm_prediction', t0)
+    t0 = time.perf_counter()
+    upcoming_events = build_upcoming_events()
+    _t('upcoming_events', t0)
 
     context = {
         'has_observations': has_observations,
@@ -58,15 +87,13 @@ def index(request):
             latest_obs_date.isoformat() if latest_obs_date else '—'
         ),
         'fred_key_present': fred_key_present,
-        'indicator_cards': build_indicator_cards() if has_observations else [],
-        'crash_alert': build_crash_alert_context() if has_observations else None,
-        'historical_crash_similarity': (
-            build_historical_crash_similarity() if has_observations else []
-        ),
-        'lightgbm_prediction': load_lightgbm_prediction(),
+        'indicator_cards': indicator_cards,
+        'crash_alert': crash_alert,
+        'historical_crash_similarity': historical_crash_similarity,
+        'lightgbm_prediction': lightgbm_prediction,
         'similar_periods': similar_periods,
         'linkages': linkages,
-        'upcoming_events': build_upcoming_events(),
+        'upcoming_events': upcoming_events,
         'overview_commentary': (
             build_overview_commentary(latest_snapshot, similar_periods)
             if has_observations else None
@@ -74,8 +101,13 @@ def index(request):
         'similar_commentary': build_similar_explanation(similar_periods),
         'linkage_commentary': build_linkage_explanation(linkages),
     }
+    t0 = time.perf_counter()
     context.update(build_regime_context(latest_snapshot))
-    return render(request, 'macro/index.html', context)
+    _t('regime_context', t0)
+    t0 = time.perf_counter()
+    resp = render(request, 'macro/index.html', context)
+    _t('render', t0)
+    return resp
 
 
 @require_POST
