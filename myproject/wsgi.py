@@ -45,19 +45,17 @@ application = get_wsgi_application()
 
 def _ensure_runtime_migrations():
     """フェッチ失敗時の空 DB やスキーマ更新時に備えて migrate を当てる。"""
-    import sqlite3 as _sqlite3
-    target = Path(os.environ.get('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
+    if not _is_serverless_runtime():
+        return
     try:
-        with _sqlite3.connect(target) as conn:
-            row = conn.execute(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='macro_observation' LIMIT 1"
-            ).fetchone()
-            if row is not None:
-                return
-    except Exception:
-        pass
-    try:
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
         from django.core.management import call_command
+
+        executor = MigrationExecutor(connection)
+        plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
+        if not plan:
+            return
         call_command('migrate', '--noinput', verbosity=0)
     except Exception:
         logger.exception('startup migrate failed')

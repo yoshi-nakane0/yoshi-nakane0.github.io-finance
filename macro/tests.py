@@ -1,7 +1,10 @@
 """macro モジュールのユニットテスト。"""
 
 from datetime import date
+from pathlib import Path
 
+from django.conf import settings
+from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -18,6 +21,27 @@ from .services import (
     similarity,
     sparkline,
 )
+
+
+class MacroRuntimeConfigTest(SimpleTestCase):
+    def test_refresh_workflow_updates_checked_in_database(self):
+        workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'refresh-macro-data.yml'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('SQLITE_DB_PATH: db.sqlite3', workflow)
+
+    def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
+        wsgi_source = (
+            Path(settings.BASE_DIR)
+            / 'myproject'
+            / 'wsgi.py'
+        ).read_text(encoding='utf-8')
+
+        self.assertNotIn("name='macro_observation'", wsgi_source)
 
 
 class _ObsStub:

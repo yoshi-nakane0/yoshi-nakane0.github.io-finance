@@ -15,6 +15,7 @@ jobs:
       DATA_BRANCH: macro-data
       DJANGO_SETTINGS_MODULE: myproject.settings
       DEBUG: "False"
+      SQLITE_DB_PATH: db.sqlite3
       SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
     steps:
