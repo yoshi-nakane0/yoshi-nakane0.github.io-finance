@@ -204,6 +204,55 @@ class ImportEarningsCsvTests(TestCase):
         self.assertIsNone(EarningsEvent.objects.get().event_date)
 
 
+from earning.models import EarningsPriceWindow
+
+
+class EarningsPriceWindowModelTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+
+    def test_create_row_with_required_fields(self):
+        row = EarningsPriceWindow.objects.create(
+            event=self.event,
+            trade_date=date_cls(2026, 1, 28),
+            offset_days=-2,
+            open=100.0, high=101.0, low=99.0, close=100.5, volume=12345,
+        )
+        self.assertEqual(row.event, self.event)
+        self.assertEqual(row.offset_days, -2)
+        self.assertAlmostEqual(row.close, 100.5)
+
+    def test_event_and_trade_date_are_unique_together(self):
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 28), offset_days=-2,
+        )
+        with transaction.atomic():
+            with self.assertRaises(Exception):
+                EarningsPriceWindow.objects.create(
+                    event=self.event, trade_date=date_cls(2026, 1, 28), offset_days=-2,
+                )
+
+    def test_ordering_by_event_then_trade_date(self):
+        EarningsPriceWindow.objects.create(event=self.event, trade_date=date_cls(2026, 1, 30), offset_days=0)
+        EarningsPriceWindow.objects.create(event=self.event, trade_date=date_cls(2026, 1, 28), offset_days=-2)
+        EarningsPriceWindow.objects.create(event=self.event, trade_date=date_cls(2026, 1, 29), offset_days=-1)
+        dates = list(EarningsPriceWindow.objects.values_list('trade_date', flat=True))
+        self.assertEqual(dates, [date_cls(2026, 1, 28), date_cls(2026, 1, 29), date_cls(2026, 1, 30)])
+
+    def test_str_includes_offset_with_sign(self):
+        row = EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 2, 5), offset_days=4,
+        )
+        self.assertIn('T+4', str(row))
+        row2 = EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 28), offset_days=-2,
+        )
+        self.assertIn('T-2', str(row2))
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):

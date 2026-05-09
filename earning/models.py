@@ -105,3 +105,31 @@ class EarningsPrediction(models.Model):
 
     def __str__(self):
         return f'{self.event} → {self.predicted_reaction:+.2f} ({self.model_version})'
+
+
+class EarningsPriceWindow(models.Model):
+    event = models.ForeignKey(EarningsEvent, on_delete=models.CASCADE, related_name='price_window')
+    trade_date = models.DateField()
+    offset_days = models.IntegerField()
+    open = models.FloatField(null=True, blank=True)
+    high = models.FloatField(null=True, blank=True)
+    low = models.FloatField(null=True, blank=True)
+    close = models.FloatField(null=True, blank=True)
+    volume = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['event', 'trade_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['event', 'trade_date'],
+                name='earning_price_window_event_date_uniq',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['event', 'offset_days']),
+        ]
+
+    def __str__(self):
+        return f'{self.event} {self.trade_date} (T{self.offset_days:+d})'
