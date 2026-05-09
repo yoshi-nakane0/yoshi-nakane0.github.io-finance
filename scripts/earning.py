@@ -735,6 +735,14 @@ def upsert_event_to_db(row_dict):
     except Exception as exc:
         print(f'  price window failed: {exc}', flush=True)
 
+    try:
+        from earning.services.macro import attach_macro_snapshot
+        cols = attach_macro_snapshot(event)
+        if cols:
+            print(f'  macro snapshot: {cols} columns filled', flush=True)
+    except Exception as exc:
+        print(f'  macro snapshot failed: {exc}', flush=True)
+
 
 # ────────────────────────────────────────────────
 # メイン処理
