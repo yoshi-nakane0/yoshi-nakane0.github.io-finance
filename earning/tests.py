@@ -1158,6 +1158,49 @@ class EarningsFetchPricesCommandTests(TestCase):
         self.assertEqual(called_event.stock.symbol, 'AAPL')
 
 
+from earning.services.scenarios import MACRO_KEYS, compute_feature_ranges
+
+
+class ScenariosFeatureRangesTests(TestCase):
+    def test_compute_feature_ranges_uses_correct_bands(self):
+        baseline = {
+            'gross_margin': 45.0,  # ignored — not a macro key
+            'vix_at_event': 18.5,
+            'hy_spread_at_event': 3.2,
+            'skew_at_event': 140.0,
+            't5yie_at_event': 2.4,
+            'rut_at_event': 2100.0,
+        }
+        ranges = compute_feature_ranges(baseline)
+        # Only macro keys present
+        self.assertEqual(set(ranges.keys()), set(MACRO_KEYS))
+        # vix / hy / rut: ±50% / ±50% / ±20%
+        self.assertAlmostEqual(ranges['vix_at_event'][0], 18.5 * 0.5)
+        self.assertAlmostEqual(ranges['vix_at_event'][1], 18.5 * 1.5)
+        self.assertAlmostEqual(ranges['hy_spread_at_event'][0], 3.2 * 0.5)
+        self.assertAlmostEqual(ranges['hy_spread_at_event'][1], 3.2 * 1.5)
+        self.assertAlmostEqual(ranges['rut_at_event'][0], 2100.0 * 0.8)
+        self.assertAlmostEqual(ranges['rut_at_event'][1], 2100.0 * 1.2)
+        # skew: ±20%
+        self.assertAlmostEqual(ranges['skew_at_event'][0], 140.0 * 0.8)
+        self.assertAlmostEqual(ranges['skew_at_event'][1], 140.0 * 1.2)
+        # t5yie: absolute ±0.5
+        self.assertAlmostEqual(ranges['t5yie_at_event'][0], 2.4 - 0.5)
+        self.assertAlmostEqual(ranges['t5yie_at_event'][1], 2.4 + 0.5)
+
+    def test_compute_feature_ranges_skips_none_values(self):
+        baseline = {
+            'vix_at_event': 18.5,
+            'hy_spread_at_event': None,
+            'skew_at_event': 140.0,
+            't5yie_at_event': None,
+            'rut_at_event': 2100.0,
+        }
+        ranges = compute_feature_ranges(baseline)
+        # Only macro keys with non-None baseline are included
+        self.assertEqual(set(ranges.keys()), {'vix_at_event', 'skew_at_event', 'rut_at_event'})
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
