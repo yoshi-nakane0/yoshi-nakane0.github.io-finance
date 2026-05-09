@@ -1165,3 +1165,73 @@ body {
     padding: 5px 2px;
   }
 }
+
+/* ===== 事前予測 vs 実測（Step 6） ===== */
+.prediction-row {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(96, 165, 250, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(96, 165, 250, 0.12);
+}
+.prediction-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 6px;
+}
+.prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.prediction-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.prediction-label {
+  font-size: 11px;
+  color: var(--text-tertiary, #64748b);
+}
+.prediction-value {
+  font-weight: 600;
+  margin-top: 2px;
+}
+.deviation-muted { color: var(--text-tertiary, #64748b); }
+.deviation-mild-pos, .deviation-mild-neg { color: var(--text-secondary, #94a3b8); }
+.deviation-moderate-pos { color: #4ade80; }
+.deviation-moderate-neg { color: #fb923c; }
+.deviation-large-pos { color: #22c55e; font-weight: 700; }
+.deviation-large-neg { color: #ef4444; font-weight: 700; }
+
+.similar-events {
+  margin-top: 8px;
+}
+.similar-events-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-tertiary, #64748b);
+  margin-bottom: 4px;
+}
+.similar-events-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.similar-event-chip {
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+  background: rgba(148, 163, 184, 0.1);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.similar-event-id {
+  color: var(--text-secondary, #94a3b8);
+}
+.similar-event-reaction {
+  font-weight: 600;
+}

@@ -150,6 +150,39 @@
             </div>
             {% endif %}
 
+            {% if company.has_prediction or company.has_deviation %}
+            <div class="prediction-row">
+                <div class="prediction-title">事前予測 vs 実測</div>
+                <div class="prediction-grid">
+                    <div class="prediction-cell">
+                        <span class="prediction-label">事前予測</span>
+                        <span class="prediction-value {{ company.predicted_reaction_class }}">{{ company.predicted_reaction_display }}</span>
+                    </div>
+                    <div class="prediction-cell">
+                        <span class="prediction-label">実測（当日）</span>
+                        <span class="prediction-value {{ company.reaction_close_class }}">{{ company.reaction_close_display }}</span>
+                    </div>
+                    <div class="prediction-cell">
+                        <span class="prediction-label">乖離</span>
+                        <span class="prediction-value {{ company.reaction_deviation_class }}">{{ company.reaction_deviation_display }}</span>
+                    </div>
+                </div>
+                {% if company.has_similar_events %}
+                <div class="similar-events">
+                    <span class="similar-events-label">類似過去事例</span>
+                    <div class="similar-events-chips">
+                        {% for sim in company.similar_events %}
+                        <span class="similar-event-chip">
+                            <span class="similar-event-id">{{ sim.symbol }} {{ sim.fiscal_period }}</span>
+                            <span class="similar-event-reaction {{ sim.reaction_class }}">{{ sim.reaction_display }}</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
             {% if company.has_reaction or company.has_past_reactions %}
             <div class="reaction-row">
                 <div class="reaction-title">決算後の反応</div>
