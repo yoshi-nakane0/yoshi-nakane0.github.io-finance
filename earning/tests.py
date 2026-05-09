@@ -1283,3 +1283,52 @@ class EarningsViewTests(TestCase):
         cache.clear()
         response = self.client.get(reverse('earning:index'))
         self.assertNotContains(response, '事前予測')
+
+
+from earning.services.lgb_walker import predict_from_json, _walk_tree
+
+
+class LgbWalkerTests(TestCase):
+    def _single_leaf_tree(self, leaf_value):
+        return {
+            'shrinkage': 1.0,
+            'root': {'leaf_value': leaf_value},
+        }
+
+    def _stump(self, split_feature, threshold, left_leaf, right_leaf, decision_type='<='):
+        return {
+            'shrinkage': 1.0,
+            'root': {
+                'split_feature': split_feature,
+                'threshold': threshold,
+                'decision_type': decision_type,
+                'default_left': True,
+                'left_child': {'leaf_value': left_leaf},
+                'right_child': {'leaf_value': right_leaf},
+            },
+        }
+
+    def test_walk_tree_returns_leaf_for_single_leaf(self):
+        node = {'leaf_value': 1.5}
+        self.assertAlmostEqual(_walk_tree(node, [0.0] * 11), 1.5)
+
+    def test_walk_tree_follows_threshold_branch(self):
+        tree = self._stump(0, 1.0, 0.5, 2.5)
+        self.assertAlmostEqual(_walk_tree(tree['root'], [0.5] + [0.0]*10), 0.5)
+        self.assertAlmostEqual(_walk_tree(tree['root'], [1.5] + [0.0]*10), 2.5)
+
+    def test_walk_tree_follows_default_left_on_nan(self):
+        tree = self._stump(0, 1.0, 0.5, 2.5)
+        self.assertAlmostEqual(_walk_tree(tree['root'], [float('nan')] + [0.0]*10), 0.5)
+
+    def test_predict_from_json_sums_trees_plus_init_score(self):
+        model = {
+            'feature_names': [f'f{i}' for i in range(11)],
+            'init_score': 0.7,
+            'trees': [
+                self._single_leaf_tree(1.0),
+                self._single_leaf_tree(2.0),
+                self._stump(3, 0.5, 0.3, -0.2),
+            ],
+        }
+        self.assertAlmostEqual(predict_from_json([0.0]*11, model), 4.0)
