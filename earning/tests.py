@@ -723,6 +723,42 @@ class EarningsPredictCommandTests(TestCase):
         self.assertIn('Wrote', out.getvalue())
 
 
+import numpy as np
+from earning.services.similarity import _zscore_normalize, _nan_safe_euclidean
+
+
+class ZScoreNormalizeTests(TestCase):
+    def test_constant_column_becomes_zero(self):
+        m = np.array([[5.0, 1.0], [5.0, 2.0], [5.0, 3.0]])
+        normalized, mean, std = _zscore_normalize(m)
+        # column 0 has std==0 → all zeros
+        self.assertTrue(np.all(normalized[:, 0] == 0.0))
+        # column 1 normalizes to mean 0 std 1
+        self.assertAlmostEqual(float(np.mean(normalized[:, 1])), 0.0, places=10)
+
+    def test_preserves_nan_in_value(self):
+        m = np.array([[1.0, 10.0], [2.0, np.nan], [3.0, 30.0]])
+        normalized, mean, std = _zscore_normalize(m)
+        # mean of column 1 computed over non-NaN entries only (10, 30 → 20)
+        self.assertAlmostEqual(mean[1], 20.0)
+        # NaN stays NaN in normalized output
+        self.assertTrue(np.isnan(normalized[1, 1]))
+
+
+class NanSafeEuclideanTests(TestCase):
+    def test_returns_basic_distance_when_no_nan(self):
+        a = np.array([0.0, 0.0])
+        b = np.array([3.0, 4.0])
+        # all dims valid → straight Euclidean = 5
+        result = _nan_safe_euclidean(a, b)
+        self.assertAlmostEqual(result, 5.0)
+
+    def test_returns_inf_when_no_overlap(self):
+        a = np.array([np.nan, 1.0])
+        b = np.array([2.0, np.nan])
+        self.assertEqual(_nan_safe_euclidean(a, b), float('inf'))
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
