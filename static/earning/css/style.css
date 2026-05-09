@@ -36,12 +36,6 @@ body {
   background-color: var(--bg-primary);
 }
 
-.common-app-header {
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
 .meta-info {
   padding: 8px 20px 0;
   color: var(--text-tertiary);
@@ -547,11 +541,6 @@ body {
 }
 
 @media (max-width: 768px) {
-  .common-app-header {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
   .history-toggle-wrap {
     justify-content: stretch;
   }
@@ -639,5 +628,540 @@ body {
 
   .company-summary {
     font-size: 15px;
+  }
+}
+
+/* ===== テーマ別集計 ===== */
+.theme-aggregation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+
+.theme-aggregation-label {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.theme-aggregation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.theme-aggregation-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.theme-aggregation-name {
+  color: var(--text-primary);
+}
+
+.theme-aggregation-score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.theme-aggregation-stage {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  opacity: 0.85;
+}
+
+.theme-aggregation-count {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ===== テーマスコア配色 ===== */
+.theme-strong {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.36);
+  color: #6ee7b7;
+}
+
+.theme-somewhat-strong {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.36);
+  color: #a5b4fc;
+}
+
+.theme-neutral {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #fcd34d;
+}
+
+.theme-weak {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+}
+
+.theme-very-weak {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fda4af;
+}
+
+.theme-muted {
+  background: rgba(100, 116, 139, 0.14);
+  border-color: rgba(100, 116, 139, 0.24);
+  color: #cbd5e1;
+}
+
+/* ===== テーマバッジ（企業カード内） ===== */
+.theme-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.theme-badge .theme-name {
+  letter-spacing: 0.2px;
+}
+
+.theme-badge .theme-score-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.theme-badge .theme-score-label {
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+/* ===== 監視銘柄の役割分類 ===== */
+.watch-info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.watch-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.watch-tier-badge.tier-top {
+  background: rgba(220, 38, 38, 0.18);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #fca5a5;
+}
+
+.watch-tier-badge.tier-important {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.36);
+  color: #a5b4fc;
+}
+
+.watch-tier-badge.tier-auxiliary {
+  background: rgba(100, 116, 139, 0.16);
+  border-color: rgba(100, 116, 139, 0.28);
+  color: #cbd5e1;
+}
+
+.watch-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.short-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(220, 38, 38, 0.18);
+  border: 1px solid rgba(220, 38, 38, 0.42);
+  border-radius: 8px;
+  color: #fda4af;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.short-lock-badge i {
+  font-size: 11px;
+}
+
+/* ===== ファンダ詳細 ===== */
+.fundamentals-row {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+
+.fundamentals-title,
+.reaction-title {
+  margin-bottom: 10px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.fundamentals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.fundamentals-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.fundamentals-cell.metric-good {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.fundamentals-cell.metric-good .fundamentals-value {
+  color: #6ee7b7;
+}
+
+.fundamentals-cell.metric-mid {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.fundamentals-cell.metric-mid .fundamentals-value {
+  color: #fcd34d;
+}
+
+.fundamentals-cell.metric-bad {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.fundamentals-cell.metric-bad .fundamentals-value {
+  color: #fca5a5;
+}
+
+.fundamentals-cell.metric-muted .fundamentals-value {
+  color: var(--text-tertiary);
+}
+
+.fundamentals-cell.guidance-status-up {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.fundamentals-cell.guidance-status-up .fundamentals-value {
+  color: #6ee7b7;
+}
+
+.fundamentals-cell.guidance-status-flat {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.fundamentals-cell.guidance-status-flat .fundamentals-value {
+  color: #fcd34d;
+}
+
+.fundamentals-cell.guidance-status-down {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.fundamentals-cell.guidance-status-down .fundamentals-value {
+  color: #fca5a5;
+}
+
+.fundamentals-cell.rs-strong {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.fundamentals-cell.rs-strong .fundamentals-value {
+  color: #6ee7b7;
+}
+
+.fundamentals-cell.rs-neutral {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.fundamentals-cell.rs-neutral .fundamentals-value {
+  color: #fcd34d;
+}
+
+.fundamentals-cell.rs-weak {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.fundamentals-cell.rs-weak .fundamentals-value {
+  color: #fca5a5;
+}
+
+.fundamentals-cell.rs-muted .fundamentals-value {
+  color: var(--text-tertiary);
+}
+
+.fundamentals-label {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.fundamentals-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ===== 決算後の反応 ===== */
+.reaction-row {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+
+.reaction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.reaction-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.reaction-label {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.reaction-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.reaction-value.reaction-positive {
+  color: var(--positive);
+}
+
+.reaction-value.reaction-negative {
+  color: var(--negative);
+}
+
+.reaction-value.reaction-neutral {
+  color: var(--neutral);
+}
+
+.reaction-value.reaction-muted {
+  color: var(--text-tertiary);
+}
+
+.reaction-value.interpretation {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.interpretation-bullish {
+  color: var(--positive);
+}
+
+.interpretation-neutral {
+  color: var(--neutral);
+}
+
+.interpretation-bearish {
+  color: var(--negative);
+}
+
+.interpretation-muted {
+  color: var(--text-tertiary);
+}
+
+/* ===== 過去4Q反応 ===== */
+.past-reactions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.past-reactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.past-reactions-title {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.past-reactions-avg {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.past-reactions-avg.reaction-positive {
+  color: var(--positive);
+}
+
+.past-reactions-avg.reaction-negative {
+  color: var(--negative);
+}
+
+.past-reactions-avg.reaction-neutral {
+  color: var(--neutral);
+}
+
+.past-reactions-avg.reaction-muted {
+  color: var(--text-tertiary);
+}
+
+.past-reactions-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.past-reaction-cell {
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.past-reaction-cell.reaction-positive {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.past-reaction-cell.reaction-negative {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.past-reaction-cell.reaction-neutral {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.26);
+  color: #fcd34d;
+}
+
+.past-reaction-cell.reaction-muted {
+  color: var(--text-tertiary);
+}
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 768px) {
+  .fundamentals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reaction-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .theme-aggregation {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reaction-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reaction-cell:last-child {
+    grid-column: span 2;
+  }
+
+  .past-reactions-cells {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .past-reaction-cell {
+    font-size: 11px;
+    padding: 5px 2px;
   }
 }

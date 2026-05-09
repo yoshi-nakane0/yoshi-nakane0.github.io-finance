@@ -5,6 +5,23 @@
         <h3 class="date-title">{{ date_group.date }}</h3>
         <span class="date-count">{{ date_group.companies|length }}件</span>
     </div>
+
+    {% if date_group.theme_aggregations %}
+    <div class="theme-aggregation">
+        <span class="theme-aggregation-label">テーマ別</span>
+        <div class="theme-aggregation-list">
+            {% for agg in date_group.theme_aggregations %}
+            <span class="theme-aggregation-item {{ agg.class }}">
+                <span class="theme-aggregation-name">{{ agg.theme }}</span>
+                <span class="theme-aggregation-score">{{ agg.avg_display }}</span>
+                <span class="theme-aggregation-stage">{{ agg.label }}</span>
+                <span class="theme-aggregation-count">{{ agg.count }}件</span>
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="companies-list">
         {% for company in date_group.companies %}
         <div class="company-card" data-market="{{ company.market }}">
@@ -13,6 +30,13 @@
                     <div class="company-name" title="{{ company.company }}">{{ company.company }}</div>
                     <div class="company-sub">
                         <span class="industry-label">{{ company.industry }}</span>
+                        {% if company.theme %}
+                        <span class="theme-badge {{ company.theme_score_class }}">
+                            <span class="theme-name">{{ company.theme }}</span>
+                            <span class="theme-score-value">{{ company.theme_score_display }}</span>
+                            <span class="theme-score-label">{{ company.theme_score_label }}</span>
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="company-badges">
@@ -21,6 +45,20 @@
                     </div>
                 </div>
             </div>
+
+            {% if company.has_watch_info or company.theme_short_lock %}
+            <div class="watch-info-row">
+                {% if company.watch_tier %}
+                <span class="watch-tier-badge {{ company.watch_tier_class }}">{{ company.watch_tier }}</span>
+                {% endif %}
+                {% if company.watch_role %}
+                <span class="watch-role-badge">{{ company.watch_role }}</span>
+                {% endif %}
+                {% if company.theme_short_lock %}
+                <span class="short-lock-badge"><i class="bi bi-lock-fill"></i>高値ショート禁止</span>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <div class="financial-table-wrapper">
                 <table class="financial-table">
@@ -82,6 +120,69 @@
                     <span class="risk-indicator {{ company.risk_class }}">{{ company.risk_display }}</span>
                 </div>
             </div>
+
+            {% if company.has_fundamentals %}
+            <div class="fundamentals-row">
+                <div class="fundamentals-title">ファンダ詳細</div>
+                <div class="fundamentals-grid">
+                    <div class="fundamentals-cell {{ company.gross_margin_class }}">
+                        <span class="fundamentals-label">粗利率</span>
+                        <span class="fundamentals-value">{{ company.gross_margin_display }}</span>
+                    </div>
+                    <div class="fundamentals-cell {{ company.operating_margin_class }}">
+                        <span class="fundamentals-label">営業利益率</span>
+                        <span class="fundamentals-value">{{ company.operating_margin_display }}</span>
+                    </div>
+                    <div class="fundamentals-cell guidance-{{ company.guidance_revision_class }}">
+                        <span class="fundamentals-label">ガイダンス</span>
+                        <span class="fundamentals-value">
+                            {% if company.guidance_revision %}
+                            <i class="bi {{ company.guidance_revision_icon }}"></i>
+                            {% endif %}
+                            {{ company.guidance_revision_label }}
+                        </span>
+                    </div>
+                    <div class="fundamentals-cell {{ company.relative_strength_class }}">
+                        <span class="fundamentals-label">相対強度</span>
+                        <span class="fundamentals-value">{{ company.relative_strength_display }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if company.has_reaction or company.has_past_reactions %}
+            <div class="reaction-row">
+                <div class="reaction-title">決算後の反応</div>
+                <div class="reaction-grid">
+                    <div class="reaction-cell">
+                        <span class="reaction-label">当日終値</span>
+                        <span class="reaction-value {{ company.reaction_close_class }}">{{ company.reaction_close_display }}</span>
+                    </div>
+                    <div class="reaction-cell">
+                        <span class="reaction-label">翌日</span>
+                        <span class="reaction-value {{ company.reaction_next_day_class }}">{{ company.reaction_next_day_display }}</span>
+                    </div>
+                    <div class="reaction-cell">
+                        <span class="reaction-label">市場の解釈</span>
+                        <span class="reaction-value interpretation {{ company.market_interpretation_class }}">{{ company.market_interpretation_label }}</span>
+                    </div>
+                </div>
+
+                {% if company.has_past_reactions %}
+                <div class="past-reactions">
+                    <div class="past-reactions-header">
+                        <span class="past-reactions-title">過去4Q反応</span>
+                        <span class="past-reactions-avg {{ company.past_reactions_avg_class }}">平均 {{ company.past_reactions_avg_display }}</span>
+                    </div>
+                    <div class="past-reactions-cells">
+                        {% for reaction in company.past_reactions %}
+                        <span class="past-reaction-cell {{ reaction.class }}">{{ reaction.display }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <div class="summary-row">
                 <p class="company-summary">{{ company.summary }}</p>
