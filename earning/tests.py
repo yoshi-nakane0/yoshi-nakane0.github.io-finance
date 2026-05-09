@@ -353,6 +353,114 @@ class FetchChartJsonTests(TestCase):
         self.assertEqual(mock_sleep.call_count, 1)
 
 
+from datetime import datetime, timezone as dt_timezone
+from earning.services.yfinance import fetch_daily_history
+
+
+def _to_ts(d):
+    return int(datetime(d.year, d.month, d.day, tzinfo=dt_timezone.utc).timestamp())
+
+
+class FetchDailyHistoryTests(TestCase):
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_parses_chart_payload(self, mock_fetch):
+        d1 = date_cls(2026, 1, 28)
+        d2 = date_cls(2026, 1, 29)
+        d3 = date_cls(2026, 1, 30)
+        mock_fetch.return_value = {
+            'chart': {
+                'result': [{
+                    'timestamp': [_to_ts(d1), _to_ts(d2), _to_ts(d3)],
+                    'indicators': {
+                        'quote': [{
+                            'open': [100.0, 101.0, 102.0],
+                            'high': [101.0, 102.0, 103.0],
+                            'low': [99.0, 100.0, 101.0],
+                            'close': [100.5, 101.5, 102.5],
+                            'volume': [1000, 2000, 3000],
+                        }],
+                        'adjclose': [{'adjclose': [100.4, 101.4, 102.4]}],
+                    },
+                }],
+                'error': None,
+            }
+        }
+        result = fetch_daily_history('AAPL', d1, d3)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0]['date'], d1)
+        self.assertAlmostEqual(result[0]['open'], 100.0)
+        self.assertAlmostEqual(result[0]['close'], 100.4)  # adjclose preferred
+        self.assertEqual(result[0]['volume'], 1000)
+        self.assertEqual(result[2]['date'], d3)
+
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_returns_empty_when_chart_error_set(self, mock_fetch):
+        mock_fetch.return_value = {'chart': {'result': None, 'error': {'code': 'Not Found'}}}
+        result = fetch_daily_history('XXXNONEXIST', date_cls(2026, 1, 1), date_cls(2026, 1, 5))
+        self.assertEqual(result, [])
+
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_returns_empty_when_result_is_empty(self, mock_fetch):
+        mock_fetch.return_value = {'chart': {'result': [], 'error': None}}
+        result = fetch_daily_history('AAPL', date_cls(2026, 1, 1), date_cls(2026, 1, 5))
+        self.assertEqual(result, [])
+
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_handles_missing_adjclose_falls_back_to_close(self, mock_fetch):
+        d1 = date_cls(2026, 1, 28)
+        mock_fetch.return_value = {
+            'chart': {
+                'result': [{
+                    'timestamp': [_to_ts(d1)],
+                    'indicators': {
+                        'quote': [{
+                            'open': [100.0], 'high': [101.0], 'low': [99.0],
+                            'close': [100.5], 'volume': [1000],
+                        }],
+                    },
+                }],
+                'error': None,
+            }
+        }
+        result = fetch_daily_history('AAPL', d1, d1)
+        self.assertEqual(len(result), 1)
+        self.assertAlmostEqual(result[0]['close'], 100.5)
+
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_handles_null_values_in_quote_arrays(self, mock_fetch):
+        d1 = date_cls(2026, 1, 28)
+        d2 = date_cls(2026, 1, 29)
+        mock_fetch.return_value = {
+            'chart': {
+                'result': [{
+                    'timestamp': [_to_ts(d1), _to_ts(d2)],
+                    'indicators': {
+                        'quote': [{
+                            'open': [100.0, None],
+                            'high': [101.0, None],
+                            'low': [99.0, None],
+                            'close': [100.5, None],
+                            'volume': [1000, None],
+                        }],
+                        'adjclose': [{'adjclose': [100.4, None]}],
+                    },
+                }],
+                'error': None,
+            }
+        }
+        result = fetch_daily_history('AAPL', d1, d2)
+        self.assertEqual(len(result), 2)
+        self.assertIsNone(result[1]['open'])
+        self.assertIsNone(result[1]['close'])
+        self.assertIsNone(result[1]['volume'])
+
+    @patch('earning.services.yfinance._fetch_chart_json')
+    def test_returns_empty_on_yahoo_fetch_error(self, mock_fetch):
+        mock_fetch.side_effect = YahooFetchError('boom')
+        result = fetch_daily_history('AAPL', date_cls(2026, 1, 1), date_cls(2026, 1, 5))
+        self.assertEqual(result, [])
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
