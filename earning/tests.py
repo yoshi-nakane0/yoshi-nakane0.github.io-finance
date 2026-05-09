@@ -180,6 +180,90 @@ class EarningsPredictionModelTests(TestCase):
         self.assertEqual(self.event.predictions.count(), 2)
 
 
+import csv as _csv
+from io import StringIO
+from django.core.management import call_command
+
+
+class ImportEarningsCsvTests(TestCase):
+    def _write_csv(self, path, rows):
+        headers = list(rows[0].keys())
+        with path.open('w', encoding='utf-8', newline='') as f:
+            writer = _csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(rows)
+
+    def setUp(self):
+        self.temp_dir = TemporaryDirectory()
+        self.csv_path = Path(self.temp_dir.name) / 'data.csv'
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_imports_a_single_row_into_stock_and_event(self):
+        rows = [{
+            'date': '2026-01-30', 'market': 'NASDAQ', 'symbol': 'AAPL', 'company': 'Apple Inc.',
+            'fiscal_period': "Q1 '26", 'industry': 'Tech',
+            'Fundamental': 'up', 'Direction': 'up', 'Sentiment': 'flat', 'Risk': '70',
+            'summary': 'great quarter',
+            'eps_forecast': '2.10', 'eps_4q_ago': '1.88', 'eps_current': '2.40', 'eps_4q_prior_period': '1.95',
+            'sales_forecast': '120.0', 'sales_4q_ago': '110.0', 'sales_current': '125.0', 'sales_4q_prior_period': '108.0',
+            'surp_4q_ago': '+2.0', 'surp_current': '+4.0', 'surp_4q_prior_period': '+1.0',
+            'surp_eps_4q_ago': '+0.05', 'surp_eps_current': '+0.30', 'surp_eps_4q_prior_period': '+0.10',
+            'theme': 'AI', 'theme_score': '80', 'watch_tier': '最重要', 'watch_role': '主要',
+            'nikkei_weight': '5.5', 'gross_margin': '45', 'operating_margin': '30',
+            'guidance_revision': 'up', 'relative_strength': '78',
+            'reaction_close': '2.5', 'reaction_next_day': '1.2', 'market_interpretation': 'bullish',
+            'past_q1': '1.0', 'past_q2': '-0.5', 'past_q3': '2.0', 'past_q4': '0.5',
+        }]
+        self._write_csv(self.csv_path, rows)
+
+        out = StringIO()
+        call_command('import_earnings_csv', str(self.csv_path), stdout=out)
+
+        stock = Stock.objects.get(symbol='AAPL', market='NASDAQ')
+        self.assertEqual(stock.industry, 'Tech')
+        self.assertEqual(stock.theme, 'AI')
+
+        event = EarningsEvent.objects.get(stock=stock, fiscal_period="Q1 '26")
+        self.assertEqual(event.event_date, date_cls(2026, 1, 30))
+        self.assertEqual(event.fundamental, 'up')
+        self.assertAlmostEqual(event.risk_value, 70.0)
+        self.assertAlmostEqual(event.gross_margin, 45.0)
+        self.assertEqual(event.guidance_revision, 'up')
+        self.assertAlmostEqual(event.reaction_close, 2.5)
+        self.assertEqual(event.market_interpretation, 'bullish')
+        self.assertEqual(event.past_reactions, [1.0, -0.5, 2.0, 0.5])
+
+    def test_re_running_does_not_duplicate(self):
+        rows = [{
+            'date': '2026-01-30', 'market': 'NASDAQ', 'symbol': 'AAPL', 'company': 'Apple Inc.',
+            'fiscal_period': "Q1 '26", 'industry': 'Tech',
+            'Fundamental': 'up', 'Direction': 'up', 'Sentiment': 'flat', 'Risk': '70',
+            'summary': 'first', 'eps_current': '2.40',
+        }]
+        self._write_csv(self.csv_path, rows)
+        call_command('import_earnings_csv', str(self.csv_path), stdout=StringIO())
+
+        rows[0]['summary'] = 'second'
+        self._write_csv(self.csv_path, rows)
+        call_command('import_earnings_csv', str(self.csv_path), stdout=StringIO())
+
+        self.assertEqual(Stock.objects.count(), 1)
+        self.assertEqual(EarningsEvent.objects.count(), 1)
+        self.assertEqual(EarningsEvent.objects.get().summary, 'second')
+
+    def test_invalid_date_falls_back_to_null(self):
+        rows = [{
+            'date': '決算日未定', 'market': 'NASDAQ', 'symbol': 'NVDA', 'company': 'NVIDIA',
+            'fiscal_period': "Q1 '26", 'industry': 'Tech',
+            'Fundamental': 'flat',
+        }]
+        self._write_csv(self.csv_path, rows)
+        call_command('import_earnings_csv', str(self.csv_path), stdout=StringIO())
+        self.assertIsNone(EarningsEvent.objects.get().event_date)
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
