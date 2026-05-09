@@ -161,12 +161,13 @@ def format_percent(value, with_sign=True):
 def fetch_earnings_from_db():
     from earning.models import EarningsEvent
 
-    queryset = EarningsEvent.objects.select_related('stock').all()
+    queryset = EarningsEvent.objects.select_related('stock').prefetch_related('predictions').all()
     items = []
     for ev in queryset:
         stock = ev.stock
         date_obj = ev.event_date
         date_display = date_obj.isoformat() if date_obj else '決算日未定'
+        prediction = next((p for p in ev.predictions.all() if p.model_version == 'baseline-v1'), None)
         items.append({
             'date': date_display,
             'date_obj': date_obj,
@@ -209,6 +210,8 @@ def fetch_earnings_from_db():
             'reaction_next_day_value': ev.reaction_next_day,
             'market_interpretation': ev.market_interpretation,
             'past_reactions_raw': list(ev.past_reactions or []),
+            'predicted_reaction_raw': prediction.predicted_reaction if prediction else None,
+            '_event_obj': ev,
         })
     return items
 
