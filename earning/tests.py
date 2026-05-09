@@ -281,6 +281,63 @@ class EarningsEventMacroColumnsTests(TestCase):
         self.assertAlmostEqual(event.rut_at_event, 2100.5)
 
 
+from macro.models import Indicator, Observation
+from earning.services.macro import (
+    MACRO_FIELD_MAP,
+    get_latest_value_on_or_before,
+)
+
+
+class MacroFieldMapTests(TestCase):
+    def test_map_has_five_entries(self):
+        self.assertEqual(len(MACRO_FIELD_MAP), 5)
+        for column, series in MACRO_FIELD_MAP.items():
+            self.assertTrue(column.endswith('_at_event'))
+            self.assertIsInstance(series, str)
+            self.assertTrue(series)
+
+    def test_map_covers_expected_series(self):
+        self.assertEqual(MACRO_FIELD_MAP['vix_at_event'], 'VIXCLS')
+        self.assertEqual(MACRO_FIELD_MAP['hy_spread_at_event'], 'BAMLH0A0HYM2')
+        self.assertEqual(MACRO_FIELD_MAP['skew_at_event'], 'CBOE_SKEW')
+        self.assertEqual(MACRO_FIELD_MAP['t5yie_at_event'], 'T5YIE')
+        self.assertEqual(MACRO_FIELD_MAP['rut_at_event'], 'RUT_INDEX')
+
+
+class GetLatestValueOnOrBeforeTests(TestCase):
+    def setUp(self):
+        self.indicator, _ = Indicator.objects.get_or_create(
+            fred_series_id='VIXCLS',
+            defaults={'name_ja': 'VIX', 'category': 'market'},
+        )
+
+    def test_returns_value_on_event_date(self):
+        Observation.objects.create(indicator=self.indicator, observation_date=date_cls(2026, 1, 28), value=15.0)
+        Observation.objects.create(indicator=self.indicator, observation_date=date_cls(2026, 1, 30), value=18.5)
+        Observation.objects.create(indicator=self.indicator, observation_date=date_cls(2026, 2, 2), value=20.0)
+        result = get_latest_value_on_or_before('VIXCLS', date_cls(2026, 1, 30))
+        self.assertAlmostEqual(result, 18.5)
+
+    def test_returns_prior_value_when_event_on_holiday(self):
+        Observation.objects.create(indicator=self.indicator, observation_date=date_cls(2026, 1, 30), value=18.5)
+        # event on 2026-01-31 (Saturday) — no obs that day
+        result = get_latest_value_on_or_before('VIXCLS', date_cls(2026, 1, 31))
+        self.assertAlmostEqual(result, 18.5)
+
+    def test_returns_none_when_indicator_missing(self):
+        result = get_latest_value_on_or_before('NOSUCHSERIES', date_cls(2026, 1, 30))
+        self.assertIsNone(result)
+
+    def test_returns_none_when_no_observations(self):
+        result = get_latest_value_on_or_before('VIXCLS', date_cls(2026, 1, 30))
+        self.assertIsNone(result)
+
+    def test_returns_none_when_event_date_is_none(self):
+        Observation.objects.create(indicator=self.indicator, observation_date=date_cls(2026, 1, 30), value=18.5)
+        result = get_latest_value_on_or_before('VIXCLS', None)
+        self.assertIsNone(result)
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
