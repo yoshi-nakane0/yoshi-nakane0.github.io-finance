@@ -253,6 +253,30 @@ class EarningsPriceWindowModelTests(TestCase):
         self.assertIn('T-2', str(row2))
 
 
+from earning.services.yfinance import build_yahoo_symbol
+
+
+class BuildYahooSymbolTests(TestCase):
+    def test_tse_appends_dot_t(self):
+        self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
+
+    def test_tse_lowercase_market_still_works(self):
+        self.assertEqual(build_yahoo_symbol('tse', '7203'), '7203.T')
+
+    def test_nasdaq_passes_symbol_through(self):
+        self.assertEqual(build_yahoo_symbol('NASDAQ', 'AAPL'), 'AAPL')
+
+    def test_nyse_passes_symbol_through(self):
+        self.assertEqual(build_yahoo_symbol('NYSE', 'UNH'), 'UNH')
+
+    def test_unknown_market_returns_none(self):
+        self.assertIsNone(build_yahoo_symbol('LSE', 'BP'))
+
+    def test_empty_symbol_returns_none(self):
+        self.assertIsNone(build_yahoo_symbol('NASDAQ', ''))
+        self.assertIsNone(build_yahoo_symbol('NASDAQ', '   '))
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
