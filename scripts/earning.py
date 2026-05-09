@@ -612,13 +612,6 @@ def upsert_event_to_db(row_dict):
     """Mirror the CSV row into Stock + EarningsEvent. Idempotent on (stock, fiscal_period)."""
     from earning.models import EarningsEvent, Stock
 
-    symbol = (row_dict.get('symbol') or '').strip()
-    market = (row_dict.get('market') or '').strip()
-    company = (row_dict.get('company') or '').strip()
-    fiscal_period = (row_dict.get('fiscal_period') or '').strip()
-    if not symbol or not market or not company or not fiscal_period:
-        return None
-
     def _s(name):
         v = row_dict.get(name)
         if v is None:
@@ -630,6 +623,13 @@ def upsert_event_to_db(row_dict):
             pass
         text = str(v).strip()
         return '' if text.lower() == 'nan' else text
+
+    symbol = _s('symbol')
+    market = _s('market')
+    company = _s('company')
+    fiscal_period = _s('fiscal_period')
+    if not symbol or not market or not company or not fiscal_period:
+        return None
 
     def _f(name):
         v = row_dict.get(name)
@@ -684,10 +684,10 @@ def upsert_event_to_db(row_dict):
         symbol=symbol, market=market,
         defaults={
             'company': company,
-            'industry': (row_dict.get('industry') or '').strip(),
-            'theme': (row_dict.get('theme') or '').strip(),
-            'watch_tier': (row_dict.get('watch_tier') or '').strip(),
-            'watch_role': (row_dict.get('watch_role') or '').strip(),
+            'industry': _s('industry'),
+            'theme': _s('theme'),
+            'watch_tier': _s('watch_tier'),
+            'watch_role': _s('watch_role'),
             'nikkei_weight': _f('nikkei_weight'),
         },
     )
