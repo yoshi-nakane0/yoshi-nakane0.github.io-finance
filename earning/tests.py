@@ -1332,3 +1332,78 @@ class LgbWalkerTests(TestCase):
             ],
         }
         self.assertAlmostEqual(predict_from_json([0.0]*11, model), 4.0)
+
+
+import json as _json
+import tempfile as _tempfile
+from pathlib import Path as _Path
+from unittest.mock import patch as _patch
+
+
+class ExportModelCommandTests(TestCase):
+    def test_command_writes_json_with_round_trip_match(self):
+        # Build a tiny LightGBM model in-process, save it, then export.
+        import lightgbm as lgb
+        import numpy as np
+
+        rng = np.random.default_rng(42)
+        X = rng.standard_normal((40, 11)).astype(float)
+        y = rng.standard_normal(40).astype(float)
+        train_set = lgb.Dataset(X, label=y)
+        booster = lgb.train(
+            {'objective': 'regression', 'num_leaves': 4, 'min_data_in_leaf': 2,
+             'learning_rate': 0.1, 'verbose': -1},
+            train_set,
+            num_boost_round=10,
+        )
+        with _tempfile.TemporaryDirectory() as td:
+            model_lgb = _Path(td) / 'baseline-v1.lgb'
+            model_json = _Path(td) / 'baseline-v1.json'
+            booster.save_model(str(model_lgb))
+
+            with _patch('earning.management.commands.earnings_export_model_json.MODEL_PATH', model_lgb):
+                with _patch('earning.management.commands.earnings_export_model_json.JSON_OUTPUT_PATH', model_json):
+                    call_command('earnings_export_model_json', stdout=StringIO())
+
+            self.assertTrue(model_json.exists())
+            payload = _json.loads(model_json.read_text(encoding='utf-8'))
+            self.assertIn('feature_names', payload)
+            self.assertIn('init_score', payload)
+            self.assertIn('trees', payload)
+            self.assertEqual(len(payload['feature_names']), 11)
+
+            # Round trip: predict_from_json on a sample row matches Booster.predict
+            from earning.services.lgb_walker import predict_from_json
+            sample = X[0].tolist()
+            expected = float(booster.predict(np.array([sample]))[0])
+            actual = predict_from_json(sample, payload)
+            self.assertAlmostEqual(actual, expected, places=6)
+
+    def test_command_round_trips_for_multiple_rows(self):
+        import lightgbm as lgb
+        import numpy as np
+
+        rng = np.random.default_rng(7)
+        X = rng.standard_normal((30, 11)).astype(float)
+        y = rng.standard_normal(30).astype(float)
+        train_set = lgb.Dataset(X, label=y)
+        booster = lgb.train(
+            {'objective': 'regression', 'num_leaves': 4, 'min_data_in_leaf': 2,
+             'learning_rate': 0.1, 'verbose': -1},
+            train_set,
+            num_boost_round=15,
+        )
+        with _tempfile.TemporaryDirectory() as td:
+            model_lgb = _Path(td) / 'baseline-v1.lgb'
+            model_json = _Path(td) / 'baseline-v1.json'
+            booster.save_model(str(model_lgb))
+            with _patch('earning.management.commands.earnings_export_model_json.MODEL_PATH', model_lgb):
+                with _patch('earning.management.commands.earnings_export_model_json.JSON_OUTPUT_PATH', model_json):
+                    call_command('earnings_export_model_json', stdout=StringIO())
+            payload = _json.loads(model_json.read_text(encoding='utf-8'))
+
+            from earning.services.lgb_walker import predict_from_json
+            preds_walker = [predict_from_json(X[i].tolist(), payload) for i in range(len(X))]
+            preds_booster = booster.predict(X).tolist()
+            for w, b in zip(preds_walker, preds_booster):
+                self.assertAlmostEqual(w, b, places=6)
