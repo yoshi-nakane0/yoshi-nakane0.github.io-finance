@@ -685,6 +685,44 @@ class EarningsTrainModelCommandTests(TestCase):
         self.assertIn('Hit rate', output)
 
 
+from unittest.mock import patch, MagicMock
+
+
+class EarningsPredictCommandTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+            gross_margin=45.0, operating_margin=30.0, relative_strength=78.0,
+            guidance_revision='up',
+            vix_at_event=18.5, hy_spread_at_event=3.2, skew_at_event=140.0,
+            t5yie_at_event=2.4, rut_at_event=2100.5,
+        )
+        for offset in range(-20, 1):
+            EarningsPriceWindow.objects.create(
+                event=self.event,
+                trade_date=date_cls(2026, 1, 30) + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset,
+                volume=1_000_000,
+            )
+
+    @patch('earning.management.commands.earnings_predict.load_model')
+    def test_predict_command_writes_predictions(self, mock_load):
+        from earning.models import EarningsPrediction
+        mock_model = MagicMock()
+        mock_model.predict.return_value = [1.5]
+        mock_load.return_value = mock_model
+
+        out = StringIO()
+        call_command('earnings_predict', '--symbol', 'AAPL', stdout=out)
+
+        pred = EarningsPrediction.objects.get(event=self.event, model_version='baseline-v1')
+        self.assertAlmostEqual(pred.predicted_reaction, 1.5)
+        self.assertIn('Wrote', out.getvalue())
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
