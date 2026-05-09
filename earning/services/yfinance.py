@@ -1,8 +1,9 @@
 import logging
 import time
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 import requests
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -114,3 +115,54 @@ def fetch_daily_history(yahoo_symbol, start_date, end_date):
             'volume': volumes[i] if i < len(volumes) else None,
         })
     return rows
+
+
+def _business_day_offset(trade_date, event_date, business_days):
+    event_idx = None
+    for i, d in enumerate(business_days):
+        if d >= event_date:
+            event_idx = i
+            break
+    if event_idx is None:
+        event_idx = len(business_days) - 1
+    return business_days.index(trade_date) - event_idx
+
+
+def fetch_price_window(event):
+    if event.event_date is None:
+        return 0
+
+    yahoo_symbol = build_yahoo_symbol(event.stock.market, event.stock.symbol)
+    if yahoo_symbol is None:
+        logger.info('Skipping unsupported market: %s/%s', event.stock.market, event.stock.symbol)
+        return 0
+
+    start_date = event.event_date - timedelta(days=90)
+    end_date = event.event_date + timedelta(days=90)
+
+    rows = fetch_daily_history(yahoo_symbol, start_date, end_date)
+    if not rows:
+        return 0
+
+    business_days = sorted(r['date'] for r in rows)
+
+    from earning.models import EarningsPriceWindow
+
+    written = 0
+    with transaction.atomic():
+        for row in rows:
+            offset = _business_day_offset(row['date'], event.event_date, business_days)
+            EarningsPriceWindow.objects.update_or_create(
+                event=event,
+                trade_date=row['date'],
+                defaults={
+                    'offset_days': offset,
+                    'open': row['open'],
+                    'high': row['high'],
+                    'low': row['low'],
+                    'close': row['close'],
+                    'volume': row['volume'],
+                },
+            )
+            written += 1
+    return written

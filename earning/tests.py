@@ -461,6 +461,102 @@ class FetchDailyHistoryTests(TestCase):
         self.assertEqual(result, [])
 
 
+from earning.services.yfinance import _business_day_offset, fetch_price_window
+from earning.models import EarningsPriceWindow as PriceWindow
+
+
+class BusinessDayOffsetTests(TestCase):
+    def test_event_lands_on_a_trading_day(self):
+        days = [date_cls(2026, 1, 28), date_cls(2026, 1, 29), date_cls(2026, 1, 30),
+                date_cls(2026, 2, 2), date_cls(2026, 2, 3)]
+        event = date_cls(2026, 1, 30)
+        self.assertEqual(_business_day_offset(date_cls(2026, 1, 28), event, days), -2)
+        self.assertEqual(_business_day_offset(date_cls(2026, 1, 30), event, days), 0)
+        self.assertEqual(_business_day_offset(date_cls(2026, 2, 2), event, days), 1)
+
+    def test_event_falls_on_weekend(self):
+        days = [date_cls(2026, 1, 28), date_cls(2026, 1, 29), date_cls(2026, 1, 30),
+                date_cls(2026, 2, 2), date_cls(2026, 2, 3)]
+        event = date_cls(2026, 1, 31)  # Saturday
+        # First trading day on or after 2026-01-31 is 2026-02-02 → offset 0
+        self.assertEqual(_business_day_offset(date_cls(2026, 1, 30), event, days), -1)
+        self.assertEqual(_business_day_offset(date_cls(2026, 2, 2), event, days), 0)
+        self.assertEqual(_business_day_offset(date_cls(2026, 2, 3), event, days), 1)
+
+
+class FetchPriceWindowTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+
+    def _payload(self, dates_with_close):
+        # dates_with_close: list of (date, close_value)
+        return [
+            {
+                'date': d,
+                'open': close - 1,
+                'high': close + 1,
+                'low': close - 2,
+                'close': close,
+                'volume': 1000,
+            }
+            for d, close in dates_with_close
+        ]
+
+    @patch('earning.services.yfinance.fetch_daily_history')
+    def test_creates_rows_with_correct_offsets(self, mock_fetch):
+        mock_fetch.return_value = self._payload([
+            (date_cls(2026, 1, 28), 100.0),
+            (date_cls(2026, 1, 29), 101.0),
+            (date_cls(2026, 1, 30), 102.0),
+            (date_cls(2026, 2, 2), 103.0),
+        ])
+        n = fetch_price_window(self.event)
+        self.assertEqual(n, 4)
+        rows = list(PriceWindow.objects.filter(event=self.event).order_by('trade_date'))
+        self.assertEqual(rows[0].offset_days, -2)
+        self.assertEqual(rows[2].offset_days, 0)
+        self.assertEqual(rows[3].offset_days, 1)
+        self.assertAlmostEqual(rows[2].close, 102.0)
+
+    @patch('earning.services.yfinance.fetch_daily_history')
+    def test_idempotent_on_rerun(self, mock_fetch):
+        mock_fetch.return_value = self._payload([
+            (date_cls(2026, 1, 28), 100.0),
+            (date_cls(2026, 1, 30), 102.0),
+        ])
+        fetch_price_window(self.event)
+        # Second run: same data, same row count
+        n = fetch_price_window(self.event)
+        self.assertEqual(n, 2)
+        self.assertEqual(PriceWindow.objects.filter(event=self.event).count(), 2)
+
+    @patch('earning.services.yfinance.fetch_daily_history')
+    def test_skips_unsupported_market(self, mock_fetch):
+        self.stock.market = 'LSE'
+        self.stock.save()
+        n = fetch_price_window(self.event)
+        self.assertEqual(n, 0)
+        self.assertFalse(mock_fetch.called)
+
+    @patch('earning.services.yfinance.fetch_daily_history')
+    def test_skips_event_without_date(self, mock_fetch):
+        self.event.event_date = None
+        self.event.save()
+        n = fetch_price_window(self.event)
+        self.assertEqual(n, 0)
+        self.assertFalse(mock_fetch.called)
+
+    @patch('earning.services.yfinance.fetch_daily_history')
+    def test_returns_zero_when_history_empty(self, mock_fetch):
+        mock_fetch.return_value = []
+        n = fetch_price_window(self.event)
+        self.assertEqual(n, 0)
+        self.assertEqual(PriceWindow.objects.filter(event=self.event).count(), 0)
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
