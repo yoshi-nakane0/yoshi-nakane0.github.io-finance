@@ -131,6 +131,20 @@ def relative_strength_class(value):
     return 'rs-neutral'
 
 
+def _deviation_class(value):
+    if value is None:
+        return 'deviation-muted'
+    sign = 'pos' if value >= 0 else 'neg'
+    abs_val = abs(value)
+    if abs_val <= 2:
+        magnitude = 'mild'
+    elif abs_val <= 5:
+        magnitude = 'moderate'
+    else:
+        magnitude = 'large'
+    return f'deviation-{magnitude}-{sign}'
+
+
 def gross_margin_class(value):
     if value is None:
         return 'metric-muted'
@@ -216,7 +230,7 @@ def fetch_earnings_from_db():
     return items
 
 
-def enrich_item(item):
+def enrich_item(item, pool=None, event_obj=None):
     risk_value = item.get('risk_value')
 
     fundamental = item.get('fundamental')
@@ -301,6 +315,30 @@ def enrich_item(item):
         'past_reactions_avg_class': reaction_class(past_avg),
         'has_past_reactions': has_past_reactions,
     })
+    predicted = item.get('predicted_reaction_raw')
+    actual_close = item.get('reaction_close_value')
+    deviation = None
+    if predicted is not None and actual_close is not None:
+        deviation = actual_close - predicted
+
+    similar = []
+    if event_obj is not None and pool is not None:
+        from earning.services.similarity import find_similar_events
+        similar = find_similar_events(event_obj, pool, top_n=3)
+
+    item.update({
+        'predicted_reaction_value': predicted,
+        'predicted_reaction_display': format_percent(predicted) if predicted is not None else '—',
+        'predicted_reaction_class': reaction_class(predicted),
+        'has_prediction': predicted is not None,
+        'reaction_deviation_value': deviation,
+        'reaction_deviation_display': format_percent(deviation) if deviation is not None else '—',
+        'reaction_deviation_class': _deviation_class(deviation),
+        'has_deviation': deviation is not None,
+        'similar_events': similar,
+        'has_similar_events': bool(similar),
+    })
+    item.pop('_event_obj', None)
 
 
 def compute_theme_aggregations(items):
@@ -370,6 +408,9 @@ def group_by_date(items, is_past=False):
 
 
 def build_grouped_payload(today):
+    from earning.models import EarningsEvent
+    from earning.services.similarity import build_similarity_pool
+
     earnings_data = fetch_earnings_from_db()
 
     future_earnings = []
@@ -389,10 +430,18 @@ def build_grouped_payload(today):
     except Exception as e:
         logger.warning("Error sorting data: %s", e)
 
+    pool_events = list(
+        EarningsEvent.objects
+        .filter(reaction_close__isnull=False)
+        .select_related('stock')
+        .prefetch_related('price_window')
+    )
+    pool = build_similarity_pool(pool_events)
+
     for item in future_earnings:
-        enrich_item(item)
+        enrich_item(item, pool=pool, event_obj=item.get('_event_obj'))
     for item in completed_earnings:
-        enrich_item(item)
+        enrich_item(item, pool=pool, event_obj=item.get('_event_obj'))
 
     return {
         'upcoming': group_by_date(future_earnings, is_past=False),
@@ -408,7 +457,7 @@ def build_cache_key(today):
     from earning.models import EarningsEvent
     last = EarningsEvent.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
     stamp = int(last.timestamp() * 1000) if last else 0
-    return f'earnings_data_grouped_v7:{today.isoformat()}:{stamp}'
+    return f'earnings_data_grouped_v8:{today.isoformat()}:{stamp}'
 
 
 def load_grouped_earnings(today=None):

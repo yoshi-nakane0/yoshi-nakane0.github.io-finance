@@ -1191,6 +1191,13 @@ class EarningsViewTests(TestCase):
             surp_eps_4q_ago='3%', surp_eps_current='5%', surp_eps_4q_prior_period='1%',
             summary='completed summary',
         )
+        from earning.models import EarningsPrediction
+        future_event = EarningsEvent.objects.get(stock=future_stock)
+        past_event = EarningsEvent.objects.get(stock=past_stock)
+        past_event.reaction_close = 1.5
+        past_event.save(update_fields=['reaction_close'])
+        EarningsPrediction.objects.create(event=future_event, predicted_reaction=2.5, model_version='baseline-v1')
+        EarningsPrediction.objects.create(event=past_event, predicted_reaction=0.5, model_version='baseline-v1')
 
     def tearDown(self):
         cache.clear()
@@ -1212,3 +1219,24 @@ class EarningsViewTests(TestCase):
         self.assertIn('Past Corp', content)
         self.assertNotIn('Future Corp', content)
         self.assertIn('data-period="completed"', content)
+
+    def test_card_renders_predicted_reaction_when_available(self):
+        response = self.client.get(reverse('earning:index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '事前予測')
+        self.assertContains(response, '+2.5%')
+
+    def test_card_renders_deviation_when_both_present(self):
+        response = self.client.get(reverse('earning:completed'))
+        content = response.content.decode('utf-8')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('乖離', content)
+        # past_event: actual=1.5, predicted=0.5, deviation=+1.0
+        self.assertIn('+1.0', content)
+
+    def test_card_does_not_render_section_when_no_prediction(self):
+        from earning.models import EarningsPrediction
+        EarningsPrediction.objects.all().delete()
+        cache.clear()
+        response = self.client.get(reverse('earning:index'))
+        self.assertNotContains(response, '事前予測')
