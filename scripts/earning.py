@@ -692,7 +692,7 @@ def upsert_event_to_db(row_dict):
         },
     )
 
-    EarningsEvent.objects.update_or_create(
+    event, _ = EarningsEvent.objects.update_or_create(
         stock=stock, fiscal_period=fiscal_period,
         defaults={
             'event_date': _date('date'),
@@ -726,6 +726,14 @@ def upsert_event_to_db(row_dict):
             'summary': _s('summary'),
         },
     )
+
+    try:
+        from earning.services.yfinance import fetch_price_window
+        rows = fetch_price_window(event)
+        if rows:
+            print(f'  price window: {rows} rows', flush=True)
+    except Exception as exc:
+        print(f'  price window failed: {exc}', flush=True)
 
 
 # ────────────────────────────────────────────────

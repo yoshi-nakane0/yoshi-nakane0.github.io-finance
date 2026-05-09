@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from earning.models import EarningsEvent, EarningsPrediction, Stock
+from earning.models import EarningsEvent, EarningsPrediction, EarningsPriceWindow, Stock
 
 
 @admin.register(Stock)
@@ -22,3 +22,11 @@ class EarningsEventAdmin(admin.ModelAdmin):
 class EarningsPredictionAdmin(admin.ModelAdmin):
     list_display = ('event', 'model_version', 'predicted_reaction', 'confidence', 'created_at')
     list_filter = ('model_version',)
+
+
+@admin.register(EarningsPriceWindow)
+class EarningsPriceWindowAdmin(admin.ModelAdmin):
+    list_display = ('event', 'trade_date', 'offset_days', 'close', 'volume', 'updated_at')
+    list_filter = ('event__stock__market',)
+    search_fields = ('event__stock__symbol',)
+    date_hierarchy = 'trade_date'
