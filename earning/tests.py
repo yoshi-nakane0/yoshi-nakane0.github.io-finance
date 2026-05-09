@@ -1284,6 +1284,41 @@ class EarningsViewTests(TestCase):
         response = self.client.get(reverse('earning:index'))
         self.assertNotContains(response, '事前予測')
 
+    def test_card_embeds_baseline_features_json_when_complete(self):
+        from earning.models import EarningsPriceWindow
+        # Need full features for has_whatif: macro + reaction_close + price_window
+        future_event = EarningsEvent.objects.get(stock__symbol='FUT')
+        future_event.gross_margin = 45.0
+        future_event.operating_margin = 30.0
+        future_event.relative_strength = 78.0
+        future_event.guidance_revision = 'up'
+        future_event.vix_at_event = 18.5
+        future_event.hy_spread_at_event = 3.2
+        future_event.skew_at_event = 140.0
+        future_event.t5yie_at_event = 2.4
+        future_event.rut_at_event = 2100.0
+        future_event.save()
+        for offset in range(-20, 1):
+            EarningsPriceWindow.objects.create(
+                event=future_event,
+                trade_date=future_event.event_date + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset,
+                volume=1_000_000,
+            )
+        cache.clear()
+        response = self.client.get(reverse('earning:index'))
+        content = response.content.decode('utf-8')
+        self.assertIn('data-whatif-baseline', content)
+        self.assertIn('"vix_at_event": 18.5', content)
+
+    def test_card_omits_whatif_when_macro_missing(self):
+        # Existing future_event has no macro snapshot; has_whatif must be False
+        cache.clear()
+        response = self.client.get(reverse('earning:index'))
+        content = response.content.decode('utf-8')
+        self.assertNotIn('data-whatif-baseline', content)
+
 
 from earning.services.lgb_walker import predict_from_json, _walk_tree
 

@@ -338,6 +338,27 @@ def enrich_item(item, pool=None, event_obj=None):
         'similar_events': similar,
         'has_similar_events': bool(similar),
     })
+
+    import json as _json
+    from earning.services.features import FEATURE_COLUMNS, build_feature_row
+    from earning.services.scenarios import MACRO_KEYS, compute_feature_ranges
+
+    baseline_features = None
+    feature_ranges = None
+    has_whatif = False
+    if predicted is not None and event_obj is not None:
+        row = build_feature_row(event_obj)
+        if row is not None:
+            baseline_features = {c: row[c] for c in FEATURE_COLUMNS}
+            feature_ranges = compute_feature_ranges(baseline_features)
+            has_whatif = all(baseline_features.get(k) is not None for k in MACRO_KEYS)
+
+    item.update({
+        'baseline_features_json': _json.dumps(baseline_features) if baseline_features else None,
+        'feature_ranges_json': _json.dumps(feature_ranges) if feature_ranges else None,
+        'baseline_prediction_value': predicted,
+        'has_whatif': has_whatif,
+    })
     item.pop('_event_obj', None)
 
 
@@ -457,7 +478,7 @@ def build_cache_key(today):
     from earning.models import EarningsEvent
     last = EarningsEvent.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
     stamp = int(last.timestamp() * 1000) if last else 0
-    return f'earnings_data_grouped_v8:{today.isoformat()}:{stamp}'
+    return f'earnings_data_grouped_v9:{today.isoformat()}:{stamp}'
 
 
 def load_grouped_earnings(today=None):
