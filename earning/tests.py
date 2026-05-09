@@ -277,6 +277,82 @@ class BuildYahooSymbolTests(TestCase):
         self.assertIsNone(build_yahoo_symbol('NASDAQ', '   '))
 
 
+from unittest.mock import patch, MagicMock
+import requests as _requests_mod
+from earning.services.yfinance import _fetch_chart_json, YahooFetchError
+
+
+class FetchChartJsonTests(TestCase):
+    @patch('earning.services.yfinance.requests.get')
+    def test_returns_payload_on_success(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'chart': {'result': [{'foo': 'bar'}], 'error': None}}
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
+        result = _fetch_chart_json('http://example.com/AAPL')
+        self.assertEqual(result, {'chart': {'result': [{'foo': 'bar'}], 'error': None}})
+        self.assertEqual(mock_get.call_count, 1)
+
+    @patch('earning.services.yfinance.time.sleep')
+    @patch('earning.services.yfinance.requests.get')
+    def test_retries_transient_then_succeeds(self, mock_get, mock_sleep):
+        ok_response = MagicMock()
+        ok_response.status_code = 200
+        ok_response.json.return_value = {'chart': {'result': [{}], 'error': None}}
+        ok_response.raise_for_status = MagicMock()
+        mock_get.side_effect = [
+            _requests_mod.Timeout(),
+            _requests_mod.ConnectionError(),
+            ok_response,
+        ]
+
+        result = _fetch_chart_json('http://example.com/AAPL')
+        self.assertEqual(mock_get.call_count, 3)
+        self.assertEqual(mock_sleep.call_count, 2)
+        self.assertIn('chart', result)
+
+    @patch('earning.services.yfinance.time.sleep')
+    @patch('earning.services.yfinance.requests.get')
+    def test_raises_after_three_transient_failures(self, mock_get, mock_sleep):
+        mock_get.side_effect = [
+            _requests_mod.Timeout(),
+            _requests_mod.Timeout(),
+            _requests_mod.Timeout(),
+        ]
+        with self.assertRaises(YahooFetchError):
+            _fetch_chart_json('http://example.com/AAPL')
+        self.assertEqual(mock_get.call_count, 3)
+
+    @patch('earning.services.yfinance.requests.get')
+    def test_does_not_retry_on_404(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.raise_for_status.side_effect = _requests_mod.HTTPError(response=mock_response)
+        mock_get.return_value = mock_response
+
+        with self.assertRaises(YahooFetchError):
+            _fetch_chart_json('http://example.com/UNKNOWN')
+        self.assertEqual(mock_get.call_count, 1)
+
+    @patch('earning.services.yfinance.time.sleep')
+    @patch('earning.services.yfinance.requests.get')
+    def test_retries_on_500(self, mock_get, mock_sleep):
+        bad_response = MagicMock()
+        bad_response.status_code = 503
+        bad_response.raise_for_status.side_effect = _requests_mod.HTTPError(response=bad_response)
+        ok_response = MagicMock()
+        ok_response.status_code = 200
+        ok_response.json.return_value = {'chart': {'result': [{}], 'error': None}}
+        ok_response.raise_for_status = MagicMock()
+        mock_get.side_effect = [bad_response, ok_response]
+
+        _fetch_chart_json('http://example.com/AAPL')
+        self.assertEqual(mock_get.call_count, 2)
+        self.assertEqual(mock_sleep.call_count, 1)
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
