@@ -521,6 +521,83 @@ class DerivedFeatureTests(TestCase):
         self.assertIsNone(_compute_pre_hv_20(self.event))
 
 
+import numpy as np
+from earning.services.features import build_feature_row, build_feature_matrix
+
+
+class BuildFeatureRowTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+            gross_margin=45.0, operating_margin=30.0, relative_strength=78.0,
+            guidance_revision='up',
+            vix_at_event=18.5, hy_spread_at_event=3.2, skew_at_event=140.0,
+            t5yie_at_event=2.4, rut_at_event=2100.5,
+        )
+        for offset in range(-20, 1):
+            EarningsPriceWindow.objects.create(
+                event=self.event,
+                trade_date=date_cls(2026, 1, 30) + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset,
+                volume=1_000_000,
+            )
+
+    def test_returns_dict_with_all_eleven_columns(self):
+        row = build_feature_row(self.event)
+        self.assertIsNotNone(row)
+        self.assertEqual(set(row.keys()), set(FEATURE_COLUMNS))
+
+    def test_returns_none_when_event_has_no_features_at_all(self):
+        empty_stock = Stock.objects.create(symbol='ZZZ', market='NASDAQ', company='Empty', industry='X')
+        empty_event = EarningsEvent.objects.create(
+            stock=empty_stock, fiscal_period="Q1 '26", event_date=None,
+        )
+        # No fundamentals, no macro, no price window, no event_date → all features None
+        row = build_feature_row(empty_event)
+        self.assertIsNone(row)
+
+
+class BuildFeatureMatrixTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+
+    def _make_event_with_label(self, fiscal_period, label):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period=fiscal_period, event_date=date_cls(2026, 1, 30),
+            gross_margin=45.0, operating_margin=30.0, relative_strength=78.0,
+            guidance_revision='up',
+            vix_at_event=18.5, hy_spread_at_event=3.2, skew_at_event=140.0,
+            t5yie_at_event=2.4, rut_at_event=2100.5,
+            reaction_close=label,
+        )
+        return event
+
+    def test_skips_events_without_label(self):
+        labeled = self._make_event_with_label("Q1 '26", 2.5)
+        unlabeled = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q2 '26", event_date=date_cls(2026, 4, 30),
+            gross_margin=45.0,  # has at least one feature
+        )
+        # unlabeled has no reaction_close → should be filtered out
+        events = list(EarningsEvent.objects.all())
+        X, y, names = build_feature_matrix(events)
+        self.assertEqual(X.shape[0], 1)  # only the labeled one
+        self.assertEqual(y[0], 2.5)
+
+    def test_returns_correct_shapes_and_feature_names(self):
+        self._make_event_with_label("Q1 '26", 2.5)
+        self._make_event_with_label("Q2 '26", -1.0)
+        events = list(EarningsEvent.objects.all())
+        X, y, names = build_feature_matrix(events)
+        self.assertEqual(X.shape, (2, 11))
+        self.assertEqual(y.shape, (2,))
+        self.assertEqual(names, FEATURE_COLUMNS)
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')

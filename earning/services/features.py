@@ -59,3 +59,41 @@ def _compute_pre_hv_20(event):
     mean = sum(log_returns) / len(log_returns)
     var = sum((r - mean) ** 2 for r in log_returns) / len(log_returns)
     return math.sqrt(var) * math.sqrt(252) * 100
+
+
+def build_feature_row(event):
+    row = {
+        'gross_margin': event.gross_margin,
+        'operating_margin': event.operating_margin,
+        'relative_strength': event.relative_strength,
+        'guidance_revision_numeric': _guidance_to_numeric(event.guidance_revision),
+        'vix_at_event': event.vix_at_event,
+        'hy_spread_at_event': event.hy_spread_at_event,
+        'skew_at_event': event.skew_at_event,
+        't5yie_at_event': event.t5yie_at_event,
+        'rut_at_event': event.rut_at_event,
+        'pre_short_return': _compute_pre_short_return(event),
+        'pre_hv_20': _compute_pre_hv_20(event),
+    }
+    if all(v is None for k, v in row.items() if k != 'guidance_revision_numeric'):
+        return None
+    return row
+
+
+def build_feature_matrix(events):
+    import numpy as np
+
+    X_rows = []
+    y_values = []
+    for event in events:
+        if event.reaction_close is None:
+            continue
+        row = build_feature_row(event)
+        if row is None:
+            continue
+        X_rows.append([row[c] if row[c] is not None else float('nan') for c in FEATURE_COLUMNS])
+        y_values.append(event.reaction_close)
+
+    X = np.array(X_rows, dtype=float) if X_rows else np.empty((0, len(FEATURE_COLUMNS)))
+    y = np.array(y_values, dtype=float)
+    return X, y, list(FEATURE_COLUMNS)
