@@ -598,6 +598,57 @@ class BuildFeatureMatrixTests(TestCase):
         self.assertEqual(names, FEATURE_COLUMNS)
 
 
+from unittest.mock import patch, MagicMock
+from earning.services.predict import load_model, predict_event
+
+
+class PredictionPipelineTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow, EarningsPrediction
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+            gross_margin=45.0, operating_margin=30.0, relative_strength=78.0,
+            guidance_revision='up',
+            vix_at_event=18.5, hy_spread_at_event=3.2, skew_at_event=140.0,
+            t5yie_at_event=2.4, rut_at_event=2100.5,
+        )
+        for offset in range(-20, 1):
+            EarningsPriceWindow.objects.create(
+                event=self.event,
+                trade_date=date_cls(2026, 1, 30) + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset,
+                volume=1_000_000,
+            )
+
+    def test_predict_event_writes_prediction_to_db(self):
+        from earning.models import EarningsPrediction
+        mock_model = MagicMock()
+        mock_model.predict.return_value = [2.45]
+        result = predict_event(self.event, mock_model)
+        self.assertAlmostEqual(result, 2.45)
+        pred = EarningsPrediction.objects.get(event=self.event, model_version='baseline-v1')
+        self.assertAlmostEqual(pred.predicted_reaction, 2.45)
+        self.assertIsNone(pred.confidence)
+
+    def test_predict_event_returns_none_when_features_unavailable(self):
+        empty_stock = Stock.objects.create(symbol='ZZZ', market='NASDAQ', company='Empty', industry='X')
+        empty_event = EarningsEvent.objects.create(
+            stock=empty_stock, fiscal_period="Q1 '26", event_date=None,
+        )
+        mock_model = MagicMock()
+        result = predict_event(empty_event, mock_model)
+        self.assertIsNone(result)
+        mock_model.predict.assert_not_called()
+
+    @patch('earning.services.predict.MODEL_PATH')
+    def test_load_model_raises_when_file_missing(self, mock_path):
+        mock_path.exists.return_value = False
+        with self.assertRaises(FileNotFoundError):
+            load_model()
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
