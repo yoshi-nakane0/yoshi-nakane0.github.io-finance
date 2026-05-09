@@ -1,8 +1,7 @@
-import csv
 import logging
-from datetime import date, datetime
+from collections import defaultdict
+from datetime import date
 
-from django.conf import settings
 from django.core.cache import cache
 from django.shortcuts import render
 from django.views.decorators.cache import cache_control
@@ -29,6 +28,30 @@ STATUS_CLASS_MAP = {
     'up': 'status-up',
     'flat': 'status-flat',
     'down': 'status-down',
+}
+
+GUIDANCE_LABELS = {
+    'up': '上方修正',
+    'flat': '維持',
+    'down': '下方修正',
+}
+
+INTERPRETATION_LABELS = {
+    'bullish': '強気',
+    'neutral': '中立',
+    'bearish': '弱気',
+}
+
+INTERPRETATION_CLASS_MAP = {
+    'bullish': 'interpretation-bullish',
+    'neutral': 'interpretation-neutral',
+    'bearish': 'interpretation-bearish',
+}
+
+WATCH_TIER_CLASS_MAP = {
+    '最重要': 'tier-top',
+    '重要': 'tier-important',
+    '補助': 'tier-auxiliary',
 }
 
 CACHE_TTL = 86400
@@ -60,119 +83,134 @@ def risk_class(value):
     return 'metric-neutral'
 
 
-def fetch_earnings_from_csv(csv_path):
-    """
-    static/earning/data/data.csvから決算データを読み込む
-    """
-    try:
-        if not csv_path.exists():
-            logger.warning("CSV file not found at %s", csv_path)
-            return []
+def theme_score_class(value):
+    if value is None:
+        return 'theme-muted'
+    if value >= 80:
+        return 'theme-strong'
+    if value >= 60:
+        return 'theme-somewhat-strong'
+    if value >= 40:
+        return 'theme-neutral'
+    if value >= 20:
+        return 'theme-weak'
+    return 'theme-very-weak'
 
-        earnings_data = []
 
-        with csv_path.open('r', encoding='utf-8', newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
+def theme_score_label(value):
+    if value is None:
+        return '—'
+    if value >= 80:
+        return '強い'
+    if value >= 60:
+        return 'やや強い'
+    if value >= 40:
+        return '中立'
+    if value >= 20:
+        return '弱い'
+    return 'かなり弱い'
 
-            for row in reader:
-                try:
-                    # CSVの各行をパース
-                    date_str = (row.get('date') or '').strip()
-                    market = (row.get('market') or '').strip()
-                    symbol = (row.get('symbol') or '').strip()
-                    company = (row.get('company') or '').strip()
-                    industry = (row.get('industry') or '').strip()
-                    fundamental = normalize_choice(
-                        row.get('Fundamental'),
-                        {'up', 'flat', 'down'},
-                        'flat',
-                    )
-                    risk_value = parse_float(row.get('Risk'))
-                    direction = normalize_choice(
-                        row.get('Direction'),
-                        {'up', 'flat', 'down'},
-                        'flat',
-                    )
-                    sentiment = normalize_choice(
-                        row.get('Sentiment'),
-                        {'up', 'flat', 'down'},
-                        'flat',
-                    )
 
-                    sales_current = row.get('sales_current')
-                    sales_forecast = row.get('sales_forecast')
-                    sales_4q_ago = row.get('sales_4q_ago')
-                    sales_4q_prior_period = row.get('sales_4q_prior_period')
+def reaction_class(value):
+    if value is None:
+        return 'reaction-muted'
+    if value > 1.0:
+        return 'reaction-positive'
+    if value < -1.0:
+        return 'reaction-negative'
+    return 'reaction-neutral'
 
-                    eps_current = row.get('eps_current')
-                    eps_forecast = row.get('eps_forecast')
-                    eps_4q_ago = row.get('eps_4q_ago')
-                    eps_4q_prior_period = row.get('eps_4q_prior_period')
 
-                    surp_4q_ago = row.get('surp_4q_ago')
-                    surp_current = row.get('surp_current')
-                    surp_4q_prior_period = row.get('surp_4q_prior_period')
-                    surp_eps_4q_ago = row.get('surp_eps_4q_ago')
-                    surp_eps_current = row.get('surp_eps_current')
-                    surp_eps_4q_prior_period = row.get('surp_eps_4q_prior_period')
-                    fiscal_period = (row.get('fiscal_period') or '').strip()
+def relative_strength_class(value):
+    if value is None:
+        return 'rs-muted'
+    if value >= 70:
+        return 'rs-strong'
+    if value <= 40:
+        return 'rs-weak'
+    return 'rs-neutral'
 
-                    summary = (row.get('summary') or '').strip()
 
-                    # 必須フィールドのチェック
-                    if not all([date_str, symbol, company]):
-                        continue
+def gross_margin_class(value):
+    if value is None:
+        return 'metric-muted'
+    if value >= 50:
+        return 'metric-good'
+    if value >= 30:
+        return 'metric-mid'
+    return 'metric-bad'
 
-                    earnings_date_obj = None
-                    earnings_date_display = '決算日未定'
-                    if date_str and date_str != '決算日未定':
-                        try:
-                            earnings_date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-                            earnings_date_display = date_str
-                        except ValueError:
-                            logger.warning("Invalid date format for %s: %s", symbol, date_str)
 
-                    earnings_data.append({
-                        'date': earnings_date_display,
-                        'date_obj': earnings_date_obj,
-                        'company': company,
-                        'industry': industry,
-                        'market': market,
-                        'symbol': symbol,
-                        'fundamental': fundamental,
-                        'risk_value': risk_value,
-                        'direction': direction,
-                        'sentiment': sentiment,
-                        'sales_current': sales_current,
-                        'sales_forecast': sales_forecast,
-                        'sales_4q_ago': sales_4q_ago,
-                        'sales_4q_prior_period': sales_4q_prior_period,
-                        'surp_forecast': '-',
-                        'surp_4q_ago': surp_4q_ago,
-                        'surp_current': surp_current,
-                        'surp_4q_prior_period': surp_4q_prior_period,
-                        'eps_current': eps_current,
-                        'eps_forecast': eps_forecast,
-                        'eps_4q_ago': eps_4q_ago,
-                        'eps_4q_prior_period': eps_4q_prior_period,
-                        'surp_eps_forecast': '-',
-                        'surp_eps_4q_ago': surp_eps_4q_ago,
-                        'surp_eps_current': surp_eps_current,
-                        'surp_eps_4q_prior_period': surp_eps_4q_prior_period,
-                        'fiscal_period': fiscal_period,
-                        'summary': summary,
-                    })
-                    
-                except Exception as e:
-                    logger.warning("Error parsing CSV row %s: %s", row, e)
-                    continue
+def operating_margin_class(value):
+    if value is None:
+        return 'metric-muted'
+    if value >= 20:
+        return 'metric-good'
+    if value >= 10:
+        return 'metric-mid'
+    return 'metric-bad'
 
-        logger.info("CSV: Successfully loaded %s earnings announcements", len(earnings_data))
-        return earnings_data
 
-    except Exception as e:
-        logger.warning("Error reading CSV file: %s", e)
-        return []
+def format_percent(value, with_sign=True):
+    if value is None:
+        return '—'
+    sign = '+' if with_sign and value > 0 else ''
+    return f'{sign}{value:.1f}%'
+
+
+def fetch_earnings_from_db():
+    from earning.models import EarningsEvent
+
+    queryset = EarningsEvent.objects.select_related('stock').all()
+    items = []
+    for ev in queryset:
+        stock = ev.stock
+        date_obj = ev.event_date
+        date_display = date_obj.isoformat() if date_obj else '決算日未定'
+        items.append({
+            'date': date_display,
+            'date_obj': date_obj,
+            'company': stock.company,
+            'industry': stock.industry,
+            'market': stock.market,
+            'symbol': stock.symbol,
+            'fundamental': ev.fundamental,
+            'risk_value': ev.risk_value,
+            'direction': ev.direction,
+            'sentiment': ev.sentiment,
+            'sales_current': ev.sales_current,
+            'sales_forecast': ev.sales_forecast,
+            'sales_4q_ago': ev.sales_4q_ago,
+            'sales_4q_prior_period': ev.sales_4q_prior_period,
+            'surp_forecast': '-',
+            'surp_4q_ago': ev.surp_4q_ago,
+            'surp_current': ev.surp_current,
+            'surp_4q_prior_period': ev.surp_4q_prior_period,
+            'eps_current': ev.eps_current,
+            'eps_forecast': ev.eps_forecast,
+            'eps_4q_ago': ev.eps_4q_ago,
+            'eps_4q_prior_period': ev.eps_4q_prior_period,
+            'surp_eps_forecast': '-',
+            'surp_eps_4q_ago': ev.surp_eps_4q_ago,
+            'surp_eps_current': ev.surp_eps_current,
+            'surp_eps_4q_prior_period': ev.surp_eps_4q_prior_period,
+            'fiscal_period': ev.fiscal_period,
+            'summary': ev.summary,
+            'theme': stock.theme,
+            'theme_score_value': ev.theme_score,
+            'watch_tier': stock.watch_tier,
+            'watch_role': stock.watch_role,
+            'nikkei_weight_value': stock.nikkei_weight,
+            'gross_margin_value': ev.gross_margin,
+            'operating_margin_value': ev.operating_margin,
+            'guidance_revision': ev.guidance_revision,
+            'relative_strength_value': ev.relative_strength,
+            'reaction_close_value': ev.reaction_close,
+            'reaction_next_day_value': ev.reaction_next_day,
+            'market_interpretation': ev.market_interpretation,
+            'past_reactions_raw': list(ev.past_reactions or []),
+        })
+    return items
 
 
 def enrich_item(item):
@@ -183,6 +221,37 @@ def enrich_item(item):
     sentiment = item.get('sentiment')
 
     summary_text = item.get('summary') or '要約未取得'
+
+    theme_score_value = item.get('theme_score_value')
+    nikkei_weight_value = item.get('nikkei_weight_value')
+    gross_margin_value = item.get('gross_margin_value')
+    operating_margin_value = item.get('operating_margin_value')
+    relative_strength_value = item.get('relative_strength_value')
+    guidance_revision = item.get('guidance_revision') or ''
+    reaction_close_value = item.get('reaction_close_value')
+    reaction_next_day_value = item.get('reaction_next_day_value')
+    market_interpretation = item.get('market_interpretation') or ''
+
+    past_reactions_raw = item.get('past_reactions_raw') or []
+    past_reactions = []
+    valid_past = []
+    for value in past_reactions_raw:
+        if value is None:
+            past_reactions.append({
+                'value': None,
+                'display': '—',
+                'class': 'reaction-muted',
+            })
+        else:
+            past_reactions.append({
+                'value': value,
+                'display': format_percent(value),
+                'class': reaction_class(value),
+            })
+            valid_past.append(value)
+
+    past_avg = sum(valid_past) / len(valid_past) if valid_past else None
+    has_past_reactions = bool(valid_past)
 
     item.update({
         'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
@@ -195,7 +264,68 @@ def enrich_item(item):
         'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
         'summary': summary_text,
         'fiscal_period': item.get('fiscal_period') or '—',
+        'theme_label': item.get('theme') or '—',
+        'theme_score_display': '—' if theme_score_value is None else f'{theme_score_value:.0f}',
+        'theme_score_class': theme_score_class(theme_score_value),
+        'theme_score_label': theme_score_label(theme_score_value),
+        'theme_short_lock': theme_score_value is not None and theme_score_value >= 80,
+        'watch_tier': item.get('watch_tier') or '',
+        'watch_tier_class': WATCH_TIER_CLASS_MAP.get(item.get('watch_tier') or '', ''),
+        'watch_role': item.get('watch_role') or '',
+        'has_watch_info': bool(item.get('watch_tier') or item.get('watch_role')),
+        'gross_margin_display': '—' if gross_margin_value is None else f'{gross_margin_value:.0f}%',
+        'gross_margin_class': gross_margin_class(gross_margin_value),
+        'operating_margin_display': '—' if operating_margin_value is None else f'{operating_margin_value:.0f}%',
+        'operating_margin_class': operating_margin_class(operating_margin_value),
+        'guidance_revision': guidance_revision,
+        'guidance_revision_label': GUIDANCE_LABELS.get(guidance_revision, '—'),
+        'guidance_revision_class': STATUS_CLASS_MAP.get(guidance_revision, 'status-flat'),
+        'guidance_revision_icon': FUNDAMENTAL_ICONS.get(guidance_revision, 'bi-dash'),
+        'relative_strength_display': '—' if relative_strength_value is None else f'{relative_strength_value:.0f}',
+        'relative_strength_class': relative_strength_class(relative_strength_value),
+        'has_fundamentals': any(
+            v is not None for v in [gross_margin_value, operating_margin_value, relative_strength_value]
+        ) or bool(guidance_revision),
+        'reaction_close_display': format_percent(reaction_close_value),
+        'reaction_close_class': reaction_class(reaction_close_value),
+        'reaction_next_day_display': format_percent(reaction_next_day_value),
+        'reaction_next_day_class': reaction_class(reaction_next_day_value),
+        'market_interpretation': market_interpretation,
+        'market_interpretation_label': INTERPRETATION_LABELS.get(market_interpretation, '—'),
+        'market_interpretation_class': INTERPRETATION_CLASS_MAP.get(market_interpretation, 'interpretation-muted'),
+        'has_reaction': reaction_close_value is not None or reaction_next_day_value is not None or bool(market_interpretation),
+        'past_reactions': past_reactions,
+        'past_reactions_avg_display': format_percent(past_avg),
+        'past_reactions_avg_class': reaction_class(past_avg),
+        'has_past_reactions': has_past_reactions,
     })
+
+
+def compute_theme_aggregations(items):
+    """
+    1日分の決算企業をテーマ単位で集計する。
+    """
+    buckets = defaultdict(list)
+    for item in items:
+        theme = (item.get('theme') or '').strip()
+        score = item.get('theme_score_value')
+        if not theme or score is None:
+            continue
+        buckets[theme].append(score)
+
+    aggregations = []
+    for theme, scores in buckets.items():
+        avg = sum(scores) / len(scores)
+        aggregations.append({
+            'theme': theme,
+            'count': len(scores),
+            'avg_score': avg,
+            'avg_display': f'{avg:.0f}',
+            'label': theme_score_label(avg),
+            'class': theme_score_class(avg),
+        })
+    aggregations.sort(key=lambda x: (-x['avg_score'], x['theme']))
+    return aggregations
 
 
 def group_by_date(items, is_past=False):
@@ -207,24 +337,24 @@ def group_by_date(items, is_past=False):
         current_date = None
         current_companies = []
 
+        def flush():
+            grouped.append({
+                'date': current_date,
+                'companies': current_companies,
+                'is_past': is_past,
+                'theme_aggregations': compute_theme_aggregations(current_companies),
+            })
+
         for item in items:
             if current_date != item['date']:
                 if current_date is not None:
-                    grouped.append({
-                        'date': current_date,
-                        'companies': current_companies,
-                        'is_past': is_past,
-                    })
+                    flush()
                 current_date = item['date']
                 current_companies = []
             current_companies.append(item)
 
         if current_date is not None:
-            grouped.append({
-                'date': current_date,
-                'companies': current_companies,
-                'is_past': is_past,
-            })
+            flush()
     except Exception as e:
         logger.warning("Error grouping data: %s", e)
         for item in items:
@@ -232,16 +362,13 @@ def group_by_date(items, is_past=False):
                 'date': item['date'],
                 'companies': [item],
                 'is_past': is_past,
+                'theme_aggregations': compute_theme_aggregations([item]),
             })
     return grouped
 
 
-def get_csv_path():
-    return settings.BASE_DIR / 'static' / 'earning' / 'data' / 'data.csv'
-
-
-def build_grouped_payload(today, csv_path):
-    earnings_data = fetch_earnings_from_csv(csv_path)
+def build_grouped_payload(today):
+    earnings_data = fetch_earnings_from_db()
 
     future_earnings = []
     completed_earnings = []
@@ -271,28 +398,24 @@ def build_grouped_payload(today, csv_path):
     }
 
 
-def build_cache_key(today, csv_path):
+def build_cache_key(today):
     """
-    「日付」と「CSV更新」で自動的に無効化されるキャッシュキー。
-    仕様を変えずに、毎リクエストの再計算を避ける。
+    Cache key invalidated by date and the latest EarningsEvent.updated_at,
+    so any DB write (importer or scraper) busts the cache.
     """
-    try:
-        mtime_ns = int(csv_path.stat().st_mtime_ns)
-    except OSError:
-        mtime_ns = 0
-    return f'earnings_data_grouped_v4:{today.isoformat()}:{mtime_ns}'
+    from earning.models import EarningsEvent
+    last = EarningsEvent.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
+    stamp = int(last.timestamp() * 1000) if last else 0
+    return f'earnings_data_grouped_v7:{today.isoformat()}:{stamp}'
 
 
 def load_grouped_earnings(today=None):
     target_date = today or date.today()
-    csv_path = get_csv_path()
-    cache_key = build_cache_key(target_date, csv_path)
+    cache_key = build_cache_key(target_date)
     cached_payload = cache.get(cache_key)
-
     if cached_payload is None:
-        cached_payload = build_grouped_payload(target_date, csv_path)
+        cached_payload = build_grouped_payload(target_date)
         cache.set(cache_key, cached_payload, CACHE_TTL)
-
     return cached_payload
 
 
