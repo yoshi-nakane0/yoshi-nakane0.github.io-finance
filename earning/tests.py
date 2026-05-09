@@ -436,6 +436,91 @@ class EarningsAttachMacroCommandTests(TestCase):
         self.assertEqual(called_event.stock.symbol, 'AAPL')
 
 
+import math
+from earning.services.features import (
+    FEATURE_COLUMNS,
+    MODEL_VERSION,
+    _guidance_to_numeric,
+    _compute_pre_short_return,
+    _compute_pre_hv_20,
+)
+
+
+class FeatureConstantsTests(TestCase):
+    def test_feature_columns_have_canonical_order(self):
+        self.assertEqual(FEATURE_COLUMNS, [
+            'gross_margin',
+            'operating_margin',
+            'relative_strength',
+            'guidance_revision_numeric',
+            'vix_at_event',
+            'hy_spread_at_event',
+            'skew_at_event',
+            't5yie_at_event',
+            'rut_at_event',
+            'pre_short_return',
+            'pre_hv_20',
+        ])
+
+    def test_model_version_is_baseline_v1(self):
+        self.assertEqual(MODEL_VERSION, 'baseline-v1')
+
+
+class GuidanceToNumericTests(TestCase):
+    def test_up_returns_one(self):
+        self.assertEqual(_guidance_to_numeric('up'), 1.0)
+
+    def test_flat_returns_zero(self):
+        self.assertEqual(_guidance_to_numeric('flat'), 0.0)
+
+    def test_down_returns_negative_one(self):
+        self.assertEqual(_guidance_to_numeric('down'), -1.0)
+
+    def test_empty_or_unknown_returns_zero(self):
+        self.assertEqual(_guidance_to_numeric(''), 0.0)
+        self.assertEqual(_guidance_to_numeric(None), 0.0)
+        self.assertEqual(_guidance_to_numeric('something_else'), 0.0)
+
+
+class DerivedFeatureTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+        # Seed 21 daily price window rows: offset_days from -20 to 0
+        for offset in range(-20, 1):
+            EarningsPriceWindow.objects.create(
+                event=self.event,
+                trade_date=date_cls(2026, 1, 30) + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset,
+                volume=1_000_000,
+            )
+
+    def test_compute_pre_short_return_uses_t_minus_1_over_t_minus_6(self):
+        # offset_days=-1 close = 99.0, offset_days=-6 close = 94.0
+        # return = (99.0 / 94.0 - 1) * 100 ≈ 5.319%
+        result = _compute_pre_short_return(self.event)
+        self.assertAlmostEqual(result, (99.0 / 94.0 - 1) * 100, places=4)
+
+    def test_compute_pre_short_return_returns_none_when_data_insufficient(self):
+        from earning.models import EarningsPriceWindow
+        EarningsPriceWindow.objects.filter(event=self.event, offset_days=-6).delete()
+        self.assertIsNone(_compute_pre_short_return(self.event))
+
+    def test_compute_pre_hv_20_returns_positive_float(self):
+        result = _compute_pre_hv_20(self.event)
+        self.assertIsNotNone(result)
+        self.assertGreater(result, 0)
+
+    def test_compute_pre_hv_20_returns_none_when_insufficient_data(self):
+        from earning.models import EarningsPriceWindow
+        EarningsPriceWindow.objects.filter(event=self.event, offset_days__lte=-11).delete()
+        self.assertIsNone(_compute_pre_hv_20(self.event))
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
