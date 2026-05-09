@@ -759,6 +759,56 @@ class NanSafeEuclideanTests(TestCase):
         self.assertEqual(_nan_safe_euclidean(a, b), float('inf'))
 
 
+from earning.services.similarity import build_similarity_pool, find_similar_events
+
+
+class SimilarityPoolTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+
+    def _make_event(self, fiscal_period, label, base=0.0):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period=fiscal_period, event_date=date_cls(2026, 1, 30),
+            gross_margin=45.0 + base, operating_margin=30.0 + base, relative_strength=78.0 + base,
+            guidance_revision='up',
+            vix_at_event=18.5 + base, hy_spread_at_event=3.2 + base, skew_at_event=140.0 + base,
+            t5yie_at_event=2.4 + base, rut_at_event=2100.5 + base,
+            reaction_close=label,
+        )
+        from earning.models import EarningsPriceWindow as PW
+        for offset in range(-20, 1):
+            PW.objects.create(
+                event=event,
+                trade_date=date_cls(2026, 1, 30) + timedelta(days=offset),
+                offset_days=offset,
+                close=100.0 + offset + base,
+                volume=1_000_000,
+            )
+        return event
+
+    def test_find_similar_returns_top_n_excluding_self(self):
+        target = self._make_event("Q1 '26", 2.5, base=0.0)
+        n1 = self._make_event("Q2 '26", 1.0, base=0.5)
+        n2 = self._make_event("Q3 '26", -1.5, base=2.0)
+        self._make_event("Q4 '26", 0.0, base=10.0)
+        self._make_event("Q1 '27", 3.0, base=20.0)
+        events = list(EarningsEvent.objects.all())
+        pool = build_similarity_pool(events)
+        result = find_similar_events(target, pool, top_n=3)
+        self.assertEqual(len(result), 3)
+        symbols = [r['fiscal_period'] for r in result]
+        # closest should include Q2 (base 0.5) and Q3 (base 2.0); target Q1 must be excluded
+        self.assertNotIn("Q1 '26", symbols)
+        self.assertIn("Q2 '26", symbols)
+
+    def test_find_similar_returns_empty_when_pool_empty(self):
+        target = self._make_event("Q1 '26", 2.5, base=0.0)
+        # Build pool from no events
+        pool = build_similarity_pool([])
+        self.assertEqual(find_similar_events(target, pool, top_n=3), [])
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
