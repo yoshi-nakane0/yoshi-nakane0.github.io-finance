@@ -14,6 +14,8 @@ __pycache__/
 .gitignore
 # Distribution / packaging
 .Python
+.codex
+.claude
 build/
 develop-eggs/
 dist/
