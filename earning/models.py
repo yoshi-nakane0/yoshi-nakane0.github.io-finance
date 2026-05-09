@@ -69,6 +69,12 @@ class EarningsEvent(models.Model):
 
     summary = models.TextField(blank=True)
 
+    vix_at_event = models.FloatField(null=True, blank=True)
+    hy_spread_at_event = models.FloatField(null=True, blank=True)
+    skew_at_event = models.FloatField(null=True, blank=True)
+    t5yie_at_event = models.FloatField(null=True, blank=True)
+    rut_at_event = models.FloatField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

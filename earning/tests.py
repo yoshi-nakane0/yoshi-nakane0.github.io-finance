@@ -256,6 +256,31 @@ class EarningsPriceWindowModelTests(TestCase):
 from earning.services.yfinance import build_yahoo_symbol
 
 
+class EarningsEventMacroColumnsTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+
+    def test_macro_columns_default_to_none(self):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+        self.assertIsNone(event.vix_at_event)
+        self.assertIsNone(event.hy_spread_at_event)
+        self.assertIsNone(event.skew_at_event)
+        self.assertIsNone(event.t5yie_at_event)
+        self.assertIsNone(event.rut_at_event)
+
+    def test_macro_columns_can_be_set_and_saved(self):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+            vix_at_event=18.5, hy_spread_at_event=3.2, skew_at_event=140.0,
+            t5yie_at_event=2.4, rut_at_event=2100.5,
+        )
+        event.refresh_from_db()
+        self.assertAlmostEqual(event.vix_at_event, 18.5)
+        self.assertAlmostEqual(event.rut_at_event, 2100.5)
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
