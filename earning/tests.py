@@ -67,6 +67,42 @@ def build_row(target_date, company, market, symbol, summary):
     }
 
 
+from earning.models import Stock
+
+
+class StockModelTests(TestCase):
+    def test_create_stock_with_required_fields(self):
+        stock = Stock.objects.create(
+            symbol='AAPL',
+            market='NASDAQ',
+            company='Apple Inc.',
+            industry='Consumer Electronics',
+        )
+        self.assertEqual(stock.symbol, 'AAPL')
+        self.assertEqual(stock.market, 'NASDAQ')
+        self.assertEqual(str(stock), 'AAPL (Apple Inc.)')
+
+    def test_symbol_market_pair_is_unique(self):
+        Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        with self.assertRaises(Exception):
+            Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Dup', industry='Tech')
+
+    def test_peer_symbols_defaults_to_empty_list(self):
+        stock = Stock.objects.create(symbol='MSFT', market='NASDAQ', company='Microsoft', industry='Tech')
+        self.assertEqual(stock.peer_symbols, [])
+
+    def test_peer_symbols_stores_list(self):
+        stock = Stock.objects.create(
+            symbol='NVDA',
+            market='NASDAQ',
+            company='NVIDIA',
+            industry='Semiconductors',
+            peer_symbols=['AMD', 'INTC', 'TSM'],
+        )
+        stock.refresh_from_db()
+        self.assertEqual(stock.peer_symbols, ['AMD', 'INTC', 'TSM'])
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
