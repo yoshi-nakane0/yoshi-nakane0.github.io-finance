@@ -351,13 +351,13 @@ class AttachMacroSnapshotTests(TestCase):
         self._make_indicator('VIXCLS', date_cls(2026, 1, 30), 18.5)
         self._make_indicator('BAMLH0A0HYM2', date_cls(2026, 1, 29), 3.2)
         self._make_indicator('CBOE_SKEW', date_cls(2026, 1, 28), 140.0)
-        self._make_indicator('T5YIE', date_cls(2026, 1, 30), 2.4)
+        self._make_indicator('T5YIE', date_cls(2026, 1, 30), 2.4, category='inflation')
         self._make_indicator('RUT_INDEX', date_cls(2026, 1, 27), 2100.5)
 
-    def _make_indicator(self, series_id, obs_date, value):
+    def _make_indicator(self, series_id, obs_date, value, category='market'):
         ind, _ = Indicator.objects.get_or_create(
             fred_series_id=series_id,
-            defaults={'name_ja': series_id, 'category': 'market'},
+            defaults={'name_ja': series_id, 'category': category},
         )
         Observation.objects.create(indicator=ind, observation_date=obs_date, value=value)
 

@@ -13,6 +13,7 @@ MACRO_FIELD_MAP = {
 
 
 def get_latest_value_on_or_before(series_id, event_date):
+    # Lazy import to avoid app-loading order issues if this module is imported during apps.ready().
     from macro.models import Indicator, Observation
 
     if event_date is None:
