@@ -149,6 +149,37 @@ class EarningsEventModelTests(TestCase):
         self.assertEqual(dates, [date_cls(2026, 7, 30), date_cls(2026, 4, 30), date_cls(2026, 1, 30)])
 
 
+from django.db import transaction
+from earning.models import EarningsPrediction
+
+
+class EarningsPredictionModelTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+
+    def test_create_prediction(self):
+        pred = EarningsPrediction.objects.create(
+            event=self.event,
+            predicted_reaction=2.5,
+            confidence=0.7,
+            model_version='baseline-v0',
+        )
+        self.assertEqual(pred.event, self.event)
+        self.assertAlmostEqual(pred.predicted_reaction, 2.5)
+        self.assertEqual(pred.model_version, 'baseline-v0')
+
+    def test_one_prediction_per_event_per_model_version(self):
+        EarningsPrediction.objects.create(event=self.event, predicted_reaction=1.0, model_version='baseline-v0')
+        with self.assertRaises(Exception):
+            with transaction.atomic():
+                EarningsPrediction.objects.create(event=self.event, predicted_reaction=2.0, model_version='baseline-v0')
+        EarningsPrediction.objects.create(event=self.event, predicted_reaction=2.0, model_version='baseline-v1')
+        self.assertEqual(self.event.predictions.count(), 2)
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):

@@ -86,3 +86,22 @@ class EarningsEvent(models.Model):
 
     def __str__(self):
         return f'{self.stock.symbol} {self.fiscal_period} ({self.event_date})'
+
+
+class EarningsPrediction(models.Model):
+    event = models.ForeignKey(EarningsEvent, on_delete=models.CASCADE, related_name='predictions')
+    predicted_reaction = models.FloatField()
+    confidence = models.FloatField(null=True, blank=True)
+    model_version = models.CharField(max_length=32)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['event', 'model_version'],
+                name='earning_prediction_event_model_uniq',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.event} → {self.predicted_reaction:+.2f} ({self.model_version})'
