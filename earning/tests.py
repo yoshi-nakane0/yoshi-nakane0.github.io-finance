@@ -397,6 +397,45 @@ class AttachMacroSnapshotTests(TestCase):
         self.assertAlmostEqual(self.event.vix_at_event, 18.5)
 
 
+from unittest.mock import patch
+
+
+class EarningsAttachMacroCommandTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.recent_event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26",
+            event_date=date.today() - timedelta(days=10),
+        )
+        self.old_event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q4 '24",
+            event_date=date.today() - timedelta(days=500),
+        )
+
+    @patch('earning.management.commands.earnings_attach_macro.attach_macro_snapshot')
+    def test_iterates_only_events_within_window(self, mock_attach):
+        mock_attach.return_value = 5
+        out = StringIO()
+        call_command('earnings_attach_macro', '--days', '90', stdout=out)
+        self.assertEqual(mock_attach.call_count, 1)
+        called_event = mock_attach.call_args[0][0]
+        self.assertEqual(called_event.id, self.recent_event.id)
+
+    @patch('earning.management.commands.earnings_attach_macro.attach_macro_snapshot')
+    def test_symbol_flag_filters_to_one_stock(self, mock_attach):
+        other_stock = Stock.objects.create(symbol='MSFT', market='NASDAQ', company='Microsoft', industry='Tech')
+        EarningsEvent.objects.create(
+            stock=other_stock, fiscal_period="Q1 '26",
+            event_date=date.today() - timedelta(days=5),
+        )
+        mock_attach.return_value = 5
+        out = StringIO()
+        call_command('earnings_attach_macro', '--symbol', 'AAPL', stdout=out)
+        self.assertEqual(mock_attach.call_count, 1)
+        called_event = mock_attach.call_args[0][0]
+        self.assertEqual(called_event.stock.symbol, 'AAPL')
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
