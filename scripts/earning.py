@@ -619,26 +619,64 @@ def upsert_event_to_db(row_dict):
     if not symbol or not market or not company or not fiscal_period:
         return None
 
+    def _s(name):
+        v = row_dict.get(name)
+        if v is None:
+            return ''
+        try:
+            if pd.isna(v):
+                return ''
+        except (TypeError, ValueError):
+            pass
+        text = str(v).strip()
+        return '' if text.lower() == 'nan' else text
+
     def _f(name):
         v = row_dict.get(name)
-        if v in (None, '', 'nan'):
+        if v is None:
             return None
         try:
-            return float(v)
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        text = str(v).strip()
+        if not text or text.lower() == 'nan':
+            return None
+        try:
+            return float(text)
         except (TypeError, ValueError):
             return None
 
     def _norm(name, allowed, default):
-        v = (row_dict.get(name) or '').strip().lower()
-        return v if v in allowed else default
+        v = row_dict.get(name)
+        if v is None:
+            return default
+        try:
+            if pd.isna(v):
+                return default
+        except (TypeError, ValueError):
+            pass
+        text = str(v).strip().lower()
+        if not text or text == 'nan':
+            return default
+        return text if text in allowed else default
 
     def _date(name):
         import datetime as _dt
-        v = (row_dict.get(name) or '').strip()
-        if not v or v == '決算日未定':
+        v = row_dict.get(name)
+        if v is None:
             return None
         try:
-            return _dt.datetime.strptime(v, '%Y-%m-%d').date()
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        text = str(v).strip()
+        if not text or text == '決算日未定' or text.lower() == 'nan':
+            return None
+        try:
+            return _dt.datetime.strptime(text, '%Y-%m-%d').date()
         except ValueError:
             return None
 
@@ -662,20 +700,20 @@ def upsert_event_to_db(row_dict):
             'direction': _norm('Direction', {'up', 'flat', 'down'}, 'flat'),
             'sentiment': _norm('Sentiment', {'up', 'flat', 'down'}, 'flat'),
             'risk_value': _f('Risk'),
-            'eps_forecast': str(row_dict.get('eps_forecast') or '').strip(),
-            'eps_4q_ago': str(row_dict.get('eps_4q_ago') or '').strip(),
-            'eps_current': str(row_dict.get('eps_current') or '').strip(),
-            'eps_4q_prior_period': str(row_dict.get('eps_4q_prior_period') or '').strip(),
-            'surp_eps_4q_ago': str(row_dict.get('surp_eps_4q_ago') or '').strip(),
-            'surp_eps_current': str(row_dict.get('surp_eps_current') or '').strip(),
-            'surp_eps_4q_prior_period': str(row_dict.get('surp_eps_4q_prior_period') or '').strip(),
-            'sales_forecast': str(row_dict.get('sales_forecast') or '').strip(),
-            'sales_4q_ago': str(row_dict.get('sales_4q_ago') or '').strip(),
-            'sales_current': str(row_dict.get('sales_current') or '').strip(),
-            'sales_4q_prior_period': str(row_dict.get('sales_4q_prior_period') or '').strip(),
-            'surp_4q_ago': str(row_dict.get('surp_4q_ago') or '').strip(),
-            'surp_current': str(row_dict.get('surp_current') or '').strip(),
-            'surp_4q_prior_period': str(row_dict.get('surp_4q_prior_period') or '').strip(),
+            'eps_forecast': _s('eps_forecast'),
+            'eps_4q_ago': _s('eps_4q_ago'),
+            'eps_current': _s('eps_current'),
+            'eps_4q_prior_period': _s('eps_4q_prior_period'),
+            'surp_eps_4q_ago': _s('surp_eps_4q_ago'),
+            'surp_eps_current': _s('surp_eps_current'),
+            'surp_eps_4q_prior_period': _s('surp_eps_4q_prior_period'),
+            'sales_forecast': _s('sales_forecast'),
+            'sales_4q_ago': _s('sales_4q_ago'),
+            'sales_current': _s('sales_current'),
+            'sales_4q_prior_period': _s('sales_4q_prior_period'),
+            'surp_4q_ago': _s('surp_4q_ago'),
+            'surp_current': _s('surp_current'),
+            'surp_4q_prior_period': _s('surp_4q_prior_period'),
             'theme_score': _f('theme_score'),
             'gross_margin': _f('gross_margin'),
             'operating_margin': _f('operating_margin'),
@@ -685,7 +723,7 @@ def upsert_event_to_db(row_dict):
             'reaction_next_day': _f('reaction_next_day'),
             'market_interpretation': _norm('market_interpretation', {'bullish', 'neutral', 'bearish'}, ''),
             'past_reactions': [_f('past_q1'), _f('past_q2'), _f('past_q3'), _f('past_q4')],
-            'summary': str(row_dict.get('summary') or '').strip(),
+            'summary': _s('summary'),
         },
     )
 
