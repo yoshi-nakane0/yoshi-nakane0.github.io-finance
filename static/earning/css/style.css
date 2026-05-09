@@ -1235,3 +1235,98 @@ body {
 .similar-event-reaction {
   font-weight: 600;
 }
+
+/* ===== シナリオ実行（Step 7） ===== */
+.whatif-row {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(168, 85, 247, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.12);
+}
+.whatif-details {
+  width: 100%;
+}
+.whatif-summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  list-style: none;
+}
+.whatif-summary::-webkit-details-marker {
+  display: none;
+}
+.whatif-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.whatif-note {
+  font-size: 11px;
+  color: var(--text-tertiary, #64748b);
+  margin: 0;
+}
+.whatif-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.whatif-slider-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 96px;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+.whatif-slider-label {
+  color: var(--text-tertiary, #64748b);
+}
+.whatif-slider-input {
+  width: 100%;
+}
+.whatif-slider-value {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  text-align: right;
+  color: var(--text-secondary, #94a3b8);
+}
+.whatif-result {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.whatif-result-label {
+  color: var(--text-tertiary, #64748b);
+}
+.whatif-baseline {
+  color: var(--text-tertiary, #64748b);
+}
+.whatif-arrow {
+  color: var(--text-tertiary, #64748b);
+}
+.whatif-current {
+  font-weight: 700;
+}
+.whatif-diff {
+  font-size: 11px;
+  color: var(--text-tertiary, #64748b);
+}
+.whatif-diff.positive { color: #4ade80; }
+.whatif-diff.negative { color: #ef4444; }
+.whatif-reset {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--text-tertiary, #64748b);
+  color: var(--text-secondary, #94a3b8);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.whatif-reset:hover {
+  background: rgba(148, 163, 184, 0.08);
+}

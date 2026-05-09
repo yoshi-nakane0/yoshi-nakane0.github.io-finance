@@ -183,6 +183,28 @@
             </div>
             {% endif %}
 
+            {% if company.has_whatif %}
+            <div class="whatif-row" data-whatif-card>
+                <details class="whatif-details">
+                    <summary class="whatif-summary">▶ シナリオ実行（マクロを動かす）</summary>
+                    <div class="whatif-body">
+                        <p class="whatif-note">5 つのマクロ条件を動かして、モデルの予測がどう変わるか確認できます。データが少ないため、参考値です。</p>
+                        <div class="whatif-sliders" data-whatif-sliders></div>
+                        <div class="whatif-result">
+                            <span class="whatif-result-label">予測：</span>
+                            <span class="whatif-baseline">baseline {{ company.predicted_reaction_display }}</span>
+                            <span class="whatif-arrow">→</span>
+                            <span class="whatif-current" data-whatif-current>—</span>
+                            <span class="whatif-diff" data-whatif-diff></span>
+                        </div>
+                        <button type="button" class="whatif-reset" data-whatif-reset>リセット</button>
+                    </div>
+                </details>
+                <script type="application/json" data-whatif-baseline>{{ company.baseline_features_json|safe }}</script>
+                <script type="application/json" data-whatif-ranges>{{ company.feature_ranges_json|safe }}</script>
+            </div>
+            {% endif %}
+
             {% if company.has_reaction or company.has_past_reactions %}
             <div class="reaction-row">
                 <div class="reaction-title">決算後の反応</div>
