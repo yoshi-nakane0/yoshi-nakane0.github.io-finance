@@ -103,6 +103,52 @@ class StockModelTests(TestCase):
         self.assertEqual(stock.peer_symbols, ['AMD', 'INTC', 'TSM'])
 
 
+from datetime import date as date_cls
+from earning.models import EarningsEvent
+
+
+class EarningsEventModelTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(
+            symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech',
+        )
+
+    def test_create_event_with_minimum_fields(self):
+        event = EarningsEvent.objects.create(
+            stock=self.stock,
+            fiscal_period="Q1 '26",
+            event_date=date_cls(2026, 1, 30),
+        )
+        self.assertEqual(event.stock, self.stock)
+        self.assertEqual(event.fiscal_period, "Q1 '26")
+
+    def test_stock_and_fiscal_period_are_unique_together(self):
+        EarningsEvent.objects.create(stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30))
+        with self.assertRaises(Exception):
+            EarningsEvent.objects.create(stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 31))
+
+    def test_default_text_columns_are_blank(self):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q2 '26", event_date=date_cls(2026, 4, 30),
+        )
+        self.assertEqual(event.summary, '')
+        self.assertEqual(event.fundamental, 'flat')
+        self.assertEqual(event.guidance_revision, '')
+
+    def test_past_reactions_default_empty_list(self):
+        event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q3 '26", event_date=date_cls(2026, 7, 30),
+        )
+        self.assertEqual(event.past_reactions, [])
+
+    def test_event_ordering_descending_by_date(self):
+        EarningsEvent.objects.create(stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30))
+        EarningsEvent.objects.create(stock=self.stock, fiscal_period="Q2 '26", event_date=date_cls(2026, 4, 30))
+        EarningsEvent.objects.create(stock=self.stock, fiscal_period="Q3 '26", event_date=date_cls(2026, 7, 30))
+        dates = list(EarningsEvent.objects.values_list('event_date', flat=True))
+        self.assertEqual(dates, [date_cls(2026, 7, 30), date_cls(2026, 4, 30), date_cls(2026, 1, 30)])
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
