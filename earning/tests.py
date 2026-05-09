@@ -557,6 +557,54 @@ class FetchPriceWindowTests(TestCase):
         self.assertEqual(PriceWindow.objects.filter(event=self.event).count(), 0)
 
 
+class EarningsFetchPricesCommandTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        # one event within 90-day window, one event 200 days old
+        self.recent_event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26",
+            event_date=date.today() - timedelta(days=10),
+        )
+        self.old_event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q4 '25",
+            event_date=date.today() - timedelta(days=200),
+        )
+
+    @patch('earning.management.commands.earnings_fetch_prices.fetch_price_window')
+    @patch('earning.management.commands.earnings_fetch_prices.time.sleep')
+    def test_iterates_only_recent_events_by_default(self, mock_sleep, mock_fetch):
+        mock_fetch.return_value = 5
+        out = StringIO()
+        call_command('earnings_fetch_prices', stdout=out)
+        # only the recent event (within 90 days) should be processed
+        self.assertEqual(mock_fetch.call_count, 1)
+        called_event = mock_fetch.call_args[0][0]
+        self.assertEqual(called_event.id, self.recent_event.id)
+
+    @patch('earning.management.commands.earnings_fetch_prices.fetch_price_window')
+    @patch('earning.management.commands.earnings_fetch_prices.time.sleep')
+    def test_days_flag_widens_window(self, mock_sleep, mock_fetch):
+        mock_fetch.return_value = 5
+        out = StringIO()
+        call_command('earnings_fetch_prices', '--days', '365', stdout=out)
+        self.assertEqual(mock_fetch.call_count, 2)
+
+    @patch('earning.management.commands.earnings_fetch_prices.fetch_price_window')
+    @patch('earning.management.commands.earnings_fetch_prices.time.sleep')
+    def test_symbol_flag_filters_to_one_stock(self, mock_sleep, mock_fetch):
+        other_stock = Stock.objects.create(symbol='MSFT', market='NASDAQ', company='Microsoft', industry='Tech')
+        EarningsEvent.objects.create(
+            stock=other_stock, fiscal_period="Q1 '26",
+            event_date=date.today() - timedelta(days=5),
+        )
+        mock_fetch.return_value = 3
+        out = StringIO()
+        call_command('earnings_fetch_prices', '--symbol', 'AAPL', stdout=out)
+        self.assertEqual(mock_fetch.call_count, 1)
+        called_event = mock_fetch.call_args[0][0]
+        self.assertEqual(called_event.stock.symbol, 'AAPL')
+
+
 @override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
 class EarningsViewTests(TestCase):
     def setUp(self):
