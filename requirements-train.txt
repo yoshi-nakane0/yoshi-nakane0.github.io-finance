@@ -1,5 +1,5 @@
 # 学習・推論専用の依存。Vercel本番には入れず、ローカル/学習環境のみで利用。
 # 使い方: pip install -r requirements.txt -r requirements-train.txt
-lightgbm>=4.0.0
+lightgbm>=4.6.0,<5
 numpy>=1.24.0
 pandas>=2.0.0
