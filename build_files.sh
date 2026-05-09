@@ -30,6 +30,9 @@ fi
 # DATABASE_URL がある場合は外部 DB へ、ない場合は同梱する SQLite を更新する。
 SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py migrate --noinput
 
+# Earnings CSV を同梱 SQLite に取り込む（CSV を deploy 時の真実として再投入）
+SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py import_earnings_csv static/earning/data/data.csv
+
 # 静的ファイルの収集
 $PYTHON_BIN manage.py collectstatic --noinput --clear
 
