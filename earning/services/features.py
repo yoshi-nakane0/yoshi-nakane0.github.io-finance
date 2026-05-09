@@ -1,10 +1,7 @@
-import logging
 import math
 from pathlib import Path
 
 from django.conf import settings
-
-logger = logging.getLogger(__name__)
 
 
 MODEL_VERSION = 'baseline-v1'

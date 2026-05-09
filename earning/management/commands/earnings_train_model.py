@@ -1,7 +1,3 @@
-import logging
-
-import numpy as np
-
 from django.core.management.base import BaseCommand, CommandError
 
 from earning.models import EarningsEvent
@@ -10,8 +6,6 @@ from earning.services.features import (
     MODEL_PATH,
     build_feature_matrix,
 )
-
-logger = logging.getLogger(__name__)
 
 
 LGB_PARAMS = {
@@ -33,6 +27,8 @@ KFOLD_SEED = 42
 
 
 def _make_kfold_splits(n, k, seed):
+    import numpy as np
+
     rng = np.random.default_rng(seed)
     indices = np.arange(n)
     rng.shuffle(indices)
@@ -61,6 +57,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         import lightgbm as lgb
+        import numpy as np
 
         events = list(
             EarningsEvent.objects
@@ -74,6 +71,10 @@ class Command(BaseCommand):
                 f'Only {n} trainable events; need at least {MIN_TRAINABLE}. '
                 f'Run earnings_fetch_prices and earnings_attach_macro backfills first.'
             )
+        if n < 50:
+            self.stdout.write(self.style.WARNING(
+                f'n={n} is below the 10x-features rule of thumb; CV metrics are highly noisy.'
+            ))
 
         splits = _make_kfold_splits(n, KFOLD_K, KFOLD_SEED)
         rmses, maes, hits = [], [], []

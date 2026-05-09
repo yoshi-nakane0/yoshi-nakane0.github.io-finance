@@ -1,15 +1,9 @@
-import logging
-
-import numpy as np
-
 from earning.services.features import (
     FEATURE_COLUMNS,
     MODEL_PATH,
     MODEL_VERSION,
     build_feature_row,
 )
-
-logger = logging.getLogger(__name__)
 
 
 def load_model():
@@ -24,6 +18,8 @@ def load_model():
 
 
 def predict_event(event, model):
+    import numpy as np
+
     from earning.models import EarningsPrediction
 
     row = build_feature_row(event)
