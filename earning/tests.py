@@ -338,6 +338,65 @@ class GetLatestValueOnOrBeforeTests(TestCase):
         self.assertIsNone(result)
 
 
+from earning.services.macro import attach_macro_snapshot
+
+
+class AttachMacroSnapshotTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+        # Pre-populate all 5 indicators with one observation each, on or before event_date
+        self._make_indicator('VIXCLS', date_cls(2026, 1, 30), 18.5)
+        self._make_indicator('BAMLH0A0HYM2', date_cls(2026, 1, 29), 3.2)
+        self._make_indicator('CBOE_SKEW', date_cls(2026, 1, 28), 140.0)
+        self._make_indicator('T5YIE', date_cls(2026, 1, 30), 2.4)
+        self._make_indicator('RUT_INDEX', date_cls(2026, 1, 27), 2100.5)
+
+    def _make_indicator(self, series_id, obs_date, value):
+        ind, _ = Indicator.objects.get_or_create(
+            fred_series_id=series_id,
+            defaults={'name_ja': series_id, 'category': 'market'},
+        )
+        Observation.objects.create(indicator=ind, observation_date=obs_date, value=value)
+
+    def test_fills_all_five_columns(self):
+        n = attach_macro_snapshot(self.event)
+        self.assertEqual(n, 5)
+        self.event.refresh_from_db()
+        self.assertAlmostEqual(self.event.vix_at_event, 18.5)
+        self.assertAlmostEqual(self.event.hy_spread_at_event, 3.2)
+        self.assertAlmostEqual(self.event.skew_at_event, 140.0)
+        self.assertAlmostEqual(self.event.t5yie_at_event, 2.4)
+        self.assertAlmostEqual(self.event.rut_at_event, 2100.5)
+
+    def test_skips_event_without_date(self):
+        self.event.event_date = None
+        self.event.save()
+        n = attach_macro_snapshot(self.event)
+        self.assertEqual(n, 0)
+        self.event.refresh_from_db()
+        self.assertIsNone(self.event.vix_at_event)
+
+    def test_partial_when_some_indicators_missing(self):
+        # Remove the indicator rows for SKEW and RUT to simulate missing series
+        Indicator.objects.filter(fred_series_id__in=['CBOE_SKEW', 'RUT_INDEX']).delete()
+        n = attach_macro_snapshot(self.event)
+        self.assertEqual(n, 3)
+        self.event.refresh_from_db()
+        self.assertAlmostEqual(self.event.vix_at_event, 18.5)
+        self.assertIsNone(self.event.skew_at_event)
+        self.assertIsNone(self.event.rut_at_event)
+
+    def test_idempotent_on_rerun(self):
+        attach_macro_snapshot(self.event)
+        n = attach_macro_snapshot(self.event)
+        self.assertEqual(n, 5)
+        self.event.refresh_from_db()
+        self.assertAlmostEqual(self.event.vix_at_event, 18.5)
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
