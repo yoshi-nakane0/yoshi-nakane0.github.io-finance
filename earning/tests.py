@@ -649,6 +649,42 @@ class PredictionPipelineTests(TestCase):
             load_model()
 
 
+class EarningsTrainModelCommandTests(TestCase):
+    def setUp(self):
+        from earning.models import EarningsPriceWindow
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        # Create 12 events with full features + labels (just enough to clear the < 10 guard)
+        for i in range(12):
+            event = EarningsEvent.objects.create(
+                stock=self.stock, fiscal_period=f"Q{i % 4 + 1} '{20 + i // 4}",
+                event_date=date_cls(2024, 1, 1) + timedelta(days=i * 30),
+                gross_margin=40.0 + i, operating_margin=20.0 + i, relative_strength=70.0 + i,
+                guidance_revision='up' if i % 2 == 0 else 'flat',
+                vix_at_event=15.0 + i * 0.5,
+                hy_spread_at_event=3.0 + i * 0.1,
+                skew_at_event=140.0 + i,
+                t5yie_at_event=2.0 + i * 0.05,
+                rut_at_event=2000.0 + i * 10,
+                reaction_close=float(i % 5 - 2) * 0.5,  # mix of pos / neg / zero
+            )
+            for offset in range(-20, 1):
+                EarningsPriceWindow.objects.create(
+                    event=event,
+                    trade_date=date_cls(2024, 1, 1) + timedelta(days=i * 30 + offset),
+                    offset_days=offset,
+                    close=100.0 + offset + i,
+                    volume=1_000_000,
+                )
+
+    def test_train_command_completes_with_no_save(self):
+        out = StringIO()
+        call_command('earnings_train_model', '--no-save', stdout=out)
+        output = out.getvalue()
+        self.assertIn('Trained on', output)
+        self.assertIn('RMSE', output)
+        self.assertIn('Hit rate', output)
+
+
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
         self.assertEqual(build_yahoo_symbol('TSE', '4519'), '4519.T')
