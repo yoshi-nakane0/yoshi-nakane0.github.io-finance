@@ -223,7 +223,6 @@ def enrich_item(item):
     summary_text = item.get('summary') or '要約未取得'
 
     theme_score_value = item.get('theme_score_value')
-    nikkei_weight_value = item.get('nikkei_weight_value')
     gross_margin_value = item.get('gross_margin_value')
     operating_margin_value = item.get('operating_margin_value')
     relative_strength_value = item.get('relative_strength_value')
