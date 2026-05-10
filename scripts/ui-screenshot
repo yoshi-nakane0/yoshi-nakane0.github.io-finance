@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PLAYWRIGHT="$ROOT/scripts/capture_charts/node_modules/.bin/playwright"
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: scripts/ui-screenshot <url> <output.png> [playwright screenshot options]" >&2
+  exit 64
+fi
+
+exec "$PLAYWRIGHT" screenshot --full-page "$@"
