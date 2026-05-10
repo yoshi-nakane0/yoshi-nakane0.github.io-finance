@@ -19,9 +19,35 @@
       modelPromise = fetch(MODEL_URL).then(function (r) {
         if (!r.ok) throw new Error('Model fetch failed: ' + r.status);
         return r.json();
+      }).then(function (model) {
+        model._featureThresholdRanges = collectThresholdRanges(model);
+        return model;
       });
     }
     return modelPromise;
+  }
+
+  function collectThresholdRanges(model) {
+    const out = {};
+    function walk(node) {
+      if ('leaf_value' in node) return;
+      const name = model.feature_names[node.split_feature];
+      const t = node.threshold;
+      if (!out[name]) out[name] = [t, t];
+      else { if (t < out[name][0]) out[name][0] = t; if (t > out[name][1]) out[name][1] = t; }
+      walk(node.left_child); walk(node.right_child);
+    }
+    const trees = model.trees || [];
+    for (let i = 0; i < trees.length; i++) walk(trees[i].root);
+    return out;
+  }
+
+  function widenToModelThresholds(key, minVal, maxVal, model) {
+    const tr = (model._featureThresholdRanges || {})[key];
+    if (!tr) return [minVal, maxVal];
+    const span = (tr[1] - tr[0]) || Math.abs(tr[0]) * 0.05 || 1;
+    const pad = span * 0.05;
+    return [Math.min(minVal, tr[0] - pad), Math.max(maxVal, tr[1] + pad)];
   }
 
   function predictFromJson(features, model) {
@@ -100,8 +126,21 @@
     const state = Object.assign({}, baseline);
     const inputs = {};
 
+    function probeIsResponsive(key, minVal, maxVal) {
+      const lo = featureNames.map(function (n) {
+        const v = n === key ? minVal : baseline[n];
+        return v === null || v === undefined ? NaN : v;
+      });
+      const hi = featureNames.map(function (n) {
+        const v = n === key ? maxVal : baseline[n];
+        return v === null || v === undefined ? NaN : v;
+      });
+      return Math.abs(predictFromJson(hi, model) - predictFromJson(lo, model)) > 1e-6;
+    }
+
     Object.keys(ranges).forEach(function (key) {
-      const [minVal, maxVal] = ranges[key];
+      const [minVal, maxVal] = widenToModelThresholds(key, ranges[key][0], ranges[key][1], model);
+      if (!probeIsResponsive(key, minVal, maxVal)) return;
       const baseVal = baseline[key];
       const row = document.createElement('div');
       row.className = 'whatif-slider-row';
