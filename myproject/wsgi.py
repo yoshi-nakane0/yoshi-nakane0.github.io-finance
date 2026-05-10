@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import urllib.request
 from pathlib import Path
 
@@ -21,14 +22,18 @@ def _is_serverless_runtime():
 
 
 def _fetch_macro_data_db():
-    """サーバーレスのコールドスタート時に macro-data ブランチから観測値入り DB を取得。"""
+    """サーバーレスのコールドスタート時に実行用 DB を用意する。"""
     if not _is_serverless_runtime():
         return
     target = Path(os.environ.get('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
     if target.exists() and target.stat().st_size > 1_000_000:
         return
+    bundled = Path(__file__).resolve().parent.parent / 'db.sqlite3'
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
+        if bundled.exists() and bundled.stat().st_size > 1_000_000:
+            shutil.copy2(bundled, target)
+            return
         with urllib.request.urlopen(MACRO_DATA_DB_URL, timeout=5) as response:
             payload = response.read()
         target.write_bytes(payload)

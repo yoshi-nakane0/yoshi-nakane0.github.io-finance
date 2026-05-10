@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import date
 
 from django.core.cache import cache
+from django.db.models import Prefetch, Q
 from django.shortcuts import render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.gzip import gzip_page
@@ -194,10 +195,23 @@ def format_percent(value, with_sign=True):
     return f'{sign}{value:.1f}%'
 
 
-def fetch_earnings_from_db():
-    from earning.models import EarningsEvent
+def fetch_earnings_from_db(today=None, period='all'):
+    from earning.models import EarningsEvent, EarningsPriceWindow
 
     queryset = EarningsEvent.objects.select_related('stock').prefetch_related('predictions').all()
+    if period == 'upcoming' and today is not None:
+        queryset = queryset.filter(Q(event_date__gte=today) | Q(event_date__isnull=True))
+        queryset = queryset.prefetch_related(
+            Prefetch(
+                'price_window',
+                queryset=EarningsPriceWindow.objects
+                .filter(offset_days__gte=-21, offset_days__lte=-1)
+                .only('event_id', 'offset_days', 'close'),
+                to_attr='_feature_price_window',
+            )
+        )
+    elif period == 'completed' and today is not None:
+        queryset = queryset.filter(event_date__lt=today)
     items = []
     for ev in queryset:
         stock = ev.stock
@@ -456,12 +470,12 @@ def group_by_date(items, is_past=False):
 
 
 def build_grouped_payload(today, period='all'):
-    from earning.models import EarningsEvent
+    from earning.models import EarningsEvent, EarningsPriceWindow
     from earning.services.similarity import build_similarity_pool
 
     include_upcoming = period in {'all', 'upcoming'}
     include_completed = period in {'all', 'completed'}
-    earnings_data = fetch_earnings_from_db()
+    earnings_data = fetch_earnings_from_db(today=today, period=period)
 
     future_earnings = []
     completed_earnings = []
@@ -484,12 +498,21 @@ def build_grouped_payload(today, period='all'):
         logger.warning("Error sorting data: %s", e)
 
     pool = None
-    if future_earnings:
+    needs_similarity = any(item.get('predicted_reaction_raw') is not None for item in future_earnings)
+    if needs_similarity:
         pool_events = list(
             EarningsEvent.objects
             .filter(reaction_close__isnull=False)
             .select_related('stock')
-            .prefetch_related('price_window')
+            .prefetch_related(
+                Prefetch(
+                    'price_window',
+                    queryset=EarningsPriceWindow.objects
+                    .filter(offset_days__gte=-21, offset_days__lte=-1)
+                    .only('event_id', 'offset_days', 'close'),
+                    to_attr='_feature_price_window',
+                )
+            )
         )
         pool = build_similarity_pool(pool_events)
 

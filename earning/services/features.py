@@ -31,11 +31,19 @@ def _guidance_to_numeric(value):
 
 
 def _compute_pre_short_return(event):
-    rows = list(
-        event.price_window
-        .filter(offset_days__gte=-6, offset_days__lte=-1)
-        .values_list('offset_days', 'close')
-    )
+    prefetched_rows = getattr(event, '_feature_price_window', None)
+    if prefetched_rows is not None:
+        rows = [
+            (row.offset_days, row.close)
+            for row in prefetched_rows
+            if -6 <= row.offset_days <= -1
+        ]
+    else:
+        rows = list(
+            event.price_window
+            .filter(offset_days__gte=-6, offset_days__lte=-1)
+            .values_list('offset_days', 'close')
+        )
     closes_by_offset = {off: c for off, c in rows if c is not None}
     if -1 not in closes_by_offset or -6 not in closes_by_offset:
         return None
@@ -43,12 +51,20 @@ def _compute_pre_short_return(event):
 
 
 def _compute_pre_hv_20(event):
-    closes = list(
-        event.price_window
-        .filter(offset_days__gte=-21, offset_days__lte=-1)
-        .order_by('offset_days')
-        .values_list('close', flat=True)
-    )
+    prefetched_rows = getattr(event, '_feature_price_window', None)
+    if prefetched_rows is not None:
+        closes = [
+            row.close
+            for row in sorted(prefetched_rows, key=lambda row: row.offset_days)
+            if -21 <= row.offset_days <= -1
+        ]
+    else:
+        closes = list(
+            event.price_window
+            .filter(offset_days__gte=-21, offset_days__lte=-1)
+            .order_by('offset_days')
+            .values_list('close', flat=True)
+        )
     closes = [c for c in closes if c is not None]
     if len(closes) < 11:
         return None
