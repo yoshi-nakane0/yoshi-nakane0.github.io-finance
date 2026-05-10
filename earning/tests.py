@@ -808,6 +808,25 @@ class SimilarityPoolTests(TestCase):
         pool = build_similarity_pool([])
         self.assertEqual(find_similar_events(target, pool, top_n=3), [])
 
+    def test_similarity_pool_does_not_require_numpy_at_runtime(self):
+        import builtins
+        from unittest.mock import patch
+
+        target = self._make_event("Q1 '26", 2.5, base=0.0)
+        self._make_event("Q2 '26", 1.0, base=0.5)
+        real_import = builtins.__import__
+
+        def block_numpy(name, *args, **kwargs):
+            if name == 'numpy':
+                raise ModuleNotFoundError("No module named 'numpy'")
+            return real_import(name, *args, **kwargs)
+
+        with patch('builtins.__import__', side_effect=block_numpy):
+            pool = build_similarity_pool(EarningsEvent.objects.all())
+            result = find_similar_events(target, pool, top_n=1)
+
+        self.assertEqual(len(result), 1)
+
 
 class BuildYahooSymbolTests(TestCase):
     def test_tse_appends_dot_t(self):
