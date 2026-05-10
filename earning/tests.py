@@ -2,12 +2,46 @@ from datetime import date, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pandas as pd
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 
 from earning.models import Stock
+from scripts.earning import _normalize_earnings_date_after_keyword, _sort_eps_sales_targets
+
+
+class EarningScriptDateParseTests(TestCase):
+    def test_uses_date_after_earnings_label(self):
+        text = (
+            '市場クローズ\n'
+            '5月8日 23:59 GMT に取引終了\n'
+            '最新の決算報告日\n'
+            '2026年4月30日\n'
+            '決算期間\n'
+            '2026 第2四半期'
+        )
+        self.assertEqual(
+            _normalize_earnings_date_after_keyword(text, '最新の決算報告日'),
+            '2026-04-30',
+        )
+
+    def test_uses_inline_date_after_earnings_label(self):
+        text = '最新の決算報告日 2026年4月30日 決算期間 2026 第2四半期'
+        self.assertEqual(
+            _normalize_earnings_date_after_keyword(text, '最新の決算報告日'),
+            '2026-04-30',
+        )
+
+    def test_eps_sales_blank_dates_are_first(self):
+        df = pd.DataFrame([
+            {'date': '2026-05-01', 'market': 'NASDAQ', 'symbol': 'AAPL'},
+            {'date': None, 'market': 'TSE', 'symbol': '4519'},
+            {'date': '2026-04-30', 'market': 'NYSE', 'symbol': 'MRK'},
+        ])
+        sorted_df = _sort_eps_sales_targets(df)
+        self.assertEqual(list(sorted_df['symbol']), ['4519', 'MRK', 'AAPL'])
 
 
 class StockModelTests(TestCase):

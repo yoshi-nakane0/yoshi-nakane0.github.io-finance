@@ -1,3 +1,4 @@
+{% load static %}
 {% for date_group in earnings_data %}
 <div class="date-group{% if date_group.is_past %} date-group-past{% endif %}"
      data-period="{% if date_group.is_past %}completed{% else %}upcoming{% endif %}">
@@ -60,64 +61,75 @@
             </div>
             {% endif %}
 
-            <div class="financial-table-wrapper">
-                <table class="financial-table">
-                    <tbody>
-                        <tr>
-                            <th>EPS</th>
-                            <td><span class="cell-val">{{ company.eps_forecast }}</span></td>
-                            <td><span class="cell-val">{{ company.eps_4q_ago }}</span></td>
-                            <td><span class="cell-val">{{ company.eps_current }}</span></td>
-                            <td><span class="cell-val">{{ company.eps_4q_prior_period }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>SURP(E)</th>
-                            <td><span class="cell-val">{{ company.surp_eps_forecast|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_eps_4q_ago|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_eps_current|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_eps_4q_prior_period|default:"-" }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>REV</th>
-                            <td><span class="cell-val">{{ company.sales_forecast }}</span></td>
-                            <td><span class="cell-val">{{ company.sales_4q_ago }}</span></td>
-                            <td><span class="cell-val">{{ company.sales_current }}</span></td>
-                            <td><span class="cell-val">{{ company.sales_4q_prior_period }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>SURP(R)</th>
-                            <td><span class="cell-val">{{ company.surp_forecast|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_4q_ago|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_current|default:"-" }}</span></td>
-                            <td><span class="cell-val">{{ company.surp_4q_prior_period|default:"-" }}</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="table-caption">※ 左から予想、4期前、直近、直近4期前</div>
+            <section class="ai-summary-panel">
+                <img src="{% static 'earning/images/ai-brain.png' %}" class="ai-summary-bg" alt="" aria-hidden="true">
+                <div class="ai-summary-copy">
+                    <div class="section-heading">
+                        <span>AI分析サマリー</span>
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <p class="company-summary">{{ company.summary }}</p>
+                </div>
+            </section>
+
+            <div class="insight-grid">
+                <div class="analysis-metric-card">
+                    <span class="metric-abbrev">市場センチメント</span>
+                    <div class="metric-gauge {{ company.sentiment_class }}" style="--metric-value: {{ company.sentiment_score_value }};">
+                        <div class="metric-gauge-core">
+                            <span>{{ company.sentiment_score_display }}</span>
+                            <small>/100</small>
+                        </div>
+                    </div>
+                    <span class="metric-caption">{{ company.sentiment_label }}</span>
+                </div>
+                <div class="analysis-metric-card">
+                    <span class="metric-abbrev">リスクスコア</span>
+                    <div class="metric-gauge {{ company.risk_class }}" style="--metric-value: {{ company.risk_value|default:0 }};">
+                        <div class="metric-gauge-core">
+                            <span>{{ company.risk_score_display }}</span>
+                            <small>/100</small>
+                        </div>
+                    </div>
+                    <span class="metric-caption">{{ company.risk_score_label }}</span>
+                </div>
+                <div class="analysis-metric-card">
+                    <span class="metric-abbrev">テーマ強度</span>
+                    <div class="metric-gauge {{ company.theme_score_class }}" style="--metric-value: {{ company.theme_score_value|default:0 }};">
+                        <div class="metric-gauge-core">
+                            <span>{{ company.theme_score_display }}</span>
+                            <small>/100</small>
+                        </div>
+                    </div>
+                    <span class="metric-caption">{{ company.theme_score_label }}</span>
+                </div>
             </div>
 
-            <div class="forecast-grid fixed-4-cols">
-                <div class="metric-card metric-card--compact">
-                    <span class="metric-abbrev">Fund.</span>
-                    <div class="metric-icon {{ company.fundamental_class }}">
-                        <i class="bi {{ company.fundamental_icon }}"></i>
+            <div class="compact-financials">
+                <div class="section-heading">
+                    <span>業績ハイライト</span>
+                </div>
+                <div class="financial-highlight-grid">
+                    <div class="financial-highlight-card">
+                        <span class="financial-label">EPS予想</span>
+                        <span class="financial-value">{{ company.eps_forecast }}</span>
+                    </div>
+                    <div class="financial-highlight-card">
+                        <span class="financial-label">EPS直近</span>
+                        <span class="financial-value">{{ company.eps_current }}</span>
+                    </div>
+                    <div class="financial-highlight-card">
+                        <span class="financial-label">売上予想</span>
+                        <span class="financial-value">{{ company.sales_forecast }}</span>
+                    </div>
+                    <div class="financial-highlight-card">
+                        <span class="financial-label">売上直近</span>
+                        <span class="financial-value">{{ company.sales_current }}</span>
                     </div>
                 </div>
-                <div class="metric-card metric-card--compact">
-                    <span class="metric-abbrev">Dir.</span>
-                    <div class="metric-icon {{ company.direction_class }}">
-                        <i class="bi {{ company.direction_icon }}"></i>
-                    </div>
-                </div>
-                <div class="metric-card metric-card--compact">
-                    <span class="metric-abbrev">Sent.</span>
-                    <div class="metric-icon {{ company.sentiment_class }}">
-                        <i class="bi {{ company.sentiment_icon }}"></i>
-                    </div>
-                </div>
-                <div class="metric-card metric-card--compact">
-                    <span class="metric-abbrev">Risk</span>
-                    <span class="risk-indicator {{ company.risk_class }}">{{ company.risk_display }}</span>
+                <div class="surprise-strip">
+                    <span>EPSサプライズ <strong>{{ company.surp_eps_current|default:"-" }}</strong></span>
+                    <span>売上サプライズ <strong>{{ company.surp_current|default:"-" }}</strong></span>
                 </div>
             </div>
 
@@ -183,28 +195,6 @@
             </div>
             {% endif %}
 
-            {% if company.has_whatif %}
-            <div class="whatif-row" data-whatif-card>
-                <details class="whatif-details">
-                    <summary class="whatif-summary">▶ シナリオ実行（マクロを動かす）</summary>
-                    <div class="whatif-body">
-                        <p class="whatif-note">5 つのマクロ条件を動かして、モデルの予測がどう変わるか確認できます。データが少ないため、参考値です。</p>
-                        <div class="whatif-sliders" data-whatif-sliders></div>
-                        <div class="whatif-result">
-                            <span class="whatif-result-label">予測：</span>
-                            <span class="whatif-baseline">baseline {{ company.predicted_reaction_display }}</span>
-                            <span class="whatif-arrow">→</span>
-                            <span class="whatif-current" data-whatif-current>—</span>
-                            <span class="whatif-diff" data-whatif-diff></span>
-                        </div>
-                        <button type="button" class="whatif-reset" data-whatif-reset>リセット</button>
-                    </div>
-                </details>
-                <script type="application/json" data-whatif-baseline>{{ company.baseline_features_json|safe }}</script>
-                <script type="application/json" data-whatif-ranges>{{ company.feature_ranges_json|safe }}</script>
-            </div>
-            {% endif %}
-
             {% if company.has_reaction or company.has_past_reactions %}
             <div class="reaction-row">
                 <div class="reaction-title">決算後の反応</div>
@@ -239,9 +229,10 @@
             </div>
             {% endif %}
 
-            <div class="summary-row">
-                <p class="company-summary">{{ company.summary }}</p>
-            </div>
+            {% if company.has_whatif %}
+            <script type="application/json" data-whatif-baseline>{{ company.baseline_features_json|safe }}</script>
+            <script type="application/json" data-whatif-ranges>{{ company.feature_ranges_json|safe }}</script>
+            {% endif %}
 
             <div class="company-actions">
                 {% if company.market and company.symbol %}

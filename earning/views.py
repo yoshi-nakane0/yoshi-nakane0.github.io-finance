@@ -24,6 +24,18 @@ SENTIMENT_ICONS = {
     'down': 'bi-arrow-down',
 }
 
+SENTIMENT_LABELS = {
+    'up': '強気',
+    'flat': '中立',
+    'down': '弱気',
+}
+
+SENTIMENT_SCORES = {
+    'up': 72,
+    'flat': 52,
+    'down': 28,
+}
+
 STATUS_CLASS_MAP = {
     'up': 'status-up',
     'flat': 'status-flat',
@@ -76,11 +88,21 @@ def normalize_choice(value, choices, default):
 def risk_class(value):
     if value is None:
         return 'metric-muted'
-    if value >= 75:
-        return 'metric-positive'
     if value <= 45:
+        return 'metric-positive'
+    if value >= 75:
         return 'metric-negative'
     return 'metric-neutral'
+
+
+def risk_score_label(value):
+    if value is None:
+        return '—'
+    if value <= 45:
+        return '低リスク'
+    if value >= 75:
+        return '高リスク'
+    return '中リスク'
 
 
 def theme_score_class(value):
@@ -271,6 +293,8 @@ def enrich_item(item, pool=None, event_obj=None):
 
     item.update({
         'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
+        'risk_score_display': '—' if risk_value is None else f'{risk_value:.0f}',
+        'risk_score_label': risk_score_label(risk_value),
         'risk_class': risk_class(risk_value),
         'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
         'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
@@ -278,6 +302,9 @@ def enrich_item(item, pool=None, event_obj=None):
         'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
         'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
         'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
+        'sentiment_label': SENTIMENT_LABELS.get(sentiment, '中立'),
+        'sentiment_score_value': SENTIMENT_SCORES.get(sentiment, 52),
+        'sentiment_score_display': f'{SENTIMENT_SCORES.get(sentiment, 52):.0f}',
         'summary': summary_text,
         'fiscal_period': item.get('fiscal_period') or '—',
         'theme_label': item.get('theme') or '—',
