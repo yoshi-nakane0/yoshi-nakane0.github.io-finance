@@ -428,10 +428,12 @@ def group_by_date(items, is_past=False):
     return grouped
 
 
-def build_grouped_payload(today):
+def build_grouped_payload(today, period='all'):
     from earning.models import EarningsEvent
     from earning.services.similarity import build_similarity_pool
 
+    include_upcoming = period in {'all', 'upcoming'}
+    include_completed = period in {'all', 'completed'}
     earnings_data = fetch_earnings_from_db()
 
     future_earnings = []
@@ -439,11 +441,14 @@ def build_grouped_payload(today):
     for item in earnings_data:
         item_date = item.get('date_obj')
         if item_date is None:
-            future_earnings.append(item)
+            if include_upcoming:
+                future_earnings.append(item)
         elif item_date >= today:
-            future_earnings.append(item)
+            if include_upcoming:
+                future_earnings.append(item)
         else:
-            completed_earnings.append(item)
+            if include_completed:
+                completed_earnings.append(item)
 
     try:
         future_earnings.sort(key=lambda x: (x.get('date_obj') is None, x.get('date_obj') or date.max))
@@ -451,18 +456,20 @@ def build_grouped_payload(today):
     except Exception as e:
         logger.warning("Error sorting data: %s", e)
 
-    pool_events = list(
-        EarningsEvent.objects
-        .filter(reaction_close__isnull=False)
-        .select_related('stock')
-        .prefetch_related('price_window')
-    )
-    pool = build_similarity_pool(pool_events)
+    pool = None
+    if future_earnings:
+        pool_events = list(
+            EarningsEvent.objects
+            .filter(reaction_close__isnull=False)
+            .select_related('stock')
+            .prefetch_related('price_window')
+        )
+        pool = build_similarity_pool(pool_events)
 
     for item in future_earnings:
         enrich_item(item, pool=pool, event_obj=item.get('_event_obj'))
     for item in completed_earnings:
-        enrich_item(item, pool=pool, event_obj=item.get('_event_obj'))
+        enrich_item(item, pool=None, event_obj=item.get('_event_obj'))
 
     return {
         'upcoming': group_by_date(future_earnings, is_past=False),
@@ -470,7 +477,18 @@ def build_grouped_payload(today):
     }
 
 
-def build_cache_key(today):
+def completed_date_group_count(today):
+    from earning.models import EarningsEvent
+    return (
+        EarningsEvent.objects
+        .filter(event_date__lt=today)
+        .values('event_date')
+        .distinct()
+        .count()
+    )
+
+
+def build_cache_key(today, period='all'):
     """
     Cache key invalidated by date and the latest EarningsEvent.updated_at,
     so any DB write (importer or scraper) busts the cache.
@@ -478,15 +496,15 @@ def build_cache_key(today):
     from earning.models import EarningsEvent
     last = EarningsEvent.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
     stamp = int(last.timestamp() * 1000) if last else 0
-    return f'earnings_data_grouped_v9:{today.isoformat()}:{stamp}'
+    return f'earnings_data_grouped_v10:{period}:{today.isoformat()}:{stamp}'
 
 
-def load_grouped_earnings(today=None):
+def load_grouped_earnings(today=None, period='all'):
     target_date = today or date.today()
-    cache_key = build_cache_key(target_date)
+    cache_key = build_cache_key(target_date, period)
     cached_payload = cache.get(cache_key)
     if cached_payload is None:
-        cached_payload = build_grouped_payload(target_date)
+        cached_payload = build_grouped_payload(target_date, period=period)
         cache.set(cache_key, cached_payload, CACHE_TTL)
     return cached_payload
 
@@ -499,14 +517,14 @@ def index(request):
     決算カレンダーページの表示
     """
     today = date.today()
-    grouped_payload = load_grouped_earnings(today)
+    grouped_payload = load_grouped_earnings(today, period='upcoming')
     grouped_earnings = grouped_payload.get('upcoming', [])
-    past_earnings_data = grouped_payload.get('completed', [])
+    past_group_count = completed_date_group_count(today)
 
     context = {
         'earnings_data': grouped_earnings,
-        'has_past_earnings': bool(past_earnings_data),
-        'past_group_count': len(past_earnings_data),
+        'has_past_earnings': past_group_count > 0,
+        'past_group_count': past_group_count,
         'updated_date': today.strftime('%Y.%m.%d'),
     }
 
@@ -517,7 +535,7 @@ def index(request):
 @cache_control(public=True, max_age=0, s_maxage=300, stale_while_revalidate=86400)
 @gzip_page
 def completed(request):
-    grouped_payload = load_grouped_earnings()
+    grouped_payload = load_grouped_earnings(period='completed')
     context = {
         'earnings_data': grouped_payload.get('completed', []),
     }

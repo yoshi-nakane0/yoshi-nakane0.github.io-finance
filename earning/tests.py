@@ -1274,6 +1274,24 @@ class EarningsViewTests(TestCase):
         self.assertNotContains(response, 'cdn.jsdelivr.net')
         self.assertContains(response, '/static/dashboard/vendor/bootstrap-icons/bootstrap-icons.css')
 
+    def test_index_does_not_enrich_completed_rows_initially(self):
+        from unittest.mock import patch
+        from earning import views
+
+        touched_symbols = []
+        original_enrich_item = views.enrich_item
+
+        def record_enrich(item, *args, **kwargs):
+            touched_symbols.append(item.get('symbol'))
+            return original_enrich_item(item, *args, **kwargs)
+
+        with patch('earning.views.enrich_item', side_effect=record_enrich):
+            response = self.client.get(reverse('earning:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('FUT', touched_symbols)
+        self.assertNotIn('PST', touched_symbols)
+
     def test_completed_endpoint_returns_only_completed_groups(self):
         response = self.client.get(reverse('earning:completed'))
         content = response.content.decode('utf-8')

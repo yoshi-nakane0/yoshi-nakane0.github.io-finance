@@ -75,11 +75,9 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
         return
     if sqlite_path.exists():
         try:
-            if sqlite_schema_signature(sqlite_path) == sqlite_schema_signature(
-                bundled_sqlite_path
-            ):
+            if sqlite_file_signature(sqlite_path) == sqlite_file_signature(bundled_sqlite_path):
                 return
-        except sqlite3.Error:
+        except OSError:
             pass
     try:
         shutil.copy2(bundled_sqlite_path, sqlite_path)
@@ -89,6 +87,11 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
             bundled_sqlite_path,
             sqlite_path,
         )
+
+
+def sqlite_file_signature(sqlite_path):
+    stat = Path(sqlite_path).stat()
+    return stat.st_size, stat.st_mtime_ns
 
 
 def sqlite_schema_signature(sqlite_path):
