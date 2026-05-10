@@ -176,10 +176,11 @@
     }
 
     recomputeAndRender();
+    card.setAttribute('data-whatif-wired', '');
   }
 
   function init() {
-    const cards = document.querySelectorAll('[data-whatif-card]');
+    const cards = document.querySelectorAll('[data-whatif-card]:not([data-whatif-wired])');
     if (cards.length === 0) return;
     loadModel().then(function (model) {
       cards.forEach(function (card) { initCard(card, model); });
@@ -193,4 +194,5 @@
   } else {
     init();
   }
+  document.addEventListener('whatif:rescan', init);
 })();

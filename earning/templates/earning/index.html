@@ -148,6 +148,7 @@
                     if (responseHtml.trim()) {
                         const fragment = document.createRange().createContextualFragment(responseHtml);
                         groupsContainer.appendChild(fragment);
+                        document.dispatchEvent(new CustomEvent('whatif:rescan'));
                         registerGroups(groupsContainer);
                     }
 
