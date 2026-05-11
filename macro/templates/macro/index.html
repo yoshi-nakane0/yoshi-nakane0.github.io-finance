@@ -50,12 +50,23 @@
                 <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}">
                     <h2 class="macro-section-title">クラッシュ警戒度</h2>
                     <div class="macro-crash-banner">
+                        <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
                         <div class="macro-crash-score">
                             <span class="macro-crash-score-num">{{ crash_alert.total_score }}</span>
                             <span class="macro-crash-score-unit">/ 100</span>
                         </div>
-                        <div class="macro-crash-level">{{ crash_alert.level_label }}</div>
                     </div>
+                    {% if crash_alert.category_summary %}
+                        <ul class="macro-crash-category-list">
+                            {% for cat in crash_alert.category_summary %}
+                                <li class="macro-crash-category">
+                                    <span class="macro-crash-category-label">{{ cat.category_label }}</span>
+                                    <span class="macro-crash-category-score">{{ cat.avg_score }}</span>
+                                    <span class="macro-crash-category-weight">配点 {{ cat.weight_pct }}%</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
                     <details class="macro-crash-details">
                         <summary>サブスコア内訳</summary>
                         <ul class="macro-crash-component-list">

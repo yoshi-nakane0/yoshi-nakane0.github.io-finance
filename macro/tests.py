@@ -356,21 +356,25 @@ class CrashAlertTest(TestCase):
         bands = [(15, 0), (20, 25), (25, 50), (30, 75), (40, 90), (float('inf'), 100)]
         self.assertEqual(crash_alert._band_score(60, bands), 100)
 
-    def test_classify_low(self):
+    def test_classify_calm(self):
         level, _ = crash_alert._classify(10)
-        self.assertEqual(level, 'low')
+        self.assertEqual(level, 'calm')
 
-    def test_classify_medium(self):
+    def test_classify_caution(self):
+        level, _ = crash_alert._classify(30)
+        self.assertEqual(level, 'caution')
+
+    def test_classify_alert(self):
         level, _ = crash_alert._classify(45)
-        self.assertEqual(level, 'medium')
+        self.assertEqual(level, 'alert')
 
     def test_classify_high(self):
         level, _ = crash_alert._classify(70)
         self.assertEqual(level, 'high')
 
-    def test_classify_extreme(self):
+    def test_classify_danger(self):
         level, _ = crash_alert._classify(85)
-        self.assertEqual(level, 'extreme')
+        self.assertEqual(level, 'danger')
 
     def test_compute_no_data_returns_unknown(self):
         result = crash_alert.compute_crash_alert()

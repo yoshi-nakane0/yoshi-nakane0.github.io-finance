@@ -303,6 +303,7 @@ def build_crash_alert_context() -> Dict:
         components.append({
             'series_id': c['series_id'],
             'label': c['label'],
+            'category': c.get('category', ''),
             'value_display': format_value(c['value'], ''),
             'score': c['score'],
         })
@@ -311,6 +312,7 @@ def build_crash_alert_context() -> Dict:
         'level': raw['level'],
         'level_label': raw['level_label'],
         'components': components,
+        'category_summary': raw.get('category_summary', []),
     }
 
 

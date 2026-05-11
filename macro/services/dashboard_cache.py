@@ -14,7 +14,7 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_CACHE_KEY = 'macro_index_v1'
+DASHBOARD_CACHE_KEY = 'macro_index_v2'
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 
