@@ -25,7 +25,10 @@
 
     <div class="companies-list">
         {% for company in date_group.companies %}
-        <div class="company-card" data-market="{{ company.market }}">
+        <div class="company-card"
+             data-market="{{ company.market }}"
+             data-theme="{{ company.theme|default:'' }}"
+             data-search="{{ company.search_text|default:'' }}">
             <div class="company-header">
                 <div class="company-identity">
                     <div class="company-name" title="{{ company.company }}">{{ company.company }}</div>
@@ -78,27 +81,27 @@
                     <div class="metric-gauge {{ company.sentiment_class }}" style="--metric-value: {{ company.sentiment_score_value }};">
                         <div class="metric-gauge-core">
                             <span>{{ company.sentiment_score_display }}</span>
-                            <small>/100</small>
+                            <small>/5</small>
                         </div>
                     </div>
                     <span class="metric-caption">{{ company.sentiment_label }}</span>
                 </div>
                 <div class="analysis-metric-card">
                     <span class="metric-abbrev">リスクスコア</span>
-                    <div class="metric-gauge {{ company.risk_class }}" style="--metric-value: {{ company.risk_value|default:0 }};">
+                    <div class="metric-gauge {{ company.risk_class }}" style="--metric-value: {{ company.risk_gauge_value|default:0 }};">
                         <div class="metric-gauge-core">
                             <span>{{ company.risk_score_display }}</span>
-                            <small>/100</small>
+                            <small>/5</small>
                         </div>
                     </div>
                     <span class="metric-caption">{{ company.risk_score_label }}</span>
                 </div>
                 <div class="analysis-metric-card">
                     <span class="metric-abbrev">テーマ強度</span>
-                    <div class="metric-gauge {{ company.theme_score_class }}" style="--metric-value: {{ company.theme_score_value|default:0 }};">
+                    <div class="metric-gauge {{ company.theme_score_class }}" style="--metric-value: {{ company.theme_gauge_value|default:0 }};">
                         <div class="metric-gauge-core">
                             <span>{{ company.theme_score_display }}</span>
-                            <small>/100</small>
+                            <small>/5</small>
                         </div>
                     </div>
                     <span class="metric-caption">{{ company.theme_score_label }}</span>
@@ -108,24 +111,6 @@
             <div class="compact-financials">
                 <div class="section-heading">
                     <span>業績ハイライト</span>
-                </div>
-                <div class="financial-highlight-grid">
-                    <div class="financial-highlight-card">
-                        <span class="financial-label">EPS予想</span>
-                        <span class="financial-value">{{ company.eps_forecast }}</span>
-                    </div>
-                    <div class="financial-highlight-card">
-                        <span class="financial-label">EPS直近</span>
-                        <span class="financial-value">{{ company.eps_current }}</span>
-                    </div>
-                    <div class="financial-highlight-card">
-                        <span class="financial-label">売上予想</span>
-                        <span class="financial-value">{{ company.sales_forecast }}</span>
-                    </div>
-                    <div class="financial-highlight-card">
-                        <span class="financial-label">売上直近</span>
-                        <span class="financial-value">{{ company.sales_current }}</span>
-                    </div>
                 </div>
                 <div class="surprise-strip">
                     <span>EPSサプライズ <strong>{{ company.surp_eps_current|default:"-" }}</strong></span>

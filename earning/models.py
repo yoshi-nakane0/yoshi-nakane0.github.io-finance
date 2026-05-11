@@ -41,20 +41,10 @@ class EarningsEvent(models.Model):
     risk_value = models.FloatField(null=True, blank=True)
 
     eps_forecast = models.CharField(max_length=32, blank=True)
-    eps_4q_ago = models.CharField(max_length=32, blank=True)
-    eps_current = models.CharField(max_length=32, blank=True)
-    eps_4q_prior_period = models.CharField(max_length=32, blank=True)
-    surp_eps_4q_ago = models.CharField(max_length=32, blank=True)
     surp_eps_current = models.CharField(max_length=32, blank=True)
-    surp_eps_4q_prior_period = models.CharField(max_length=32, blank=True)
 
     sales_forecast = models.CharField(max_length=32, blank=True)
-    sales_4q_ago = models.CharField(max_length=32, blank=True)
-    sales_current = models.CharField(max_length=32, blank=True)
-    sales_4q_prior_period = models.CharField(max_length=32, blank=True)
-    surp_4q_ago = models.CharField(max_length=32, blank=True)
     surp_current = models.CharField(max_length=32, blank=True)
-    surp_4q_prior_period = models.CharField(max_length=32, blank=True)
 
     theme_score = models.FloatField(null=True, blank=True)
     gross_margin = models.FloatField(null=True, blank=True)

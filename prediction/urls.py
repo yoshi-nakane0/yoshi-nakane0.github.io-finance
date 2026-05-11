@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
@@ -6,5 +6,8 @@ app_name = 'prediction'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('<int:row_id>/', views.detail, name='detail'),
+    path('authenticate/', views.authenticate, name='authenticate'),
+    path('logout/', views.logout, name='logout'),
+    path('refresh/', views.refresh, name='refresh'),
+    path('api/', include('prediction.api.urls')),
 ]

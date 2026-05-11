@@ -61,20 +61,12 @@ PERIOD_COLUMN = 'fiscal_period'
 FORECAST_COLUMNS = [
     'eps_forecast',
     'sales_forecast',
-    'eps_4q_ago',
-    'sales_4q_ago',
-    'eps_4q_prior_period',
-    'sales_4q_prior_period',
 ]
 SURP_REVENUE_COLUMNS = [
-    'surp_4q_ago',
     'surp_current',
-    'surp_4q_prior_period',
 ]
 SURP_EPS_COLUMNS = [
-    'surp_eps_4q_ago',
     'surp_eps_current',
-    'surp_eps_4q_prior_period',
 ]
 
 EARNINGS_URL_TEMPLATE = (
@@ -951,19 +943,9 @@ def upsert_event_to_db(row_dict):
             'sentiment': _norm('Sentiment', {'up', 'flat', 'down'}, 'flat'),
             'risk_value': _f('Risk'),
             'eps_forecast': _s('eps_forecast'),
-            'eps_4q_ago': _s('eps_4q_ago'),
-            'eps_current': _s('eps_current'),
-            'eps_4q_prior_period': _s('eps_4q_prior_period'),
-            'surp_eps_4q_ago': _s('surp_eps_4q_ago'),
             'surp_eps_current': _s('surp_eps_current'),
-            'surp_eps_4q_prior_period': _s('surp_eps_4q_prior_period'),
             'sales_forecast': _s('sales_forecast'),
-            'sales_4q_ago': _s('sales_4q_ago'),
-            'sales_current': _s('sales_current'),
-            'sales_4q_prior_period': _s('sales_4q_prior_period'),
-            'surp_4q_ago': _s('surp_4q_ago'),
             'surp_current': _s('surp_current'),
-            'surp_4q_prior_period': _s('surp_4q_prior_period'),
             'theme_score': _f('theme_score'),
             'gross_margin': _f('gross_margin'),
             'operating_margin': _f('operating_margin'),
@@ -1103,18 +1085,8 @@ def main():
     period_idx = header_index.get(PERIOD_COLUMN)
     eps_forecast_idx = header_index.get('eps_forecast')
     sales_forecast_idx = header_index.get('sales_forecast')
-    eps_current_idx = header_index.get('eps_current')
-    sales_current_idx = header_index.get('sales_current')
-    eps_4q_ago_idx = header_index.get('eps_4q_ago')
-    sales_4q_ago_idx = header_index.get('sales_4q_ago')
-    eps_4q_prior_idx = header_index.get('eps_4q_prior_period')
-    sales_4q_prior_idx = header_index.get('sales_4q_prior_period')
-    surp_4q_ago_idx = header_index.get('surp_4q_ago')
     surp_current_idx = header_index.get('surp_current')
-    surp_4q_prior_idx = header_index.get('surp_4q_prior_period')
-    surp_eps_4q_ago_idx = header_index.get('surp_eps_4q_ago')
     surp_eps_current_idx = header_index.get('surp_eps_current')
-    surp_eps_4q_prior_idx = header_index.get('surp_eps_4q_prior_period')
     header_names = [str(df.iat[0, c]).strip() for c in range(len(df.columns))]
 
     eps_sales_rows = []
@@ -1218,47 +1190,13 @@ def main():
                             display_period = _format_fiscal_period(decision_period_norm)
                             df.iat[i + 1, period_idx] = display_period or decision_period
 
-                        decision_prior_period_norm = (
-                            _shift_period(decision_period_norm, -4) if decision_period_norm else None
-                        )
-                        current_prior_period_norm = (
-                            _shift_period(current_period_norm, -4) if current_period_norm else None
-                        )
-
                         eps_forecast_value = eps_forecasts.get(decision_period_norm) if decision_period_norm else None
                         sales_forecast_value = sales_forecasts.get(decision_period_norm) if decision_period_norm else None
-                        eps_same_period_prior_value = (
-                            eps_values.get(decision_prior_period_norm) if decision_prior_period_norm else None
-                        )
-                        sales_same_period_prior_value = (
-                            sales_values.get(decision_prior_period_norm) if decision_prior_period_norm else None
-                        )
-                        eps_current_value = eps_values.get(current_period_norm) if current_period_norm else None
-                        sales_current_value = sales_values.get(current_period_norm) if current_period_norm else None
-                        eps_current_prior_value = (
-                            eps_values.get(current_prior_period_norm) if current_prior_period_norm else None
-                        )
-                        sales_current_prior_value = (
-                            sales_values.get(current_prior_period_norm) if current_prior_period_norm else None
-                        )
-
-                        sales_surp_same_period_prior_value = (
-                            sales_surprises.get(decision_prior_period_norm) if decision_prior_period_norm else None
-                        )
                         sales_surp_current_value = (
                             sales_surprises.get(current_period_norm) if current_period_norm else None
                         )
-                        sales_surp_current_prior_value = (
-                            sales_surprises.get(current_prior_period_norm) if current_prior_period_norm else None
-                        )
-                        eps_surp_same_period_prior_value = (
-                            eps_surprises.get(decision_prior_period_norm) if decision_prior_period_norm else None
-                        )
                         eps_surp_current_value = (
                             eps_surprises.get(current_period_norm) if current_period_norm else None
-                        )
-                        eps_surp_current_prior_value = (
-                            eps_surprises.get(current_prior_period_norm) if current_prior_period_norm else None
                         )
 
                         if eps_forecast_idx is not None:
@@ -1266,34 +1204,10 @@ def main():
                         if sales_forecast_idx is not None:
                             df.iat[i + 1, sales_forecast_idx] = _format_revenue(sales_forecast_value)
 
-                        if eps_current_idx is not None:
-                            df.iat[i + 1, eps_current_idx] = _format_eps(eps_current_value)
-                        if sales_current_idx is not None:
-                            df.iat[i + 1, sales_current_idx] = _format_revenue(sales_current_value)
-
-                        if eps_4q_ago_idx is not None:
-                            df.iat[i + 1, eps_4q_ago_idx] = _format_eps(eps_same_period_prior_value)
-                        if sales_4q_ago_idx is not None:
-                            df.iat[i + 1, sales_4q_ago_idx] = _format_revenue(sales_same_period_prior_value)
-
-                        if eps_4q_prior_idx is not None:
-                            df.iat[i + 1, eps_4q_prior_idx] = _format_eps(eps_current_prior_value)
-                        if sales_4q_prior_idx is not None:
-                            df.iat[i + 1, sales_4q_prior_idx] = _format_revenue(sales_current_prior_value)
-
-                        if surp_4q_ago_idx is not None:
-                            df.iat[i + 1, surp_4q_ago_idx] = _format_surprise(sales_surp_same_period_prior_value)
                         if surp_current_idx is not None:
                             df.iat[i + 1, surp_current_idx] = _format_surprise(sales_surp_current_value)
-                        if surp_4q_prior_idx is not None:
-                            df.iat[i + 1, surp_4q_prior_idx] = _format_surprise(sales_surp_current_prior_value)
-
-                        if surp_eps_4q_ago_idx is not None:
-                            df.iat[i + 1, surp_eps_4q_ago_idx] = _format_surprise(eps_surp_same_period_prior_value)
                         if surp_eps_current_idx is not None:
                             df.iat[i + 1, surp_eps_current_idx] = _format_surprise(eps_surp_current_value)
-                        if surp_eps_4q_prior_idx is not None:
-                            df.iat[i + 1, surp_eps_4q_prior_idx] = _format_surprise(eps_surp_current_prior_value)
 
                         date_value = _df_cell_text(df, i + 1, date_idx)
                         company_value = _df_cell_text(df, i + 1, company_idx)
@@ -1354,6 +1268,15 @@ def main():
             print('[Info] eps_sales 用の行が無いため保存をスキップしました。')
     except Exception as e:
         print(f'[Warning] {EPS_SALES_CSV} への保存に失敗しました: {e}')
+
+    # 7.6) eps_sales.csv の内容を DB に同期
+    try:
+        if EPS_SALES_CSV.exists():
+            from earning.services.eps_sales_sync import sync_eps_sales_csv_to_db
+            q0, q1, skipped = sync_eps_sales_csv_to_db(str(EPS_SALES_CSV))
+            print(f'[Info] eps_sales を DB に同期しました（q0={q0} q1={q1} skipped={skipped}）。')
+    except Exception as e:
+        print(f'[Warning] eps_sales の DB 同期に失敗しました: {e}')
 
     # 8) 作業用CSVを削除
     try:

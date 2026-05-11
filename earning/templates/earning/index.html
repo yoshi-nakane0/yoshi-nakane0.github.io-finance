@@ -21,11 +21,50 @@
         <div class="schedule-container">
 
             <div class="filter-panel">
+                <div class="search-bar">
+                    <i class="bi bi-search search-bar-icon" aria-hidden="true"></i>
+                    <input type="search"
+                           id="search-input"
+                           class="search-input"
+                           placeholder="銘柄・社名・業種・テーマで検索"
+                           autocomplete="off" />
+                    <button id="search-clear" type="button" class="search-clear-btn" aria-label="検索をクリア" hidden>
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
                 <div class="filter-buttons">
                     <button class="filter-btn active" data-filter="all">ALL</button>
                     <button class="filter-btn" data-filter="en">US / Global</button>
                     <button class="filter-btn" data-filter="jp">Japan</button>
                 </div>
+                <details class="theme-panel" id="theme-panel">
+                    <summary class="theme-panel-summary">
+                        <span class="theme-panel-title">
+                            <i class="bi bi-tags" aria-hidden="true"></i>
+                            テーマ一覧
+                            <span class="theme-panel-count">{{ theme_total_count }}テーマ・{{ stock_total_count }}銘柄</span>
+                        </span>
+                        <i class="bi bi-chevron-down theme-panel-chevron" aria-hidden="true"></i>
+                    </summary>
+                    <div class="theme-panel-body">
+                        <button class="theme-chip active" data-theme-filter="all" type="button">すべて</button>
+                        {% for theme in theme_index %}
+                        <div class="theme-group">
+                            <button class="theme-chip" data-theme-filter="{{ theme.name }}" type="button">
+                                {{ theme.name }}<span class="theme-chip-count">{{ theme.count }}</span>
+                            </button>
+                            <div class="theme-stocks">
+                                {% for stock in theme.stocks %}
+                                <span class="theme-stock" data-market="{{ stock.market }}">
+                                    <span class="theme-stock-symbol">{{ stock.symbol }}</span>
+                                    <span class="theme-stock-company">{{ stock.company }}</span>
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
                 <div class="history-toggle-wrap">
                     <button id="toggle-completed-btn"
                             type="button"
@@ -41,6 +80,13 @@
                         {% else %}
                         決算済みデータなし
                         {% endif %}
+                    </button>
+                </div>
+                <div class="active-filter-banner" id="active-filter-banner" hidden>
+                    <span class="active-filter-label">絞り込み中:</span>
+                    <span class="active-filter-value" id="active-filter-value"></span>
+                    <button type="button" class="active-filter-clear" id="active-filter-clear" aria-label="絞り込みを解除">
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
             </div>
@@ -89,10 +135,19 @@
             const filterButtons = document.querySelectorAll('.filter-btn');
             const toggleCompletedButton = document.getElementById('toggle-completed-btn');
             const groupsContainer = document.getElementById('earnings-groups');
+            const searchInput = document.getElementById('search-input');
+            const searchClear = document.getElementById('search-clear');
+            const themePanel = document.getElementById('theme-panel');
+            const themeChips = themePanel ? themePanel.querySelectorAll('.theme-chip') : [];
+            const activeFilterBanner = document.getElementById('active-filter-banner');
+            const activeFilterValue = document.getElementById('active-filter-value');
+            const activeFilterClear = document.getElementById('active-filter-clear');
             const dateGroups = [];
             const groupCards = new Map();
             let showCompleted = false;
             let marketFilter = 'all';
+            let themeFilter = 'all';
+            let searchQuery = '';
             let completedLoaded = false;
             let completedLoading = false;
 
@@ -171,7 +226,27 @@
 
             registerGroups(groupsContainer);
 
+            const updateActiveFilterBanner = () => {
+                if (!activeFilterBanner) return;
+                const parts = [];
+                if (themeFilter && themeFilter !== 'all') {
+                    parts.push(`テーマ: ${themeFilter}`);
+                }
+                if (searchQuery) {
+                    parts.push(`検索: "${searchQuery}"`);
+                }
+                if (parts.length === 0) {
+                    activeFilterBanner.hidden = true;
+                    return;
+                }
+                activeFilterBanner.hidden = false;
+                if (activeFilterValue) {
+                    activeFilterValue.textContent = parts.join(' / ');
+                }
+            };
+
             const applyFilters = () => {
+                const query = searchQuery.toLowerCase();
                 dateGroups.forEach(group => {
                     const isCompletedGroup = group.getAttribute('data-period') === 'completed';
                     if (showCompleted && !isCompletedGroup) {
@@ -187,13 +262,21 @@
                     let visibleCount = 0;
 
                     cards.forEach(card => {
-                        const market = card.dataset.market;
+                        const market = card.dataset.market || '';
+                        const theme = card.dataset.theme || '';
+                        const searchText = card.dataset.search || '';
 
                         let visible = true;
                         if (marketFilter === 'jp') {
                             visible = market === 'TSE';
                         } else if (marketFilter === 'en') {
                             visible = market !== 'TSE';
+                        }
+                        if (visible && themeFilter !== 'all') {
+                            visible = theme === themeFilter;
+                        }
+                        if (visible && query) {
+                            visible = searchText.indexOf(query) !== -1;
                         }
 
                         card.style.display = visible ? '' : 'none';
@@ -204,7 +287,58 @@
 
                     group.style.display = visibleCount > 0 ? '' : 'none';
                 });
+                updateActiveFilterBanner();
             };
+
+            const setThemeFilter = (value) => {
+                themeFilter = value || 'all';
+                themeChips.forEach(chip => {
+                    chip.classList.toggle('active', (chip.dataset.themeFilter || 'all') === themeFilter);
+                });
+            };
+
+            themeChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    setThemeFilter(chip.dataset.themeFilter || 'all');
+                    applyFilters();
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    searchQuery = searchInput.value.trim();
+                    if (searchClear) {
+                        searchClear.hidden = searchQuery.length === 0;
+                    }
+                    applyFilters();
+                });
+            }
+
+            if (searchClear) {
+                searchClear.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = '';
+                        searchInput.focus();
+                    }
+                    searchQuery = '';
+                    searchClear.hidden = true;
+                    applyFilters();
+                });
+            }
+
+            if (activeFilterClear) {
+                activeFilterClear.addEventListener('click', () => {
+                    setThemeFilter('all');
+                    if (searchInput) {
+                        searchInput.value = '';
+                    }
+                    searchQuery = '';
+                    if (searchClear) {
+                        searchClear.hidden = true;
+                    }
+                    applyFilters();
+                });
+            }
 
             filterButtons.forEach(button => {
                 button.addEventListener('click', function() {

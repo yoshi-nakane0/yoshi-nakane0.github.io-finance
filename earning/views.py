@@ -79,6 +79,156 @@ def parse_float(value):
         return None
 
 
+def to_5_scale(value):
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return None
+    if v < 20:
+        return 1
+    if v < 40:
+        return 2
+    if v < 60:
+        return 3
+    if v < 80:
+        return 4
+    return 5
+
+
+def _linear_to_100(value, low, high):
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return None
+    if high == low:
+        return 50.0
+    score = (v - low) / (high - low) * 100.0
+    return max(0.0, min(100.0, score))
+
+
+def _inverted_linear_to_100(value, low, high):
+    score = _linear_to_100(value, low, high)
+    if score is None:
+        return None
+    return 100.0 - score
+
+
+def compute_sentiment_score(event):
+    if event is None:
+        return None
+    vix_score = _inverted_linear_to_100(event.vix_at_event, 10.0, 30.0)
+    hy_score = _inverted_linear_to_100(event.hy_spread_at_event, 2.5, 6.0)
+    parts = [s for s in (vix_score, hy_score) if s is not None]
+    if not parts:
+        return None
+    score = sum(parts) / len(parts)
+    skew = event.skew_at_event
+    if skew is not None and skew >= 145.0:
+        score -= 10.0
+    t5yie = event.t5yie_at_event
+    if t5yie is not None and (t5yie < 1.5 or t5yie > 3.0):
+        score -= 5.0
+    return max(0.0, min(100.0, score))
+
+
+def compute_risk_score(event):
+    if event is None:
+        return None
+    market_parts = []
+    vix_risk = _linear_to_100(event.vix_at_event, 10.0, 30.0)
+    if vix_risk is not None:
+        market_parts.append(vix_risk)
+    hy_risk = _linear_to_100(event.hy_spread_at_event, 2.5, 6.0)
+    if hy_risk is not None:
+        market_parts.append(hy_risk)
+    skew_risk = _linear_to_100(event.skew_at_event, 120.0, 150.0)
+    if skew_risk is not None:
+        market_parts.append(skew_risk)
+    market_risk = sum(market_parts) / len(market_parts) if market_parts else None
+
+    valid_reactions = [r for r in (event.past_reactions or []) if r is not None]
+    individual_risk = None
+    if valid_reactions:
+        abs_avg = sum(abs(r) for r in valid_reactions) / len(valid_reactions)
+        individual_risk = _linear_to_100(abs_avg, 0.0, 10.0)
+
+    if market_risk is None and individual_risk is None:
+        return None
+    if market_risk is None:
+        return individual_risk
+    if individual_risk is None:
+        return market_risk
+    return market_risk * 0.6 + individual_risk * 0.4
+
+
+def build_theme_strength_pool():
+    from earning.models import EarningsEvent
+    theme_buckets = defaultdict(list)
+    industry_buckets = defaultdict(list)
+    queryset = (
+        EarningsEvent.objects
+        .select_related('stock')
+        .filter(reaction_close__isnull=False)
+        .only('reaction_close', 'stock__theme', 'stock__industry')
+    )
+    for ev in queryset:
+        try:
+            value = float(ev.reaction_close)
+        except (ValueError, TypeError):
+            continue
+        theme = (ev.stock.theme or '').strip()
+        industry = (ev.stock.industry or '').strip()
+        if theme:
+            theme_buckets[theme].append(value)
+        if industry:
+            industry_buckets[industry].append(value)
+    pool = {'theme': {}, 'industry': {}}
+    for theme, values in theme_buckets.items():
+        if values:
+            pool['theme'][theme] = sum(values) / len(values)
+    for industry, values in industry_buckets.items():
+        if values:
+            pool['industry'][industry] = sum(values) / len(values)
+    return pool
+
+
+def compute_theme_strength(theme, industry, theme_pool):
+    if not theme_pool:
+        return None
+    avg = None
+    if theme:
+        avg = theme_pool.get('theme', {}).get(theme.strip())
+    if avg is None and industry:
+        avg = theme_pool.get('industry', {}).get(industry.strip())
+    if avg is None:
+        return None
+    return _linear_to_100(avg, -5.0, 5.0)
+
+
+def sentiment_label_from_5(score_5):
+    if score_5 is None:
+        return '—'
+    if score_5 >= 4:
+        return '強気'
+    if score_5 <= 2:
+        return '弱気'
+    return '中立'
+
+
+def sentiment_class_from_5(score_5):
+    if score_5 is None:
+        return 'status-flat'
+    if score_5 >= 4:
+        return 'status-up'
+    if score_5 <= 2:
+        return 'status-down'
+    return 'status-flat'
+
+
 def normalize_choice(value, choices, default):
     if not value:
         return default
@@ -229,22 +379,10 @@ def fetch_earnings_from_db(today=None, period='all'):
             'risk_value': ev.risk_value,
             'direction': ev.direction,
             'sentiment': ev.sentiment,
-            'sales_current': ev.sales_current,
             'sales_forecast': ev.sales_forecast,
-            'sales_4q_ago': ev.sales_4q_ago,
-            'sales_4q_prior_period': ev.sales_4q_prior_period,
-            'surp_forecast': '-',
-            'surp_4q_ago': ev.surp_4q_ago,
             'surp_current': ev.surp_current,
-            'surp_4q_prior_period': ev.surp_4q_prior_period,
-            'eps_current': ev.eps_current,
             'eps_forecast': ev.eps_forecast,
-            'eps_4q_ago': ev.eps_4q_ago,
-            'eps_4q_prior_period': ev.eps_4q_prior_period,
-            'surp_eps_forecast': '-',
-            'surp_eps_4q_ago': ev.surp_eps_4q_ago,
             'surp_eps_current': ev.surp_eps_current,
-            'surp_eps_4q_prior_period': ev.surp_eps_4q_prior_period,
             'fiscal_period': ev.fiscal_period,
             'summary': ev.summary,
             'theme': stock.theme,
@@ -266,7 +404,7 @@ def fetch_earnings_from_db(today=None, period='all'):
     return items
 
 
-def enrich_item(item, pool=None, event_obj=None):
+def enrich_item(item, pool=None, event_obj=None, theme_pool=None):
     risk_value = item.get('risk_value')
 
     fundamental = item.get('fundamental')
@@ -305,27 +443,45 @@ def enrich_item(item, pool=None, event_obj=None):
     past_avg = sum(valid_past) / len(valid_past) if valid_past else None
     has_past_reactions = bool(valid_past)
 
+    sentiment_100 = compute_sentiment_score(event_obj)
+    risk_100 = compute_risk_score(event_obj)
+    theme_100 = compute_theme_strength(item.get('theme'), item.get('industry'), theme_pool)
+
+    search_parts = [
+        str(item.get('symbol') or ''),
+        str(item.get('company') or ''),
+        str(item.get('industry') or ''),
+        str(item.get('theme') or ''),
+    ]
+    item['search_text'] = ' '.join(p for p in search_parts if p).lower()
+
+    sentiment_5 = to_5_scale(sentiment_100)
+    risk_5 = to_5_scale(risk_100)
+    theme_5 = to_5_scale(theme_100)
+
     item.update({
-        'risk_display': '—' if risk_value is None else f'{risk_value:.0f}%',
-        'risk_score_display': '—' if risk_value is None else f'{risk_value:.0f}',
-        'risk_score_label': risk_score_label(risk_value),
-        'risk_class': risk_class(risk_value),
+        'risk_display': '—' if risk_100 is None else f'{risk_100:.0f}%',
+        'risk_score_display': '—' if risk_5 is None else str(risk_5),
+        'risk_score_label': risk_score_label(risk_100),
+        'risk_class': risk_class(risk_100),
+        'risk_gauge_value': risk_5 * 20 if risk_5 is not None else 0,
         'fundamental_class': STATUS_CLASS_MAP.get(fundamental, 'status-flat'),
         'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
         'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
         'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
-        'sentiment_class': STATUS_CLASS_MAP.get(sentiment, 'status-flat'),
+        'sentiment_class': sentiment_class_from_5(sentiment_5),
         'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
-        'sentiment_label': SENTIMENT_LABELS.get(sentiment, '中立'),
-        'sentiment_score_value': SENTIMENT_SCORES.get(sentiment, 52),
-        'sentiment_score_display': f'{SENTIMENT_SCORES.get(sentiment, 52):.0f}',
+        'sentiment_label': sentiment_label_from_5(sentiment_5),
+        'sentiment_score_value': sentiment_5 * 20 if sentiment_5 is not None else 0,
+        'sentiment_score_display': '—' if sentiment_5 is None else str(sentiment_5),
         'summary': summary_text,
         'fiscal_period': item.get('fiscal_period') or '—',
         'theme_label': item.get('theme') or '—',
-        'theme_score_display': '—' if theme_score_value is None else f'{theme_score_value:.0f}',
-        'theme_score_class': theme_score_class(theme_score_value),
-        'theme_score_label': theme_score_label(theme_score_value),
-        'theme_short_lock': theme_score_value is not None and theme_score_value >= 80,
+        'theme_score_display': '—' if theme_5 is None else str(theme_5),
+        'theme_score_class': theme_score_class(theme_100),
+        'theme_score_label': theme_score_label(theme_100),
+        'theme_short_lock': theme_100 is not None and theme_100 >= 80,
+        'theme_gauge_value': theme_5 * 20 if theme_5 is not None else 0,
         'watch_tier': item.get('watch_tier') or '',
         'watch_tier_class': WATCH_TIER_CLASS_MAP.get(item.get('watch_tier') or '', ''),
         'watch_role': item.get('watch_role') or '',
@@ -403,24 +559,25 @@ def enrich_item(item, pool=None, event_obj=None):
     item.pop('_event_obj', None)
 
 
-def compute_theme_aggregations(items):
+def compute_theme_aggregations(items, theme_pool=None):
     """
-    1日分の決算企業をテーマ単位で集計する。
+    1日分の決算企業をテーマ単位で集計する。テーマ強度はテーマプールから取得。
     """
-    buckets = defaultdict(list)
+    buckets = defaultdict(int)
     for item in items:
         theme = (item.get('theme') or '').strip()
-        score = item.get('theme_score_value')
-        if not theme or score is None:
+        if not theme:
             continue
-        buckets[theme].append(score)
+        buckets[theme] += 1
 
     aggregations = []
-    for theme, scores in buckets.items():
-        avg = sum(scores) / len(scores)
+    for theme, count in buckets.items():
+        avg = compute_theme_strength(theme, None, theme_pool)
+        if avg is None:
+            continue
         aggregations.append({
             'theme': theme,
-            'count': len(scores),
+            'count': count,
             'avg_score': avg,
             'avg_display': f'{avg:.0f}',
             'label': theme_score_label(avg),
@@ -430,7 +587,7 @@ def compute_theme_aggregations(items):
     return aggregations
 
 
-def group_by_date(items, is_past=False):
+def group_by_date(items, is_past=False, theme_pool=None):
     grouped = []
     if not items:
         return grouped
@@ -444,7 +601,7 @@ def group_by_date(items, is_past=False):
                 'date': current_date,
                 'companies': current_companies,
                 'is_past': is_past,
-                'theme_aggregations': compute_theme_aggregations(current_companies),
+                'theme_aggregations': compute_theme_aggregations(current_companies, theme_pool=theme_pool),
             })
 
         for item in items:
@@ -464,7 +621,7 @@ def group_by_date(items, is_past=False):
                 'date': item['date'],
                 'companies': [item],
                 'is_past': is_past,
-                'theme_aggregations': compute_theme_aggregations([item]),
+                'theme_aggregations': compute_theme_aggregations([item], theme_pool=theme_pool),
             })
     return grouped
 
@@ -497,6 +654,17 @@ def build_grouped_payload(today, period='all'):
     except Exception as e:
         logger.warning("Error sorting data: %s", e)
 
+    if include_completed and completed_earnings:
+        seen_symbols = set()
+        latest_completed = []
+        for item in completed_earnings:
+            sym = item.get('symbol')
+            if sym in seen_symbols:
+                continue
+            seen_symbols.add(sym)
+            latest_completed.append(item)
+        completed_earnings = latest_completed
+
     pool = None
     needs_similarity = any(item.get('predicted_reaction_raw') is not None for item in future_earnings)
     if needs_similarity:
@@ -516,26 +684,54 @@ def build_grouped_payload(today, period='all'):
         )
         pool = build_similarity_pool(pool_events)
 
+    theme_pool = build_theme_strength_pool()
+
     for item in future_earnings:
-        enrich_item(item, pool=pool, event_obj=item.get('_event_obj'))
+        enrich_item(item, pool=pool, event_obj=item.get('_event_obj'), theme_pool=theme_pool)
     for item in completed_earnings:
-        enrich_item(item, pool=None, event_obj=item.get('_event_obj'))
+        enrich_item(item, pool=None, event_obj=item.get('_event_obj'), theme_pool=theme_pool)
 
     return {
-        'upcoming': group_by_date(future_earnings, is_past=False),
-        'completed': group_by_date(completed_earnings, is_past=True),
+        'upcoming': group_by_date(future_earnings, is_past=False, theme_pool=theme_pool),
+        'completed': group_by_date(completed_earnings, is_past=True, theme_pool=theme_pool),
     }
+
+
+def build_theme_index():
+    """
+    全銘柄をテーマ別にまとめた一覧を返す。テーマパネルでの表示用。
+    """
+    from earning.models import Stock
+    buckets = defaultdict(list)
+    for s in Stock.objects.all().order_by('company'):
+        theme = (s.theme or '').strip() or '（未設定）'
+        buckets[theme].append({
+            'symbol': s.symbol,
+            'company': s.company,
+            'market': s.market,
+        })
+    result = []
+    for theme in sorted(buckets.keys()):
+        stocks = buckets[theme]
+        result.append({
+            'name': theme,
+            'count': len(stocks),
+            'stocks': stocks,
+        })
+    return result
 
 
 def completed_date_group_count(today):
     from earning.models import EarningsEvent
-    return (
+    from django.db.models import Max
+    latest_dates = (
         EarningsEvent.objects
         .filter(event_date__lt=today)
-        .values('event_date')
-        .distinct()
-        .count()
+        .values('stock_id')
+        .annotate(max_date=Max('event_date'))
+        .values_list('max_date', flat=True)
     )
+    return len(set(latest_dates))
 
 
 def build_cache_key(today, period='all'):
@@ -571,11 +767,17 @@ def index(request):
     grouped_earnings = grouped_payload.get('upcoming', [])
     past_group_count = completed_date_group_count(today)
 
+    theme_index = build_theme_index()
+    total_stocks = sum(t['count'] for t in theme_index)
+
     context = {
         'earnings_data': grouped_earnings,
         'has_past_earnings': past_group_count > 0,
         'past_group_count': past_group_count,
         'updated_date': today.strftime('%Y.%m.%d'),
+        'theme_index': theme_index,
+        'theme_total_count': len(theme_index),
+        'stock_total_count': total_stocks,
     }
 
     return render(request, 'earning/index.html', context)

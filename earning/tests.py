@@ -180,10 +180,10 @@ class ImportEarningsCsvTests(TestCase):
             'fiscal_period': "Q1 '26", 'industry': 'Tech',
             'Fundamental': 'up', 'Direction': 'up', 'Sentiment': 'flat', 'Risk': '70',
             'summary': 'great quarter',
-            'eps_forecast': '2.10', 'eps_4q_ago': '1.88', 'eps_current': '2.40', 'eps_4q_prior_period': '1.95',
-            'sales_forecast': '120.0', 'sales_4q_ago': '110.0', 'sales_current': '125.0', 'sales_4q_prior_period': '108.0',
-            'surp_4q_ago': '+2.0', 'surp_current': '+4.0', 'surp_4q_prior_period': '+1.0',
-            'surp_eps_4q_ago': '+0.05', 'surp_eps_current': '+0.30', 'surp_eps_4q_prior_period': '+0.10',
+            'eps_forecast': '2.10',
+            'sales_forecast': '120.0',
+            'surp_current': '+4.0',
+            'surp_eps_current': '+0.30',
             'theme': 'AI', 'theme_score': '80', 'watch_tier': '最重要', 'watch_role': '主要',
             'nikkei_weight': '5.5', 'gross_margin': '45', 'operating_margin': '30',
             'guidance_revision': 'up', 'relative_strength': '78',
@@ -214,7 +214,7 @@ class ImportEarningsCsvTests(TestCase):
             'date': '2026-01-30', 'market': 'NASDAQ', 'symbol': 'AAPL', 'company': 'Apple Inc.',
             'fiscal_period': "Q1 '26", 'industry': 'Tech',
             'Fundamental': 'up', 'Direction': 'up', 'Sentiment': 'flat', 'Risk': '70',
-            'summary': 'first', 'eps_current': '2.40',
+            'summary': 'first', 'eps_forecast': '2.40',
         }]
         self._write_csv(self.csv_path, rows)
         call_command('import_earnings_csv', str(self.csv_path), stdout=StringIO())
@@ -1271,20 +1271,16 @@ class EarningsViewTests(TestCase):
             stock=future_stock, fiscal_period='Q4',
             event_date=today + timedelta(days=1),
             fundamental='up', direction='flat', sentiment='down', risk_value=82,
-            eps_current='3.2', eps_forecast='3.4', eps_4q_ago='2.9', eps_4q_prior_period='2.4',
-            sales_current='120', sales_forecast='130', sales_4q_ago='100', sales_4q_prior_period='95',
-            surp_4q_ago='4%', surp_current='6%', surp_4q_prior_period='2%',
-            surp_eps_4q_ago='3%', surp_eps_current='5%', surp_eps_4q_prior_period='1%',
+            eps_forecast='3.4', sales_forecast='130',
+            surp_current='6%', surp_eps_current='5%',
             summary='upcoming summary',
         )
         EarningsEvent.objects.create(
             stock=past_stock, fiscal_period='Q4',
             event_date=today - timedelta(days=1),
             fundamental='up', direction='flat', sentiment='down', risk_value=82,
-            eps_current='3.2', eps_forecast='3.4', eps_4q_ago='2.9', eps_4q_prior_period='2.4',
-            sales_current='120', sales_forecast='130', sales_4q_ago='100', sales_4q_prior_period='95',
-            surp_4q_ago='4%', surp_current='6%', surp_4q_prior_period='2%',
-            surp_eps_4q_ago='3%', surp_eps_current='5%', surp_eps_4q_prior_period='1%',
+            eps_forecast='3.4', sales_forecast='130',
+            surp_current='6%', surp_eps_current='5%',
             summary='completed summary',
         )
         from earning.models import EarningsPrediction
@@ -1302,8 +1298,8 @@ class EarningsViewTests(TestCase):
     def test_index_renders_only_upcoming_groups_initially(self):
         response = self.client.get(reverse('earning:index'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Future Corp')
-        self.assertNotContains(response, 'Past Corp')
+        self.assertContains(response, 'upcoming summary')
+        self.assertNotContains(response, 'completed summary')
         self.assertContains(response, '決算済みを表示（1日分）')
         self.assertNotContains(response, 'cdn.jsdelivr.net')
         self.assertContains(response, '/static/dashboard/vendor/bootstrap-icons/bootstrap-icons.css')

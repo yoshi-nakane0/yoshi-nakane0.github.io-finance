@@ -1,0 +1,54 @@
+[
+  {
+    "model": "prediction.sentimenttopic",
+    "fields": {
+      "slug": "inflation",
+      "name_ja": "インフレ",
+      "category": "inflation",
+      "query": "(inflation OR CPI OR \"consumer price index\" OR \"core inflation\")",
+      "display_order": 10,
+      "is_active": true,
+      "created_at": "2026-05-11T00:00:00Z",
+      "updated_at": "2026-05-11T00:00:00Z"
+    }
+  },
+  {
+    "model": "prediction.sentimenttopic",
+    "fields": {
+      "slug": "geopolitical",
+      "name_ja": "地政学",
+      "category": "geopolitical",
+      "query": "(war OR sanctions OR geopolitical OR Taiwan OR Russia OR Iran OR \"middle east\" OR Hormuz)",
+      "display_order": 20,
+      "is_active": true,
+      "created_at": "2026-05-11T00:00:00Z",
+      "updated_at": "2026-05-11T00:00:00Z"
+    }
+  },
+  {
+    "model": "prediction.sentimenttopic",
+    "fields": {
+      "slug": "fed",
+      "name_ja": "FRB",
+      "category": "fed",
+      "query": "(\"Federal Reserve\" OR FOMC OR Powell OR \"rate hike\" OR \"rate cut\" OR \"monetary policy\")",
+      "display_order": 30,
+      "is_active": true,
+      "created_at": "2026-05-11T00:00:00Z",
+      "updated_at": "2026-05-11T00:00:00Z"
+    }
+  },
+  {
+    "model": "prediction.sentimenttopic",
+    "fields": {
+      "slug": "recession",
+      "name_ja": "リセッション",
+      "category": "recession",
+      "query": "(recession OR \"economic downturn\" OR \"yield curve\" OR \"soft landing\" OR \"hard landing\")",
+      "display_order": 40,
+      "is_active": true,
+      "created_at": "2026-05-11T00:00:00Z",
+      "updated_at": "2026-05-11T00:00:00Z"
+    }
+  }
+]

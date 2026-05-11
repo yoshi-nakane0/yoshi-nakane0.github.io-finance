@@ -1,114 +1,146 @@
-import csv
-import math
-from datetime import datetime
-from pathlib import Path
+"""Prediction ページのビュー。
 
-from django.conf import settings
-from django.http import Http404
-from django.shortcuts import render
+- index: 4 トピックの集計＋直近24時間のネガティブ記事を表示
+- refresh: ボタンから GDELT 取得を実行（ハイブリッドセッション認証付き）
+- authenticate: パスフレーズ入力を受け、セッションフラグを立てる
+"""
 
-CSV_RELATIVE_PATH = Path("static") / "prediction" / "data" / "prediction_data.csv"
-COLUMN_RENAME = {
-    "Methods": "methods",
-}
-EXPECTED_COLUMNS = ("date", "evaluation", "methods", "article", "plan", "scenario")
+import logging
+from datetime import datetime, timedelta, timezone
 
-def _parse_date(value):
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text:
-        return None
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
-        try:
-            return datetime.strptime(text, fmt).date()
-        except ValueError:
-            continue
-    return None
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
+from .api.auth import (
+    SESSION_AUTH_KEY,
+    SESSION_DURATION_SEC,
+    get_passphrase,
+    grant_session,
+    has_valid_session,
+    session_remaining_seconds,
+    verify_passphrase,
+)
+from .models import SentimentArticle
+from .services.refresh import (
+    SKIP_WINDOW_SEC,
+    get_last_refresh_at,
+    refresh_all_topics,
+    should_skip_refresh,
+)
+from .services.sentiment_aggregator import build_topic_summary, list_active_topics
 
-def _parse_evaluation(value):
-    if value is None:
-        return ""
-    text = str(value).strip()
-    if not text:
-        return ""
-    try:
-        number = float(text)
-    except ValueError:
-        return ""
-    if math.isnan(number):
-        return ""
-    return str(int(number))
+logger = logging.getLogger(__name__)
+
+ARTICLES_PER_TOPIC = 3
+RECENT_HOURS = 24
 
 
-def _string_value(value):
-    if value is None:
-        return ""
-    return str(value)
+def _build_cards(days: int = 7) -> list:
+    return [build_topic_summary(topic, days=days) for topic in list_active_topics()]
 
 
-def _load_prediction_records():
-    csv_path = settings.BASE_DIR / CSV_RELATIVE_PATH
-    if not csv_path.exists():
-        print(f"CSV file not found at {csv_path}")
-        return []
-
-    try:
-        with open(csv_path, newline="", encoding="utf-8") as csvfile:
-            reader = csv.DictReader(csvfile)
-            if reader.fieldnames:
-                reader.fieldnames = [
-                    name.lstrip("\ufeff") if name else name for name in reader.fieldnames
-                ]
-
-            records = []
-            for row in reader:
-                normalized_row = {}
-                for key, value in row.items():
-                    normalized_key = COLUMN_RENAME.get(key, key)
-                    normalized_row[normalized_key] = value
-
-                record = {
-                    "date": _parse_date(normalized_row.get("date")),
-                    "evaluation": _parse_evaluation(normalized_row.get("evaluation")),
-                    "methods": _string_value(normalized_row.get("methods")),
-                    "article": _string_value(normalized_row.get("article")),
-                    "plan": _string_value(normalized_row.get("plan")),
-                    "scenario": _string_value(normalized_row.get("scenario")),
+def _build_articles_by_topic() -> list:
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=RECENT_HOURS)
+    sections = []
+    for topic in list_active_topics():
+        rows = list(
+            SentimentArticle.objects
+            .filter(topic=topic, published_at__gte=cutoff)
+            .order_by('-published_at')
+            .values('title', 'url', 'domain', 'published_at')[:ARTICLES_PER_TOPIC]
+        )
+        sections.append({
+            'topic_slug': topic.slug,
+            'topic_name': topic.name_ja,
+            'category': topic.category,
+            'articles': [
+                {
+                    'title': r['title'],
+                    'url': r['url'],
+                    'domain': r['domain'],
+                    'published_at': r['published_at'],
                 }
-                records.append(record)
-    except Exception as exc:
-        print(f"Error reading CSV file: {exc}")
-        return []
-
-    with_date = [record for record in records if record["date"] is not None]
-    without_date = [record for record in records if record["date"] is None]
-    with_date.sort(key=lambda record: record["date"], reverse=True)
-    ordered = with_date + without_date
-    for idx, record in enumerate(ordered):
-        record["row_id"] = idx
-
-    return ordered
-
-
-def _get_prediction_records():
-    records = _load_prediction_records()
-    if not records:
-        return []
-    return records
+                for r in rows
+            ],
+        })
+    return sections
 
 
 def index(request):
-    predictions = _get_prediction_records()
-    return render(request, "prediction/list.html", {"predictions": predictions})
+    cards = _build_cards(days=7)
+    articles_by_topic = _build_articles_by_topic()
+    last_refresh = get_last_refresh_at()
+    skip, remaining = should_skip_refresh()
+    context = {
+        'cards': cards,
+        'articles_by_topic': articles_by_topic,
+        'last_refresh': last_refresh,
+        'is_authenticated': has_valid_session(request),
+        'session_remaining_sec': session_remaining_seconds(request),
+        'session_duration_hours': SESSION_DURATION_SEC // 3600,
+        'refresh_skip': skip,
+        'refresh_skip_remaining': remaining,
+        'refresh_window_sec': SKIP_WINDOW_SEC,
+        'passphrase_configured': bool(get_passphrase()),
+    }
+    return render(request, 'prediction/list.html', context)
 
 
-def detail(request, row_id):
-    predictions = _get_prediction_records()
-    prediction = next(
-        (item for item in predictions if item.get("row_id") == row_id), None
-    )
-    if not prediction:
-        raise Http404("Prediction not found")
-    return render(request, "prediction/detail.html", {"prediction": prediction})
+@require_POST
+def authenticate(request):
+    """パスフレーズを検証し、合えばセッションフラグを立てる。"""
+    if not get_passphrase():
+        messages.error(
+            request,
+            'パスフレーズが未設定です（.env の PREDICTION_AUTH_PASSPHRASE）',
+        )
+        return redirect(reverse('prediction:index'))
+    passphrase = request.POST.get('passphrase', '')
+    if verify_passphrase(passphrase):
+        grant_session(request)
+        messages.success(request, '認証しました。これで更新ボタンが使えます。')
+    else:
+        messages.error(request, 'パスフレーズが正しくありません')
+    return redirect(reverse('prediction:index'))
+
+
+@require_POST
+def refresh(request):
+    """GDELT 取得を実行。ハイブリッドセッション認証必須。"""
+    if not has_valid_session(request):
+        messages.error(request, '認証が必要です。パスフレーズを入力してください。')
+        return redirect(reverse('prediction:index'))
+
+    try:
+        result = refresh_all_topics(force=False)
+    except Exception as exc:
+        logger.exception('GDELT refresh failed')
+        messages.error(request, f'更新中にエラー: {exc}')
+        return redirect(reverse('prediction:index'))
+
+    if result.get('skipped'):
+        messages.info(
+            request,
+            f"直近 {SKIP_WINDOW_SEC // 60} 分以内に更新済みのためスキップ "
+            f"（あと {result['remaining_sec']} 秒）",
+        )
+        return redirect(reverse('prediction:index'))
+
+    ok = len(result['success'])
+    ng = len(result['failed'])
+    if ng == 0:
+        messages.success(request, f'{ok} トピックを更新しました')
+    elif ok == 0:
+        messages.error(request, f'全 {ng} トピックの取得に失敗しました')
+    else:
+        messages.warning(request, f'{ok} 件成功 / {ng} 件失敗')
+    return redirect(reverse('prediction:index'))
+
+
+@require_POST
+def logout(request):
+    request.session.pop(SESSION_AUTH_KEY, None)
+    messages.success(request, '認証を解除しました')
+    return redirect(reverse('prediction:index'))

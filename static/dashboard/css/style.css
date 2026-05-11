@@ -19,7 +19,6 @@
   --color-basecalc: #FFFFFF;    /* Crisp White */
   --color-prompt: #F87171;      /* Red 400 */
   --color-admin: #94A3B8;       /* Slate 400 */
-  --color-settings: #CBD5E1;    /* Slate 300 */
 }
 
 body {
@@ -328,15 +327,15 @@ body {
 }
 .type-prompt svg { stroke: var(--color-prompt); }
 
-/* Admin & Settings (Neutral but Bold) */
-.type-admin, .type-settings {
+/* Admin (Neutral but Bold) */
+.type-admin {
   border-color: rgba(148, 163, 184, var(--card-border-opacity));
 }
-.type-admin .icon-wrapper, .type-settings .icon-wrapper {
+.type-admin .icon-wrapper {
   background: rgba(148, 163, 184, 0.1);
   border-color: rgba(187, 196, 210, 0.665);
 }
-.type-admin svg, .type-settings svg { stroke: var(--color-admin); }
+.type-admin svg { stroke: var(--color-admin); }
 
 /* Unified Icon Theme (Match basecalc) */
 .dashboard-card {
