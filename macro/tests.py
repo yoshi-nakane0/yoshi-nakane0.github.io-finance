@@ -471,11 +471,12 @@ class DetailAnalysisTest(TestCase):
 class IndicatorSeedingTest(TestCase):
     """マイグレーションが指標を登録していることを確認。
 
-    Phase 4 で 5 系列、Phase 5（価格アクション）で 12 系列が追加されている。
+    Phase 4 で 5 系列、Phase 5（価格アクション）で 12 系列、
+    Phase 6（MOVE / VIX-VIX3M 比）で 2 系列が追加されている。
     """
 
     def test_seeded_count(self):
-        self.assertEqual(Indicator.objects.count(), 63)
+        self.assertEqual(Indicator.objects.count(), 65)
 
     def test_importance_a_count(self):
         # Phase 1: 11 + Phase 2: SP500, T10Y3M = 13（Phase 4 は B のみ）

@@ -1,14 +1,20 @@
-"""Yahoo Finance から日次価格を取得し、価格アクション指標を算出する。
+"""Yahoo Finance から日次データを取得し、複数の派生指標を算出する。
 
-主要指数（^GSPC, ^N225, ^DJI, ^IXIC）から以下の派生指標を計算する。
-- DD200 : 200日移動平均からの乖離率（%）
-- DD52W : 52週高値からの下落率（%、負値ほど深い）
-- MOM20 : 20営業日リターン（%）
+対応する系列:
+1. 主要指数の価格アクション（series_id: `PA_<SYMBOL>_<METRIC>`）
+   主要指数（^GSPC, ^N225, ^DJI, ^IXIC）から以下の派生指標を計算する。
+   - DD200 : 200日移動平均からの乖離率（%）
+   - DD52W : 52週高値からの下落率（%、負値ほど深い）
+   - MOM20 : 20営業日リターン（%）
 
-series_id は `PA_<SYMBOL>_<METRIC>` 形式（例: PA_GSPC_DD200）。
+2. 単発の Yahoo シンボル（series_id: 任意の独自ID）
+   ^MOVE などを生値のまま観測値として返す。
 
-クラッシュ警戒度サブスコアと指標サマリの両方で利用するため、Observation テーブルに
-時系列で保存する。日次値のうち、最終的に保存するのは過去 2 年分程度。
+3. 比率系（series_id: 任意の独自ID）
+   VIX_VIX3M_RATIO のように 2 つの Yahoo シンボルの比を返す。
+
+すべて Observation テーブルに時系列で保存し、クラッシュ警戒度サブスコアと指標サマリの
+両方で利用する。
 """
 
 import logging
@@ -44,6 +50,16 @@ SYMBOL_MAP: Dict[str, str] = {
 }
 
 METRICS = ('DD200', 'DD52W', 'MOM20')
+
+# 単発系列: series_id → Yahoo シンボル。価格そのものを観測値として返す。
+RAW_SYMBOL_MAP: Dict[str, str] = {
+    'MOVE_INDEX': '^MOVE',
+}
+
+# 比率系列: series_id → (分子の Yahoo シンボル, 分母の Yahoo シンボル)
+RATIO_DEFS: Dict[str, Tuple[str, str]] = {
+    'VIX_VIX3M_RATIO': ('^VIX', '^VIX3M'),
+}
 
 
 class PriceActionError(Exception):
@@ -179,12 +195,19 @@ def _parse_series_id(series_id: str) -> Tuple[str, str]:
     return symbol_key, metric
 
 
-def fetch_observations(
+def _within_range(d: date, start, end) -> bool:
+    if start is not None and d < start:
+        return False
+    if end is not None and d > end:
+        return False
+    return True
+
+
+def _fetch_price_action(
     series_id: str,
-    observation_start: 'date | None' = None,
-    observation_end: 'date | None' = None,
+    start: 'date | None',
+    end: 'date | None',
 ) -> List[Tuple[date, float]]:
-    """`PA_<SYMBOL>_<METRIC>` 形式の派生指標を計算して (date, value) リストで返す。"""
     symbol_key, metric = _parse_series_id(series_id)
     history = _fetch_daily_history(SYMBOL_MAP[symbol_key])
     if not history:
@@ -200,13 +223,53 @@ def fetch_observations(
     else:
         values = _compute_mom20(closes)
 
+    return [
+        (d, v) for d, v in zip(dates, values)
+        if v is not None and _within_range(d, start, end)
+    ]
+
+
+def _fetch_raw_symbol(
+    series_id: str,
+    start: 'date | None',
+    end: 'date | None',
+) -> List[Tuple[date, float]]:
+    symbol = RAW_SYMBOL_MAP[series_id]
+    history = _fetch_daily_history(symbol)
+    return [(d, v) for d, v in history if _within_range(d, start, end)]
+
+
+def _fetch_ratio(
+    series_id: str,
+    start: 'date | None',
+    end: 'date | None',
+) -> List[Tuple[date, float]]:
+    num_symbol, den_symbol = RATIO_DEFS[series_id]
+    num_history = _fetch_daily_history(num_symbol)
+    den_history = _fetch_daily_history(den_symbol)
+    den_lookup = dict(den_history)
+
     out: List[Tuple[date, float]] = []
-    for d, v in zip(dates, values):
-        if v is None:
+    for d, num in num_history:
+        den = den_lookup.get(d)
+        if den is None or den == 0:
             continue
-        if observation_start is not None and d < observation_start:
+        if not _within_range(d, start, end):
             continue
-        if observation_end is not None and d > observation_end:
-            continue
-        out.append((d, v))
+        out.append((d, num / den))
     return out
+
+
+def fetch_observations(
+    series_id: str,
+    observation_start: 'date | None' = None,
+    observation_end: 'date | None' = None,
+) -> List[Tuple[date, float]]:
+    """series_id 種別に応じて Yahoo Finance から派生値・生値・比率を取得する。"""
+    if series_id.startswith('PA_'):
+        return _fetch_price_action(series_id, observation_start, observation_end)
+    if series_id in RAW_SYMBOL_MAP:
+        return _fetch_raw_symbol(series_id, observation_start, observation_end)
+    if series_id in RATIO_DEFS:
+        return _fetch_ratio(series_id, observation_start, observation_end)
+    raise PriceActionError(f"Unknown yfinance_daily series id: {series_id}")

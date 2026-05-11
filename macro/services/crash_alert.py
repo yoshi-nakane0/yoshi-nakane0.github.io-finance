@@ -40,6 +40,14 @@ COMPONENT_SPECS = [
         'series_id': 'AAII_BULLISH', 'label': 'AAII強気%', 'category': 'market', 'direction': 'higher',
         'bands': [(30, 0), (40, 25), (50, 50), (55, 75), (60, 90), (float('inf'), 100)],
     },
+    {
+        'series_id': 'MOVE_INDEX', 'label': 'MOVE指数', 'category': 'market', 'direction': 'higher',
+        'bands': [(80, 0), (100, 25), (130, 50), (160, 75), (200, 90), (float('inf'), 100)],
+    },
+    {
+        'series_id': 'VIX_VIX3M_RATIO', 'label': 'VIX/VIX3M比', 'category': 'market', 'direction': 'higher',
+        'bands': [(0.9, 0), (0.95, 25), (1.0, 50), (1.1, 75), (1.2, 90), (float('inf'), 100)],
+    },
     # --- 市場（価格アクション: 4指数 × 3指標）---
     *[
         {
