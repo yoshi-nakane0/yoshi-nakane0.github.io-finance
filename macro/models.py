@@ -29,6 +29,7 @@ class Indicator(models.Model):
         AAII = 'aaii', 'AAII'
         NAAIM = 'naaim', 'NAAIM'
         YFINANCE = 'yfinance', 'Yahoo Finance'
+        YFINANCE_DAILY = 'yfinance_daily', 'Yahoo Finance (日次)'
 
     fred_series_id = models.CharField(max_length=64, unique=True)
     source = models.CharField(

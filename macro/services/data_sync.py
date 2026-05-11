@@ -22,6 +22,7 @@ from . import (
     external_yfinance_client,
     finra_client,
     naaim_client,
+    price_action_client,
 )
 from .fred_client import FredApiError, fetch_observations as fetch_fred_observations
 
@@ -210,6 +211,10 @@ def _fetch_for_source(
         return external_yfinance_client.fetch_monthly_index(
             sid, observation_start=start_date, observation_end=end_date,
         )
+    if source == 'yfinance_daily':
+        return price_action_client.fetch_observations(
+            sid, observation_start=start_date, observation_end=end_date,
+        )
     raise FredApiError(f"未対応の source: {source}")
 
 
@@ -301,6 +306,7 @@ def sync_all_indicators(*, history_years: int = HISTORY_YEARS) -> dict:
         aaii_client.AaiiError,
         naaim_client.NaaimError,
         external_yfinance_client.ExternalYfinanceError,
+        price_action_client.PriceActionError,
     )
     for indicator in indicators:
         try:
