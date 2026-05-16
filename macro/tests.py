@@ -9,7 +9,13 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
-from .models import Indicator, Observation, PriceObservation, RegimeSnapshot
+from .models import (
+    DashboardCache,
+    Indicator,
+    Observation,
+    PriceObservation,
+    RegimeSnapshot,
+)
 from .services import (
     crash_alert,
     dashboard,
@@ -33,6 +39,14 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
         self.assertIn('SQLITE_DB_PATH: db.sqlite3', workflow)
+
+    def test_vercel_build_precomputes_macro_dashboard(self):
+        build_script = (
+            Path(settings.BASE_DIR)
+            / 'build_files.sh'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('manage.py precompute_dashboard', build_script)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (
@@ -193,6 +207,21 @@ class DashboardFormatTest(TestCase):
 
     def test_format_signed_positive(self):
         self.assertEqual(dashboard.format_signed(0.5, 2), '+0.50')
+
+
+class DashboardCacheTest(TestCase):
+    def test_load_dashboard_payload_accepts_legacy_key(self):
+        from .services.dashboard_cache import load_dashboard_payload
+
+        DashboardCache.objects.create(
+            cache_key='macro_index_v1',
+            payload={'last_updated': '2026-05-01'},
+        )
+
+        self.assertEqual(
+            load_dashboard_payload(),
+            {'last_updated': '2026-05-01'},
+        )
 
 
 @override_settings(ALLOWED_HOSTS=['*'])

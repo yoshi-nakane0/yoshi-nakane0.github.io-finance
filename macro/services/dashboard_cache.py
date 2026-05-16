@@ -15,6 +15,7 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 DASHBOARD_CACHE_KEY = 'macro_index_v2'
+LEGACY_DASHBOARD_CACHE_KEYS = ('macro_index_v1',)
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 
@@ -50,6 +51,13 @@ def load_dashboard_payload() -> Optional[dict]:
     from ..models import DashboardCache
     try:
         cache_obj = DashboardCache.objects.filter(cache_key=DASHBOARD_CACHE_KEY).first()
+        if cache_obj is None and LEGACY_DASHBOARD_CACHE_KEYS:
+            cache_obj = (
+                DashboardCache.objects
+                .filter(cache_key__in=LEGACY_DASHBOARD_CACHE_KEYS)
+                .order_by('-computed_at')
+                .first()
+            )
     except Exception:
         logger.exception('failed to read DashboardCache')
         return None

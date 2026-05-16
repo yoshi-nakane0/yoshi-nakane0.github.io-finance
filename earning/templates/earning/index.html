@@ -82,13 +82,6 @@
                         {% endif %}
                     </button>
                 </div>
-                <div class="active-filter-banner" id="active-filter-banner" hidden>
-                    <span class="active-filter-label">絞り込み中:</span>
-                    <span class="active-filter-value" id="active-filter-value"></span>
-                    <button type="button" class="active-filter-clear" id="active-filter-clear" aria-label="絞り込みを解除">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
             </div>
 
             <div class="schedule-date">
@@ -139,9 +132,6 @@
             const searchClear = document.getElementById('search-clear');
             const themePanel = document.getElementById('theme-panel');
             const themeChips = themePanel ? themePanel.querySelectorAll('.theme-chip') : [];
-            const activeFilterBanner = document.getElementById('active-filter-banner');
-            const activeFilterValue = document.getElementById('active-filter-value');
-            const activeFilterClear = document.getElementById('active-filter-clear');
             const dateGroups = [];
             const groupCards = new Map();
             let showCompleted = false;
@@ -226,25 +216,6 @@
 
             registerGroups(groupsContainer);
 
-            const updateActiveFilterBanner = () => {
-                if (!activeFilterBanner) return;
-                const parts = [];
-                if (themeFilter && themeFilter !== 'all') {
-                    parts.push(`テーマ: ${themeFilter}`);
-                }
-                if (searchQuery) {
-                    parts.push(`検索: "${searchQuery}"`);
-                }
-                if (parts.length === 0) {
-                    activeFilterBanner.hidden = true;
-                    return;
-                }
-                activeFilterBanner.hidden = false;
-                if (activeFilterValue) {
-                    activeFilterValue.textContent = parts.join(' / ');
-                }
-            };
-
             const applyFilters = () => {
                 const query = searchQuery.toLowerCase();
                 dateGroups.forEach(group => {
@@ -287,7 +258,6 @@
 
                     group.style.display = visibleCount > 0 ? '' : 'none';
                 });
-                updateActiveFilterBanner();
             };
 
             const setThemeFilter = (value) => {
@@ -322,20 +292,6 @@
                     }
                     searchQuery = '';
                     searchClear.hidden = true;
-                    applyFilters();
-                });
-            }
-
-            if (activeFilterClear) {
-                activeFilterClear.addEventListener('click', () => {
-                    setThemeFilter('all');
-                    if (searchInput) {
-                        searchInput.value = '';
-                    }
-                    searchQuery = '';
-                    if (searchClear) {
-                        searchClear.hidden = true;
-                    }
                     applyFilters();
                 });
             }

@@ -33,6 +33,9 @@ SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py migrate --noinput
 # Earnings CSV を同梱 SQLite に取り込む（CSV を deploy 時の真実として再投入）
 SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py import_earnings_csv static/earning/data/data.csv
 
+# Macro ページの重い計算結果を deploy 時に作り、アクセス時の 504 を防ぐ
+SQLITE_DB_PATH="$PWD/db.sqlite3" $PYTHON_BIN manage.py precompute_dashboard
+
 # 静的ファイルの収集
 $PYTHON_BIN manage.py collectstatic --noinput --clear
 
