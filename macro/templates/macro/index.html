@@ -23,6 +23,11 @@
                     {% endfor %}
                 </ul>
             {% endif %}
+            {% if dashboard_cache_missing %}
+                <ul class="macro-messages">
+                    <li class="macro-message macro-message--warning">一部の重い分析は準備中です。基本指標のみ表示しています。</li>
+                </ul>
+            {% endif %}
 
             <section class="macro-regime-bar">
                 <div class="macro-regime-orbit" aria-hidden="true"></div>
@@ -213,7 +218,7 @@
                     </details>
                     {% endwith %}
                 {% elif similar_commentary.summary %}
-                    <p class="macro-similar-empty">{{ similar_commentary.summary }}</p>
+                    <p class="macro-similar-empty">{% if dashboard_cache_missing %}類似局面は準備中です。{% else %}{{ similar_commentary.summary }}{% endif %}</p>
                 {% else %}
                     <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
                 {% endif %}
@@ -298,7 +303,7 @@
                         {% endfor %}
                     </ol>
                 {% else %}
-                    <p class="macro-placeholder">{% if has_observations %}連動分析に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
+                    <p class="macro-placeholder">{% if dashboard_cache_missing %}連動分析は準備中です。{% elif has_observations %}連動分析に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
                 {% endif %}
             </section>
 

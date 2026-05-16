@@ -32,9 +32,22 @@
             <div class="meta-info">Updated: 2026.04.20</div>
             <div class="events-content">
                 <div id="past-events-container" class="events-group events-group--past" hidden></div>
-                <div class="events-group events-group--future">
+                <div
+                    id="future-events-container"
+                    class="events-group events-group--future"
+                >
                     {% include "events/_event_sections.html" with grouped_entries=future_groups %}
                 </div>
+                <button
+                    class="events-more-button"
+                    id="load-more-events"
+                    type="button"
+                    data-more-url="{{ future_more_url }}"
+                    data-next-offset="0"
+                    {% if not has_future_more_events %}hidden{% endif %}
+                >
+                    もっと見る
+                </button>
             </div>
         </div>
 
@@ -45,11 +58,14 @@
         <script>
             const toggleButton = document.getElementById('toggle-past-events');
             const pastEventsContainer = document.getElementById('past-events-container');
+            const futureEventsContainer = document.getElementById('future-events-container');
+            const loadMoreButton = document.getElementById('load-more-events');
             const hasPastEvents = toggleButton.dataset.hasPastEvents === 'true';
             const pastEventsUrl = toggleButton.dataset.pastUrl;
             let showPastEvents = false;
             let pastEventsLoaded = false;
             let pastEventsLoading = false;
+            let moreEventsLoading = false;
 
             async function ensurePastEventsLoaded() {
                 if (!hasPastEvents || pastEventsLoaded || pastEventsLoading) {
@@ -96,6 +112,40 @@
                 }
 
                 setPastEventsVisibility(true);
+            });
+
+            loadMoreButton.addEventListener('click', async () => {
+                if (moreEventsLoading) {
+                    return;
+                }
+
+                moreEventsLoading = true;
+                loadMoreButton.disabled = true;
+                loadMoreButton.textContent = '読み込み中';
+
+                const url = new URL(loadMoreButton.dataset.moreUrl, window.location.origin);
+                url.searchParams.set('offset', loadMoreButton.dataset.nextOffset || '0');
+
+                try {
+                    const response = await fetch(url.toString(), { cache: 'force-cache' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const payload = await response.json();
+                    if (payload.html) {
+                        futureEventsContainer.insertAdjacentHTML('beforeend', payload.html);
+                    }
+
+                    loadMoreButton.dataset.nextOffset = String(payload.nextOffset || 0);
+                    loadMoreButton.hidden = !payload.hasMore;
+                } catch (error) {
+                    console.error('追加イベントの読み込みでエラー:', error);
+                } finally {
+                    moreEventsLoading = false;
+                    loadMoreButton.disabled = false;
+                    loadMoreButton.textContent = 'もっと見る';
+                }
             });
 
             const backToTopButton = document.getElementById("back-to-top");

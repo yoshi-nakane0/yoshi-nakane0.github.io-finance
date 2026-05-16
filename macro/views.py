@@ -1,6 +1,7 @@
 """macro モジュールのビュー。"""
 
 import logging
+import os
 from datetime import datetime
 
 from django.contrib import messages
@@ -49,6 +50,13 @@ from .services.yfinance_client import sync_all_price_histories
 logger = logging.getLogger(__name__)
 
 
+def _is_serverless_runtime():
+    return any(
+        os.getenv(name)
+        for name in ('VERCEL', 'AWS_LAMBDA_FUNCTION_NAME', 'LAMBDA_TASK_ROOT')
+    )
+
+
 def index(request):
     """macro モジュールのトップ画面。重い計算は事前計算キャッシュから取得。"""
     from .services.dashboard_cache import load_dashboard_payload
@@ -75,6 +83,28 @@ def index(request):
     latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
     fred_key_present = bool(get_api_key())
     has_observations = latest_obs_date is not None
+
+    if _is_serverless_runtime():
+        context = {
+            'has_observations': has_observations,
+            'last_updated': (
+                latest_obs_date.isoformat() if latest_obs_date else '—'
+            ),
+            'fred_key_present': fred_key_present,
+            'indicator_cards': build_indicator_cards() if has_observations else [],
+            'crash_alert': None,
+            'historical_crash_similarity': [],
+            'lightgbm_prediction': load_lightgbm_prediction(),
+            'similar_periods': [],
+            'linkages': [],
+            'overview_commentary': None,
+            'similar_commentary': build_similar_explanation([]),
+            'linkage_commentary': build_linkage_explanation([]),
+            'dashboard_cache_missing': True,
+        }
+        context.update(build_regime_context(latest_snapshot))
+        return render(request, 'macro/index.html', context)
+
     similar_periods = build_similar_periods() if has_observations else []
     linkages = build_linkages() if has_observations else []
 

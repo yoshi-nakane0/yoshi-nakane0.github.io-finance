@@ -87,6 +87,34 @@ body {
     font-size: 13px;
 }
 
+.events-more-button {
+    display: block;
+    width: min(220px, calc(100% - 16px));
+    margin: 14px auto 24px;
+    padding: 9px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(78, 88, 112, 0.92), rgba(50, 60, 82, 0.92));
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+}
+
+.events-more-button:hover {
+    background: linear-gradient(135deg, rgba(88, 98, 122, 0.96), rgba(60, 70, 92, 0.96));
+}
+
+.events-more-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.events-more-button[hidden] {
+    display: none !important;
+}
+
 /* 日付ごとのセクション */
 .events-date {
     margin-bottom: 20px;

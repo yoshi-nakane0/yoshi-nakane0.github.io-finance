@@ -2,6 +2,7 @@
 
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
 from django.conf import settings
 from django.test import SimpleTestCase
@@ -231,6 +232,30 @@ class MacroUrlsTest(TestCase):
     def test_index_renders(self):
         r = self.client.get(reverse('macro:index'))
         self.assertEqual(r.status_code, 200)
+
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    @mock.patch('macro.views.build_historical_crash_similarity')
+    @mock.patch('macro.views.build_crash_alert_context')
+    @mock.patch('macro.views.build_linkages')
+    @mock.patch('macro.views.build_similar_periods')
+    def test_index_serverless_without_cache_skips_heavy_fallback(
+        self,
+        build_similar_periods_mock,
+        build_linkages_mock,
+        build_crash_alert_context_mock,
+        build_historical_crash_similarity_mock,
+    ):
+        build_similar_periods_mock.side_effect = AssertionError('heavy fallback')
+        build_linkages_mock.side_effect = AssertionError('heavy fallback')
+        build_crash_alert_context_mock.side_effect = AssertionError('heavy fallback')
+        build_historical_crash_similarity_mock.side_effect = AssertionError(
+            'heavy fallback'
+        )
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '基本指標のみ表示しています')
 
     def test_refresh_without_key_redirects(self):
         r = self.client.post(reverse('macro:refresh'))
