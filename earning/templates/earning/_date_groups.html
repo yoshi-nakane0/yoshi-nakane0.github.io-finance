@@ -76,15 +76,16 @@
             </section>
 
             <div class="insight-grid">
-                <div class="analysis-metric-card">
-                    <span class="metric-abbrev">市場センチメント</span>
-                    <div class="metric-gauge {{ company.sentiment_class }}" style="--metric-value: {{ company.sentiment_score_value }};">
+                <div class="analysis-metric-card expectation-card {{ company.expectation_class }}">
+                    <span class="metric-abbrev">決算期待度</span>
+                    <div class="metric-gauge {{ company.expectation_class }}" style="--metric-value: {{ company.expectation_score_value|default:0 }};">
                         <div class="metric-gauge-core">
-                            <span>{{ company.sentiment_score_display }}</span>
+                            <span>{{ company.expectation_scale_display }}</span>
                             <small>/5</small>
                         </div>
                     </div>
-                    <span class="metric-caption">{{ company.sentiment_label }}</span>
+                    <span class="metric-caption">{{ company.expectation_label }}</span>
+                    <span class="expectation-raw">{{ company.expectation_score_display }}/100</span>
                 </div>
                 <div class="analysis-metric-card">
                     <span class="metric-abbrev">リスクスコア</span>
@@ -119,8 +120,8 @@
             </div>
 
             {% if company.has_fundamentals %}
-            <div class="fundamentals-row">
-                <div class="fundamentals-title">ファンダ詳細</div>
+            <details class="fundamentals-row detail-disclosure">
+                <summary class="fundamentals-title">ファンダ詳細</summary>
                 <div class="fundamentals-grid">
                     <div class="fundamentals-cell {{ company.gross_margin_class }}">
                         <span class="fundamentals-label">粗利率</span>
@@ -144,12 +145,12 @@
                         <span class="fundamentals-value">{{ company.relative_strength_display }}</span>
                     </div>
                 </div>
-            </div>
+            </details>
             {% endif %}
 
             {% if company.has_prediction or company.has_deviation %}
-            <div class="prediction-row">
-                <div class="prediction-title">事前予測 vs 実測</div>
+            <details class="prediction-row detail-disclosure">
+                <summary class="prediction-title">事前予測 vs 実測</summary>
                 <div class="prediction-grid">
                     <div class="prediction-cell">
                         <span class="prediction-label">事前予測</span>
@@ -177,12 +178,12 @@
                     </div>
                 </div>
                 {% endif %}
-            </div>
+            </details>
             {% endif %}
 
             {% if company.has_reaction or company.has_past_reactions %}
-            <div class="reaction-row">
-                <div class="reaction-title">決算後の反応</div>
+            <details class="reaction-row detail-disclosure">
+                <summary class="reaction-title">決算後の反応</summary>
                 <div class="reaction-grid">
                     <div class="reaction-cell">
                         <span class="reaction-label">当日終値</span>
@@ -211,7 +212,7 @@
                     </div>
                 </div>
                 {% endif %}
-            </div>
+            </details>
             {% endif %}
 
             {% if company.has_whatif %}

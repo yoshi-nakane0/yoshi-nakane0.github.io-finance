@@ -153,6 +153,8 @@ class PriceObservation(models.Model):
     class Ticker(models.TextChoices):
         NIKKEI = 'N225', '日経225'
         SP500 = 'GSPC', 'S&P 500'
+        NYDOW = 'DJI', 'NYダウ'
+        NASDAQ = 'IXIC', 'NASDAQ'
 
     ticker = models.CharField(max_length=16, choices=Ticker.choices)
     observation_month = models.DateField()

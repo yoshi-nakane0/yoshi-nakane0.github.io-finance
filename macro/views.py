@@ -22,10 +22,10 @@ from .services.dashboard import (
     build_linkages,
     build_regime_context,
     build_similar_periods,
-    build_upcoming_events,
     load_lightgbm_prediction,
 )
 from .services.dashboard_cache import (
+    invalidate_dashboard_cache,
     invalidate_indicator_detail_caches,
     invalidate_similar_detail_caches,
     load_indicator_detail_payload,
@@ -92,7 +92,6 @@ def index(request):
         'lightgbm_prediction': load_lightgbm_prediction(),
         'similar_periods': similar_periods,
         'linkages': linkages,
-        'upcoming_events': build_upcoming_events(),
         'overview_commentary': (
             build_overview_commentary(latest_snapshot, similar_periods)
             if has_observations else None
@@ -146,10 +145,7 @@ def refresh(request):
     # 価格データも併せて更新
     try:
         price_result = sync_all_price_histories()
-        price_ok = len(price_result['success'])
         price_ng = len(price_result['failed'])
-        if price_ok > 0:
-            messages.info(request, f"価格データ {price_ok} 銘柄を更新")
         if price_ng > 0:
             messages.warning(request, f"価格データ {price_ng} 銘柄の取得に失敗")
     except Exception:
@@ -157,6 +153,7 @@ def refresh(request):
         messages.warning(request, "価格データ更新でエラー（ログを確認）")
 
     # キャッシュ無効化（次のページ表示で再計算）
+    invalidate_dashboard_cache()
     invalidate_indicator_detail_caches()
     invalidate_similar_detail_caches()
 

@@ -77,32 +77,29 @@ def _build_risk_flags() -> List[str]:
 
 def _aggregate_similar_returns(similar_periods: List[Dict]) -> Dict[str, Optional[float]]:
     """類似局面リストから翌月リターン平均・中央値・上昇下落数を集計する。"""
-    nikkei_vals = []
-    spx_vals = []
-    for p in similar_periods or []:
-        n = p.get('nikkei_return_value')
-        s = p.get('spx_return_value')
-        if isinstance(n, (int, float)):
-            nikkei_vals.append(n)
-        if isinstance(s, (int, float)):
-            spx_vals.append(s)
-
-    nikkei_up = sum(1 for v in nikkei_vals if v >= 0)
-    nikkei_down = len(nikkei_vals) - nikkei_up
-    spx_up = sum(1 for v in spx_vals if v >= 0)
-    spx_down = len(spx_vals) - spx_up
-
-    return {
-        'nikkei_avg': mean(nikkei_vals) if nikkei_vals else None,
-        'nikkei_median': median(nikkei_vals) if nikkei_vals else None,
-        'nikkei_up': nikkei_up,
-        'nikkei_down': nikkei_down,
-        'spx_avg': mean(spx_vals) if spx_vals else None,
-        'spx_median': median(spx_vals) if spx_vals else None,
-        'spx_up': spx_up,
-        'spx_down': spx_down,
-        'count': max(len(nikkei_vals), len(spx_vals)),
+    return_keys = {
+        'nikkei': 'nikkei_return_value',
+        'spx': 'spx_return_value',
+        'nydow': 'nydow_return_value',
+        'nasdaq': 'nasdaq_return_value',
     }
+    values = {key: [] for key in return_keys}
+    for p in similar_periods or []:
+        for key, value_key in return_keys.items():
+            value = p.get(value_key)
+            if isinstance(value, (int, float)):
+                values[key].append(value)
+
+    result = {'count': max((len(v) for v in values.values()), default=0)}
+    for key, vals in values.items():
+        up = sum(1 for v in vals if v >= 0)
+        result.update({
+            f'{key}_avg': mean(vals) if vals else None,
+            f'{key}_median': median(vals) if vals else None,
+            f'{key}_up': up,
+            f'{key}_down': len(vals) - up,
+        })
+    return result
 
 
 def _confidence_label(count: int) -> str:
@@ -157,14 +154,18 @@ def build_overview_commentary(
             sentences.append(
                 f'過去の類似{agg["count"]}局面では、翌月平均は'
                 f'日経 {_format_pct(agg["nikkei_avg"])}、'
-                f'S&P {_format_pct(agg["spx_avg"])}。'
-                f'日米とも{nikkei_word}でした。'
+                f'S&P {_format_pct(agg["spx_avg"])}、'
+                f'NYダウ {_format_pct(agg["nydow_avg"])}、'
+                f'NASDAQ {_format_pct(agg["nasdaq_avg"])}。'
+                f'日経とS&Pは{nikkei_word}でした。'
             )
         else:
             sentences.append(
                 f'過去の類似{agg["count"]}局面の翌月平均: '
                 f'日経 {_format_pct(agg["nikkei_avg"])} / '
-                f'S&P {_format_pct(agg["spx_avg"])}。'
+                f'S&P {_format_pct(agg["spx_avg"])} / '
+                f'NYダウ {_format_pct(agg["nydow_avg"])} / '
+                f'NASDAQ {_format_pct(agg["nasdaq_avg"])}。'
             )
 
     if not sentences:
@@ -182,7 +183,7 @@ def build_similar_explanation(similar_periods: List[Dict]) -> Dict:
     help_text = (
         '現在の指標構成と「本当に似ていた」過去の月だけを距離が近い順に並べています。'
         '距離が大きく離れた月は除外しているため件数が少ない場合は参考度を低めに見てください。'
-        '各月の「翌月リターン」は当時の日経・S&Pが実際にどう動いたかの過去事実で、'
+        '各月の「翌月リターン」は当時の主要指数が実際にどう動いたかの過去事実で、'
         '将来の上昇・下落を保証するものではありません。'
     )
     if not similar_periods:
@@ -207,18 +208,24 @@ def build_similar_explanation(similar_periods: List[Dict]) -> Dict:
     summary_lines.append(
         f'上位{agg["count"]}件の翌月平均: '
         f'日経 {_format_pct(agg["nikkei_avg"])} / '
-        f'S&P {_format_pct(agg["spx_avg"])}。'
+        f'S&P {_format_pct(agg["spx_avg"])} / '
+        f'NYダウ {_format_pct(agg["nydow_avg"])} / '
+        f'NASDAQ {_format_pct(agg["nasdaq_avg"])}。'
     )
     summary_lines.append(
         f'中央値: 日経 {_format_pct(agg["nikkei_median"])} / '
-        f'S&P {_format_pct(agg["spx_median"])}。'
+        f'S&P {_format_pct(agg["spx_median"])} / '
+        f'NYダウ {_format_pct(agg["nydow_median"])} / '
+        f'NASDAQ {_format_pct(agg["nasdaq_median"])}。'
     )
     summary_lines.append(
         f'内訳: 日経 上昇{agg["nikkei_up"]}件・下落{agg["nikkei_down"]}件、'
-        f'S&P 上昇{agg["spx_up"]}件・下落{agg["spx_down"]}件。'
+        f'S&P 上昇{agg["spx_up"]}件・下落{agg["spx_down"]}件、'
+        f'NYダウ 上昇{agg["nydow_up"]}件・下落{agg["nydow_down"]}件、'
+        f'NASDAQ 上昇{agg["nasdaq_up"]}件・下落{agg["nasdaq_down"]}件。'
     )
     if nikkei_word == spx_word and nikkei_word:
-        summary_lines.append(f'日米とも{nikkei_word}の地合いでした。')
+        summary_lines.append(f'日経とS&Pは{nikkei_word}の地合いでした。')
     elif nikkei_word and spx_word:
         summary_lines.append(f'日経は{nikkei_word}、S&Pは{spx_word}でした。')
     summary_lines.append(f'参考度: {confidence}（{agg["count"]}件）')
@@ -237,6 +244,14 @@ def build_similar_explanation(similar_periods: List[Dict]) -> Dict:
             'spx_median_display': _format_pct(agg['spx_median']),
             'spx_up': agg['spx_up'],
             'spx_down': agg['spx_down'],
+            'nydow_avg_display': _format_pct(agg['nydow_avg']),
+            'nydow_median_display': _format_pct(agg['nydow_median']),
+            'nydow_up': agg['nydow_up'],
+            'nydow_down': agg['nydow_down'],
+            'nasdaq_avg_display': _format_pct(agg['nasdaq_avg']),
+            'nasdaq_median_display': _format_pct(agg['nasdaq_median']),
+            'nasdaq_up': agg['nasdaq_up'],
+            'nasdaq_down': agg['nasdaq_down'],
         },
     }
 

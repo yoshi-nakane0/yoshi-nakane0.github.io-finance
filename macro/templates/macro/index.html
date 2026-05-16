@@ -25,11 +25,21 @@
             {% endif %}
 
             <section class="macro-regime-bar">
-                <h2 class="macro-section-title">現在の景気局面</h2>
-                <div class="macro-regime-label">
-                    <span class="macro-regime-main">{{ regime_label }}</span>
-                    <span class="macro-regime-sub">×&nbsp;{{ inflation_flag }}</span>
+                <div class="macro-regime-orbit" aria-hidden="true"></div>
+                <div class="macro-regime-head">
+                    <h2 class="macro-section-title macro-section-title--pulse">現在の景気局面</h2>
+                    <span class="macro-regime-status-pill">{{ regime_tone_label }}</span>
                 </div>
+                <div class="macro-regime-label">
+                    <span class="macro-regime-main">
+                        {% for line in regime_summary_lines %}
+                            <span>{{ line }}</span>
+                        {% empty %}
+                            <span>{{ regime_summary_label }}</span>
+                        {% endfor %}
+                    </span>
+                </div>
+                <div class="macro-regime-sub">{{ regime_label }} × {{ inflation_flag }}</div>
                 <div class="macro-regime-confidence">
                     <span class="macro-regime-confidence-text">確度 {{ confidence_pct }}%</span>
                     <div class="macro-regime-confidence-bar" aria-hidden="true">
@@ -45,16 +55,36 @@
                 </div>
             </section>
 
+            {# 現状サマリ（自動生成コメント） #}
+            {% if overview_commentary and overview_commentary.sentences %}
+                <section class="macro-overview">
+                    <h2 class="macro-section-title macro-section-title--list">現状サマリ</h2>
+                    <ul class="macro-overview-list">
+                        {% for s in overview_commentary.sentences %}
+                            <li class="macro-overview-item">{{ s }}</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+
             {# クラッシュ警戒度 #}
             {% if crash_alert and crash_alert.total_score is not None %}
                 <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}">
-                    <h2 class="macro-section-title">クラッシュ警戒度</h2>
-                    <div class="macro-crash-banner">
-                        <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
-                        <div class="macro-crash-score">
-                            <span class="macro-crash-score-num">{{ crash_alert.total_score }}</span>
-                            <span class="macro-crash-score-unit">/ 100</span>
+                    <h2 class="macro-section-title macro-section-title--shield">クラッシュ警戒度</h2>
+                    <div class="macro-crash-top">
+                        <div class="macro-crash-banner">
+                            <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
+                            <div class="macro-crash-score">
+                                <span class="macro-crash-score-num">{{ crash_alert.total_score }}</span>
+                                <span class="macro-crash-score-unit">/ 100</span>
+                            </div>
                         </div>
+                        <div class="macro-crash-visual" aria-hidden="true">
+                            <span></span>
+                        </div>
+                    </div>
+                    <div class="macro-crash-score-bar" aria-hidden="true">
+                        <div class="macro-crash-score-fill" style="width: {{ crash_alert.total_score }}%;"></div>
                     </div>
                     {% if crash_alert.category_summary %}
                         <ul class="macro-crash-category-list">
@@ -85,13 +115,14 @@
             {# LightGBM 予測 #}
             {% if lightgbm_prediction %}
                 <section class="macro-section macro-lgbm">
-                    <h2 class="macro-section-title">LightGBM 予測（SP500リターン）</h2>
+                    <h2 class="macro-section-title macro-section-title--brain">LightGBM 予測（SP500リターン）</h2>
                     <div class="macro-lgbm-grid">
                         {% for h in lightgbm_prediction.horizons %}
                             <div class="macro-lgbm-card macro-lgbm-card--{{ h.level }}">
                                 <div class="macro-lgbm-horizon">{{ h.months }}ヶ月後</div>
                                 <div class="macro-lgbm-return">{{ h.predicted_return_display }}</div>
                                 <div class="macro-lgbm-mae">検証誤差 {{ h.validation_mae_display }}</div>
+                                <div class="macro-lgbm-spark" aria-hidden="true"></div>
                             </div>
                         {% endfor %}
                     </div>
@@ -103,132 +134,143 @@
                 </section>
             {% endif %}
 
-            {# 歴史的クラッシュ局面との類似度 #}
-            {% if historical_crash_similarity %}
-                <section class="macro-section">
-                    <h2 class="macro-section-title">過去のクラッシュ局面との類似度</h2>
-                    <ol class="macro-crash-history-list">
-                        {% for item in historical_crash_similarity %}
-                            <li class="macro-crash-history-item">
-                                <span class="macro-crash-history-rank">#{{ forloop.counter }}</span>
-                                <span class="macro-crash-history-month">{{ item.month_label }}</span>
-                                <span class="macro-crash-history-label">{{ item.label }}</span>
-                                <span class="macro-crash-history-distance">距離 {{ item.distance_display }}</span>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                </section>
-            {% endif %}
-
-            {# 現状サマリ（自動生成コメント） #}
-            {% if overview_commentary and overview_commentary.sentences %}
-                <section class="macro-overview">
-                    <h2 class="macro-section-title">現状サマリ</h2>
-                    <ul class="macro-overview-list">
-                        {% for s in overview_commentary.sentences %}
-                            <li class="macro-overview-item">{{ s }}</li>
-                        {% endfor %}
-                    </ul>
-                </section>
-            {% endif %}
-
-            {# 指標サマリ #}
-            <section class="macro-section">
-                <h2 class="macro-section-title">指標サマリ</h2>
-                {% if has_observations %}
-                    <div class="macro-card-list">
-                        {% for card in indicator_cards %}
-                            {% if card.importance == 'A' %}
-                                {% include "macro/_partials/indicator_card.html" with card=card %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <details class="macro-more">
-                        <summary>その他の指標を表示</summary>
-                        <div class="macro-card-list macro-card-list--secondary">
-                            {% for card in indicator_cards %}
-                                {% if card.importance != 'A' %}
-                                    {% include "macro/_partials/indicator_card.html" with card=card %}
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </details>
-                {% else %}
-                    <p class="macro-placeholder">指標データがまだ取得されていません。「更新」ボタンを押して取得してください。</p>
-                {% endif %}
-            </section>
-
             {# 過去類似局面 #}
-            <section class="macro-section">
-                <h2 class="macro-section-title">過去類似局面</h2>
-                {% if similar_commentary %}
-                    <div class="macro-help">
-                        <p class="macro-help-text">{{ similar_commentary.help }}</p>
-                    </div>
-                {% endif %}
+            <section class="macro-section macro-section--similar">
+                <h2 class="macro-section-title macro-section-title--search">過去類似局面</h2>
                 {% if similar_commentary.aggregate %}
                     {% with agg=similar_commentary.aggregate %}
-                    <div class="macro-similar-aggregate">
-                        <div class="macro-similar-aggregate-header">
-                            <span class="macro-similar-aggregate-title">類似{{ agg.count }}件の翌月リターン集約</span>
-                            <span class="macro-similar-aggregate-confidence macro-conf-{{ agg.confidence }}">参考度 {{ agg.confidence }}</span>
-                        </div>
-                        <table class="macro-similar-aggregate-table">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>平均</th>
-                                    <th>中央値</th>
-                                    <th>上昇 / 下落</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th>日経</th>
-                                    <td>{{ agg.nikkei_avg_display }}</td>
-                                    <td>{{ agg.nikkei_median_display }}</td>
-                                    <td>{{ agg.nikkei_up }} / {{ agg.nikkei_down }}</td>
-                                </tr>
-                                <tr>
-                                    <th>S&amp;P</th>
-                                    <td>{{ agg.spx_avg_display }}</td>
-                                    <td>{{ agg.spx_median_display }}</td>
-                                    <td>{{ agg.spx_up }} / {{ agg.spx_down }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <details class="macro-similar-aggregate">
+                        <summary class="macro-similar-aggregate-summary">
+                            <div class="macro-similar-aggregate-header">
+                                <span class="macro-similar-aggregate-title">類似{{ agg.count }}件の翌月リターン集約</span>
+                                <span class="macro-similar-aggregate-confidence macro-conf-{{ agg.confidence }}">参考度 {{ agg.confidence }}</span>
+                            </div>
+                            <table class="macro-similar-aggregate-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>平均</th>
+                                        <th>中央値</th>
+                                        <th>上昇 / 下落</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>日経</th>
+                                        <td>{{ agg.nikkei_avg_display }}</td>
+                                        <td>{{ agg.nikkei_median_display }}</td>
+                                        <td>{{ agg.nikkei_up }} / {{ agg.nikkei_down }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>S&amp;P</th>
+                                        <td>{{ agg.spx_avg_display }}</td>
+                                        <td>{{ agg.spx_median_display }}</td>
+                                        <td>{{ agg.spx_up }} / {{ agg.spx_down }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>NYダウ</th>
+                                        <td>{{ agg.nydow_avg_display }}</td>
+                                        <td>{{ agg.nydow_median_display }}</td>
+                                        <td>{{ agg.nydow_up }} / {{ agg.nydow_down }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>NASDAQ</th>
+                                        <td>{{ agg.nasdaq_avg_display }}</td>
+                                        <td>{{ agg.nasdaq_median_display }}</td>
+                                        <td>{{ agg.nasdaq_up }} / {{ agg.nasdaq_down }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </summary>
+                        {% if similar_periods %}
+                            <ol class="macro-similar-list macro-similar-list--inside">
+                                {% for period in similar_periods %}
+                                    <li class="macro-similar-item">
+                                        <a href="{% url 'macro:similar_detail' month=period.month_start %}" class="macro-similar-link">
+                                            <div class="macro-similar-head">
+                                                <span class="macro-similar-rank">#{{ forloop.counter }}</span>
+                                                <span class="macro-similar-month">{{ period.month_label }}</span>
+                                                <span class="macro-similar-distance">距離 {{ period.distance_display }}</span>
+                                            </div>
+                                            <div class="macro-similar-metrics">
+                                                <span>Core PCE {{ period.core_pce_display }}</span>
+                                                <span>INDPRO {{ period.indpro_display }}</span>
+                                                <span>2-10 {{ period.spread_display }}</span>
+                                            </div>
+                                            <div class="macro-similar-returns">
+                                                <span class="macro-similar-return {% if period.nikkei_return_pos %}macro-pos{% else %}macro-neg{% endif %}">日経 {{ period.nikkei_return_display }}</span>
+                                                <span class="macro-similar-return {% if period.spx_return_pos %}macro-pos{% else %}macro-neg{% endif %}">S&P {{ period.spx_return_display }}</span>
+                                                <span class="macro-similar-return {% if period.nydow_return_pos %}macro-pos{% else %}macro-neg{% endif %}">NYダウ {{ period.nydow_return_display }}</span>
+                                                <span class="macro-similar-return {% if period.nasdaq_return_pos %}macro-pos{% else %}macro-neg{% endif %}">NASDAQ {{ period.nasdaq_return_display }}</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        {% else %}
+                            <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
+                        {% endif %}
+                    </details>
                     {% endwith %}
                 {% elif similar_commentary.summary %}
                     <p class="macro-similar-empty">{{ similar_commentary.summary }}</p>
-                {% endif %}
-                {% if similar_periods %}
-                    <ol class="macro-similar-list">
-                        {% for period in similar_periods %}
-                            <li class="macro-similar-item">
-                                <a href="{% url 'macro:similar_detail' month=period.month_start %}" class="macro-similar-link">
-                                    <div class="macro-similar-head">
-                                        <span class="macro-similar-rank">#{{ forloop.counter }}</span>
-                                        <span class="macro-similar-month">{{ period.month_label }}</span>
-                                        <span class="macro-similar-distance">距離 {{ period.distance_display }}</span>
-                                    </div>
-                                    <div class="macro-similar-metrics">
-                                        <span>Core PCE {{ period.core_pce_display }}</span>
-                                        <span>INDPRO {{ period.indpro_display }}</span>
-                                        <span>2-10 {{ period.spread_display }}</span>
-                                    </div>
-                                    <div class="macro-similar-returns">
-                                        <span class="macro-similar-return {% if period.nikkei_return_pos %}macro-pos{% else %}macro-neg{% endif %}">日経 {{ period.nikkei_return_display }}</span>
-                                        <span class="macro-similar-return {% if period.spx_return_pos %}macro-pos{% else %}macro-neg{% endif %}">S&P {{ period.spx_return_display }}</span>
-                                    </div>
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ol>
                 {% else %}
                     <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
                 {% endif %}
             </section>
+
+            {# 指標サマリ #}
+            <section class="macro-section">
+                <details class="macro-accordion">
+                    <summary class="macro-accordion-summary">
+                        <span class="macro-section-title">指標サマリ</span>
+                        <span class="macro-accordion-status">表示</span>
+                    </summary>
+                    {% if has_observations %}
+                        <div class="macro-card-list">
+                            {% for card in indicator_cards %}
+                                {% if card.importance == 'A' %}
+                                    {% include "macro/_partials/indicator_card.html" with card=card %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <details class="macro-more">
+                            <summary>その他の指標を表示</summary>
+                            <div class="macro-card-list macro-card-list--secondary">
+                                {% for card in indicator_cards %}
+                                    {% if card.importance != 'A' %}
+                                        {% include "macro/_partials/indicator_card.html" with card=card %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% else %}
+                        <p class="macro-placeholder">指標データがまだ取得されていません。「更新」ボタンを押して取得してください。</p>
+                    {% endif %}
+                </details>
+            </section>
+
+            {# 歴史的クラッシュ局面との類似度 #}
+            {% if historical_crash_similarity %}
+                <section class="macro-section">
+                    <details class="macro-accordion">
+                        <summary class="macro-accordion-summary">
+                            <span class="macro-section-title">過去のクラッシュ局面との類似度</span>
+                            <span class="macro-accordion-status">表示</span>
+                        </summary>
+                        <ol class="macro-crash-history-list">
+                            {% for item in historical_crash_similarity %}
+                                <li class="macro-crash-history-item">
+                                    <span class="macro-crash-history-rank">#{{ forloop.counter }}</span>
+                                    <span class="macro-crash-history-month">{{ item.month_label }}</span>
+                                    <span class="macro-crash-history-label">{{ item.label }}</span>
+                                    <span class="macro-crash-history-distance">距離 {{ item.distance_display }}</span>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    </details>
+                </section>
+            {% endif %}
 
             {# 連動マップ #}
             <section class="macro-section">
@@ -260,24 +302,6 @@
                 {% endif %}
             </section>
 
-            {# 直近イベント予定 #}
-            <section class="macro-section">
-                <h2 class="macro-section-title">直近イベント予定</h2>
-                {% if upcoming_events %}
-                    <ul class="macro-event-list">
-                        {% for ev in upcoming_events %}
-                            <li class="macro-event-item">
-                                <span class="macro-event-date">{{ ev.date_label }}</span>
-                                <span class="macro-event-time">{{ ev.time }}</span>
-                                <span class="macro-event-currency">{{ ev.currency }}</span>
-                                <span class="macro-event-name">{{ ev.event }}</span>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="macro-placeholder">直近1週間に★★★イベントはありません。</p>
-                {% endif %}
-            </section>
         </div>
     </div>
 </body>

@@ -3,23 +3,20 @@
 AAII（American Association of Individual Investors）は週次で個人投資家の
 強気・弱気・中立比率を公開している。
 
-データソース：
-  AAII公式（CSV）: https://www.aaii.com/files/surveys/sentiment.xls
-
-xls はバイナリ Excel。プロジェクトの依存（lxml はあるが xlrd / openpyxl は未追加）の関係で、
-本実装は Stooq などの代替CSVソース、または HTML 抽出を試みるフォールバック路線を取る。
-
-本ファイルでは「Stooq の AAII 互換時系列ファイル」または将来的な独自ミラーを叩く形で実装。
-URL は SERIES_TO_URL の差し替えで切り替え可能。
+AAII 本体の履歴ファイルはサーバ側で 403 になりやすいため、
+AAII 公式 Insights の週次記事から直近値を抽出する。
 """
 
 import csv
 import io
 import logging
+import re
 from datetime import date, datetime
 from typing import List, Optional, Tuple
+from xml.etree import ElementTree as ET
 
 import requests
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +26,8 @@ USER_AGENT = (
     '(KHTML, like Gecko) Chrome/118.0 Safari/537.36'
 )
 
-# 候補CSVソース（公式 .xls のCSVミラー、または互換ソース）
-# 公式 .xls をパースするには openpyxl/xlrd 等が必要なため、CSV ミラーを使う。
-# 公式 URL の CSV 化版：今後変更される可能性ありなので CANDIDATE_URLS に列挙して順次トライ。
-CANDIDATE_URLS = {
-    'AAII_BULLISH': [
-        # AAII 公式は基本 .xls だが、一部期間は CSV エンドポイントが公開されている
-        # 本URLは仮置き：実環境で安定動作するURLが見つかれば差し替え可
-        'https://www.aaii.com/files/surveys/sentiment.csv',
-    ],
-}
+FEED_URL = 'https://insights.aaii.com/feed'
+ARTICLE_TITLE_KEYWORD = 'aaii sentiment survey'
 
 
 class AaiiError(Exception):
@@ -90,12 +79,77 @@ def _parse_csv(text: str) -> List[Tuple[date, float]]:
 
 
 def _parse_flexible_date(text: str) -> date:
-    for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%m/%d/%y'):
+    for fmt in (
+        '%Y-%m-%d',
+        '%Y-%m-%dT%H:%M:%S%z',
+        '%a, %d %b %Y %H:%M:%S %Z',
+        '%m/%d/%Y',
+        '%m/%d/%y',
+    ):
         try:
             return datetime.strptime(text, fmt).date()
         except ValueError:
             continue
     raise ValueError(f"unparseable date: {text}")
+
+
+def _parse_article_text(text: str, fallback_date: date) -> Optional[Tuple[date, float]]:
+    """AAII Insights 記事本文から Bullish% を抽出する。"""
+    text = re.sub(r'\s+', ' ', text)
+    match = re.search(
+        r"This week(?:'|’)?s Sentiment Survey results:.*?"
+        r"Bullish:\s*([0-9]+(?:\.[0-9]+)?)%",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if match is None:
+        match = re.search(
+            r"Bullish sentiment.*?(?:increased|decreased|rose|fell|jumped|declined)"
+            r".*?to\s*([0-9]+(?:\.[0-9]+)?)%",
+            text,
+            flags=re.IGNORECASE,
+        )
+    if match is None:
+        return None
+    return fallback_date, float(match.group(1))
+
+
+def _fetch_recent_articles() -> List[Tuple[str, date]]:
+    headers = {'User-Agent': USER_AGENT}
+    response = requests.get(FEED_URL, headers=headers, timeout=DEFAULT_TIMEOUT)
+    response.raise_for_status()
+    root = ET.fromstring(response.content)
+
+    articles: List[Tuple[str, date]] = []
+    for item in root.findall('./channel/item'):
+        title = item.findtext('title') or ''
+        link = item.findtext('link') or ''
+        pub_date = item.findtext('pubDate') or ''
+        if ARTICLE_TITLE_KEYWORD not in title.lower() or not link:
+            continue
+        try:
+            published = _parse_flexible_date(pub_date)
+        except ValueError:
+            published = date.today()
+        articles.append((link, published))
+    return articles
+
+
+def _fetch_article_value(url: str, fallback_date: date) -> Optional[Tuple[date, float]]:
+    headers = {'User-Agent': USER_AGENT}
+    response = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    published = fallback_date
+    meta = soup.find('meta', attrs={'itemprop': 'datePublished'})
+    if meta and meta.get('content'):
+        try:
+            published = _parse_flexible_date(meta['content'])
+        except ValueError:
+            published = fallback_date
+
+    return _parse_article_text(soup.get_text('\n', strip=True), published)
 
 
 def fetch_observations(
@@ -104,29 +158,24 @@ def fetch_observations(
     observation_end: Optional[date] = None,
 ) -> List[Tuple[date, float]]:
     """AAII Sentiment（Bullish %）を取得。"""
-    urls = CANDIDATE_URLS.get(series_id) or []
-    if not urls:
-        raise AaiiError(f"AAII URL 未定義: {series_id}")
+    if series_id != 'AAII_BULLISH':
+        raise AaiiError(f"AAII series 未定義: {series_id}")
 
-    headers = {'User-Agent': USER_AGENT}
-    last_error: Optional[Exception] = None
-    text = None
-    for url in urls:
-        try:
-            response = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
-            response.raise_for_status()
-            text = response.text
-            break
-        except requests.RequestException as exc:
-            last_error = exc
-            continue
+    try:
+        rows = []
+        for url, published in _fetch_recent_articles()[:20]:
+            item = _fetch_article_value(url, published)
+            if item is not None:
+                rows.append(item)
+    except requests.RequestException as exc:
+        raise AaiiError(f"AAII fetch failed: {exc}") from exc
 
-    if text is None:
-        raise AaiiError(f"AAII fetch failed: {last_error}")
-
-    rows = _parse_csv(text)
+    dedup = {d: v for d, v in rows}
+    rows = sorted(dedup.items())
     if observation_start:
         rows = [(d, v) for d, v in rows if d >= observation_start]
     if observation_end:
         rows = [(d, v) for d, v in rows if d <= observation_end]
+    if not rows:
+        raise AaiiError("AAII fetch failed: no sentiment rows parsed")
     return rows

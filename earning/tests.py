@@ -287,6 +287,47 @@ class EarningsPriceWindowModelTests(TestCase):
         self.assertIn('T-2', str(row2))
 
 
+from earning.services.reactions import compute_price_reactions, update_price_reactions
+
+
+class EarningsPriceReactionTests(TestCase):
+    def setUp(self):
+        self.stock = Stock.objects.create(symbol='AAPL', market='NASDAQ', company='Apple Inc.', industry='Tech')
+        self.event = EarningsEvent.objects.create(
+            stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
+        )
+
+    def test_computes_close_and_next_day_from_previous_close(self):
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 29), offset_days=-1, close=100.0,
+        )
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 30), offset_days=0, close=104.0,
+        )
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 2, 2), offset_days=1, close=97.0,
+        )
+
+        reaction_close, reaction_next_day = compute_price_reactions(self.event)
+
+        self.assertAlmostEqual(reaction_close, 4.0)
+        self.assertAlmostEqual(reaction_next_day, -3.0)
+
+    def test_updates_event_when_reactions_are_available(self):
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 29), offset_days=-1, close=80.0,
+        )
+        EarningsPriceWindow.objects.create(
+            event=self.event, trade_date=date_cls(2026, 1, 30), offset_days=0, close=84.0,
+        )
+
+        update_price_reactions(self.event)
+
+        self.event.refresh_from_db()
+        self.assertAlmostEqual(self.event.reaction_close, 5.0)
+        self.assertIsNone(self.event.reaction_next_day)
+
+
 from earning.services.yfinance import build_yahoo_symbol
 
 
@@ -298,6 +339,7 @@ class EarningsEventMacroColumnsTests(TestCase):
         event = EarningsEvent.objects.create(
             stock=self.stock, fiscal_period="Q1 '26", event_date=date_cls(2026, 1, 30),
         )
+        self.assertIsNone(event.expectation_score)
         self.assertIsNone(event.vix_at_event)
         self.assertIsNone(event.hy_spread_at_event)
         self.assertIsNone(event.skew_at_event)
@@ -320,6 +362,37 @@ from earning.services.macro import (
     MACRO_FIELD_MAP,
     get_latest_value_on_or_before,
 )
+
+
+from earning.services.expectation import compute_expectation_score, expectation_level
+
+
+class EarningsExpectationScoreTests(TestCase):
+    def test_scores_strong_setup(self):
+        score = compute_expectation_score(
+            theme_score=85,
+            risk_score=25,
+            eps_surprise='12.0',
+            sales_surprise='8.0',
+            guidance_revision='up',
+            past_reactions=[4.0, 2.0, 3.0],
+        )
+
+        self.assertGreaterEqual(score, 75)
+        self.assertEqual(expectation_level(score)['label'], '強気')
+
+    def test_scores_caution_setup(self):
+        score = compute_expectation_score(
+            theme_score=25,
+            risk_score=85,
+            eps_surprise='-12.0',
+            sales_surprise='-8.0',
+            guidance_revision='down',
+            past_reactions=[-4.0, -2.0],
+        )
+
+        self.assertLess(score, 45)
+        self.assertIn(expectation_level(score)['label'], {'警戒', '強い警戒'})
 
 
 class MacroFieldMapTests(TestCase):

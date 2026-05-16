@@ -97,6 +97,7 @@ class Command(BaseCommand):
                         'direction': _norm_choice(row.get('Direction'), VALID_TRINARY, 'flat'),
                         'sentiment': _norm_choice(row.get('Sentiment'), VALID_TRINARY, 'flat'),
                         'risk_value': _parse_float(row.get('Risk')),
+                        'expectation_score': _parse_float(row.get('expectation_score')),
                         'eps_forecast': (row.get('eps_forecast') or '').strip(),
                         'surp_eps_current': (row.get('surp_eps_current') or '').strip(),
                         'sales_forecast': (row.get('sales_forecast') or '').strip(),

@@ -68,6 +68,10 @@ SURP_REVENUE_COLUMNS = [
 SURP_EPS_COLUMNS = [
     'surp_eps_current',
 ]
+DERIVED_SCORE_COLUMNS = [
+    'expectation_score',
+]
+_THEME_SCORE_CACHE = {}
 
 EARNINGS_URL_TEMPLATE = (
     'https://jp.tradingview.com/symbols/{market}-{symbol}/financials-earnings/'
@@ -942,6 +946,7 @@ def upsert_event_to_db(row_dict):
             'direction': _norm('Direction', {'up', 'flat', 'down'}, 'flat'),
             'sentiment': _norm('Sentiment', {'up', 'flat', 'down'}, 'flat'),
             'risk_value': _f('Risk'),
+            'expectation_score': _f('expectation_score'),
             'eps_forecast': _s('eps_forecast'),
             'surp_eps_current': _s('surp_eps_current'),
             'sales_forecast': _s('sales_forecast'),
@@ -967,6 +972,20 @@ def upsert_event_to_db(row_dict):
     except Exception as exc:
         print(f'  price window failed: {exc}', flush=True)
 
+    reaction_close = reaction_next_day = None
+    try:
+        from earning.services.reactions import update_price_reactions
+        reaction_close, reaction_next_day = update_price_reactions(event)
+        if reaction_close is not None or reaction_next_day is not None:
+            print(
+                '  reactions: '
+                f'close={_round_or_blank(reaction_close, 2)} '
+                f'next={_round_or_blank(reaction_next_day, 2)}',
+                flush=True,
+            )
+    except Exception as exc:
+        print(f'  reaction update failed: {exc}', flush=True)
+
     try:
         from earning.services.macro import attach_macro_snapshot
         cols = attach_macro_snapshot(event)
@@ -974,6 +993,60 @@ def upsert_event_to_db(row_dict):
             print(f'  macro snapshot: {cols} columns filled', flush=True)
     except Exception as exc:
         print(f'  macro snapshot failed: {exc}', flush=True)
+
+    theme_score = _f('theme_score')
+    try:
+        from earning.services.theme_strength import fetch_theme_strength, normalize_theme
+        theme_key = normalize_theme(_s('theme'))
+        if theme_key:
+            if theme_key not in _THEME_SCORE_CACHE:
+                _THEME_SCORE_CACHE[theme_key] = fetch_theme_strength(theme_key)
+            if _THEME_SCORE_CACHE[theme_key] is not None:
+                theme_score = _THEME_SCORE_CACHE[theme_key]
+                event.theme_score = theme_score
+                event.save(update_fields=['theme_score'])
+                print(f'  theme score: {_round_or_blank(theme_score, 2)}', flush=True)
+    except Exception as exc:
+        print(f'  theme score failed: {exc}', flush=True)
+
+    risk_score = None
+    try:
+        from earning.services.risk import compute_risk_score
+        risk_score = compute_risk_score(event)
+        if risk_score is None:
+            risk_score = _f('Risk')
+        if risk_score is not None:
+            event.risk_value = risk_score
+            event.save(update_fields=['risk_value'])
+            print(f'  risk score: {_round_or_blank(risk_score, 2)}', flush=True)
+    except Exception as exc:
+        print(f'  risk score failed: {exc}', flush=True)
+
+    expectation_score = None
+    try:
+        from earning.services.expectation import compute_expectation_score
+        expectation_score = compute_expectation_score(
+            theme_score=theme_score,
+            risk_score=risk_score,
+            eps_surprise=_s('surp_eps_current'),
+            sales_surprise=_s('surp_current'),
+            guidance_revision=_s('guidance_revision'),
+            past_reactions=event.past_reactions,
+        )
+        if expectation_score is not None:
+            event.expectation_score = expectation_score
+            event.save(update_fields=['expectation_score'])
+            print(f'  expectation score: {_round_or_blank(expectation_score, 2)}', flush=True)
+    except Exception as exc:
+        print(f'  expectation score failed: {exc}', flush=True)
+
+    return {
+        'reaction_close': reaction_close,
+        'reaction_next_day': reaction_next_day,
+        'theme_score': theme_score,
+        'risk_score': risk_score,
+        'expectation_score': expectation_score,
+    }
 
 
 def _load_eps_sales_period_map():
@@ -1070,6 +1143,7 @@ def main():
         + FORECAST_COLUMNS
         + SURP_REVENUE_COLUMNS
         + SURP_EPS_COLUMNS
+        + DERIVED_SCORE_COLUMNS
     )
     header_index = build_header_index(df)
 
@@ -1087,6 +1161,11 @@ def main():
     sales_forecast_idx = header_index.get('sales_forecast')
     surp_current_idx = header_index.get('surp_current')
     surp_eps_current_idx = header_index.get('surp_eps_current')
+    theme_score_idx = header_index.get('theme_score')
+    risk_idx = header_index.get('Risk')
+    expectation_score_idx = header_index.get('expectation_score')
+    reaction_close_idx = header_index.get('reaction_close')
+    reaction_next_day_idx = header_index.get('reaction_next_day')
     header_names = [str(df.iat[0, c]).strip() for c in range(len(df.columns))]
 
     eps_sales_rows = []
@@ -1227,7 +1306,22 @@ def main():
                         print(f'{progress} 完了 決算日={earning_date} 期間={period_display}', flush=True)
                         row_dict = {name: df.iat[i + 1, c] for c, name in enumerate(header_names)}
                         try:
-                            upsert_event_to_db(row_dict)
+                            reaction_result = upsert_event_to_db(row_dict) or {}
+                            reaction_close = reaction_result.get('reaction_close')
+                            reaction_next_day = reaction_result.get('reaction_next_day')
+                            theme_score = reaction_result.get('theme_score')
+                            risk_score = reaction_result.get('risk_score')
+                            expectation_score = reaction_result.get('expectation_score')
+                            if theme_score_idx is not None and theme_score is not None:
+                                df.iat[i + 1, theme_score_idx] = _round_or_blank(theme_score, 2)
+                            if risk_idx is not None and risk_score is not None:
+                                df.iat[i + 1, risk_idx] = _round_or_blank(risk_score, 2)
+                            if expectation_score_idx is not None and expectation_score is not None:
+                                df.iat[i + 1, expectation_score_idx] = _round_or_blank(expectation_score, 2)
+                            if reaction_close_idx is not None and reaction_close is not None:
+                                df.iat[i + 1, reaction_close_idx] = _round_or_blank(reaction_close, 2)
+                            if reaction_next_day_idx is not None and reaction_next_day is not None:
+                                df.iat[i + 1, reaction_next_day_idx] = _round_or_blank(reaction_next_day, 2)
                             print(f'{progress} DB upsert 完了', flush=True)
                         except Exception as e:
                             print(f'{progress} DB upsert 失敗: {e}', flush=True)

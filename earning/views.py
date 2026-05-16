@@ -9,6 +9,10 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.gzip import gzip_page
 from django.views.decorators.http import require_GET
 
+from earning.services.expectation import compute_expectation_score, expectation_level
+from earning.services.risk import compute_risk_score as compute_event_risk_score
+from earning.services.theme_strength import fallback_theme_score, normalize_theme
+
 logger = logging.getLogger(__name__)
 
 FUNDAMENTAL_ICONS = {
@@ -18,24 +22,6 @@ FUNDAMENTAL_ICONS = {
 }
 
 DIRECTION_ICONS = FUNDAMENTAL_ICONS
-
-SENTIMENT_ICONS = {
-    'up': 'bi-arrow-up',
-    'flat': 'bi-dash',
-    'down': 'bi-arrow-down',
-}
-
-SENTIMENT_LABELS = {
-    'up': '強気',
-    'flat': '中立',
-    'down': '弱気',
-}
-
-SENTIMENT_SCORES = {
-    'up': 72,
-    'flat': 52,
-    'down': 28,
-}
 
 STATUS_CLASS_MAP = {
     'up': 'status-up',
@@ -110,31 +96,6 @@ def _linear_to_100(value, low, high):
     return max(0.0, min(100.0, score))
 
 
-def _inverted_linear_to_100(value, low, high):
-    score = _linear_to_100(value, low, high)
-    if score is None:
-        return None
-    return 100.0 - score
-
-
-def compute_sentiment_score(event):
-    if event is None:
-        return None
-    vix_score = _inverted_linear_to_100(event.vix_at_event, 10.0, 30.0)
-    hy_score = _inverted_linear_to_100(event.hy_spread_at_event, 2.5, 6.0)
-    parts = [s for s in (vix_score, hy_score) if s is not None]
-    if not parts:
-        return None
-    score = sum(parts) / len(parts)
-    skew = event.skew_at_event
-    if skew is not None and skew >= 145.0:
-        score -= 10.0
-    t5yie = event.t5yie_at_event
-    if t5yie is not None and (t5yie < 1.5 or t5yie > 3.0):
-        score -= 5.0
-    return max(0.0, min(100.0, score))
-
-
 def compute_risk_score(event):
     if event is None:
         return None
@@ -189,44 +150,33 @@ def build_theme_strength_pool():
     pool = {'theme': {}, 'industry': {}}
     for theme, values in theme_buckets.items():
         if values:
-            pool['theme'][theme] = sum(values) / len(values)
+            normalized = normalize_theme(theme)
+            pool['theme'][normalized] = sum(values) / len(values)
     for industry, values in industry_buckets.items():
         if values:
             pool['industry'][industry] = sum(values) / len(values)
     return pool
 
 
-def compute_theme_strength(theme, industry, theme_pool):
+def compute_theme_strength(theme, industry, theme_pool, explicit_score=None):
+    explicit_score = parse_float(explicit_score)
+    fallback_score = fallback_theme_score(theme)
+    if explicit_score is not None:
+        if fallback_score is not None:
+            explicit_score = max(explicit_score, fallback_score)
+        return max(0.0, min(100.0, explicit_score))
+    if fallback_score is not None:
+        return fallback_score
     if not theme_pool:
         return None
     avg = None
     if theme:
-        avg = theme_pool.get('theme', {}).get(theme.strip())
+        avg = theme_pool.get('theme', {}).get(normalize_theme(theme))
     if avg is None and industry:
         avg = theme_pool.get('industry', {}).get(industry.strip())
     if avg is None:
         return None
     return _linear_to_100(avg, -5.0, 5.0)
-
-
-def sentiment_label_from_5(score_5):
-    if score_5 is None:
-        return '—'
-    if score_5 >= 4:
-        return '強気'
-    if score_5 <= 2:
-        return '弱気'
-    return '中立'
-
-
-def sentiment_class_from_5(score_5):
-    if score_5 is None:
-        return 'status-flat'
-    if score_5 >= 4:
-        return 'status-up'
-    if score_5 <= 2:
-        return 'status-down'
-    return 'status-flat'
 
 
 def normalize_choice(value, choices, default):
@@ -345,6 +295,14 @@ def format_percent(value, with_sign=True):
     return f'{sign}{value:.1f}%'
 
 
+def expectation_score_class(value):
+    return expectation_level(value)['class']
+
+
+def expectation_score_label(value):
+    return expectation_level(value)['label']
+
+
 def fetch_earnings_from_db(today=None, period='all'):
     from earning.models import EarningsEvent, EarningsPriceWindow
 
@@ -377,8 +335,8 @@ def fetch_earnings_from_db(today=None, period='all'):
             'symbol': stock.symbol,
             'fundamental': ev.fundamental,
             'risk_value': ev.risk_value,
+            'expectation_score_value': ev.expectation_score,
             'direction': ev.direction,
-            'sentiment': ev.sentiment,
             'sales_forecast': ev.sales_forecast,
             'surp_current': ev.surp_current,
             'eps_forecast': ev.eps_forecast,
@@ -409,10 +367,9 @@ def enrich_item(item, pool=None, event_obj=None, theme_pool=None):
 
     fundamental = item.get('fundamental')
     direction = item.get('direction')
-    sentiment = item.get('sentiment')
-
     summary_text = item.get('summary') or '要約未取得'
 
+    explicit_expectation_score = item.get('expectation_score_value')
     theme_score_value = item.get('theme_score_value')
     gross_margin_value = item.get('gross_margin_value')
     operating_margin_value = item.get('operating_margin_value')
@@ -443,9 +400,25 @@ def enrich_item(item, pool=None, event_obj=None, theme_pool=None):
     past_avg = sum(valid_past) / len(valid_past) if valid_past else None
     has_past_reactions = bool(valid_past)
 
-    sentiment_100 = compute_sentiment_score(event_obj)
-    risk_100 = compute_risk_score(event_obj)
-    theme_100 = compute_theme_strength(item.get('theme'), item.get('industry'), theme_pool)
+    risk_100 = compute_event_risk_score(event_obj)
+    if risk_100 is None:
+        risk_100 = risk_value
+    theme_100 = compute_theme_strength(
+        item.get('theme'),
+        item.get('industry'),
+        theme_pool,
+        explicit_score=theme_score_value,
+    )
+    expectation_100 = explicit_expectation_score
+    if expectation_100 is None:
+        expectation_100 = compute_expectation_score(
+            theme_score=theme_100,
+            risk_score=risk_100,
+            eps_surprise=item.get('surp_eps_current'),
+            sales_surprise=item.get('surp_current'),
+            guidance_revision=guidance_revision,
+            past_reactions=valid_past,
+        )
 
     search_parts = [
         str(item.get('symbol') or ''),
@@ -455,9 +428,9 @@ def enrich_item(item, pool=None, event_obj=None, theme_pool=None):
     ]
     item['search_text'] = ' '.join(p for p in search_parts if p).lower()
 
-    sentiment_5 = to_5_scale(sentiment_100)
     risk_5 = to_5_scale(risk_100)
     theme_5 = to_5_scale(theme_100)
+    expectation_meta = expectation_level(expectation_100)
 
     item.update({
         'risk_display': '—' if risk_100 is None else f'{risk_100:.0f}%',
@@ -469,11 +442,11 @@ def enrich_item(item, pool=None, event_obj=None, theme_pool=None):
         'fundamental_icon': FUNDAMENTAL_ICONS.get(fundamental, 'bi-dash'),
         'direction_class': STATUS_CLASS_MAP.get(direction, 'status-flat'),
         'direction_icon': DIRECTION_ICONS.get(direction, 'bi-dash'),
-        'sentiment_class': sentiment_class_from_5(sentiment_5),
-        'sentiment_icon': SENTIMENT_ICONS.get(sentiment, 'bi-dash'),
-        'sentiment_label': sentiment_label_from_5(sentiment_5),
-        'sentiment_score_value': sentiment_5 * 20 if sentiment_5 is not None else 0,
-        'sentiment_score_display': '—' if sentiment_5 is None else str(sentiment_5),
+        'expectation_score_display': '—' if expectation_100 is None else f'{expectation_100:.0f}',
+        'expectation_score_value': 0 if expectation_100 is None else expectation_100,
+        'expectation_label': expectation_meta['label'],
+        'expectation_class': expectation_meta['class'],
+        'expectation_scale_display': '—' if expectation_meta['scale'] is None else str(expectation_meta['scale']),
         'summary': summary_text,
         'fiscal_period': item.get('fiscal_period') or '—',
         'theme_label': item.get('theme') or '—',
@@ -572,7 +545,13 @@ def compute_theme_aggregations(items, theme_pool=None):
 
     aggregations = []
     for theme, count in buckets.items():
-        avg = compute_theme_strength(theme, None, theme_pool)
+        explicit_scores = [
+            item.get('theme_score_value')
+            for item in items
+            if (item.get('theme') or '').strip() == theme and item.get('theme_score_value') is not None
+        ]
+        explicit_avg = sum(explicit_scores) / len(explicit_scores) if explicit_scores else None
+        avg = compute_theme_strength(theme, None, theme_pool, explicit_score=explicit_avg)
         if avg is None:
             continue
         aggregations.append({
@@ -742,7 +721,7 @@ def build_cache_key(today, period='all'):
     from earning.models import EarningsEvent
     last = EarningsEvent.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
     stamp = int(last.timestamp() * 1000) if last else 0
-    return f'earnings_data_grouped_v10:{period}:{today.isoformat()}:{stamp}'
+    return f'earnings_data_grouped_v11:{period}:{today.isoformat()}:{stamp}'
 
 
 def load_grouped_earnings(today=None, period='all'):

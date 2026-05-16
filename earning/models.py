@@ -39,6 +39,7 @@ class EarningsEvent(models.Model):
     direction = models.CharField(max_length=8, choices=FUNDAMENTAL_CHOICES, default='flat')
     sentiment = models.CharField(max_length=8, choices=FUNDAMENTAL_CHOICES, default='flat')
     risk_value = models.FloatField(null=True, blank=True)
+    expectation_score = models.FloatField(null=True, blank=True)
 
     eps_forecast = models.CharField(max_length=32, blank=True)
     surp_eps_current = models.CharField(max_length=32, blank=True)

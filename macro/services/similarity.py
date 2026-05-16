@@ -174,6 +174,12 @@ def find_similar_months(
             spx_return = get_next_month_return(
                 PriceObservation.Ticker.SP500, cur
             )
+            nydow_return = get_next_month_return(
+                PriceObservation.Ticker.NYDOW, cur
+            )
+            nasdaq_return = get_next_month_return(
+                PriceObservation.Ticker.NASDAQ, cur
+            )
 
             candidates.append({
                 'month_start': cur,
@@ -183,6 +189,8 @@ def find_similar_months(
                 'main3': main3,
                 'nikkei_next_return': nikkei_return,
                 'spx_next_return': spx_return,
+                'nydow_next_return': nydow_return,
+                'nasdaq_next_return': nasdaq_return,
             })
         cur = cur + relativedelta(months=1)
 

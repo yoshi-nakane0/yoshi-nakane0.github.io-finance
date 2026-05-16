@@ -5,15 +5,8 @@ from django.core.management.base import BaseCommand
 
 from earning.models import EarningsEvent, Stock
 from earning.services.macro import attach_macro_snapshot
+from earning.services.reactions import update_price_reactions
 from earning.services.yfinance import build_yahoo_symbol, fetch_price_window
-
-
-def _compute_reaction_close(event):
-    rows = list(event.price_window.filter(offset_days__in=[-1, 0]).values_list('offset_days', 'close'))
-    closes = {off: c for off, c in rows if c is not None}
-    if 0 not in closes or -1 not in closes:
-        return None
-    return (closes[0] / closes[-1] - 1) * 100
 
 
 class Command(BaseCommand):
@@ -93,11 +86,9 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.WARNING(f'  {ev_date} price err: {exc}'))
                         continue
 
-                if event.reaction_close is None:
-                    rc = _compute_reaction_close(event)
-                    if rc is not None:
-                        event.reaction_close = rc
-                        event.save(update_fields=['reaction_close'])
+                if event.reaction_close is None or event.reaction_next_day is None:
+                    rc, rn = update_price_reactions(event)
+                    if rc is not None or rn is not None:
                         reaction_filled += 1
 
                 if event.vix_at_event is None:

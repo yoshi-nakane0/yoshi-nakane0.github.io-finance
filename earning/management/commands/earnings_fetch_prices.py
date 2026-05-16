@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from django.core.management.base import BaseCommand
 
 from earning.models import EarningsEvent
+from earning.services.reactions import update_price_reactions
 from earning.services.yfinance import fetch_price_window
 
 
@@ -32,12 +33,15 @@ class Command(BaseCommand):
         events = list(queryset.order_by('event_date'))
 
         total = len(events)
-        written_total = failed = 0
+        written_total = reaction_total = failed = 0
         for i, event in enumerate(events, start=1):
             label = f'[{i}/{total}] {event.stock.symbol} {event.fiscal_period}'
             try:
                 n = fetch_price_window(event)
                 written_total += n
+                rc, rn = update_price_reactions(event)
+                if rc is not None or rn is not None:
+                    reaction_total += 1
                 self.stdout.write(f'{label}: {n} rows')
             except Exception as exc:
                 failed += 1
@@ -47,5 +51,6 @@ class Command(BaseCommand):
                 time.sleep(sleep_seconds)
 
         self.stdout.write(self.style.SUCCESS(
-            f'Processed: {total} events, {written_total} rows written, {failed} failed'
+            f'Processed: {total} events, {written_total} rows written, '
+            f'{reaction_total} reactions updated, {failed} failed'
         ))

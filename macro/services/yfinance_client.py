@@ -30,6 +30,8 @@ REFRESH_BUFFER_MONTHS = 3
 TICKER_TO_SYMBOL = {
     PriceObservation.Ticker.NIKKEI: '^N225',
     PriceObservation.Ticker.SP500: '^GSPC',
+    PriceObservation.Ticker.NYDOW: '^DJI',
+    PriceObservation.Ticker.NASDAQ: '^IXIC',
 }
 
 

@@ -66,6 +66,13 @@ def load_dashboard_payload() -> Optional[dict]:
     return cache_obj.payload
 
 
+def invalidate_dashboard_cache() -> None:
+    from ..models import DashboardCache
+    DashboardCache.objects.filter(
+        cache_key__in=(DASHBOARD_CACHE_KEY, *LEGACY_DASHBOARD_CACHE_KEYS),
+    ).delete()
+
+
 def save_indicator_detail_payload(series_id: str, payload: dict) -> None:
     from ..models import DashboardCache
     serialized = json.loads(json.dumps(payload, default=_json_default))
@@ -135,7 +142,6 @@ def precompute_dashboard_payload() -> dict:
         build_indicator_cards,
         build_linkages,
         build_similar_periods,
-        build_upcoming_events,
     )
     from .data_sync import get_latest_observation_date
 
@@ -148,7 +154,6 @@ def precompute_dashboard_payload() -> dict:
         'indicator_cards': build_indicator_cards(),
         'crash_alert': build_crash_alert_context(),
         'historical_crash_similarity': build_historical_crash_similarity(),
-        'upcoming_events': build_upcoming_events(),
     }
 
 

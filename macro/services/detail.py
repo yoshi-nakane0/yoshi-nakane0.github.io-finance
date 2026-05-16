@@ -315,6 +315,8 @@ def build_similar_detail_context(month_start: date) -> Dict:
     # 月次価格と、+1m/+3m/+6m リターン
     nikkei_returns = _multi_month_returns(PriceObservation.Ticker.NIKKEI, month_start)
     spx_returns = _multi_month_returns(PriceObservation.Ticker.SP500, month_start)
+    nydow_returns = _multi_month_returns(PriceObservation.Ticker.NYDOW, month_start)
+    nasdaq_returns = _multi_month_returns(PriceObservation.Ticker.NASDAQ, month_start)
 
     events = _events_at_month(month_start.year, month_start.month)
 
@@ -324,6 +326,8 @@ def build_similar_detail_context(month_start: date) -> Dict:
         'indicator_rows': rows,
         'nikkei_returns': nikkei_returns,
         'spx_returns': spx_returns,
+        'nydow_returns': nydow_returns,
+        'nasdaq_returns': nasdaq_returns,
         'events': events,
     }
 

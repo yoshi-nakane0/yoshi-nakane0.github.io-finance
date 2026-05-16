@@ -24,7 +24,6 @@ from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
 from .similarity import find_similar_months
 from .sparkline import generate_sparkline_svg
-from .upcoming_events import load_upcoming_high_impact_events
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +192,8 @@ def build_similar_periods(top_n: int = 5) -> List[Dict]:
         main3 = item.get('main3', {})
         nikkei_val = item.get('nikkei_next_return')
         spx_val = item.get('spx_next_return')
+        nydow_val = item.get('nydow_next_return')
+        nasdaq_val = item.get('nasdaq_next_return')
         results.append({
             'month_label': item['month_start'].strftime('%Y年%m月'),
             'month_start': item['month_start'].isoformat(),
@@ -206,6 +207,12 @@ def build_similar_periods(top_n: int = 5) -> List[Dict]:
             'spx_return_display': format_pct(spx_val),
             'spx_return_pos': (spx_val or 0) >= 0,
             'spx_return_value': spx_val,
+            'nydow_return_display': format_pct(nydow_val),
+            'nydow_return_pos': (nydow_val or 0) >= 0,
+            'nydow_return_value': nydow_val,
+            'nasdaq_return_display': format_pct(nasdaq_val),
+            'nasdaq_return_pos': (nasdaq_val or 0) >= 0,
+            'nasdaq_return_value': nasdaq_val,
         })
     return results
 
@@ -281,18 +288,63 @@ def build_linkages(top_n: int = 10) -> List[Dict]:
 
 def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
     if snapshot is None:
+        summary_label = '判定データ不足'
         return {
             'regime_label': '—',
             'inflation_flag': '—',
+            'regime_summary_label': summary_label,
+            'regime_summary_lines': [summary_label],
+            'regime_tone_label': 'データ待ち',
             'confidence_pct': 0,
             'snapshot_date': None,
         }
+    summary = _regime_summary(
+        snapshot.regime_label,
+        snapshot.inflation_flag,
+    )
     return {
         'regime_label': snapshot.get_regime_label_display(),
         'inflation_flag': snapshot.get_inflation_flag_display(),
+        'regime_summary_label': summary['label'],
+        'regime_summary_lines': _split_regime_summary(summary['label']),
+        'regime_tone_label': summary['tone'],
         'confidence_pct': int(round(snapshot.confidence)),
         'snapshot_date': snapshot.snapshot_date,
     }
+
+
+def _split_regime_summary(label: str) -> List[str]:
+    if '。' not in label:
+        return [label]
+    first, rest = label.split('。', 1)
+    lines = [f'{first}。'] if first else []
+    if rest:
+        lines.append(rest)
+    return lines or [label]
+
+
+def _regime_summary(regime_label: str, inflation_flag: str) -> Dict[str, str]:
+    labels = RegimeSnapshot.Label
+    flags = RegimeSnapshot.InflationFlag
+    summary_map = {
+        (labels.EXPANSION, flags.HIGH): ('景気は強いが、物価が重い', '過熱気味'),
+        (labels.EXPANSION, flags.EASING): ('景気は強く、物価は落ち着き方向', '良好'),
+        (labels.EXPANSION, flags.NORMAL): ('景気は強く、物価も安定', '良好'),
+        (labels.SLOWDOWN, flags.HIGH): ('景気は鈍く、物価は高い', '警戒'),
+        (labels.SLOWDOWN, flags.EASING): ('景気は鈍いが、物価は落ち着き方向', '様子見'),
+        (labels.SLOWDOWN, flags.NORMAL): ('景気は鈍いが、物価は安定', '様子見'),
+        (labels.CONTRACTION, flags.HIGH): ('景気悪化と物価高が重なる', '要警戒'),
+        (labels.CONTRACTION, flags.EASING): ('景気は悪いが、物価は落ち着き方向', '底探り'),
+        (labels.CONTRACTION, flags.NORMAL): ('景気は悪く、物価は安定', '底探り'),
+        (labels.RECOVERY, flags.HIGH): ('持ち直し中。ただし物価は高い', '回復途上'),
+        (labels.RECOVERY, flags.EASING): ('持ち直し中で、物価も落ち着き方向', '改善'),
+        (labels.RECOVERY, flags.NORMAL): ('持ち直し中で、物価は安定', '改善'),
+    }
+    label, tone = summary_map.get(
+        (regime_label, inflation_flag),
+        ('判定が安定していません', '確認中'),
+    )
+    return {'label': label, 'tone': tone}
 
 
 def build_crash_alert_context() -> Dict:
@@ -371,13 +423,3 @@ def load_lightgbm_prediction() -> Optional[Dict]:
         'feature_count': raw.get('feature_count'),
         'model_version': raw.get('model_version'),
     }
-
-
-def build_upcoming_events(days_ahead: int = 7) -> List[Dict]:
-    items = load_upcoming_high_impact_events(days_ahead=days_ahead)
-    return [{
-        'date_label': item['date'].strftime('%m/%d (%a)'),
-        'time': item['time'],
-        'currency': item['currency'],
-        'event': item['event'],
-    } for item in items]
