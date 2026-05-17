@@ -23,7 +23,9 @@
         <div class="schedule-container">
             <!-- ステータスバー -->
             <div class="status-bar">
+                {% if can_refresh_sector_data %}
                 <button class="status-bar-item" id="refresh-btn">📊 データ取得</button>
+                {% endif %}
                 <button class="status-bar-item" onclick="window.open('https://finance.yahoo.com/sectors', '_blank')">リンク</button>
             </div>
 
@@ -154,13 +156,16 @@
     </div>
 
     <script>
-        // Refresh button functionality
-        document.getElementById('refresh-btn').addEventListener('click', function() {
-            refreshData();
-        });
+        const refreshButton = document.getElementById('refresh-btn');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function() {
+                refreshData();
+            });
+        }
 
         function refreshData() {
             const refreshBtn = document.getElementById('refresh-btn');
+            if (!refreshBtn) return;
             refreshBtn.disabled = true;
             refreshBtn.innerHTML = '📊 取得中...';
 

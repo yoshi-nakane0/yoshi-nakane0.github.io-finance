@@ -19,7 +19,9 @@ def env_bool(key, default=False):
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY') or 'default-development-key-never-use-in-production'
+SECRET_KEY = (os.getenv('SECRET_KEY') or '').strip()
+if not SECRET_KEY:
+    raise RuntimeError('SECRET_KEY environment variable is required.')
 
 DEBUG = env_bool('DEBUG', True)
 

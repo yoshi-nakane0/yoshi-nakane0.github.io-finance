@@ -1,18 +1,10 @@
 import logging
 import os
-import shutil
-import urllib.request
 from pathlib import Path
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 
 logger = logging.getLogger(__name__)
-
-MACRO_DATA_DB_URL = (
-    'https://raw.githubusercontent.com/'
-    'yoshi-nakane0/yoshi-nakane0.github.io-finance/macro-data/db.sqlite3'
-)
-
 
 def _is_serverless_runtime():
     return any(
@@ -21,27 +13,17 @@ def _is_serverless_runtime():
     )
 
 
-def _fetch_macro_data_db():
-    """サーバーレスのコールドスタート時に実行用 DB を用意する。"""
+def _prepare_runtime_db_path():
     if not _is_serverless_runtime():
         return
     target = Path(os.environ.get('SQLITE_DB_PATH', '/tmp/db.sqlite3'))
-    if target.exists() and target.stat().st_size > 1_000_000:
-        return
-    bundled = Path(__file__).resolve().parent.parent / 'db.sqlite3'
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        if bundled.exists() and bundled.stat().st_size > 1_000_000:
-            shutil.copy2(bundled, target)
-            return
-        with urllib.request.urlopen(MACRO_DATA_DB_URL, timeout=5) as response:
-            payload = response.read()
-        target.write_bytes(payload)
-    except Exception:
-        logger.exception('failed to fetch db.sqlite3 from macro-data branch')
+    except OSError:
+        logger.exception('failed to prepare SQLite runtime directory')
 
 
-_fetch_macro_data_db()
+_prepare_runtime_db_path()
 
 from django.core.wsgi import get_wsgi_application  # noqa: E402
 

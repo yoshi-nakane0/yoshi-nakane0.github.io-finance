@@ -21,7 +21,6 @@
       "config": {
         "runtime": "python3.12",
         "maxDuration": 30,
-        "includeFiles": "db.sqlite3",
         "excludeFiles": "{.actions-runner-chart/**,.chart-profile-ci/**,.claude/**,.git/**,.github/**,.toolcache/**,.vercel/**,chrome_profile/**,node_modules/**,**/__pycache__/**,*.pyc,.DS_Store,.env,.venv/**,env/**,venv/**}",
         "buildCommand": "bash build_files.sh"
       }

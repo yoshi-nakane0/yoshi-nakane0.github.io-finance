@@ -1,13 +1,16 @@
 # sector/views.py
+import logging
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.cache import cache
 from django.db.utils import DatabaseError, OperationalError, ProgrammingError
 from datetime import datetime, timezone, timedelta
 from .models import SectorSnapshot
 import json
 import requests
+
+logger = logging.getLogger(__name__)
 
 # JST timezone
 TZ_JST = timezone(timedelta(hours=9))
@@ -66,8 +69,8 @@ def fetch_jpx_data():
         if "IndustryTypeStockIndex" in data:
             return data["IndustryTypeStockIndex"]
         return {}
-    except Exception as e:
-        print(f"Failed to fetch JPX data: {e}")
+    except Exception:
+        logger.exception("Failed to fetch JPX data")
         return {}
 
 def fetch_yahoo_finance_data(ticker: str):
@@ -96,8 +99,8 @@ def fetch_yahoo_finance_data(ticker: str):
             return current_price, change_abs, change_pct
         
         return None, None, None
-    except Exception as e:
-        print(f"Failed to fetch Yahoo Finance data for {ticker}: {e}")
+    except Exception:
+        logger.exception("Failed to fetch Yahoo Finance data for %s", ticker)
         return None, None, None
 
 def get_sector_data_real(fallback_sectors=None):
@@ -215,8 +218,8 @@ def get_persisted_snapshot():
     """Get persisted sector and benchmark data"""
     try:
         snapshot = SectorSnapshot.objects.filter(pk=1).first()
-    except (OperationalError, ProgrammingError, DatabaseError) as e:
-        print(f"[sector] DB unavailable, skip snapshot: {e}")
+    except (OperationalError, ProgrammingError, DatabaseError):
+        logger.exception("[sector] DB unavailable, skip snapshot")
         return None, None, None
     if snapshot:
         return snapshot.sectors, snapshot.benchmarks, snapshot.update_time
@@ -275,13 +278,15 @@ def persist_snapshot(sectors, benchmarks, update_time):
                 "update_time": update_time,
             },
         )
-    except (OperationalError, ProgrammingError, DatabaseError) as e:
-        print(f"[sector] DB write failed, skip snapshot: {e}")
+    except (OperationalError, ProgrammingError, DatabaseError):
+        logger.exception("[sector] DB write failed, skip snapshot")
 
-@csrf_exempt
+@ensure_csrf_cookie
 def index(request):
     if request.method == 'POST':
-        # Handle AJAX refresh request
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return JsonResponse({'success': False, 'error': '権限がありません。'}, status=403)
+
         try:
             data = json.loads(request.body)
             if data.get('action') == 'refresh':
@@ -315,8 +320,12 @@ def index(request):
                     'sectors': sectors,
                     'benchmarks': benchmarks
                 })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': '不正な操作です。'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'JSON が不正です。'}, status=400)
+        except Exception:
+            logger.exception("[sector] refresh failed")
+            return JsonResponse({'success': False, 'error': '更新に失敗しました。'}, status=500)
     
     # GET request - render the main page with cached data
     sectors, benchmarks, cached_update_time = get_cached_data()
@@ -341,6 +350,7 @@ def index(request):
         'benchmarks': benchmarks,
         'us_sectors': us_sectors,
         'jp_sectors': jp_sectors,
+        'can_refresh_sector_data': request.user.is_authenticated and request.user.is_staff,
     }
     
     return render(request, 'sector/index.html', context)
