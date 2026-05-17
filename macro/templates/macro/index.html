@@ -8,7 +8,7 @@
     <title>Macro</title>
 
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260517">
 </head>
 
 <body>
@@ -117,13 +117,6 @@
                         </ul>
                     </details>
                 {% endif %}
-                {% if regime_warnings %}
-                    <ul class="macro-regime-warning-list">
-                        {% for warning in regime_warnings|slice:":3" %}
-                            <li class="macro-regime-warning-item">{{ warning }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
                 <details class="macro-regime-update-guide">
                     <summary>更新頻度の目安</summary>
                     <ul>
@@ -141,6 +134,26 @@
                         </form>
                     {% endif %}
                 </div>
+                {% if can_refresh_macro_data %}
+                    <div class="macro-operation-panel">
+                        <div class="macro-operation-row">
+                            <span class="macro-operation-title">日次更新</span>
+                            <span class="macro-operation-meta">指標取得・景気判定・画面反映</span>
+                            <form method="post" action="{% url 'macro:refresh' %}" class="macro-operation-form">
+                                {% csrf_token %}
+                                <button class="macro-operation-button macro-operation-button--sync" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>実行</button>
+                            </form>
+                        </div>
+                        <div class="macro-operation-row">
+                            <span class="macro-operation-title">月次メンテナンス</span>
+                            <span class="macro-operation-meta">月次検証・急落確率モデル更新</span>
+                            <form method="post" action="{% url 'macro:recompute_crash_backtest' %}" class="macro-operation-form">
+                                {% csrf_token %}
+                                <button class="macro-operation-button macro-operation-button--test" type="submit"{% if not can_run_macro_model_jobs %} disabled title="ローカル環境で実行してください"{% endif %}>実行</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
             </section>
 
             {# 現状サマリ（自動生成コメント） #}
@@ -155,10 +168,38 @@
                 </section>
             {% endif %}
 
+            {# 急変判定 #}
+            {% if market_shock and market_shock.has_data %}
+                <section class="macro-section macro-market-shock macro-market-shock--{{ market_shock.tone }}">
+                    <h2 class="macro-section-title macro-section-title--pulse">急変判定</h2>
+                    <p class="macro-market-shock-summary">{{ market_shock.summary }}</p>
+                    <div class="macro-market-shock-grid">
+                        {% for row in market_shock.rows %}
+                            <article class="macro-market-shock-card macro-market-shock-card--{{ row.tone }}">
+                                <div class="macro-market-shock-head">
+                                    <span class="macro-market-shock-name">{{ row.label }}</span>
+                                    <span class="macro-market-shock-badge">{{ row.headline }}</span>
+                                </div>
+                                <div class="macro-market-shock-main">
+                                    <span class="macro-market-shock-label">20営業日</span>
+                                    <span class="macro-market-shock-value {% if row.direction == 'surge' %}macro-pos{% elif row.direction == 'drop' %}macro-neg{% endif %}">{{ row.momentum_20d_display }}</span>
+                                </div>
+                                <div class="macro-market-shock-facts">
+                                    <span>200日線 {{ row.dd200_display }}</span>
+                                    <span>52週高値 {{ row.dd52w_display }}</span>
+                                    <span>継続目安 {{ row.continuation_score_display }}</span>
+                                </div>
+                                <p class="macro-market-shock-reason">{{ row.reason }}</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
             {# クラッシュ警戒度 #}
             {% if crash_alert and crash_alert.total_score is not None %}
                 <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}">
-                    <h2 class="macro-section-title macro-section-title--shield">クラッシュ警戒度</h2>
+                    <h2 class="macro-section-title macro-section-title--shield">市場ストレス・急落警戒スコア</h2>
                     <div class="macro-crash-top">
                         <div class="macro-crash-banner">
                             <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
@@ -174,29 +215,68 @@
                     <div class="macro-crash-score-bar" aria-hidden="true">
                         <div class="macro-crash-score-fill" style="width: {{ crash_alert.total_score }}%;"></div>
                     </div>
+                    <p class="macro-crash-note">現在の市場がどれだけ緊張しているかを、信用・流動性、ボラ・需給、価格アクション、景気・金利の4項目から0〜100点で示します。点数が高いほど市場の不安が強い状態です。将来の暴落確率ではありません。</p>
+                    <div class="macro-crash-metrics">
+                        <div class="macro-crash-metric">
+                            <span class="macro-crash-metric-label">判定強度</span>
+                            <span class="macro-crash-metric-value">{{ crash_alert.rule_agreement_pct }}%</span>
+                        </div>
+                        <div class="macro-crash-metric">
+                            <span class="macro-crash-metric-label">データ品質</span>
+                            <span class="macro-crash-metric-value">{{ crash_alert.data_quality_pct }}%</span>
+                        </div>
+                        <div class="macro-crash-metric">
+                            <span class="macro-crash-metric-label">検証状態</span>
+                            <span class="macro-crash-metric-value">{{ crash_alert.validation_status }}</span>
+                        </div>
+                    </div>
+                    {% if crash_alert.quality_warnings %}
+                        <ul class="macro-crash-warning-list">
+                            {% for warning in crash_alert.quality_warnings %}
+                                <li>{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
                     {% if crash_alert.category_summary %}
                         <ul class="macro-crash-category-list">
                             {% for cat in crash_alert.category_summary %}
                                 <li class="macro-crash-category">
                                     <span class="macro-crash-category-label">{{ cat.category_label }}</span>
-                                    <span class="macro-crash-category-score">{{ cat.avg_score }}</span>
-                                    <span class="macro-crash-category-weight">配点 {{ cat.weight_pct }}%</span>
+                                    <span class="macro-crash-category-score">{{ cat.avg_score_display }}</span>
+                                    <span class="macro-crash-category-weight">配点 {{ cat.weight_pct }}% / 品質 {{ cat.coverage_pct }}%</span>
                                 </li>
                             {% endfor %}
                         </ul>
                     {% endif %}
                     <details class="macro-crash-details">
-                        <summary>サブスコア内訳</summary>
+                        <summary>サブスコア内訳（観測日・鮮度）</summary>
                         <ul class="macro-crash-component-list">
                             {% for c in crash_alert.components %}
-                                <li class="macro-crash-component">
+                                <li class="macro-crash-component{% if c.is_missing %} macro-crash-component--missing{% elif c.is_stale %} macro-crash-component--stale{% endif %}">
                                     <span class="macro-crash-component-label">{{ c.label }}</span>
+                                    <span class="macro-crash-component-category">{{ c.category_label }}</span>
                                     <span class="macro-crash-component-value">{{ c.value_display }}</span>
+                                    <span class="macro-crash-component-date">{{ c.observation_date }} / {{ c.age_days_display }}</span>
+                                    <span class="macro-crash-component-freshness">{{ c.freshness_label }}</span>
                                     <span class="macro-crash-component-score">{{ c.score }}</span>
                                 </li>
                             {% endfor %}
                         </ul>
                     </details>
+                </section>
+            {% endif %}
+
+            {# 急落確率モデル #}
+            {% if crash_probability_model %}
+                <section class="macro-section macro-crash-probability">
+                    <h2 class="macro-section-title macro-section-title--shield">急落確率モデル v1</h2>
+                    <div class="macro-probability-top">
+                        <div>
+                            <div class="macro-probability-label">{{ crash_probability_model.prediction_label }}</div>
+                            <div class="macro-probability-value">{{ crash_probability_model.current_probability_display }}</div>
+                        </div>
+                        <div class="macro-probability-badge">月次校正済み</div>
+                    </div>
                 </section>
             {% endif %}
 
@@ -344,7 +424,7 @@
                 <section class="macro-section">
                     <details class="macro-accordion">
                         <summary class="macro-accordion-summary">
-                            <span class="macro-section-title">過去のクラッシュ局面との類似度</span>
+                            <span class="macro-section-title">過去の急落局面との類似度</span>
                             <span class="macro-accordion-status">表示</span>
                         </summary>
                         <ol class="macro-crash-history-list">

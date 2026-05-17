@@ -8,6 +8,11 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('refresh/', views.refresh, name='refresh'),
     path(
+        'recompute-crash-backtest/',
+        views.recompute_crash_backtest,
+        name='recompute_crash_backtest',
+    ),
+    path(
         'indicator/<str:series_id>/',
         views.indicator_detail,
         name='indicator_detail',

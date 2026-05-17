@@ -33,9 +33,10 @@ USER_AGENT = (
 )
 DEFAULT_TIMEOUT = 30
 
-# DD52W に必要な約 1 年（252 営業日）と 200DMA に必要な 200 営業日を考慮し、
-# 派生値を遡って算出するために生データは 3 年分取得する。
+# 通常の差分更新では直近数年で十分。full-history 時は observation_start に合わせて
+# Yahoo の取得開始日を広げる。
 DAILY_HISTORY_DAYS = 365 * 3
+WARMUP_DAYS = 365
 
 SMA_WINDOW = 200
 HIGH_WINDOW = 252
@@ -67,7 +68,7 @@ class PriceActionError(Exception):
 
 
 # プロセス内キャッシュ。同一 sync 内で同じシンボルを複数回 fetch しないようにする。
-_DAILY_CACHE: Dict[str, List[Tuple[date, float]]] = {}
+_DAILY_CACHE: Dict[Tuple[str, date], List[Tuple[date, float]]] = {}
 
 
 def clear_cache() -> None:
@@ -75,14 +76,30 @@ def clear_cache() -> None:
     _DAILY_CACHE.clear()
 
 
-def _fetch_daily_history(symbol: str) -> List[Tuple[date, float]]:
-    """Yahoo Finance から symbol の日次終値を 3 年分取得し、(date, close) のソート済みリストを返す。"""
-    cached = _DAILY_CACHE.get(symbol)
+def _fetch_daily_history(
+    symbol: str,
+    observation_start: 'date | None' = None,
+) -> List[Tuple[date, float]]:
+    """Yahoo Finance から symbol の日次終値を取得し、(date, close) のソート済みリストを返す。"""
+    cache_start = observation_start or date.min
+    cache_key = (symbol, cache_start)
+    cached = _DAILY_CACHE.get(cache_key)
     if cached is not None:
         return cached
 
     end_ts = int(time.time())
-    start_ts = end_ts - DAILY_HISTORY_DAYS * 86400
+    if observation_start is not None:
+        fetch_start = observation_start - timedelta(days=WARMUP_DAYS)
+        start_ts = int(
+            datetime(
+                fetch_start.year,
+                fetch_start.month,
+                fetch_start.day,
+                tzinfo=dt_timezone.utc,
+            ).timestamp()
+        )
+    else:
+        start_ts = end_ts - DAILY_HISTORY_DAYS * 86400
 
     params = {
         'period1': start_ts,
@@ -129,7 +146,7 @@ def _fetch_daily_history(symbol: str) -> List[Tuple[date, float]]:
         history.append((d, float(close)))
 
     history.sort(key=lambda x: x[0])
-    _DAILY_CACHE[symbol] = history
+    _DAILY_CACHE[cache_key] = history
     return history
 
 
@@ -209,7 +226,7 @@ def _fetch_price_action(
     end: 'date | None',
 ) -> List[Tuple[date, float]]:
     symbol_key, metric = _parse_series_id(series_id)
-    history = _fetch_daily_history(SYMBOL_MAP[symbol_key])
+    history = _fetch_daily_history(SYMBOL_MAP[symbol_key], start)
     if not history:
         return []
 
@@ -235,7 +252,7 @@ def _fetch_raw_symbol(
     end: 'date | None',
 ) -> List[Tuple[date, float]]:
     symbol = RAW_SYMBOL_MAP[series_id]
-    history = _fetch_daily_history(symbol)
+    history = _fetch_daily_history(symbol, start)
     return [(d, v) for d, v in history if _within_range(d, start, end)]
 
 
@@ -245,8 +262,8 @@ def _fetch_ratio(
     end: 'date | None',
 ) -> List[Tuple[date, float]]:
     num_symbol, den_symbol = RATIO_DEFS[series_id]
-    num_history = _fetch_daily_history(num_symbol)
-    den_history = _fetch_daily_history(den_symbol)
+    num_history = _fetch_daily_history(num_symbol, start)
+    den_history = _fetch_daily_history(den_symbol, start)
     den_lookup = dict(den_history)
 
     out: List[Tuple[date, float]] = []

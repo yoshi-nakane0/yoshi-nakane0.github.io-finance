@@ -22,6 +22,7 @@ from .crash_alert import compute_crash_alert
 from .historical_crash import find_similar_crash_months
 from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
+from .market_shock import build_market_shock_context
 from .similarity import find_similar_months
 from .sparkline import generate_sparkline_svg
 
@@ -34,6 +35,8 @@ logger = logging.getLogger(__name__)
 SPARKLINE_MONTHS = 24
 
 LIGHTGBM_PREDICTION_PATH = Path('static') / 'macro' / 'lightgbm_prediction.json'
+CRASH_ALERT_BACKTEST_PATH = Path('static') / 'macro' / 'crash_alert_backtest.json'
+CRASH_PROBABILITY_MODEL_PATH = Path('static') / 'macro' / 'crash_probability_model.json'
 
 
 def format_value(value: Optional[float], unit: str) -> str:
@@ -576,6 +579,7 @@ def _regime_update_guidance() -> List[str]:
         '金利・VIXなど市場系は毎営業日確認',
         '景気・雇用・物価は週1回と主要発表後に更新',
         '局面判定は最低でも月1回、CPI・PCE・雇用統計後は再判定',
+        '急落スコアの月次検証と確率モデルは月末データ反映後に更新',
     ]
 
 
@@ -614,23 +618,59 @@ def _regime_summary(regime_label: str, inflation_flag: str) -> Dict[str, str]:
 
 
 def build_crash_alert_context() -> Dict:
-    """クラッシュ警戒度の表示用コンテキストを作る。"""
+    """市場ストレス・急落警戒スコアの表示用コンテキストを作る。"""
     raw = compute_crash_alert()
+    backtest = load_crash_alert_backtest()
     components = []
     for c in raw['components']:
+        if c.get('is_missing'):
+            freshness_label = '欠損'
+        elif c.get('is_stale'):
+            freshness_label = '古い'
+        else:
+            freshness_label = '新鮮'
         components.append({
             'series_id': c['series_id'],
             'label': c['label'],
             'category': c.get('category', ''),
+            'category_label': c.get('category_label', ''),
             'value_display': format_value(c['value'], ''),
-            'score': c['score'],
+            'score': c['score'] if c['score'] is not None else '—',
+            'observation_date': c.get('observation_date') or '—',
+            'age_days': c.get('age_days'),
+            'age_days_display': (
+                f"{c['age_days']}日" if c.get('age_days') is not None else '—'
+            ),
+            'freshness_label': freshness_label,
+            'is_missing': c.get('is_missing', False),
+            'is_stale': c.get('is_stale', False),
+            'warning': c.get('warning'),
+        })
+    category_summary = []
+    for cat in raw.get('category_summary', []):
+        avg_score = cat.get('avg_score')
+        category_summary.append({
+            **cat,
+            'avg_score_display': avg_score if avg_score is not None else '—',
         })
     return {
         'total_score': raw['total_score'],
+        'market_stress_score': raw.get('market_stress_score'),
+        'forward_risk_score': raw.get('forward_risk_score'),
         'level': raw['level'],
         'level_label': raw['level_label'],
         'components': components,
-        'category_summary': raw.get('category_summary', []),
+        'category_summary': category_summary,
+        'data_quality_pct': raw.get('data_quality_pct', 0),
+        'rule_agreement_pct': raw.get('rule_agreement_pct', 0),
+        'validation_confidence_pct': raw.get('validation_confidence_pct'),
+        'validation_status': (
+            '月次検証あり'
+            if backtest else raw.get('validation_status', '検証未実施')
+        ),
+        'backtest_summary': backtest,
+        'is_provisional': raw.get('is_provisional', False),
+        'quality_warnings': raw.get('quality_warnings', []),
     }
 
 
@@ -688,4 +728,93 @@ def load_lightgbm_prediction() -> Optional[Dict]:
         'training_samples': raw.get('training_samples'),
         'feature_count': raw.get('feature_count'),
         'model_version': raw.get('model_version'),
+    }
+
+
+def load_crash_alert_backtest() -> Optional[Dict]:
+    """市場ストレススコアの検証 JSON を読み込んで表示用に整形する。"""
+    path = Path(settings.BASE_DIR) / CRASH_ALERT_BACKTEST_PATH
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        logger.exception("Crash alert backtest JSON の読み込みに失敗")
+        return None
+
+    roc_auc = raw.get('roc_auc')
+    pr_auc = raw.get('pr_auc')
+    threshold_25 = next(
+        (row for row in raw.get('thresholds', []) if row.get('threshold') == 25),
+        {},
+    )
+    return {
+        'target': raw.get('target'),
+        'horizon_days': raw.get('horizon_days'),
+        'drawdown_threshold_pct': raw.get('drawdown_threshold_pct'),
+        'sample_count': raw.get('sample_count'),
+        'event_count': raw.get('event_count'),
+        'roc_auc_display': f'{roc_auc:.2f}' if roc_auc is not None else '—',
+        'pr_auc_display': f'{pr_auc:.2f}' if pr_auc is not None else '—',
+        'precision_25_display': (
+            f"{threshold_25.get('precision') * 100:.1f}%"
+            if threshold_25.get('precision') is not None else '—'
+        ),
+        'recall_25_display': (
+            f"{threshold_25.get('recall') * 100:.1f}%"
+            if threshold_25.get('recall') is not None else '—'
+        ),
+        'calm_miss_count': raw.get('calm_miss_count'),
+        'note': raw.get('note'),
+    }
+
+
+def load_crash_probability_model() -> Optional[Dict]:
+    """急落確率モデル JSON を読み込んで表示用に整形する。"""
+    path = Path(settings.BASE_DIR) / CRASH_PROBABILITY_MODEL_PATH
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        logger.exception("Crash probability model JSON の読み込みに失敗")
+        return None
+
+    probability = raw.get('current_probability')
+    validation = raw.get('validation') or {}
+    roc_auc = validation.get('roc_auc')
+    pr_auc = validation.get('pr_auc')
+    brier = validation.get('brier_score')
+    thresholds = validation.get('thresholds') or []
+    threshold_10 = next(
+        (row for row in thresholds if row.get('threshold') == 0.1),
+        {},
+    )
+    return {
+        'model_version': raw.get('model_version'),
+        'trained_at': raw.get('trained_at'),
+        'prediction_label': raw.get('prediction_label'),
+        'current_probability_pct': round(probability * 100, 1) if probability is not None else None,
+        'current_probability_display': (
+            f'{probability * 100:.1f}%' if probability is not None else '—'
+        ),
+        'target': raw.get('target'),
+        'horizon_days': raw.get('horizon_days'),
+        'drawdown_threshold_pct': raw.get('drawdown_threshold_pct'),
+        'sample_count': raw.get('sample_count'),
+        'event_count': raw.get('event_count'),
+        'validation_samples': raw.get('validation_samples'),
+        'validation_event_count': raw.get('validation_event_count'),
+        'roc_auc_display': f'{roc_auc:.2f}' if roc_auc is not None else '—',
+        'pr_auc_display': f'{pr_auc:.2f}' if pr_auc is not None else '—',
+        'brier_score_display': f'{brier:.2f}' if brier is not None else '—',
+        'threshold_10_precision_display': (
+            f"{threshold_10.get('precision') * 100:.1f}%"
+            if threshold_10.get('precision') is not None else '—'
+        ),
+        'threshold_10_recall_display': (
+            f"{threshold_10.get('recall') * 100:.1f}%"
+            if threshold_10.get('recall') is not None else '—'
+        ),
+        'limitations': raw.get('limitations', []),
     }

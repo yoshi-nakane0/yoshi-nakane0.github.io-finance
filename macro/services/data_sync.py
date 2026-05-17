@@ -29,7 +29,7 @@ from .fred_client import FredApiError, fetch_observations as fetch_fred_observat
 logger = logging.getLogger(__name__)
 
 # 初回取得時に遡る期間（年）
-HISTORY_YEARS = 15
+HISTORY_YEARS = 25
 # 既存データありの差分取得時に直近何日分を取り直すか（FRED の改定値を拾うバッファ）
 REFRESH_BUFFER_DAYS = 45
 # 長期統計を計算する際の最小サンプル数
@@ -159,6 +159,7 @@ def _resolve_fetch_start(
     indicator: Indicator,
     today: date,
     history_years: int,
+    force_full_history: bool = False,
 ) -> Tuple[date, bool]:
     """FRED 取得開始日を決める。
     既存データがあれば最新日付から REFRESH_BUFFER_DAYS だけ遡る。
@@ -172,7 +173,7 @@ def _resolve_fetch_start(
         .values_list('observation_date', flat=True)
         .first()
     )
-    if latest is None:
+    if latest is None or force_full_history:
         start = today.replace(year=today.year - history_years)
         return start, True
     start = latest - timedelta(days=REFRESH_BUFFER_DAYS)
@@ -218,7 +219,12 @@ def _fetch_for_source(
     raise FredApiError(f"未対応の source: {source}")
 
 
-def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) -> dict:
+def sync_indicator(
+    indicator: Indicator,
+    *,
+    history_years: int = HISTORY_YEARS,
+    force_full_history: bool = False,
+) -> dict:
     """1指標を取得元から差分取得し、既存値とマージしてDBを更新する。
 
     取得元は indicator.source に応じて切替。
@@ -226,7 +232,12 @@ def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) 
     （途中失敗時の一時的なデータ消失を防ぐため）。
     """
     today = timezone.localdate()
-    start_date, is_initial = _resolve_fetch_start(indicator, today, history_years)
+    start_date, is_initial = _resolve_fetch_start(
+        indicator,
+        today,
+        history_years,
+        force_full_history=force_full_history,
+    )
 
     raw_new = _fetch_for_source(indicator, start_date, today)
     raw_new_valid, skipped_new = _filter_valid_observations(indicator, raw_new)
@@ -291,6 +302,7 @@ def sync_all_indicators(
     *,
     history_years: int = HISTORY_YEARS,
     series_ids: Optional[Iterable[str]] = None,
+    force_full_history: bool = False,
 ) -> dict:
     """全アクティブ指標を FRED から取得・更新する。
 
@@ -316,7 +328,11 @@ def sync_all_indicators(
     )
     for indicator in indicators:
         try:
-            summary = sync_indicator(indicator, history_years=history_years)
+            summary = sync_indicator(
+                indicator,
+                history_years=history_years,
+                force_full_history=force_full_history,
+            )
             results['success'].append(summary)
         except expected_errors as exc:
             logger.warning(

@@ -17,11 +17,27 @@ from macro.services.yfinance_client import sync_all_price_histories
 class Command(BaseCommand):
     help = '全 macro 指標を取得元から再取得し DB に保存する'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--history-years',
+            type=int,
+            default=25,
+            help='初回取得または --full-history 時に遡る年数。',
+        )
+        parser.add_argument(
+            '--full-history',
+            action='store_true',
+            help='既存データがあっても指定年数ぶんを再取得して埋め直す。',
+        )
+
     def handle(self, *args, **options):
         if not get_api_key():
             raise CommandError('FRED_API_KEY が未設定です')
 
-        result = sync_all_indicators()
+        result = sync_all_indicators(
+            history_years=options['history_years'],
+            force_full_history=options['full_history'],
+        )
         ok = len(result['success'])
         ng = len(result['failed'])
         self.stdout.write(f'成功 {ok} 件 / 失敗 {ng} 件')
@@ -34,7 +50,7 @@ class Command(BaseCommand):
 
         compute_current_regime()
 
-        price_result = sync_all_price_histories()
+        price_result = sync_all_price_histories(years=options['history_years'])
         price_ok = len(price_result['success'])
         price_ng = len(price_result['failed'])
         self.stdout.write(f'価格データ 成功 {price_ok} 件 / 失敗 {price_ng} 件')

@@ -46,23 +46,23 @@ def _build_risk_flags() -> List[str]:
         if spread.value < 0:
             flags.append(
                 f'米2-10年金利差が{spread.value:+.2f}%と逆イールド。'
-                'リセッション接近のシグナルとして警戒される局面です。'
+                '過去には景気後退前にも見られたため、景気減速への注意が必要です。'
             )
         elif spread.value < 0.3:
             flags.append(
                 f'米2-10年金利差が{spread.value:+.2f}%と縮小気味。'
-                '逆イールド一歩手前で景気減速懸念が残ります。'
+                '景気減速への警戒が残りやすい状態です。'
             )
 
     vix = _latest_observation('VIXCLS')
     if vix and vix.value is not None:
         if vix.value >= 30:
             flags.append(
-                f'VIX が{vix.value:.1f}と高水準。市場の警戒感が強いリスクオフ局面です。'
+                f'VIX が{vix.value:.1f}と高水準。市場の警戒感が強い状態です。'
             )
         elif vix.value <= 14:
             flags.append(
-                f'VIX が{vix.value:.1f}と低水準。市場は楽観的でリスクオン傾向です。'
+                f'VIX が{vix.value:.1f}と低水準。市場は落ち着いている状態です。'
             )
 
     hy = _latest_observation('BAMLH0A0HYM2')

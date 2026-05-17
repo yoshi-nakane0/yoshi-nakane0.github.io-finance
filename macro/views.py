@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 
 from django.contrib import messages
+from django.core.management import call_command
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -23,8 +24,10 @@ from .services.dashboard import (
     build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
+    build_market_shock_context,
     build_regime_context,
     build_similar_periods,
+    load_crash_probability_model,
     load_lightgbm_prediction,
 )
 from .services.dashboard_cache import (
@@ -74,6 +77,10 @@ def _can_refresh_macro_data(user):
     return is_creator_user(user)
 
 
+def _can_run_macro_model_jobs(user):
+    return is_creator_user(user) and not _is_serverless_runtime()
+
+
 def _refresh_serverless_macro_data(request):
     """本番向けの軽量更新。即時性の高い市場ストレス指標だけ取得する。"""
     try:
@@ -104,6 +111,7 @@ def _refresh_serverless_macro_data(request):
             'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
             'indicator_cards': build_indicator_cards(),
             'crash_alert': build_crash_alert_context(),
+            'market_shock': build_market_shock_context(),
         })
         save_dashboard_payload(payload)
         invalidate_indicator_detail_caches()
@@ -127,9 +135,21 @@ def index(request):
         context = dict(cache_payload)
         context['has_observations'] = context.get('has_observations', True)
         context['dashboard_cache_missing'] = not context['has_observations']
+        if (
+            context['has_observations']
+            and (
+                not context.get('crash_alert')
+                or 'data_quality_pct' not in context['crash_alert']
+            )
+        ):
+            context['crash_alert'] = build_crash_alert_context()
+        if context['has_observations'] and not context.get('market_shock'):
+            context['market_shock'] = build_market_shock_context()
         context['fred_key_present'] = bool(get_api_key())
         context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
+        context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()
+        context['crash_probability_model'] = load_crash_probability_model()
         similar_periods = context.get('similar_periods', [])
         linkages = context.get('linkages', [])
         context['overview_commentary'] = build_overview_commentary(
@@ -153,10 +173,15 @@ def index(request):
             ),
             'fred_key_present': fred_key_present,
             'can_refresh_macro_data': _can_refresh_macro_data(request.user),
+            'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
             'indicator_cards': build_indicator_cards() if has_observations else [],
             'crash_alert': None,
+            'market_shock': (
+                build_market_shock_context() if has_observations else None
+            ),
             'historical_crash_similarity': [],
             'lightgbm_prediction': load_lightgbm_prediction(),
+            'crash_probability_model': load_crash_probability_model(),
             'similar_periods': [],
             'linkages': [],
             'overview_commentary': None,
@@ -177,12 +202,15 @@ def index(request):
         ),
         'fred_key_present': fred_key_present,
         'can_refresh_macro_data': _can_refresh_macro_data(request.user),
+        'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
         'indicator_cards': build_indicator_cards() if has_observations else [],
         'crash_alert': build_crash_alert_context() if has_observations else None,
+        'market_shock': build_market_shock_context() if has_observations else None,
         'historical_crash_similarity': (
             build_historical_crash_similarity() if has_observations else []
         ),
         'lightgbm_prediction': load_lightgbm_prediction(),
+        'crash_probability_model': load_crash_probability_model(),
         'similar_periods': similar_periods,
         'linkages': linkages,
         'overview_commentary': (
@@ -270,6 +298,41 @@ def refresh(request):
                 "判定は更新しましたが、重い分析の画面反映は次回表示時に再計算します",
             )
 
+    return redirect(reverse('macro:index'))
+
+
+@require_POST
+def recompute_crash_backtest(request):
+    """月次検証と急落確率モデル再学習をまとめて実行する。"""
+    if not is_creator_user(request.user):
+        return HttpResponseForbidden("権限がありません。")
+    if _is_serverless_runtime():
+        messages.warning(request, "重い月次メンテナンスはローカル環境で実行してください。")
+        return redirect(reverse('macro:index'))
+
+    try:
+        call_command(
+            'backtest_crash_alert',
+            target='GSPC',
+            horizon_days=63,
+            drawdown_threshold=-10.0,
+            output='static/macro/crash_alert_backtest.json',
+            csv_output='static/macro/crash_alert_backtest.csv',
+        )
+        call_command(
+            'train_crash_probability_model',
+            target='GSPC',
+            horizon_days=63,
+            drawdown_threshold=-10.0,
+            validation_months=120,
+        )
+        payload = precompute_dashboard_payload()
+        save_dashboard_payload(payload)
+    except Exception as exc:
+        logger.exception("Monthly crash maintenance failed")
+        messages.error(request, f"月次メンテナンスに失敗しました: {exc}")
+    else:
+        messages.success(request, "月次検証と急落確率モデルを更新しました")
     return redirect(reverse('macro:index'))
 
 

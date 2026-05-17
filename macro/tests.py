@@ -3,8 +3,10 @@
 from io import StringIO
 from datetime import date
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import mock
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -27,6 +29,7 @@ from .services import (
     historical_crash,
     judgment,
     linkage,
+    market_shock,
     regime,
     similarity,
     sparkline,
@@ -323,7 +326,7 @@ class DashboardFormatTest(TestCase):
         self.assertTrue(context['regime_good_points'])
         self.assertTrue(context['regime_bad_points'])
         self.assertTrue(context['regime_outlook'])
-        self.assertEqual(len(context['regime_update_guidance']), 3)
+        self.assertEqual(len(context['regime_update_guidance']), 4)
 
     def test_regime_condition_scale_adjusts_for_inflation(self):
         strong = dashboard._regime_condition_summary(
@@ -462,6 +465,130 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, 'macro-regime-details--evidence')
         self.assertContains(r, '鉱工業生産指数')
         self.assertNotContains(r, '確度')
+        self.assertNotContains(r, '主要指標の観測日が古い可能性があります。')
+
+    @mock.patch('macro.views.load_dashboard_payload')
+    def test_index_crash_alert_copy_uses_market_stress_wording(self, cache_mock):
+        cache_mock.return_value = {
+            'has_observations': True,
+            'last_updated': '2026-05-17',
+            'similar_periods': [],
+            'linkages': [],
+            'indicator_cards': [],
+            'historical_crash_similarity': [],
+            'crash_alert': {
+                'total_score': 20,
+                'level': 'calm',
+                'level_label': '平常',
+                'rule_agreement_pct': 86,
+                'data_quality_pct': 90,
+                'validation_status': '検証未実施',
+                'backtest_summary': {
+                    'target': 'GSPC',
+                    'horizon_days': 63,
+                    'drawdown_threshold_pct': -10.0,
+                    'roc_auc_display': '0.71',
+                    'pr_auc_display': '0.40',
+                    'precision_25_display': '11.8%',
+                    'recall_25_display': '73.7%',
+                    'calm_miss_count': 5,
+                },
+                'quality_warnings': ['未取得の指標: NAAIMエクスポージャー、AAII強気%。この2件は今回の点数に含めていません。'],
+                'category_summary': [{
+                    'category': 'price_action',
+                    'category_label': '価格アクション',
+                    'avg_score_display': 12,
+                    'weight_pct': 20,
+                    'coverage_pct': 100,
+                }],
+                'components': [{
+                    'label': 'VIX',
+                    'category_label': 'ボラ・需給',
+                    'value_display': '18.00',
+                    'observation_date': '2026-05-15',
+                    'age_days_display': '2日',
+                    'freshness_label': '新鮮',
+                    'score': 25,
+                }],
+            },
+            'market_shock': {
+                'has_data': True,
+                'tone': 'negative',
+                'summary': 'S&P500の急落は継続寄りです。',
+                'rows': [{
+                    'label': 'S&P500',
+                    'headline': '急落 中 / 継続寄り',
+                    'tone': 'negative',
+                    'direction': 'drop',
+                    'momentum_20d_display': '-8.5%',
+                    'dd200_display': '-4.0%',
+                    'dd52w_display': '-14.0%',
+                    'continuation_score_display': '80%',
+                    'reason': '下落にボラ・信用・トレンド悪化が重なっています。',
+                }],
+            },
+        }
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '市場ストレス・急落警戒スコア')
+        self.assertContains(r, '急変判定')
+        self.assertContains(r, 'S&amp;P500の急落は継続寄りです。')
+        self.assertContains(r, '将来の暴落確率ではありません')
+        self.assertContains(r, '判定強度')
+        self.assertContains(r, 'データ品質')
+        self.assertContains(r, '検証未実施')
+        self.assertNotContains(r, 'クラッシュ警戒度')
+        self.assertNotContains(r, '月次検証: GSPC')
+        self.assertNotContains(r, 'ROC-AUC 0.71')
+        self.assertNotContains(r, '閾値25')
+        self.assertNotContains(r, '平常表示時の取り逃し')
+
+    @mock.patch('macro.views.load_crash_probability_model')
+    @mock.patch('macro.views.load_dashboard_payload')
+    def test_index_shows_crash_probability_model(self, cache_mock, probability_mock):
+        cache_mock.return_value = {
+            'has_observations': True,
+            'last_updated': '2026-05-17',
+            'similar_periods': [],
+            'linkages': [],
+            'indicator_cards': [],
+            'historical_crash_similarity': [],
+            'crash_alert': None,
+        }
+        probability_mock.return_value = {
+            'prediction_label': '今後63日相当でGSPCが-10%以上下落する推定確率',
+            'current_probability_display': '11.1%',
+            'validation_samples': 84,
+            'validation_event_count': 5,
+            'roc_auc_display': '0.77',
+            'pr_auc_display': '0.37',
+            'brier_score_display': '0.06',
+            'threshold_10_precision_display': '6.9%',
+            'threshold_10_recall_display': '100.0%',
+            'limitations': ['急落は発生回数が少ないため、確率は参考値です。'],
+            'trained_at': '2026-05-17',
+            'sample_count': 180,
+            'event_count': 8,
+            'model_version': 'crash_probability_logistic_v1',
+        }
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '急落確率モデル v1')
+        self.assertContains(r, '11.1%')
+        self.assertContains(r, '月次校正済み')
+        self.assertNotContains(r, '検証: 84件')
+        self.assertNotContains(r, 'ROC-AUC 0.77')
+        self.assertNotContains(r, 'Brier 0.06')
+        self.assertNotContains(r, '閾値10%')
+        self.assertNotContains(r, '急落は発生回数が少ないため')
+        self.assertNotContains(r, '投資判断や売買推奨としては使えません')
+        self.assertNotContains(r, '学習日 2026-05-17')
+        self.assertNotContains(r, 'サンプル 180')
+        self.assertNotContains(r, 'モデル crash_probability_logistic_v1')
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})
     @mock.patch('macro.views.build_historical_crash_similarity')
@@ -501,10 +628,17 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
         self.assertNotContains(r, '取得・判定')
         self.assertNotContains(r, 'macro-refresh-form')
+        self.assertNotContains(r, 'macro-operation-panel')
 
     def test_anonymous_refresh_is_forbidden(self):
         r = self.client.post(reverse('macro:refresh'))
         self.assertEqual(r.status_code, 403)
+
+    def test_anonymous_model_jobs_are_forbidden(self):
+        backtest_response = self.client.post(
+            reverse('macro:recompute_crash_backtest')
+        )
+        self.assertEqual(backtest_response.status_code, 403)
 
     def test_staff_refresh_is_forbidden_and_button_hidden(self):
         user = User.objects.create_user(
@@ -516,9 +650,13 @@ class MacroUrlsTest(TestCase):
 
         get_response = self.client.get(reverse('macro:index'))
         post_response = self.client.post(reverse('macro:refresh'))
+        backtest_response = self.client.post(
+            reverse('macro:recompute_crash_backtest')
+        )
 
         self.assertNotContains(get_response, '取得・判定')
         self.assertEqual(post_response.status_code, 403)
+        self.assertEqual(backtest_response.status_code, 403)
 
     def test_refresh_button_is_visible_for_superusers(self):
         user = User.objects.create_superuser(
@@ -532,6 +670,10 @@ class MacroUrlsTest(TestCase):
 
         self.assertContains(r, '取得・判定')
         self.assertContains(r, 'macro-refresh-form')
+        self.assertContains(r, 'macro-operation-panel')
+        self.assertContains(r, '月次メンテナンス')
+        self.assertContains(r, '月次検証・急落確率モデル更新')
+        self.assertNotContains(r, '確率更新')
 
     def test_serverless_refresh_button_runs_lightweight_update_only(self):
         user = User.objects.create_superuser(
@@ -603,6 +745,49 @@ class MacroUrlsTest(TestCase):
         price_mock.assert_called_once()
         precompute_mock.assert_called_once()
         save_cache_mock.assert_called_once_with({'last_updated': '2026-05-17'})
+
+    def test_monthly_maintenance_runs_backtest_model_and_cache_update(self):
+        user = User.objects.create_superuser(
+            username='backtest-creator',
+            email='backtest-creator@example.com',
+            password='test-password',
+        )
+        self.client.force_login(user)
+
+        with mock.patch('macro.views._is_serverless_runtime', return_value=False), \
+             mock.patch('macro.views.call_command') as call_command_mock, \
+             mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
+             mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
+            precompute_mock.return_value = {'crash_alert': {'total_score': 18}}
+
+            r = self.client.post(reverse('macro:recompute_crash_backtest'))
+
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(call_command_mock.call_count, 2)
+        self.assertEqual(
+            call_command_mock.call_args_list[0],
+            mock.call(
+                'backtest_crash_alert',
+                target='GSPC',
+                horizon_days=63,
+                drawdown_threshold=-10.0,
+                output='static/macro/crash_alert_backtest.json',
+                csv_output='static/macro/crash_alert_backtest.csv',
+            ),
+        )
+        self.assertEqual(
+            call_command_mock.call_args_list[1],
+            mock.call(
+                'train_crash_probability_model',
+                target='GSPC',
+                horizon_days=63,
+                drawdown_threshold=-10.0,
+                validation_months=120,
+            ),
+        )
+        save_cache_mock.assert_called_once_with(
+            {'crash_alert': {'total_score': 18}}
+        )
 
     def test_indicator_detail_existing(self):
         # マイグレーションでシードされた CPIAUCSL は存在する想定
@@ -762,7 +947,7 @@ class CrashAlertTest(TestCase):
         self.assertEqual(level, 'caution')
 
     def test_classify_alert(self):
-        level, _ = crash_alert._classify(45)
+        level, _ = crash_alert._classify(55)
         self.assertEqual(level, 'alert')
 
     def test_classify_high(self):
@@ -777,6 +962,222 @@ class CrashAlertTest(TestCase):
         result = crash_alert.compute_crash_alert()
         self.assertEqual(result['level'], 'unknown')
         self.assertIsNone(result['total_score'])
+
+    def test_stale_daily_data_is_marked(self):
+        as_of = date(2026, 5, 17)
+
+        def lookup(series_id):
+            if series_id != 'VIXCLS':
+                return None
+            return {
+                'value': 30.0,
+                'observation_date': date(2026, 5, 8),
+                'frequency': Indicator.Frequency.DAILY,
+            }
+
+        result = crash_alert.compute_crash_alert(value_lookup=lookup, as_of=as_of)
+        vix = next(c for c in result['components'] if c['series_id'] == 'VIXCLS')
+        self.assertTrue(vix['is_stale'])
+        self.assertEqual(vix['age_days'], 9)
+
+    def test_low_data_quality_forces_provisional_label(self):
+        as_of = date(2026, 5, 17)
+
+        def lookup(series_id):
+            if series_id != 'VIXCLS':
+                return None
+            return {
+                'value': 35.0,
+                'observation_date': as_of,
+                'frequency': Indicator.Frequency.DAILY,
+            }
+
+        result = crash_alert.compute_crash_alert(value_lookup=lookup, as_of=as_of)
+        self.assertEqual(result['level'], 'provisional')
+        self.assertEqual(result['level_label'], '参考表示')
+        self.assertLess(result['data_quality_pct'], 70)
+
+    def test_price_action_is_capped_at_twenty_percent(self):
+        as_of = date(2026, 5, 17)
+        values = {
+            spec['series_id']: -30.0
+            for spec in crash_alert.COMPONENT_SPECS
+            if spec['category'] == 'price_action'
+        }
+
+        def lookup(series_id):
+            if series_id not in values:
+                return None
+            return {
+                'value': values[series_id],
+                'observation_date': as_of,
+                'frequency': Indicator.Frequency.DAILY,
+            }
+
+        result = crash_alert.compute_crash_alert(value_lookup=lookup, as_of=as_of)
+        price_cat = next(
+            c for c in result['category_summary']
+            if c['category'] == 'price_action'
+        )
+        self.assertEqual(price_cat['avg_score'], 100)
+        self.assertEqual(result['total_score'], 20)
+
+    def test_missing_credit_category_forces_provisional(self):
+        as_of = date(2026, 5, 17)
+        high_values = {
+            'VIXCLS': 50.0,
+            'CBOE_SKEW': 170.0,
+            'NAAIM_EXPOSURE': 110.0,
+            'AAII_BULLISH': 65.0,
+            'MOVE_INDEX': 220.0,
+            'VIX_VIX3M_RATIO': 1.3,
+            'T10Y2Y': -1.0,
+            'T10Y3M': -1.0,
+        }
+        for spec in crash_alert.COMPONENT_SPECS:
+            if spec['category'] == 'price_action':
+                high_values[spec['series_id']] = -30.0
+
+        def lookup(series_id):
+            if series_id not in high_values:
+                return None
+            return {
+                'value': high_values[series_id],
+                'observation_date': as_of,
+                'frequency': Indicator.Frequency.DAILY,
+            }
+
+        result = crash_alert.compute_crash_alert(value_lookup=lookup, as_of=as_of)
+        self.assertEqual(result['level'], 'provisional')
+        self.assertIn('信用・流動性', ' '.join(result['quality_warnings']))
+
+    def test_danger_requires_credit_or_volatility_support(self):
+        level, label = crash_alert._classify(
+            90,
+            data_quality_pct=100,
+            low_coverage_categories=[],
+            supporting_stress=False,
+        )
+        self.assertEqual(level, 'high')
+        self.assertEqual(label, '高警戒')
+
+
+class MarketShockTest(TestCase):
+    """急変判定の表示用ロジック。"""
+
+    def _create_price_action(self, series_id, value):
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id=series_id,
+            defaults={
+                'name_ja': series_id,
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.B,
+                'frequency': Indicator.Frequency.DAILY,
+                'source': Indicator.Source.YFINANCE_DAILY,
+                'is_active': True,
+            },
+        )
+        Observation.objects.filter(indicator=indicator).delete()
+        Observation.objects.create(
+            indicator=indicator,
+            observation_date=date(2026, 5, 18),
+            value=value,
+        )
+
+    def test_drop_with_credit_stress_is_continuation_biased(self):
+        self._create_price_action('PA_GSPC_MOM20', -8.5)
+        self._create_price_action('PA_GSPC_DD200', -4.0)
+        self._create_price_action('PA_GSPC_DD52W', -14.0)
+        alert = {
+            'market_stress_score': 62,
+            'category_summary': [
+                {'category': 'volatility_sentiment', 'avg_score': 65},
+                {'category': 'credit_liquidity', 'avg_score': 72},
+            ],
+        }
+
+        result = market_shock.build_market_shock_context(
+            alert=alert,
+            as_of=date(2026, 5, 18),
+        )
+
+        gspc = next(row for row in result['rows'] if row['symbol'] == 'GSPC')
+        self.assertEqual(gspc['direction'], 'drop')
+        self.assertEqual(gspc['continuation_label'], '継続寄り')
+        self.assertIn('S&P500', result['summary'])
+
+    def test_surge_with_low_stress_is_continuation_biased(self):
+        self._create_price_action('PA_IXIC_MOM20', 8.1)
+        self._create_price_action('PA_IXIC_DD200', 6.0)
+        self._create_price_action('PA_IXIC_DD52W', -2.0)
+        alert = {
+            'market_stress_score': 18,
+            'category_summary': [
+                {'category': 'volatility_sentiment', 'avg_score': 24},
+                {'category': 'credit_liquidity', 'avg_score': 12},
+            ],
+        }
+
+        result = market_shock.build_market_shock_context(
+            alert=alert,
+            as_of=date(2026, 5, 18),
+        )
+
+        nasdaq = next(row for row in result['rows'] if row['symbol'] == 'IXIC')
+        self.assertEqual(nasdaq['direction'], 'surge')
+        self.assertEqual(nasdaq['continuation_label'], '継続寄り')
+
+
+class BacktestCrashAlertCommandTest(TestCase):
+    """市場ストレス検証コマンド。"""
+
+    def test_backtest_outputs_json(self):
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id='VIXCLS',
+            defaults={
+                'source': Indicator.Source.FRED,
+                'name_ja': 'VIX',
+                'name_en': 'VIX',
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.B,
+                'frequency': Indicator.Frequency.DAILY,
+                'unit': 'index',
+                'is_active': True,
+            },
+        )
+        for month, close, vix in (
+            (date(2026, 1, 1), 100.0, 16.0),
+            (date(2026, 2, 1), 88.0, 32.0),
+            (date(2026, 3, 1), 92.0, 24.0),
+            (date(2026, 4, 1), 94.0, 18.0),
+            (date(2026, 5, 1), 96.0, 16.0),
+        ):
+            PriceObservation.objects.create(
+                ticker=PriceObservation.Ticker.SP500,
+                observation_month=month,
+                close_price=close,
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=month + relativedelta(months=1) - relativedelta(days=1),
+                value=vix,
+            )
+
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'backtest.json'
+            out = StringIO()
+            call_command(
+                'backtest_crash_alert',
+                '--target', 'GSPC',
+                '--horizon-days', '63',
+                '--drawdown-threshold', '-10',
+                '--output', str(output),
+                stdout=out,
+            )
+            self.assertTrue(output.exists())
+            payload = output.read_text(encoding='utf-8')
+            self.assertIn('"roc_auc"', payload)
+            self.assertIn('"precision"', payload)
 
 
 class LightgbmPredictionLoadTest(TestCase):

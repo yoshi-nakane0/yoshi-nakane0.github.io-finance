@@ -14,8 +14,8 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_CACHE_KEY = 'macro_index_v2'
-LEGACY_DASHBOARD_CACHE_KEYS = ('macro_index_v1',)
+DASHBOARD_CACHE_KEY = 'macro_index_v3'
+LEGACY_DASHBOARD_CACHE_KEYS = ('macro_index_v2', 'macro_index_v1')
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 
@@ -141,6 +141,7 @@ def precompute_dashboard_payload() -> dict:
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
+        build_market_shock_context,
         build_similar_periods,
     )
     from .data_sync import get_latest_observation_date
@@ -154,6 +155,7 @@ def precompute_dashboard_payload() -> dict:
         'linkages': build_linkages(),
         'indicator_cards': build_indicator_cards(),
         'crash_alert': build_crash_alert_context(),
+        'market_shock': build_market_shock_context(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }
 
