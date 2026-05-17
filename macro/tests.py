@@ -53,6 +53,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
         self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertIn('Running finance production build bootstrap', build_script)
         self.assertIn('BUNDLED_SQLITE_PATH', build_script)
         self.assertIn('manage.py refresh_macro_data', build_script)
         self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
@@ -61,7 +62,16 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         vercel_config = (Path(settings.BASE_DIR) / 'vercel.json').read_text(
             encoding='utf-8',
         )
+        python_project = (Path(settings.BASE_DIR) / 'pyproject.toml').read_text(
+            encoding='utf-8',
+        )
+        self.assertIn('"buildCommand": "bash build_files.sh"', vercel_config)
+        self.assertIn('"functions"', vercel_config)
+        self.assertIn('"api/index.py"', vercel_config)
         self.assertIn('"includeFiles": "runtime/db.sqlite3"', vercel_config)
+        self.assertNotIn('"builds"', vercel_config)
+        self.assertNotIn('"installCommand": "bash build_files.sh"', vercel_config)
+        self.assertIn('requires-python = ">=3.12"', python_project)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (

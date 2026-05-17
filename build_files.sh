@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+echo "Running finance production build bootstrap"
+
 # 環境変数を設定
 export DJANGO_SETTINGS_MODULE=myproject.settings
 export SQLITE_DB_PATH="${SQLITE_DB_PATH:-/tmp/db.sqlite3}"
