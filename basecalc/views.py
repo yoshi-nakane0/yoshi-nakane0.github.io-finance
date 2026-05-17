@@ -1,7 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from django.core.cache import cache
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .anchor_snapshot import (
     calculate_erp_fixed,
@@ -14,8 +16,20 @@ from .anchor_snapshot import (
 )
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 
+
+@ensure_csrf_cookie
 def index(request):
+    can_update_basecalc_data = (
+        request.user.is_authenticated and request.user.is_staff
+    )
+    if request.method == 'POST':
+        if request.POST.get('action') != 'update':
+            return HttpResponseBadRequest('Invalid action')
+        if not can_update_basecalc_data:
+            return HttpResponseForbidden('Forbidden')
+
     try:
+        params = request.POST if request.method == 'POST' else request.GET
         # キャッシュキー
         CACHE_KEY_FWD = 'nikkei_forward_per'
         CACHE_KEY_PRICE = 'nikkei_price'
@@ -24,13 +38,13 @@ def index(request):
         CACHE_TTL_PRICE = 300
         CACHE_TTL_JGB = 3600
         
-        # 1. パラメータ確認: update=true なら強制更新
-        force_update = request.GET.get('update') == 'true'
+        # 1. パラメータ確認: 更新は管理者 POST のみ
+        force_update = request.method == 'POST'
         erp_fixed = 0.0
         erp_growth_input = None
         erp_growth_percent = None
         erp_method = normalize_erp_method(
-            request.GET.get('erp_method', 'method_a')
+            params.get('erp_method', 'method_a')
         )
 
         def parse_float_param(value):
@@ -51,7 +65,7 @@ def index(request):
                 return None
             return normalized if normalized > 0 else None
 
-        growth_param = request.GET.get('erp_growth')
+        growth_param = params.get('erp_growth')
         erp_growth_percent = normalize_growth_percent(
             parse_float_param(growth_param),
             erp_method,
@@ -60,7 +74,7 @@ def index(request):
             erp_growth_input = f"{erp_growth_percent:.1f}"
 
         price_override = normalize_price(
-            parse_float_param(request.GET.get('price'))
+            parse_float_param(params.get('price'))
         )
 
         def format_price_param(value):
@@ -70,8 +84,8 @@ def index(request):
 
         price_param = format_price_param(price_override)
 
-        core_ratio_param = request.GET.get('growth_core_ratio')
-        wide_ratio_param = request.GET.get('growth_wide_ratio')
+        core_ratio_param = params.get('growth_core_ratio')
+        wide_ratio_param = params.get('growth_wide_ratio')
         growth_core_ratio = normalize_ratio(
             parse_float_param(core_ratio_param),
             default_value=0.6,
@@ -93,17 +107,8 @@ def index(request):
         jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
         dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
         
-        # 3. 更新リクエストまたは未取得時はデータ取得・更新 (All or Nothing)
-        needs_update = force_update or any(
-            value is None
-            for value in (
-                forward_per,
-                price,
-                jgb10y_yield_percent,
-                dividend_yield_index_percent,
-            )
-        )
-        if needs_update:
+        # 3. 外部取得と共有キャッシュ更新は管理者 POST のみ
+        if force_update:
             with ThreadPoolExecutor() as executor:
                 futures = {}
                 futures['per_values'] = executor.submit(get_nikkei_per_values)
@@ -128,6 +133,7 @@ def index(request):
 
         if price_override is not None:
             price = price_override
+        if force_update and price_override is not None:
             cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
         
         # 4. 欠落時は0.00を使用
@@ -245,9 +251,11 @@ def index(request):
             'price_param': price_param,
             'growth_core_ratio_input': growth_core_ratio_input,
             'growth_wide_ratio_input': growth_wide_ratio_input,
+            'can_update_basecalc_data': can_update_basecalc_data,
         }
     except Exception as e:
         context = {
-            'error': str(e)
+            'error': str(e),
+            'can_update_basecalc_data': can_update_basecalc_data,
         }
     return render(request, 'basecalc/index.html', context)

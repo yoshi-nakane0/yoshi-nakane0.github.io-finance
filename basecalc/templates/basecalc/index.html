@@ -18,9 +18,15 @@
             <div class="card" style="border-left: 4px solid var(--color-accent-red);">
                 <div class="card-title text-red">Error Occurred</div>
                 <div style="margin-top: 8px; color: #fca5a5; font-size: 0.95rem;">{{ error }}</div>
+                {% if can_update_basecalc_data %}
                 <div style="margin-top: 16px; text-align: right;">
-                    <a href="?update=true" class="btn-base btn-outline">Retry</a>
+                    <form method="post" action="" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update">
+                        <button type="submit" class="btn-base btn-outline">Retry</button>
+                    </form>
                 </div>
+                {% endif %}
             </div>
             {% else %}
 
@@ -57,14 +63,20 @@
             <!-- Fair Value Actions -->
             <div class="action-row">
                 <button type="submit" class="btn-base btn-primary" form="erp-form">Apply ERP</button>
-                <a href="?update=true&erp_method={{ erp_method }}{% if erp_growth_input %}&erp_growth={{ erp_growth_input }}{% endif %}{% if growth_core_ratio_input %}&growth_core_ratio={{ growth_core_ratio_input }}{% endif %}{% if growth_wide_ratio_input %}&growth_wide_ratio={{ growth_wide_ratio_input }}{% endif %}{% if price_param %}&price={{ price_param }}{% endif %}" class="btn-base btn-outline" id="price-refresh">
+                {% if can_update_basecalc_data %}
+                <form method="post" action="" id="price-refresh-form" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update">
+                    <button type="submit" class="btn-base btn-outline" id="price-refresh">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 4v6h-6"></path>
                         <path d="M1 20v-6h6"></path>
                         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                     </svg>
                     Refresh
-                </a>
+                    </button>
+                </form>
+                {% endif %}
             </div>
 
             <!-- 3. Independent Price Display -->
@@ -447,7 +459,8 @@
             const form = document.querySelector(".erp-form");
             const priceValue = document.getElementById("current-price");
             const priceInput = form ? form.querySelector('[name="price"]') : null;
-            const refreshLink = document.getElementById("price-refresh");
+            const refreshForm = document.getElementById("price-refresh-form");
+            const refreshButton = document.getElementById("price-refresh");
             const STORAGE_KEY = "basecalc_current_price";
             const priceWarning = document.getElementById("price-warning");
 
@@ -555,7 +568,7 @@
                     .then((html) => parsePriceFromHtml(html));
             };
 
-            const buildUrlFromForm = (options = {}) => {
+            const buildUrlFromForm = () => {
                 const url = new URL(window.location.href);
                 url.search = "";
                 if (form) {
@@ -565,9 +578,6 @@
                             url.searchParams.set(key, value);
                         }
                     }
-                }
-                if (options.update) {
-                    url.searchParams.set("update", "true");
                 }
                 return url;
             };
@@ -606,13 +616,37 @@
                 }
             };
 
-            const requestUpdate = async (url) => {
+            const getRefreshCsrfToken = () => {
+                if (!refreshForm) {
+                    return "";
+                }
+                return new FormData(refreshForm).get("csrfmiddlewaretoken") || "";
+            };
+
+            const buildRefreshBody = () => {
+                const body = form ? new FormData(form) : new FormData();
+                body.set("action", "update");
+                const csrfToken = getRefreshCsrfToken();
+                if (csrfToken) {
+                    body.set("csrfmiddlewaretoken", csrfToken);
+                }
+                return body;
+            };
+
+            const requestUpdate = async (url, options = {}) => {
+                const method = options.method || "GET";
+                const headers = {
+                    "X-Requested-With": "XMLHttpRequest",
+                };
+                const csrfToken = getRefreshCsrfToken();
+                if (method === "POST" && csrfToken) {
+                    headers["X-CSRFToken"] = csrfToken;
+                }
                 try {
-                    const response = await fetch(url.toString(), {
-                        method: "GET",
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest",
-                        },
+                    const response = await fetch(method === "POST" ? window.location.pathname : url.toString(), {
+                        method,
+                        headers,
+                        body: options.body || null,
                         cache: "no-store",
                     });
                     if (!response.ok) {
@@ -634,24 +668,39 @@
                 });
             }
 
-            if (refreshLink) {
-                refreshLink.addEventListener("click", async (event) => {
+            if (refreshForm) {
+                refreshForm.addEventListener("submit", async (event) => {
                     event.preventDefault();
                     setPriceWarning(false);
+                    if (refreshButton) {
+                        refreshButton.disabled = true;
+                    }
                     let latestPrice = null;
                     try {
                         latestPrice = await fetchLatestPrice();
                     } catch (e) {}
                     if (latestPrice === null) {
                         setPriceWarning(true);
+                        if (refreshButton) {
+                            refreshButton.disabled = false;
+                        }
                         return;
                     }
                     if (priceInput) {
                         priceInput.value = String(latestPrice);
                     }
                     writeStorage(String(latestPrice));
-                    const url = buildUrlFromForm({ update: true });
-                    requestUpdate(url);
+                    const url = buildUrlFromForm();
+                    try {
+                        await requestUpdate(url, {
+                            method: "POST",
+                            body: buildRefreshBody(),
+                        });
+                    } finally {
+                        if (refreshButton) {
+                            refreshButton.disabled = false;
+                        }
+                    }
                 });
             }
         });
