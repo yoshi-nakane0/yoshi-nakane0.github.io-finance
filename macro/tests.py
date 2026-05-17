@@ -58,6 +58,8 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('manage.py refresh_macro_data', build_script)
         self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
         self.assertNotIn('origin/${DATA_BRANCH}:db.sqlite3', build_script)
+        self.assertNotIn('ensurepip', build_script)
+        self.assertNotIn('pip install -r requirements-prod.txt', build_script)
 
         vercel_config = (Path(settings.BASE_DIR) / 'vercel.json').read_text(
             encoding='utf-8',

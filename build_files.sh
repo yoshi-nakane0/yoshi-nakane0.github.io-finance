@@ -8,16 +8,11 @@ export DJANGO_SETTINGS_MODULE=myproject.settings
 export SQLITE_DB_PATH="${SQLITE_DB_PATH:-/tmp/db.sqlite3}"
 export BUNDLED_SQLITE_PATH="${BUNDLED_SQLITE_PATH:-$PWD/runtime/db.sqlite3}"
 
-# pip の準備とアップグレード
+# Vercel が事前に依存関係を入れるため、ここでは実行する Python だけ選ぶ。
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   PYTHON_BIN=python
 fi
-$PYTHON_BIN -m ensurepip
-$PYTHON_BIN -m pip install --upgrade pip --no-warn-script-location
-
-# 依存関係のインストール（本番向け）
-$PYTHON_BIN -m pip install -r requirements-prod.txt --no-warn-script-location
 
 if [ -z "${DATABASE_URL:-}" ]; then
   rm -f "$SQLITE_DB_PATH"
