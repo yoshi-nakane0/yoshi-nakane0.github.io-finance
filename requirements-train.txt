@@ -2,5 +2,5 @@
 # 使い方: pip install -r requirements.txt -r requirements-train.txt
 lightgbm>=4.6.0,<5
 numpy>=1.24.0
-pandas>=2.0.0
+pandas>=3.0.3
 yfinance>=0.2.40
