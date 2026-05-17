@@ -50,4 +50,18 @@ def _ensure_runtime_migrations():
 
 _ensure_runtime_migrations()
 
+
+def _ensure_runtime_superuser():
+    if not _is_serverless_runtime():
+        return
+    try:
+        from myproject.auth import ensure_env_superuser
+
+        ensure_env_superuser()
+    except Exception:
+        logger.exception('startup superuser provisioning failed')
+
+
+_ensure_runtime_superuser()
+
 app = application

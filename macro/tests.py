@@ -53,7 +53,15 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
         self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertIn('BUNDLED_SQLITE_PATH', build_script)
+        self.assertIn('manage.py refresh_macro_data', build_script)
+        self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
         self.assertNotIn('origin/${DATA_BRANCH}:db.sqlite3', build_script)
+
+        vercel_config = (Path(settings.BASE_DIR) / 'vercel.json').read_text(
+            encoding='utf-8',
+        )
+        self.assertIn('"includeFiles": "runtime/db.sqlite3"', vercel_config)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (
@@ -359,6 +367,25 @@ class DashboardCacheTest(TestCase):
             load_dashboard_payload(),
             {'last_updated': '2026-05-01'},
         )
+
+    def test_cached_empty_payload_is_marked_as_preparing(self):
+        DashboardCache.objects.create(
+            cache_key='macro_index_v2',
+            payload={
+                'has_observations': False,
+                'last_updated': '—',
+                'similar_periods': [],
+                'linkages': [],
+                'indicator_cards': [],
+                'crash_alert': None,
+                'historical_crash_similarity': [],
+            },
+        )
+
+        response = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '基本指標のみ表示しています')
 
 
 class BacktestRegimeCommandTest(TestCase):

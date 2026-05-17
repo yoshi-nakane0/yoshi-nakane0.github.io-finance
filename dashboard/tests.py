@@ -18,7 +18,7 @@ class DashboardPageTests(TestCase):
 
         self.assertContains(response, reverse("dashboard:admin_panel"))
         self.assertContains(response, "tapCount >= 5")
-        self.assertContains(response, ".dashboard-card")
+        self.assertNotContains(response, '".dashboard-card"')
 
     def test_admin_panel_shows_login_for_anonymous_user(self):
         response = self.client.get(reverse("dashboard:admin_panel"))

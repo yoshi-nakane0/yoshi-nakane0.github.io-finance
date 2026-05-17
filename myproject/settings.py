@@ -59,9 +59,23 @@ def default_sqlite_database_path():
     return Path('/tmp/db.sqlite3')
 
 
+def default_bundled_sqlite_database_path():
+    explicit_path = os.getenv('BUNDLED_SQLITE_PATH')
+    if explicit_path:
+        return Path(explicit_path)
+
+    private_bundle = BASE_DIR / 'runtime' / 'db.sqlite3'
+    if private_bundle.exists():
+        return private_bundle
+
+    return BASE_DIR / 'db.sqlite3'
+
+
 def bootstrap_sqlite_database(sqlite_path, source_path=None):
     sqlite_path = Path(sqlite_path)
-    bundled_sqlite_path = Path(source_path) if source_path else BASE_DIR / 'db.sqlite3'
+    bundled_sqlite_path = (
+        Path(source_path) if source_path else default_bundled_sqlite_database_path()
+    )
     if sqlite_path == bundled_sqlite_path:
         return
     try:

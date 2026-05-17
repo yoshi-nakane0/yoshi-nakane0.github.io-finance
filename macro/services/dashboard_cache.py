@@ -148,6 +148,7 @@ def precompute_dashboard_payload() -> dict:
     latest_obs_date = get_latest_observation_date()
 
     return {
+        'has_observations': latest_obs_date is not None,
         'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
         'similar_periods': build_similar_periods(),
         'linkages': build_linkages(),

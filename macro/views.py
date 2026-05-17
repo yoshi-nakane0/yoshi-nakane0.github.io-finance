@@ -70,7 +70,8 @@ def index(request):
     if cache_payload is not None:
         latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
         context = dict(cache_payload)
-        context['has_observations'] = True
+        context['has_observations'] = context.get('has_observations', True)
+        context['dashboard_cache_missing'] = not context['has_observations']
         context['fred_key_present'] = bool(get_api_key())
         context['can_refresh_macro_data'] = is_creator_user(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()

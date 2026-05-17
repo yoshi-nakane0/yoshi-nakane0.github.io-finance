@@ -8,7 +8,7 @@
 
   <!-- style.cssの読み込み -->
   <link rel="stylesheet" href="/static/common/css/layout.31619be3c74a.css">
-  <link rel="stylesheet" href="/static/dashboard/css/style.4fe0d161e91d.css">
+  <link rel="stylesheet" href="/static/dashboard/css/style.9aed52b78b39.css">
   <link rel="icon" type="image/png" href="/static/images/ico/favicon.ae422910f6a4.png">
 </head>
 
@@ -175,23 +175,45 @@
                 <span class="card-subtitle">Management</span>
               </div>
             </a>
-    
-            <!-- 9. Settings -->
-            <a href="#" class="dashboard-card category-admin type-settings">
-              <div class="icon-wrapper">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-              </div>
-              <div class="text-wrapper">
-                <h2 class="card-title">Settings</h2>
-                <span class="card-subtitle">Config</span>
-              </div>
-            </a>
-    
+
           </div>
         </section>
   </div>
+  <script>
+    (function () {
+      const adminUrl = "/dashboard/admin/";
+      const ignoredSelector = [
+        "a",
+        "button",
+        "input",
+        "select",
+        "textarea",
+        "summary",
+        "details",
+        ".common-app-header"
+      ].join(",");
+      let tapCount = 0;
+      let resetTimer = null;
+
+      document.addEventListener("click", function (event) {
+        if (event.target.closest(ignoredSelector)) {
+          return;
+        }
+
+        tapCount += 1;
+        window.clearTimeout(resetTimer);
+
+        if (tapCount >= 5) {
+          tapCount = 0;
+          window.location.href = adminUrl;
+          return;
+        }
+
+        resetTimer = window.setTimeout(function () {
+          tapCount = 0;
+        }, 4000);
+      });
+    })();
+  </script>
 </body>
 </html>

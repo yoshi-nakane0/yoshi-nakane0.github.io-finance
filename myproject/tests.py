@@ -1,10 +1,16 @@
 import sqlite3
 import tempfile
 from pathlib import Path
+from unittest import mock
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
-from myproject.settings import bootstrap_sqlite_database
+from myproject.auth import ensure_env_superuser
+from myproject.settings import (
+    BASE_DIR,
+    bootstrap_sqlite_database,
+    default_bundled_sqlite_database_path,
+)
 
 
 class SQLiteBootstrapTests(SimpleTestCase):
@@ -31,3 +37,36 @@ class SQLiteBootstrapTests(SimpleTestCase):
             bootstrap_sqlite_database(runtime, source)
 
             self.assertEqual(self._sample_count(runtime), 2)
+
+    def test_private_runtime_bundle_is_default_source_when_present(self):
+        private_bundle = BASE_DIR / 'runtime' / 'db.sqlite3'
+        original_exists = Path.exists
+
+        def fake_exists(path):
+            if path == private_bundle:
+                return True
+            return original_exists(path)
+
+        with mock.patch.dict('os.environ', {'BUNDLED_SQLITE_PATH': ''}):
+            with mock.patch('pathlib.Path.exists', fake_exists):
+                self.assertEqual(
+                    default_bundled_sqlite_database_path(),
+                    private_bundle,
+                )
+
+
+class RuntimeAdminProvisioningTests(TestCase):
+    @mock.patch.dict(
+        'os.environ',
+        {
+            'DJANGO_SUPERUSER_USERNAME': 'runtime-admin',
+            'DJANGO_SUPERUSER_PASSWORD': 'runtime-password',
+            'DJANGO_SUPERUSER_EMAIL': 'runtime@example.com',
+        },
+    )
+    def test_env_superuser_is_created(self):
+        user = ensure_env_superuser()
+
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.check_password('runtime-password'))
