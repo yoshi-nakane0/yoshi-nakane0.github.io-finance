@@ -45,18 +45,101 @@
                     </span>
                 </div>
                 <div class="macro-regime-sub">{{ regime_label }} × {{ inflation_flag }}</div>
-                <div class="macro-regime-confidence">
-                    <span class="macro-regime-confidence-text">確度 {{ confidence_pct }}%</span>
-                    <div class="macro-regime-confidence-bar" aria-hidden="true">
-                        <div class="macro-regime-confidence-fill" style="width: {{ confidence_pct }}%;"></div>
+                <details class="macro-regime-details">
+                    <summary>結論・良い点・悪い点・先行き</summary>
+                    <div class="macro-regime-answer">
+                        <div class="macro-regime-answer-label">一目で見る結論</div>
+                        <div class="macro-regime-answer-main">{{ regime_plain_judgment }}</div>
+                        <p class="macro-regime-answer-detail">{{ regime_plain_detail }}</p>
                     </div>
+                    <div class="macro-regime-materials">
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-pos">良い点</span>
+                            <ul>
+                                {% for point in regime_good_points %}
+                                    <li>{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-neg">悪い点</span>
+                            <ul>
+                                {% for point in regime_bad_points %}
+                                    <li>{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="macro-regime-outlook">
+                        <span class="macro-regime-outlook-title">これから先</span>
+                        <span>{{ regime_outlook }}</span>
+                    </div>
+                </details>
+                <div class="macro-regime-scores">
+                    <div class="macro-regime-score macro-regime-score--condition macro-regime-condition--{{ regime_condition_tone }}">
+                        <span class="macro-regime-score-name">景気評価</span>
+                        <span class="macro-regime-score-percent">{{ regime_condition_pct_display }}</span>
+                        <span class="macro-regime-score-count">{{ regime_condition_fraction_display }}</span>
+                        <div class="macro-regime-score-bar macro-regime-score-bar--condition" aria-hidden="true">
+                            <div class="macro-regime-score-fill macro-regime-score-fill--condition" style="width: {{ regime_condition_bar_pct }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="macro-regime-score">
+                        <span class="macro-regime-score-name">判定強度</span>
+                        <span class="macro-regime-score-percent">{{ rule_strength_pct }}%</span>
+                        <span class="macro-regime-score-count">{{ rule_strength_fraction_display }}</span>
+                        <div class="macro-regime-score-bar" aria-hidden="true">
+                            <div class="macro-regime-score-fill" style="width: {{ rule_strength_pct }}%;"></div>
+                        </div>
+                    </div>
+                    <div class="macro-regime-score">
+                        <span class="macro-regime-score-name">データ鮮度</span>
+                        <span class="macro-regime-score-percent">{{ data_quality_pct }}%</span>
+                        <span class="macro-regime-score-count">{{ data_quality_fraction_display }}</span>
+                        <div class="macro-regime-score-bar macro-regime-score-bar--quality" aria-hidden="true">
+                            <div class="macro-regime-score-fill macro-regime-score-fill--quality" style="width: {{ data_quality_pct }}%;"></div>
+                        </div>
+                    </div>
+                    <p class="macro-regime-condition-note">{{ regime_condition_note }}</p>
                 </div>
+                {% if regime_evidence %}
+                    <details class="macro-regime-details macro-regime-details--evidence">
+                        <summary>判定根拠</summary>
+                        <ul class="macro-regime-evidence-list">
+                            {% for ev in regime_evidence|slice:":6" %}
+                                <li class="macro-regime-evidence-item">
+                                    <span class="macro-regime-evidence-name">{{ ev.name }}</span>
+                                    <span class="macro-regime-evidence-value">{{ ev.metric }} {{ ev.value_display }}{% if ev.unit %} {{ ev.unit }}{% endif %}</span>
+                                    <span class="macro-regime-evidence-date">{{ ev.observation_date }}</span>
+                                    <span class="macro-regime-evidence-signal {% if ev.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ ev.signal }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                {% endif %}
+                {% if regime_warnings %}
+                    <ul class="macro-regime-warning-list">
+                        {% for warning in regime_warnings|slice:":3" %}
+                            <li class="macro-regime-warning-item">{{ warning }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <details class="macro-regime-update-guide">
+                    <summary>更新頻度の目安</summary>
+                    <ul>
+                        {% for item in regime_update_guidance %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </details>
                 <div class="macro-regime-meta">
-                    <span class="macro-regime-updated">更新: {{ last_updated }}</span>
-                    <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
-                        {% csrf_token %}
-                        <button class="macro-refresh-button" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>更新</button>
-                    </form>
+                    <span class="macro-regime-updated">更新: {{ last_updated }} / {{ regime_model_version }}</span>
+                    {% if can_refresh_macro_data %}
+                        <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
+                            {% csrf_token %}
+                            <button class="macro-refresh-button" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>取得・判定</button>
+                        </form>
+                    {% endif %}
                 </div>
             </section>
 
@@ -120,7 +203,8 @@
             {# LightGBM 予測 #}
             {% if lightgbm_prediction %}
                 <section class="macro-section macro-lgbm">
-                    <h2 class="macro-section-title macro-section-title--brain">LightGBM 予測（SP500リターン）</h2>
+                    <h2 class="macro-section-title macro-section-title--brain">LightGBM 参考予測（SP500リターン）</h2>
+                    <p class="macro-lgbm-note">景気局面判定とは独立した参考値です。</p>
                     <div class="macro-lgbm-grid">
                         {% for h in lightgbm_prediction.horizons %}
                             <div class="macro-lgbm-card macro-lgbm-card--{{ h.level }}">

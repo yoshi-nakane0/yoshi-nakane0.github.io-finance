@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.db.utils import DatabaseError, OperationalError, ProgrammingError
 from datetime import datetime, timezone, timedelta
 from .models import SectorSnapshot
+from myproject.auth import is_creator_user
 import json
 import requests
 
@@ -284,7 +285,7 @@ def persist_snapshot(sectors, benchmarks, update_time):
 @ensure_csrf_cookie
 def index(request):
     if request.method == 'POST':
-        if not request.user.is_authenticated or not request.user.is_staff:
+        if not is_creator_user(request.user):
             return JsonResponse({'success': False, 'error': '権限がありません。'}, status=403)
 
         try:
@@ -350,7 +351,7 @@ def index(request):
         'benchmarks': benchmarks,
         'us_sectors': us_sectors,
         'jp_sectors': jp_sectors,
-        'can_refresh_sector_data': request.user.is_authenticated and request.user.is_staff,
+        'can_refresh_sector_data': is_creator_user(request.user),
     }
     
     return render(request, 'sector/index.html', context)

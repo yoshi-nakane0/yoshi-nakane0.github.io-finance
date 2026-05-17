@@ -11,6 +11,12 @@
     --macro-bad: #F87171;
 }
 
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -285,7 +291,7 @@ body {
 
 .macro-placeholder {
     color: var(--macro-text-secondary);
-    font-size: 0.9rem;
+    font-size: 1rem;
     margin: 0.4rem 0 0;
 }
 
@@ -316,7 +322,7 @@ body {
 /* 指標カードのリスト */
 .macro-card-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.6rem;
 }
 .macro-card-list--secondary {
@@ -335,6 +341,7 @@ body {
     text-decoration: none;
     color: inherit;
     transition: border-color 0.2s ease, background 0.2s ease;
+    min-width: 0;
 }
 .macro-card:hover {
     border-color: var(--macro-accent);
@@ -349,6 +356,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 0.4rem;
+    min-width: 0;
 }
 .macro-card-name {
     font-size: 0.78rem;
@@ -357,6 +365,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
 }
 .macro-card-arrow {
     font-size: 0.95rem;
@@ -382,32 +391,37 @@ body {
 .judge-row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     font-size: 0.62rem;
     color: var(--macro-text-secondary);
+    min-width: 0;
 }
 .judge-key {
     color: var(--macro-text-primary);
     font-size: 0.66rem;
-    width: auto;
-    min-width: 28px;
+    flex: 0 0 1.55rem;
+    min-width: 0;
     white-space: nowrap;
 }
 .judge-edge {
     color: rgba(148, 163, 184, 0.7);
     font-size: 0.58rem;
-    width: 14px;
+    flex: 0 0 0.72rem;
     text-align: center;
 }
 .judge-dots {
-    display: flex;
-    gap: 3px;
-    flex: 1;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(4px, 8px));
+    gap: 2px;
+    flex: 1 1 auto;
+    justify-content: space-between;
+    min-width: 0;
 }
 .judge-dot {
-    width: 8px;
-    height: 8px;
+    width: 100%;
+    max-width: 8px;
+    aspect-ratio: 1;
+    height: auto;
     border-radius: 50%;
     background: rgba(148, 163, 184, 0.18);
 }
@@ -888,22 +902,6 @@ body {
 }
 .macro-table tbody tr:last-child td { border-bottom: none; }
 
-@media (max-width: 600px) {
-    .macro-container {
-        padding: 0.5rem 0.75rem 2rem;
-    }
-    .macro-regime-main {
-        font-size: 1.15rem;
-    }
-    .macro-card-list {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
-    }
-    .macro-detail-title {
-        font-size: 1.25rem;
-    }
-}
-
 /* === クラッシュ警戒度バナー === */
 .macro-crash-alert {
     border-radius: 12px;
@@ -1377,7 +1375,7 @@ body {
 .macro-regime-head .macro-section-title {
     margin: 0;
     min-height: 1.2rem;
-    font-size: 0.78rem;
+    font-size: 0.9rem;
 }
 
 .macro-regime-head .macro-section-title::before {
@@ -1395,7 +1393,7 @@ body {
     color: var(--macro-accent-strong);
     background: rgba(4, 34, 51, 0.72);
     box-shadow: 0 0 22px rgba(53, 231, 242, 0.18), inset 0 0 20px rgba(53, 231, 242, 0.08);
-    font-size: 0.78rem;
+    font-size: 1rem;
     font-weight: 800;
     white-space: nowrap;
 }
@@ -1407,8 +1405,8 @@ body {
 
 .macro-regime-main {
     display: block;
-    max-width: 15.2rem;
-    font-size: 1.5rem;
+    max-width: 100%;
+    font-size: 1.34rem;
     font-weight: 900;
     line-height: 1.28;
     letter-spacing: 0;
@@ -1418,6 +1416,14 @@ body {
 .macro-regime-main span {
     display: block;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+    .macro-regime-main {
+        font-size: 1.3rem;
+    }
 }
 
 .macro-regime-sub {
@@ -1428,7 +1434,7 @@ body {
     border-radius: 6px;
     color: #c5d6ee;
     background: rgba(21, 63, 120, 0.2);
-    font-size: 0.74rem;
+    font-size: 0.94rem;
     font-weight: 700;
 }
 
@@ -1459,10 +1465,364 @@ body {
     box-shadow: 0 0 14px rgba(53, 231, 242, 0.5);
 }
 
+.macro-regime-answer {
+    display: grid;
+    gap: 0.26rem;
+    padding: 0.56rem 0 0.5rem;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+    border-bottom: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-details {
+    margin: 0;
+    padding: 0.42rem 0;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-details > summary {
+    color: var(--macro-accent-strong);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.25;
+    cursor: pointer;
+}
+
+.macro-regime-details[open] > summary {
+    margin-bottom: 0.46rem;
+}
+
+.macro-regime-details .macro-regime-answer {
+    padding-top: 0;
+}
+
+.macro-regime-details--evidence {
+    border-bottom: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-answer-label,
+.macro-regime-outlook-title,
+.macro-regime-condition-title,
+.macro-regime-material-title {
+    color: #b4c8df;
+    font-size: 0.92rem;
+    font-weight: 900;
+}
+
+.macro-regime-answer-main {
+    color: var(--macro-text-primary);
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.macro-regime-answer-detail {
+    margin: 0;
+    color: var(--macro-text-secondary);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.macro-regime-materials {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.52rem;
+}
+
+.macro-regime-material {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.macro-regime-material ul,
+.macro-regime-update-guide ul {
+    display: grid;
+    gap: 0.28rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-regime-material li,
+.macro-regime-update-guide li {
+    position: relative;
+    padding-left: 0.82rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.94rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.macro-regime-material li::before,
+.macro-regime-update-guide li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.48em;
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.75;
+}
+
+.macro-regime-outlook {
+    display: grid;
+    gap: 0.28rem;
+    padding: 0.46rem 0;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+    border-bottom: 1px solid rgba(125, 158, 190, 0.16);
+    color: var(--macro-text-secondary);
+    font-size: 0.96rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.macro-regime-condition {
+    --condition-color: var(--macro-warn);
+    display: grid;
+    gap: 0.42rem;
+    padding: 0.55rem 0 0.6rem;
+    border-bottom: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-condition--positive {
+    --condition-color: var(--macro-good);
+}
+
+.macro-regime-condition--negative {
+    --condition-color: var(--macro-bad);
+}
+
+.macro-regime-condition--unknown {
+    --condition-color: var(--macro-text-secondary);
+}
+
+.macro-regime-condition-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.34rem;
+    flex-wrap: wrap;
+}
+
+.macro-regime-condition-score {
+    color: var(--condition-color);
+    font-size: 1.9rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-regime-condition-denom {
+    color: var(--macro-text-secondary);
+    font-size: 0.94rem;
+    font-weight: 900;
+}
+
+.macro-regime-condition-label {
+    min-height: 1.55rem;
+    padding: 0.16rem 0.52rem;
+    border: 1px solid color-mix(in srgb, var(--condition-color) 58%, transparent);
+    border-radius: 999px;
+    color: var(--condition-color);
+    background: color-mix(in srgb, var(--condition-color) 16%, transparent);
+    font-size: 0.86rem;
+    font-weight: 900;
+}
+
+.macro-regime-condition-scale {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.26rem;
+}
+
+.macro-regime-condition-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.48rem;
+    border: 1px solid rgba(125, 158, 190, 0.2);
+    border-radius: 6px;
+    color: var(--macro-text-secondary);
+    background: rgba(125, 158, 190, 0.08);
+    font-size: 0.74rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-regime-condition-mark.is-active {
+    border-color: color-mix(in srgb, var(--condition-color) 62%, transparent);
+    color: var(--macro-bg);
+    background: var(--condition-color);
+}
+
+.macro-regime-condition-note {
+    margin: 0;
+    color: var(--macro-text-secondary);
+    font-size: 0.94rem;
+    font-weight: 700;
+    line-height: 1.42;
+}
+
+.macro-regime-scores {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.08rem;
+    padding: 0.55rem 0 0.6rem;
+    border-bottom: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-score {
+    display: grid;
+    grid-template-columns: 5.8rem 3.45rem 3.15rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.24rem;
+}
+
+.macro-regime-score-name,
+.macro-regime-score-percent,
+.macro-regime-score-count {
+    color: var(--macro-text-primary);
+    font-size: 0.96rem;
+    font-weight: 900;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.macro-regime-score-name {
+    color: var(--macro-accent-strong);
+}
+
+.macro-regime-score-percent,
+.macro-regime-score-count {
+    text-align: right;
+}
+
+.macro-regime-score-bar {
+    height: 0.42rem;
+    border-radius: 999px;
+    background: rgba(125, 158, 190, 0.16);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+
+.macro-regime-score-bar--condition {
+    background:
+        linear-gradient(90deg, rgba(255, 98, 111, 0.2), rgba(250, 204, 21, 0.18), rgba(57, 233, 129, 0.2)),
+        rgba(125, 158, 190, 0.12);
+}
+
+.macro-regime-score-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #4cf9c2, var(--macro-accent-strong));
+    box-shadow: 0 0 14px rgba(53, 231, 242, 0.5);
+}
+
+.macro-regime-score-fill--condition {
+    background: linear-gradient(
+        90deg,
+        #ff626f 0%,
+        #fb923c 28%,
+        #facc15 52%,
+        #a3e635 76%,
+        #39e981 100%
+    );
+    box-shadow: 0 0 14px color-mix(in srgb, var(--condition-color, var(--macro-warn)) 48%, transparent);
+}
+
+.macro-regime-score-fill--quality {
+    background: linear-gradient(90deg, #facc15, #39e981);
+}
+
+.macro-regime-evidence {
+    margin-top: 0.18rem;
+}
+
+.macro-regime-evidence-title {
+    margin-bottom: 0.34rem;
+    color: #b4c8df;
+    font-size: 0.92rem;
+    font-weight: 900;
+}
+
+.macro-regime-evidence-list,
+.macro-regime-warning-list {
+    display: grid;
+    gap: 0.38rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-regime-evidence-item {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 0.22rem 0.55rem;
+    padding: 0.48rem 0;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+    color: var(--macro-text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.25;
+}
+
+.macro-regime-evidence-item span {
+    overflow-wrap: anywhere;
+}
+
+.macro-regime-evidence-name {
+    color: var(--macro-text-primary);
+    font-weight: 800;
+}
+
+.macro-regime-evidence-value,
+.macro-regime-evidence-date {
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-regime-evidence-signal {
+    justify-self: start;
+    font-weight: 900;
+}
+
+.macro-regime-warning-list {
+    margin-top: 0.1rem;
+}
+
+.macro-regime-warning-item {
+    padding: 0.42rem 0.5rem;
+    border: 1px solid rgba(250, 204, 21, 0.28);
+    border-radius: 6px;
+    color: #fde68a;
+    background: rgba(113, 63, 18, 0.2);
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.macro-regime-update-guide {
+    margin: 0;
+    padding: 0.42rem 0;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+}
+
+.macro-regime-update-guide > summary {
+    color: var(--macro-accent-strong);
+    font-size: 0.96rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.macro-regime-update-guide ul {
+    margin-top: 0.42rem;
+}
+
 .macro-regime-meta {
     margin-top: 0.08rem;
     color: var(--macro-text-secondary);
-    font-size: 0.74rem;
+    font-size: 0.9rem;
 }
 
 .macro-regime-updated {
@@ -1484,7 +1844,7 @@ body {
 }
 
 .macro-refresh-button {
-    min-width: 3.8rem;
+    min-width: 6.3rem;
     min-height: 1.75rem;
     padding: 0 0.68rem;
     border: 1px solid rgba(53, 231, 242, 0.72);
@@ -1492,8 +1852,9 @@ body {
     color: var(--macro-accent-strong);
     background: rgba(15, 45, 79, 0.72);
     box-shadow: inset 0 0 18px rgba(53, 231, 242, 0.12);
-    font-size: 0.78rem;
+    font-size: 0.96rem;
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .macro-refresh-button::after {
@@ -1615,13 +1976,16 @@ body {
     display: grid;
     grid-template-columns: 1.65rem minmax(2.2rem, 1fr) auto;
     grid-template-rows: auto auto;
-    gap: 0 0.28rem;
+    row-gap: 0.12rem;
+    column-gap: 0.34rem;
     align-items: center;
+    align-content: center;
     min-height: 3.35rem;
     padding: 0.46rem 0.44rem;
     border: 1px solid rgba(112, 168, 226, 0.28);
     border-radius: 8px;
     background: rgba(9, 31, 55, 0.72);
+    min-width: 0;
 }
 
 .macro-crash-category::before {
@@ -1641,18 +2005,24 @@ body {
     font-weight: 800;
     line-height: 1.1;
     white-space: nowrap;
+    min-width: 0;
+    align-self: end;
 }
 
 .macro-crash-category-score {
     color: var(--macro-text-primary);
     font-size: 0.9rem;
     font-weight: 900;
+    line-height: 1.1;
+    align-self: end;
 }
 
 .macro-crash-category-weight {
     grid-column: 2 / 4;
     color: var(--macro-text-secondary);
     font-size: 0.72rem;
+    line-height: 1.1;
+    align-self: start;
 }
 
 .macro-crash-details > summary,
@@ -1664,6 +2034,14 @@ body {
 
 .macro-lgbm .macro-section-title {
     color: #4aa3ff;
+}
+
+.macro-lgbm-note {
+    margin: -0.22rem 0 0.72rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .macro-lgbm-grid {
@@ -1822,59 +2200,4 @@ body {
 .macro-state-item,
 .macro-crash-component {
     border-radius: 8px;
-}
-
-@media (max-width: 600px) {
-    .macro-container {
-        padding: 0.75rem 0.7rem 1.5rem;
-    }
-
-    .macro-regime-bar {
-        min-height: 9rem;
-        padding: 0.78rem 0.85rem 0.7rem;
-    }
-
-    .macro-regime-status-pill {
-        min-height: 1.65rem;
-        padding: 0 0.6rem;
-        font-size: 0.74rem;
-    }
-
-    .macro-regime-main {
-        max-width: 14.5rem;
-        font-size: 1.42rem;
-    }
-
-    .macro-regime-orbit {
-        right: 0;
-        top: 1.7rem;
-        width: 12rem;
-        height: 12rem;
-        transform: translateX(45%);
-    }
-
-    .macro-crash-top {
-        grid-template-columns: minmax(0, 1fr) 7.4rem;
-    }
-
-    .macro-similar-aggregate-table {
-        font-size: 0.84rem;
-    }
-
-    .macro-similar-aggregate-table th,
-    .macro-similar-aggregate-table td {
-        padding: 0.42rem 0.42rem;
-    }
-}
-
-@media (max-width: 380px) {
-    .macro-regime-main {
-        max-width: 13.2rem;
-        font-size: 1.28rem;
-    }
-
-    .macro-crash-category-list,
-    .macro-lgbm-grid {
-        grid-template-columns: 1fr;
-    }
 }

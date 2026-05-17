@@ -137,7 +137,7 @@
         </a>
 
         <!-- 6. Explanation -->
-        <a href="{% url 'explanation:index' %}" class="dashboard-card category-market type-explanation">
+        <div class="dashboard-card category-market type-explanation">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -151,7 +151,7 @@
             <h2 class="card-title">Explanation</h2>
             <span class="card-subtitle">Indicators</span>
           </div>
-        </a>
+        </div>
 
       </div>
     </section>
@@ -179,5 +179,42 @@
           </div>
         </section>
   </div>
+  <script>
+    (function () {
+      const adminUrl = "{% url 'dashboard:admin_panel' %}";
+      const ignoredSelector = [
+        "a",
+        "button",
+        "input",
+        "select",
+        "textarea",
+        "summary",
+        "details",
+        ".dashboard-card",
+        ".common-app-header"
+      ].join(",");
+      let tapCount = 0;
+      let resetTimer = null;
+
+      document.addEventListener("click", function (event) {
+        if (event.target.closest(ignoredSelector)) {
+          return;
+        }
+
+        tapCount += 1;
+        window.clearTimeout(resetTimer);
+
+        if (tapCount >= 5) {
+          tapCount = 0;
+          window.location.href = adminUrl;
+          return;
+        }
+
+        resetTimer = window.setTimeout(function () {
+          tapCount = 0;
+        }, 4000);
+      });
+    })();
+  </script>
 </body>
 </html>

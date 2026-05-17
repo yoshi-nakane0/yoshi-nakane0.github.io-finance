@@ -106,9 +106,9 @@ CATEGORY_WEIGHTS = {
 }
 
 CATEGORY_LABELS = {
-    'market': '市場',
-    'credit': '信用',
-    'macro': 'マクロ',
+    'market': '株式面',
+    'credit': '金融面',
+    'macro': '景気面',
 }
 
 

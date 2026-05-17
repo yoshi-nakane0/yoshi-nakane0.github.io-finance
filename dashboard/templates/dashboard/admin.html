@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin</title>
+  <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+  <link rel="icon" type="image/png" href="{% static 'images/ico/favicon.png' %}">
+</head>
+<body class="dashboard-page">
+  <div class="app-container">
+    {% include "common/app_header.html" with page_title="Admin" page_slug="dashboard" %}
+
+    <section class="dashboard-section dashboard-admin-section">
+      <h3 class="section-title">Creator</h3>
+
+      {% if not user.is_authenticated %}
+        <div class="dashboard-admin-panel">
+          <h2 class="dashboard-admin-title">管理者ログイン</h2>
+          {% if auth_error %}
+            <p class="dashboard-admin-message">{{ auth_error }}</p>
+          {% endif %}
+          <form method="post" class="dashboard-admin-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="login">
+            <label class="dashboard-admin-label" for="id_username">ユーザー名</label>
+            <input class="dashboard-admin-input" id="id_username" name="username" type="text" autocomplete="username" required>
+            <label class="dashboard-admin-label" for="id_password">パスワード</label>
+            <input class="dashboard-admin-input" id="id_password" name="password" type="password" autocomplete="current-password" required>
+            <button class="dashboard-admin-button" type="submit">ログイン</button>
+          </form>
+        </div>
+      {% elif is_creator %}
+        <div class="dashboard-admin-panel">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="logout">
+            <button class="dashboard-admin-button dashboard-admin-button--ghost" type="submit">ログアウト</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="dashboard-admin-panel">
+          <h2 class="dashboard-admin-title">権限がありません</h2>
+          <p class="dashboard-admin-text">このページは管理者ユーザーだけが利用できます。</p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="logout">
+            <button class="dashboard-admin-button dashboard-admin-button--ghost" type="submit">ログアウト</button>
+          </form>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</body>
+</html>

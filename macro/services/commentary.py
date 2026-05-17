@@ -15,17 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 REGIME_SUMMARY = {
-    RegimeSnapshot.Label.EXPANSION: '景気は拡大局面（生産・雇用が伸びている）',
-    RegimeSnapshot.Label.SLOWDOWN: '景気は減速局面（拡大ペースが落ちてきている）',
-    RegimeSnapshot.Label.CONTRACTION: '景気は縮小局面（リセッションの可能性）',
-    RegimeSnapshot.Label.RECOVERY: '景気は回復局面（底を打って持ち直している）',
+    RegimeSnapshot.Label.EXPANSION: '景気は拡大寄り（生産・雇用が比較的しっかりしている）',
+    RegimeSnapshot.Label.SLOWDOWN: '景気は減速寄り（拡大ペースが落ちてきている）',
+    RegimeSnapshot.Label.CONTRACTION: '景気は縮小寄り（景気後退に注意する状態）',
+    RegimeSnapshot.Label.RECOVERY: '景気は回復寄り（底打ち後の持ち直しを確認中）',
     RegimeSnapshot.Label.UNKNOWN: '景気局面は判定不能',
 }
 
 INFLATION_SUMMARY = {
-    RegimeSnapshot.InflationFlag.HIGH: 'インフレは高止まり（FRB目標2%超）',
-    RegimeSnapshot.InflationFlag.EASING: 'インフレは鈍化中（落ち着きつつある）',
-    RegimeSnapshot.InflationFlag.NORMAL: 'インフレは正常（目標近辺）',
+    RegimeSnapshot.InflationFlag.HIGH: 'インフレは高止まり寄り（FRB目標2%を上回る）',
+    RegimeSnapshot.InflationFlag.EASING: 'インフレは鈍化方向（落ち着きつつある）',
+    RegimeSnapshot.InflationFlag.NORMAL: 'インフレは安定圏（目標近辺）',
     RegimeSnapshot.InflationFlag.UNKNOWN: 'インフレ状態は判定不能',
 }
 

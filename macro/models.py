@@ -131,6 +131,11 @@ class RegimeSnapshot(models.Model):
         default=InflationFlag.UNKNOWN,
     )
     confidence = models.FloatField(default=0.0)
+    rule_strength = models.FloatField(default=0.0)
+    data_quality = models.FloatField(default=0.0)
+    evidence = models.JSONField(default=list, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+    model_version = models.CharField(max_length=32, default='regime_v1')
     indicator_vector = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

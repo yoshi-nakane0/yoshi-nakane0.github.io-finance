@@ -119,7 +119,6 @@ INSTALLED_APPS = [
     'prompt',
     'earning',
     'sector',
-    'explanation',
     'person',
     'prediction',
     'basecalc',

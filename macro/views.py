@@ -5,10 +5,12 @@ import os
 from datetime import datetime
 
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+
+from myproject.auth import is_creator_user
 
 from .models import Indicator, RegimeSnapshot
 from .services.commentary import (
@@ -31,6 +33,8 @@ from .services.dashboard_cache import (
     invalidate_similar_detail_caches,
     load_indicator_detail_payload,
     load_similar_detail_payload,
+    precompute_dashboard_payload,
+    save_dashboard_payload,
 )
 from .services.data_sync import (
     get_latest_observation_date,
@@ -68,6 +72,7 @@ def index(request):
         context = dict(cache_payload)
         context['has_observations'] = True
         context['fred_key_present'] = bool(get_api_key())
+        context['can_refresh_macro_data'] = is_creator_user(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()
         similar_periods = context.get('similar_periods', [])
         linkages = context.get('linkages', [])
@@ -91,6 +96,7 @@ def index(request):
                 latest_obs_date.isoformat() if latest_obs_date else '—'
             ),
             'fred_key_present': fred_key_present,
+            'can_refresh_macro_data': is_creator_user(request.user),
             'indicator_cards': build_indicator_cards() if has_observations else [],
             'crash_alert': None,
             'historical_crash_similarity': [],
@@ -114,6 +120,7 @@ def index(request):
             latest_obs_date.isoformat() if latest_obs_date else '—'
         ),
         'fred_key_present': fred_key_present,
+        'can_refresh_macro_data': is_creator_user(request.user),
         'indicator_cards': build_indicator_cards() if has_observations else [],
         'crash_alert': build_crash_alert_context() if has_observations else None,
         'historical_crash_similarity': (
@@ -136,6 +143,9 @@ def index(request):
 @require_POST
 def refresh(request):
     """全指標を FRED から再取得し、レジームを再計算する。"""
+    if not is_creator_user(request.user):
+        return HttpResponseForbidden("権限がありません。")
+
     if not get_api_key():
         messages.error(
             request,
@@ -162,9 +172,10 @@ def refresh(request):
             f"指標 {ok_count} 件成功、{ng_count} 件失敗",
         )
 
+    regime_snapshot = None
     if ok_count > 0:
         try:
-            compute_current_regime()
+            regime_snapshot = compute_current_regime()
         except Exception:
             logger.exception("Regime recomputation failed")
             messages.warning(
@@ -182,10 +193,23 @@ def refresh(request):
         logger.exception("Price sync failed")
         messages.warning(request, "価格データ更新でエラー（ログを確認）")
 
-    # キャッシュ無効化（次のページ表示で再計算）
+    # キャッシュ無効化後、トップ画面用キャッシュまで作り直す。
+    # これにより「指標取得 → 判定 → 画面反映」をボタン1回で完了させる。
     invalidate_dashboard_cache()
     invalidate_indicator_detail_caches()
     invalidate_similar_detail_caches()
+
+    if ok_count > 0 and regime_snapshot is not None:
+        try:
+            payload = precompute_dashboard_payload()
+            save_dashboard_payload(payload)
+            messages.success(request, "最新データで景気局面を再判定しました")
+        except Exception:
+            logger.exception("Dashboard cache refresh failed")
+            messages.warning(
+                request,
+                "判定は更新しましたが、重い分析の画面反映は次回表示時に再計算します",
+            )
 
     return redirect(reverse('macro:index'))
 

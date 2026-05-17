@@ -1,10 +1,13 @@
 """macro モジュールのユニットテスト。"""
 
+from io import StringIO
 from datetime import date
 from pathlib import Path
 from unittest import mock
 
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -147,6 +150,17 @@ class RegimeClassificationTest(TestCase):
         label, _ = regime.classify_regime(metrics)
         self.assertEqual(label, RegimeSnapshot.Label.CONTRACTION)
 
+    def test_fast_shock_contraction_before_gdp_catches_up(self):
+        metrics = {
+            'indpro_yoy': -5.0,
+            'indpro_3m_change_pct': -4.0,
+            'unrate_6m_change': 0.6,
+            'gdp_yoy': 1.0,
+            'vix': 40.0,
+        }
+        label, _ = regime.classify_regime(metrics)
+        self.assertEqual(label, RegimeSnapshot.Label.CONTRACTION)
+
     def test_recovery_pattern(self):
         metrics = {
             'indpro_yoy': 0.5,
@@ -189,6 +203,36 @@ class RegimeClassificationTest(TestCase):
         flag, _ = regime.classify_inflation({})
         self.assertEqual(flag, RegimeSnapshot.InflationFlag.UNKNOWN)
 
+    def test_missing_data_assessment_has_quality_warning(self):
+        assessment = regime.build_current_regime_assessment()
+        self.assertEqual(
+            assessment['regime_label'], RegimeSnapshot.Label.UNKNOWN
+        )
+        self.assertLess(assessment['data_quality'], 60)
+        self.assertTrue(assessment['warnings'])
+
+    def test_assessment_contains_evidence_when_data_exists(self):
+        indpro = Indicator.objects.get(fred_series_id='INDPRO')
+        Observation.objects.create(
+            indicator=indpro,
+            observation_date=date(2025, 1, 1),
+            value=100,
+        )
+        Observation.objects.create(
+            indicator=indpro,
+            observation_date=date(2026, 1, 1),
+            value=103,
+            prev_value=102,
+            yoy_change=3.0,
+        )
+
+        assessment = regime.build_current_regime_assessment(
+            as_of=date(2026, 1, 1)
+        )
+
+        self.assertTrue(assessment['evidence'])
+        self.assertEqual(assessment['model_version'], regime.MODEL_VERSION)
+
 
 class DashboardFormatTest(TestCase):
     def test_format_value_large_numbers(self):
@@ -212,6 +256,95 @@ class DashboardFormatTest(TestCase):
     def test_format_signed_positive(self):
         self.assertEqual(dashboard.format_signed(0.5, 2), '+0.50')
 
+    def test_regime_context_uses_rule_strength_not_confidence_pct(self):
+        snapshot = RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 17),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            confidence=99,
+            rule_strength=62,
+            data_quality=78,
+            evidence=[{
+                'series_id': 'INDPRO',
+                'name': '鉱工業生産指数',
+                'metric': '前年比',
+                'value': 0.8,
+                'unit': '%',
+                'observation_date': '2026-04-01',
+                'signal': '減速寄り',
+                'contribution': -0.35,
+            }],
+            warnings=['テスト警告'],
+            model_version='regime_v2_score',
+        )
+
+        context = dashboard.build_regime_context(snapshot)
+
+        self.assertNotIn('confidence_pct', context)
+        self.assertEqual(context['rule_strength_pct'], 62)
+        self.assertEqual(context['data_quality_pct'], 78)
+        self.assertEqual(context['regime_evidence'][0]['signal'], '減速寄り')
+        self.assertEqual(context['regime_warnings'], ['テスト警告'])
+        self.assertEqual(context['regime_plain_judgment'], '景気は弱含みで物価も重い')
+        self.assertEqual(context['regime_condition_score'], 2)
+        self.assertEqual(context['regime_condition_score_display'], '2')
+        self.assertEqual(context['regime_condition_fraction_display'], '2/5')
+        self.assertEqual(context['regime_condition_bar_pct'], 40)
+        self.assertEqual(context['regime_condition_pct_display'], '40%')
+        self.assertEqual(context['regime_condition_label'], 'やや悪い')
+        self.assertEqual(context['regime_condition_tone'], 'negative')
+        self.assertEqual(context['rule_strength_score'], 4)
+        self.assertEqual(context['rule_strength_fraction_display'], '4/5')
+        self.assertEqual(context['data_quality_score'], 4)
+        self.assertEqual(context['data_quality_fraction_display'], '4/5')
+        self.assertTrue(context['regime_good_points'])
+        self.assertTrue(context['regime_bad_points'])
+        self.assertTrue(context['regime_outlook'])
+        self.assertEqual(len(context['regime_update_guidance']), 3)
+
+    def test_regime_condition_scale_adjusts_for_inflation(self):
+        strong = dashboard._regime_condition_summary(
+            RegimeSnapshot.Label.EXPANSION,
+            RegimeSnapshot.InflationFlag.NORMAL,
+            [],
+            80,
+            90,
+        )
+        hot = dashboard._regime_condition_summary(
+            RegimeSnapshot.Label.RECOVERY,
+            RegimeSnapshot.InflationFlag.HIGH,
+            [],
+            80,
+            90,
+        )
+        weak = dashboard._regime_condition_summary(
+            RegimeSnapshot.Label.CONTRACTION,
+            RegimeSnapshot.InflationFlag.HIGH,
+            [],
+            80,
+            90,
+        )
+
+        self.assertEqual(strong['regime_condition_score'], 5)
+        self.assertEqual(hot['regime_condition_score'], 3)
+        self.assertEqual(weak['regime_condition_score'], 1)
+
+    def test_regime_condition_holds_when_data_is_too_weak(self):
+        condition = dashboard._regime_condition_summary(
+            RegimeSnapshot.Label.EXPANSION,
+            RegimeSnapshot.InflationFlag.NORMAL,
+            [],
+            80,
+            30,
+        )
+
+        self.assertEqual(condition['regime_condition_score'], 0)
+        self.assertEqual(condition['regime_condition_score_display'], '—')
+        self.assertEqual(condition['regime_condition_fraction_display'], '—/5')
+        self.assertEqual(condition['regime_condition_bar_pct'], 0)
+        self.assertEqual(condition['regime_condition_pct_display'], '—%')
+        self.assertEqual(condition['regime_condition_label'], '判定保留')
+
 
 class DashboardCacheTest(TestCase):
     def test_load_dashboard_payload_accepts_legacy_key(self):
@@ -228,6 +361,15 @@ class DashboardCacheTest(TestCase):
         )
 
 
+class BacktestRegimeCommandTest(TestCase):
+    def test_backtest_regime_no_data_does_not_crash(self):
+        out = StringIO()
+        call_command('backtest_regime', stdout=out)
+        output = out.getvalue()
+        self.assertIn('"sample_count": 0', output)
+        self.assertIn(regime.MODEL_VERSION, output)
+
+
 @override_settings(ALLOWED_HOSTS=['*'])
 class MacroUrlsTest(TestCase):
     """URLが正しく解決され、想定したHTTPステータスを返すことを確認。"""
@@ -235,6 +377,49 @@ class MacroUrlsTest(TestCase):
     def test_index_renders(self):
         r = self.client.get(reverse('macro:index'))
         self.assertEqual(r.status_code, 200)
+
+    def test_index_regime_copy_avoids_confidence_word(self):
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 17),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            rule_strength=62,
+            data_quality=78,
+            evidence=[{
+                'series_id': 'INDPRO',
+                'name': '鉱工業生産指数',
+                'metric': '前年比',
+                'value': 0.8,
+                'unit': '%',
+                'observation_date': '2026-04-01',
+                'signal': '減速寄り',
+                'contribution': -0.35,
+            }],
+            warnings=['主要指標の観測日が古い可能性があります。'],
+            model_version='regime_v2_score',
+        )
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '判定強度')
+        self.assertContains(r, 'データ鮮度')
+        self.assertContains(r, '一目で見る結論')
+        self.assertContains(r, '良い点')
+        self.assertContains(r, '悪い点')
+        self.assertContains(r, 'これから先')
+        self.assertContains(r, '<details class="macro-regime-details">')
+        self.assertContains(r, '結論・良い点・悪い点・先行き')
+        self.assertContains(r, '景気評価')
+        self.assertNotContains(r, '景気コンディション')
+        self.assertContains(r, '40%')
+        self.assertContains(r, '2/5')
+        self.assertContains(r, '4/5')
+        self.assertContains(r, '更新頻度の目安')
+        self.assertContains(r, '判定根拠')
+        self.assertContains(r, 'macro-regime-details--evidence')
+        self.assertContains(r, '鉱工業生産指数')
+        self.assertNotContains(r, '確度')
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})
     @mock.patch('macro.views.build_historical_crash_similarity')
@@ -261,8 +446,80 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '基本指標のみ表示しています')
 
     def test_refresh_without_key_redirects(self):
+        user = User.objects.create_superuser(
+            username='creator-no-key',
+            email='creator-no-key@example.com',
+            password='test-password',
+        )
+        self.client.force_login(user)
         r = self.client.post(reverse('macro:refresh'))
         self.assertEqual(r.status_code, 302)
+
+    def test_refresh_button_is_hidden_for_anonymous_users(self):
+        r = self.client.get(reverse('macro:index'))
+        self.assertNotContains(r, '取得・判定')
+        self.assertNotContains(r, 'macro-refresh-form')
+
+    def test_anonymous_refresh_is_forbidden(self):
+        r = self.client.post(reverse('macro:refresh'))
+        self.assertEqual(r.status_code, 403)
+
+    def test_staff_refresh_is_forbidden_and_button_hidden(self):
+        user = User.objects.create_user(
+            username='macro-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        get_response = self.client.get(reverse('macro:index'))
+        post_response = self.client.post(reverse('macro:refresh'))
+
+        self.assertNotContains(get_response, '取得・判定')
+        self.assertEqual(post_response.status_code, 403)
+
+    def test_refresh_button_is_visible_for_superusers(self):
+        user = User.objects.create_superuser(
+            username='macro-creator',
+            email='macro-creator@example.com',
+            password='test-password',
+        )
+        self.client.force_login(user)
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertContains(r, '取得・判定')
+        self.assertContains(r, 'macro-refresh-form')
+
+    def test_refresh_button_runs_fetch_judgment_and_cache_update(self):
+        user = User.objects.create_superuser(
+            username='creator',
+            email='creator@example.com',
+            password='test-password',
+        )
+        self.client.force_login(user)
+        with mock.patch('macro.views.get_api_key', return_value='key'), \
+             mock.patch('macro.views.sync_all_indicators') as sync_mock, \
+             mock.patch('macro.views.compute_current_regime') as regime_mock, \
+             mock.patch('macro.views.sync_all_price_histories') as price_mock, \
+             mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
+             mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
+            sync_mock.return_value = {
+                'success': [{'series_id': 'USREC'}],
+                'failed': [],
+            }
+            regime_mock.return_value = object()
+            price_mock.return_value = {'success': [], 'failed': []}
+            precompute_mock.return_value = {'last_updated': '2026-05-17'}
+
+            r = self.client.post(reverse('macro:refresh'))
+
+        self.assertEqual(r.status_code, 302)
+        sync_mock.assert_called_once()
+        regime_mock.assert_called_once()
+        price_mock.assert_called_once()
+        precompute_mock.assert_called_once()
+        save_cache_mock.assert_called_once_with({'last_updated': '2026-05-17'})
 
     def test_indicator_detail_existing(self):
         # マイグレーションでシードされた CPIAUCSL は存在する想定
@@ -533,7 +790,7 @@ class IndicatorSeedingTest(TestCase):
     """
 
     def test_seeded_count(self):
-        self.assertEqual(Indicator.objects.count(), 65)
+        self.assertEqual(Indicator.objects.count(), 66)
 
     def test_importance_a_count(self):
         # Phase 1: 11 + Phase 2: SP500, T10Y3M = 13（Phase 4 は B のみ）
@@ -547,6 +804,12 @@ class IndicatorSeedingTest(TestCase):
         )
         for s in ['fred', 'cboe', 'finra', 'aaii', 'naaim', 'yfinance']:
             self.assertIn(s, sources)
+
+    def test_usrec_present_for_backtest_truth(self):
+        indicator = Indicator.objects.get(fred_series_id='USREC')
+        self.assertEqual(indicator.name_ja, '米景気後退フラグ')
+        self.assertEqual(indicator.importance, 'C')
+        self.assertTrue(indicator.is_active)
 
 
 class ExternalClientParseTest(TestCase):
