@@ -533,7 +533,7 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '取得・判定')
         self.assertContains(r, 'macro-refresh-form')
 
-    def test_serverless_hides_refresh_button_and_skips_refresh(self):
+    def test_serverless_refresh_button_runs_lightweight_update_only(self):
         user = User.objects.create_superuser(
             username='serverless-creator',
             email='serverless-creator@example.com',
@@ -542,14 +542,37 @@ class MacroUrlsTest(TestCase):
         self.client.force_login(user)
 
         with mock.patch('macro.views._is_serverless_runtime', return_value=True), \
-             mock.patch('macro.views.sync_all_indicators') as sync_mock:
+             mock.patch('macro.views.get_api_key', return_value='key'), \
+             mock.patch('macro.views.sync_all_indicators') as sync_mock, \
+             mock.patch('macro.views.compute_current_regime') as regime_mock, \
+             mock.patch('macro.views.sync_all_price_histories') as price_mock, \
+             mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
+             mock.patch('macro.views.build_indicator_cards', return_value=[]), \
+             mock.patch('macro.views.build_crash_alert_context', return_value={}), \
+             mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
+            sync_mock.return_value = {
+                'success': [{'series_id': 'VIXCLS'}],
+                'failed': [],
+            }
             get_response = self.client.get(reverse('macro:index'))
             post_response = self.client.post(reverse('macro:refresh'))
 
         self.assertEqual(post_response.status_code, 302)
-        self.assertNotContains(get_response, '取得・判定')
-        self.assertNotContains(get_response, 'macro-refresh-form')
-        sync_mock.assert_not_called()
+        self.assertContains(get_response, '取得・判定')
+        self.assertContains(get_response, 'macro-refresh-form')
+        sync_mock.assert_called_once_with(
+            series_ids=(
+                'VIXCLS',
+                'BAMLH0A0HYM2',
+                'CBOE_SKEW',
+                'MOVE_INDEX',
+                'VIX_VIX3M_RATIO',
+            ),
+        )
+        regime_mock.assert_called_once()
+        save_cache_mock.assert_called_once()
+        price_mock.assert_not_called()
+        precompute_mock.assert_not_called()
 
     def test_refresh_button_runs_fetch_judgment_and_cache_update(self):
         user = User.objects.create_superuser(

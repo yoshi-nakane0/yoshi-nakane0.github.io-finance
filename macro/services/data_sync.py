@@ -10,7 +10,7 @@ import logging
 import math
 from bisect import bisect_left
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from django.db import transaction
 from django.utils import timezone
@@ -287,7 +287,11 @@ def sync_indicator(indicator: Indicator, *, history_years: int = HISTORY_YEARS) 
     }
 
 
-def sync_all_indicators(*, history_years: int = HISTORY_YEARS) -> dict:
+def sync_all_indicators(
+    *,
+    history_years: int = HISTORY_YEARS,
+    series_ids: Optional[Iterable[str]] = None,
+) -> dict:
     """全アクティブ指標を FRED から取得・更新する。
 
     1指標ずつ独立に処理し、失敗があっても他は続行する。
@@ -299,6 +303,8 @@ def sync_all_indicators(*, history_years: int = HISTORY_YEARS) -> dict:
     }
 
     indicators = Indicator.objects.filter(is_active=True).order_by('display_order')
+    if series_ids is not None:
+        indicators = indicators.filter(fred_series_id__in=tuple(series_ids))
     expected_errors = (
         FredApiError,
         cboe_client.CboeError,

@@ -31,6 +31,7 @@ from .services.dashboard_cache import (
     invalidate_dashboard_cache,
     invalidate_indicator_detail_caches,
     invalidate_similar_detail_caches,
+    load_dashboard_payload,
     load_indicator_detail_payload,
     load_similar_detail_payload,
     precompute_dashboard_payload,
@@ -53,6 +54,14 @@ from .services.yfinance_client import sync_all_price_histories
 
 logger = logging.getLogger(__name__)
 
+SERVERLESS_REFRESH_SERIES_IDS = (
+    'VIXCLS',
+    'BAMLH0A0HYM2',
+    'CBOE_SKEW',
+    'MOVE_INDEX',
+    'VIX_VIX3M_RATIO',
+)
+
 
 def _is_serverless_runtime():
     return any(
@@ -62,13 +71,55 @@ def _is_serverless_runtime():
 
 
 def _can_refresh_macro_data(user):
-    return is_creator_user(user) and not _is_serverless_runtime()
+    return is_creator_user(user)
+
+
+def _refresh_serverless_macro_data(request):
+    """本番向けの軽量更新。即時性の高い市場ストレス指標だけ取得する。"""
+    try:
+        result = sync_all_indicators(series_ids=SERVERLESS_REFRESH_SERIES_IDS)
+    except Exception as exc:
+        logger.exception("Serverless lightweight macro sync failed")
+        messages.error(request, f"更新中にエラー: {exc}")
+        return redirect(reverse('macro:index'))
+
+    ok_count = len(result['success'])
+    ng_count = len(result['failed'])
+
+    if ok_count == 0:
+        messages.error(request, f"即時指標 {ng_count} 件の取得に失敗しました")
+        return redirect(reverse('macro:index'))
+
+    try:
+        compute_current_regime()
+    except Exception:
+        logger.exception("Serverless regime recomputation failed")
+        messages.warning(request, "即時指標は更新しましたが、判定更新でエラーが発生しました")
+
+    try:
+        payload = load_dashboard_payload() or {}
+        latest_obs_date = get_latest_observation_date()
+        payload.update({
+            'has_observations': latest_obs_date is not None,
+            'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
+            'indicator_cards': build_indicator_cards(),
+            'crash_alert': build_crash_alert_context(),
+        })
+        save_dashboard_payload(payload)
+        invalidate_indicator_detail_caches()
+    except Exception:
+        logger.exception("Serverless dashboard cache patch failed")
+        messages.warning(request, "即時指標は更新しましたが、画面キャッシュ更新でエラーが発生しました")
+
+    if ng_count == 0:
+        messages.success(request, f"即時指標 {ok_count} 件を更新しました")
+    else:
+        messages.warning(request, f"即時指標 {ok_count} 件成功、{ng_count} 件失敗")
+    return redirect(reverse('macro:index'))
 
 
 def index(request):
     """macro モジュールのトップ画面。重い計算は事前計算キャッシュから取得。"""
-    from .services.dashboard_cache import load_dashboard_payload
-
     cache_payload = load_dashboard_payload()
 
     if cache_payload is not None:
@@ -152,12 +203,7 @@ def refresh(request):
         return HttpResponseForbidden("権限がありません。")
 
     if _is_serverless_runtime():
-        messages.warning(
-            request,
-            "本番環境では取得・判定はデプロイ時に実行されます。"
-            "手動更新はローカルまたは再デプロイで反映してください。",
-        )
-        return redirect(reverse('macro:index'))
+        return _refresh_serverless_macro_data(request)
 
     if not get_api_key():
         messages.error(
