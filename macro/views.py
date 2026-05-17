@@ -61,6 +61,10 @@ def _is_serverless_runtime():
     )
 
 
+def _can_refresh_macro_data(user):
+    return is_creator_user(user) and not _is_serverless_runtime()
+
+
 def index(request):
     """macro モジュールのトップ画面。重い計算は事前計算キャッシュから取得。"""
     from .services.dashboard_cache import load_dashboard_payload
@@ -73,7 +77,7 @@ def index(request):
         context['has_observations'] = context.get('has_observations', True)
         context['dashboard_cache_missing'] = not context['has_observations']
         context['fred_key_present'] = bool(get_api_key())
-        context['can_refresh_macro_data'] = is_creator_user(request.user)
+        context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()
         similar_periods = context.get('similar_periods', [])
         linkages = context.get('linkages', [])
@@ -97,7 +101,7 @@ def index(request):
                 latest_obs_date.isoformat() if latest_obs_date else '—'
             ),
             'fred_key_present': fred_key_present,
-            'can_refresh_macro_data': is_creator_user(request.user),
+            'can_refresh_macro_data': _can_refresh_macro_data(request.user),
             'indicator_cards': build_indicator_cards() if has_observations else [],
             'crash_alert': None,
             'historical_crash_similarity': [],
@@ -121,7 +125,7 @@ def index(request):
             latest_obs_date.isoformat() if latest_obs_date else '—'
         ),
         'fred_key_present': fred_key_present,
-        'can_refresh_macro_data': is_creator_user(request.user),
+        'can_refresh_macro_data': _can_refresh_macro_data(request.user),
         'indicator_cards': build_indicator_cards() if has_observations else [],
         'crash_alert': build_crash_alert_context() if has_observations else None,
         'historical_crash_similarity': (
@@ -146,6 +150,14 @@ def refresh(request):
     """全指標を FRED から再取得し、レジームを再計算する。"""
     if not is_creator_user(request.user):
         return HttpResponseForbidden("権限がありません。")
+
+    if _is_serverless_runtime():
+        messages.warning(
+            request,
+            "本番環境では取得・判定はデプロイ時に実行されます。"
+            "手動更新はローカルまたは再デプロイで反映してください。",
+        )
+        return redirect(reverse('macro:index'))
 
     if not get_api_key():
         messages.error(

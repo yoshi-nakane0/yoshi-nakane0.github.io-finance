@@ -533,6 +533,24 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '取得・判定')
         self.assertContains(r, 'macro-refresh-form')
 
+    def test_serverless_hides_refresh_button_and_skips_refresh(self):
+        user = User.objects.create_superuser(
+            username='serverless-creator',
+            email='serverless-creator@example.com',
+            password='test-password',
+        )
+        self.client.force_login(user)
+
+        with mock.patch('macro.views._is_serverless_runtime', return_value=True), \
+             mock.patch('macro.views.sync_all_indicators') as sync_mock:
+            get_response = self.client.get(reverse('macro:index'))
+            post_response = self.client.post(reverse('macro:refresh'))
+
+        self.assertEqual(post_response.status_code, 302)
+        self.assertNotContains(get_response, '取得・判定')
+        self.assertNotContains(get_response, 'macro-refresh-form')
+        sync_mock.assert_not_called()
+
     def test_refresh_button_runs_fetch_judgment_and_cache_update(self):
         user = User.objects.create_superuser(
             username='creator',
