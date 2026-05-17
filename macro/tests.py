@@ -31,7 +31,7 @@ from .services import (
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
-    def test_refresh_workflow_updates_checked_in_database(self):
+    def test_refresh_workflow_does_not_publish_sqlite_database(self):
         workflow = (
             Path(settings.BASE_DIR)
             / '.github'
@@ -39,7 +39,9 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             / 'refresh-macro-data.yml'
         ).read_text(encoding='utf-8')
 
-        self.assertIn('SQLITE_DB_PATH: db.sqlite3', workflow)
+        self.assertIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
+        self.assertNotIn('git add db.sqlite3', workflow)
+        self.assertNotIn('DATA_BRANCH', workflow)
 
     def test_vercel_build_precomputes_macro_dashboard(self):
         build_script = (
@@ -48,6 +50,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
         self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertNotIn('origin/${DATA_BRANCH}:db.sqlite3', build_script)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (
