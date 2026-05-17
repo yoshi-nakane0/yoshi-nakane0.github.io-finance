@@ -74,6 +74,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertNotIn('"builds"', vercel_config)
         self.assertNotIn('"installCommand": "bash build_files.sh"', vercel_config)
         self.assertIn('requires-python = ">=3.12"', python_project)
+        self.assertIn('"outputDirectory": "staticfiles"', vercel_config)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (

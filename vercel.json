@@ -15,6 +15,7 @@
     }
   },
   "buildCommand": "bash build_files.sh",
+  "outputDirectory": "staticfiles",
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
