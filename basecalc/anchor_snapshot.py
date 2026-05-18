@@ -271,12 +271,15 @@ def _load_anchor_payload_from_path(path):
 
 
 def load_anchor_snapshot(path=None):
-    payload = (
-        _load_anchor_payload_from_path(path)
-        if path
-        else load_nikkei_per_payload()
-    )
-    source = path or NIKKEI_PER_DATA_PATH
+    if path:
+        payload = _load_anchor_payload_from_path(path)
+        source = path
+    else:
+        payload = _load_anchor_payload_from_path(NIKKEI_PER_DATA_PATH)
+        source = NIKKEI_PER_DATA_PATH
+        if payload is None or _extract_anchor_config(payload) is None:
+            payload = load_nikkei_per_payload()
+            source = "configured Nikkei PER payload"
     if payload is None:
         return None
     config = _extract_anchor_config(payload)

@@ -13,6 +13,11 @@
   "basecalc_anchor": {
     "anchor_date": "2025.12",
     "anchor_price": 50339,
-    "jgb10y_yield_percent": 2.236
+    "forward_per": 23.87,
+    "jgb10y_yield_percent": 2.236,
+    "dividend_yield_index_percent": 1.48,
+    "erp_method": "method_a",
+    "growth_core_ratio": 0.6,
+    "growth_wide_ratio": 0.7
   }
 }

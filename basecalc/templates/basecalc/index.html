@@ -30,6 +30,48 @@
             </div>
             {% else %}
 
+            <!-- 0. Futures Sentiment -->
+            <div class="card sentiment-card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: var(--color-accent-green);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 17l6-6 4 4 8-8"></path>
+                            <path d="M14 7h7v7"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">Futures Sentiment</div>
+                </div>
+                <div class="sentiment-headline">
+                    <div>
+                        <span class="price-label">Market Bias</span>
+                        <div class="{{ data.sentiment_class|default:'value text-muted' }} sentiment-main" data-field="sentiment_label" data-sync-class>{{ data.sentiment_label|default:"" }}</div>
+                    </div>
+                    <div class="sentiment-action">
+                        <span class="price-label">Action</span>
+                        <div class="{{ data.sentiment_class|default:'value text-muted' }} sentiment-main" data-field="strategy_label" data-sync-class>{{ data.strategy_label|default:"" }}</div>
+                    </div>
+                </div>
+                <div class="summary-grid sentiment-grid">
+                    <div class="metric-box">
+                        <label>Move Type</label>
+                        <div class="value text-amber" data-field="continuity_label">{{ data.continuity_label|default:"" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Daily</label>
+                        <div class="{{ data.sentiment_class|default:'value text-muted' }}" data-field="daily_change_pct_display" data-sync-class>{{ data.daily_change_pct_display|default:"" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Upper Target</label>
+                        <div class="value text-green" data-field="upper_target_display">{{ data.upper_target_display|default:"" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Lower Target</label>
+                        <div class="value text-red" data-field="lower_target_display">{{ data.lower_target_display|default:"" }}</div>
+                    </div>
+                </div>
+                <div class="sentiment-note" data-field="strategy_detail">{{ data.strategy_detail|default:"" }}</div>
+            </div>
+
             <!-- 1. Fair Value Ranges -->
             <div class="card fair-value-card">
                 <!-- Fair Range Detail -->
@@ -84,7 +126,7 @@
                 <span class="price-label">Current Price</span>
                 <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
                 <div id="price-warning" class="text-red" style="margin-top: 8px; font-size: 0.85rem;" hidden>
-                    価格取得に失敗しました。更新を停止しました。
+                    価格取得に失敗しました。少し時間を置いて再実行してください。
                 </div>
             </div>
 
@@ -333,6 +375,14 @@
                         <div class="value text-blue" data-field="fair_price_mid">{% if data.fair_price_mid %}{{ data.fair_price_mid|floatformat:0|intcomma }}{% endif %}</div>
                     </div>
                     <div class="metric-box">
+                        <label>Valuation</label>
+                        <div class="{{ data.valuation_class|default:'value text-muted' }}" data-field="valuation_label" data-sync-class>{{ data.valuation_label|default:"" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Gap vs Mid</label>
+                        <div class="{{ data.fair_price_gap_class|default:'value text-muted' }}" data-field="fair_price_gap_pct_display" data-sync-class>{{ data.fair_price_gap_pct_display|default:"" }}</div>
+                    </div>
+                    <div class="metric-box">
                         <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 6px;">
                             <label style="margin-bottom: 0;">Assumed ERP</label>
                             <button type="button" class="info-icon-btn" id="erp-info-btn" aria-label="Show explanation">
@@ -537,37 +587,6 @@
                 writeStorage(String(initialPrice));
             }
 
-            const parsePriceFromHtml = (html) => {
-                const match = html.match(/current\s+Nikkei 225 Futures price is\s*([0-9.,]+)/i);
-                if (!match) {
-                    return null;
-                }
-                const raw = match[1].replace(/,/g, "");
-                const value = parseFloat(raw);
-                if (!Number.isFinite(value)) {
-                    return null;
-                }
-                const floored = Math.floor(value);
-                return floored > 0 ? floored : null;
-            };
-            const fetchLatestPrice = () => {
-                return fetch("https://www.investing.com/indices/japan-225-futures", {
-                    method: "GET",
-                    mode: "cors",
-                    credentials: "omit",
-                    headers: {
-                        Accept: "text/html",
-                    },
-                })
-                    .then((response) => {
-                        if (!response.ok) {
-                            throw new Error("price fetch failed");
-                        }
-                        return response.text();
-                    })
-                    .then((html) => parsePriceFromHtml(html));
-            };
-
             const buildUrlFromForm = () => {
                 const url = new URL(window.location.href);
                 url.search = "";
@@ -625,6 +644,7 @@
 
             const buildRefreshBody = () => {
                 const body = form ? new FormData(form) : new FormData();
+                body.delete("price");
                 body.set("action", "update");
                 const csrfToken = getRefreshCsrfToken();
                 if (csrfToken) {
@@ -650,15 +670,22 @@
                         cache: "no-store",
                     });
                     if (!response.ok) {
-                        return;
+                        return false;
                     }
                     const html = await response.text();
                     const doc = new DOMParser().parseFromString(html, "text/html");
                     syncFieldsFromDoc(doc);
                     syncStoredPrice();
-                    window.history.replaceState({}, "", url.toString());
-                } catch (e) {}
+                    window.history.replaceState({}, "", buildUrlFromForm().toString());
+                    return true;
+                } catch (e) {
+                    return false;
+                }
             };
+
+            if (storedPrice !== null && storedPrice !== inputPrice) {
+                requestUpdate(buildUrlFromForm());
+            }
 
             if (form) {
                 form.addEventListener("submit", (event) => {
@@ -675,27 +702,14 @@
                     if (refreshButton) {
                         refreshButton.disabled = true;
                     }
-                    let latestPrice = null;
                     try {
-                        latestPrice = await fetchLatestPrice();
-                    } catch (e) {}
-                    if (latestPrice === null) {
-                        setPriceWarning(true);
-                        if (refreshButton) {
-                            refreshButton.disabled = false;
-                        }
-                        return;
-                    }
-                    if (priceInput) {
-                        priceInput.value = String(latestPrice);
-                    }
-                    writeStorage(String(latestPrice));
-                    const url = buildUrlFromForm();
-                    try {
-                        await requestUpdate(url, {
+                        const updated = await requestUpdate(buildUrlFromForm(), {
                             method: "POST",
                             body: buildRefreshBody(),
                         });
+                        if (!updated) {
+                            setPriceWarning(true);
+                        }
                     } finally {
                         if (refreshButton) {
                             refreshButton.disabled = false;

@@ -233,6 +233,36 @@ body {
 .metric-box .value { font-size: 1.4rem; font-weight: 700; color: #fff; font-feature-settings: "tnum"; }
 .metric-box .unit { font-size: 0.95rem; color: var(--color-text-muted); font-weight: 400; margin-left: 2px; }
 
+/* Sentiment */
+.sentiment-card {
+    border-color: rgba(74, 222, 128, 0.16);
+}
+.sentiment-headline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.sentiment-action {
+    text-align: right;
+}
+.sentiment-main {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.sentiment-grid {
+    margin-top: 8px;
+}
+.sentiment-note {
+    margin-top: 14px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
 /* Fair Value Ranges Specifics */
 .fair-value-card {
     border-color: rgba(56, 189, 248, 0.2);
@@ -479,4 +509,11 @@ summary.accordion-summary::-webkit-details-marker {
     }
     .metric-box label { font-size: 0.75rem; }
     .metric-box .value { font-size: 1.2rem; }
+
+    .sentiment-headline {
+        gap: 10px;
+    }
+    .sentiment-main {
+        font-size: 1.3rem;
+    }
 }
