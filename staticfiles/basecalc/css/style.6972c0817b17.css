@@ -1,4 +1,5 @@
 :root {
+    --app-max-width: 980px;
     --app-container-bg: #071224;
     --color-text-main: #f1f5f9;
     --color-text-muted: #9fb3d1;
@@ -22,6 +23,10 @@ body {
         #020817;
     background-size: 56px 56px;
     margin: 0;
+}
+
+.app-container {
+    max-width: var(--app-max-width);
 }
 
 .header {
@@ -60,12 +65,11 @@ body {
 }
 
 .content {
-    container-type: inline-size;
-    padding: 16px 12px 36px;
+    padding: 24px 20px 40px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-width: 100%;
+    gap: 18px;
+    max-width: 860px;
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
@@ -74,20 +78,20 @@ body {
 /* Independent Price Display */
 .price-display {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
     align-items: center;
-    gap: 12px;
-    padding: 16px;
+    gap: 16px;
+    padding: 18px 22px;
     border: 1px solid rgba(46, 239, 253, 0.2);
-    border-radius: 14px;
+    border-radius: 18px;
     background: rgba(4, 15, 31, 0.72);
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025);
 }
 .price-display__head {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 .price-label {
     display: block;
@@ -98,7 +102,7 @@ body {
     letter-spacing: 0;
 }
 .price-value {
-    font-size: 2rem;
+    font-size: 2.35rem;
     font-weight: 850;
     color: #fff;
     font-feature-settings: "tnum";
@@ -107,7 +111,7 @@ body {
 }
 .manual-price-form {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 76px;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
     max-width: 360px;
     margin: 0;
@@ -197,7 +201,7 @@ body {
     transition: all 0.2s;
     font-weight: 600;
     white-space: nowrap;
-    height: 44px;
+    height: 48px;
     width: 100%;
     box-sizing: border-box;
     line-height: 1;
@@ -211,8 +215,8 @@ body {
 /* Card Styles */
 .card {
     background: var(--color-card-bg-local);
-    border-radius: 14px;
-    padding: 16px;
+    border-radius: 18px;
+    padding: 24px;
     border: 1px solid var(--color-border);
     box-shadow: 0 16px 48px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.025);
     backdrop-filter: blur(5px);
@@ -344,7 +348,7 @@ details.card {
 
 summary.card-header {
     margin: 0;
-    padding: 16px;
+    padding: 24px; /* Same as original card padding */
     border-bottom: 1px solid transparent;
     cursor: pointer;
     list-style: none; /* Hide default arrow */
@@ -374,7 +378,7 @@ details.card[open] .accordion-toggle {
 }
 
 .accordion-content {
-    padding: 0 16px 16px 16px;
+    padding: 0 24px 24px 24px;
     animation: slideDown 0.3s ease-out;
 }
 
@@ -414,7 +418,7 @@ details.card[open] .accordion-toggle {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     padding: 10px;
     border: 1px solid rgba(62, 130, 204, 0.3);
-    border-radius: 14px;
+    border-radius: 18px;
     background: rgba(4, 15, 31, 0.52);
     box-sizing: border-box;
 }
@@ -459,9 +463,8 @@ details.card[open] .accordion-toggle {
 .wm-hero__top {
     display: flex;
     align-items: flex-start;
-    flex-direction: column;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
 }
 
 .eyebrow {
@@ -542,12 +545,12 @@ details.card[open] .accordion-toggle {
 }
 
 .wm-stat {
-    min-height: 58px;
+    min-height: 70px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 5px;
-    padding: 9px;
+    padding: 10px;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.045);
     border: 1px solid rgba(255, 255, 255, 0.055);
@@ -561,7 +564,7 @@ details.card[open] .accordion-toggle {
 
 .wm-stat strong {
     color: #fff;
-    font-size: 0.94rem;
+    font-size: 1rem;
     line-height: 1.15;
     font-feature-settings: "tnum";
     overflow-wrap: anywhere;
@@ -580,7 +583,7 @@ details.card[open] .accordion-toggle {
 
 .wm-hero {
     isolation: isolate;
-    padding: 18px;
+    padding: 28px 32px;
     background:
         linear-gradient(135deg, rgba(6, 26, 47, 0.96), rgba(1, 8, 22, 0.96)),
         linear-gradient(rgba(46, 239, 253, 0.035) 1px, transparent 1px),
@@ -596,10 +599,10 @@ details.card[open] .accordion-toggle {
 .wm-hero::before {
     content: "";
     position: absolute;
-    width: 170px;
-    height: 170px;
-    right: 8px;
-    top: 70px;
+    width: 270px;
+    height: 270px;
+    right: 18px;
+    top: 46px;
     z-index: -1;
     border-radius: 50%;
     background:
@@ -626,10 +629,10 @@ details.card[open] .accordion-toggle {
     align-items: center;
     gap: 12px;
     color: var(--color-accent-blue);
-    font-size: 1.05rem;
+    font-size: 1.25rem;
     font-weight: 850;
     letter-spacing: 0;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .wm-kicker__icon {
@@ -656,7 +659,7 @@ details.card[open] .accordion-toggle {
 .wm-direction {
     max-width: 600px;
     color: #fff;
-    font-size: 2rem;
+    font-size: 2.7rem;
     line-height: 1.12;
     font-weight: 900;
     letter-spacing: 0;
@@ -668,8 +671,8 @@ details.card[open] .accordion-toggle {
 }
 
 .confidence-badge {
-    min-width: 58px;
-    padding: 7px 8px;
+    min-width: 120px;
+    padding: 10px 16px;
     border: 2px solid rgba(46, 239, 253, 0.72);
     border-radius: 999px;
     background: rgba(46, 239, 253, 0.06);
@@ -679,33 +682,33 @@ details.card[open] .accordion-toggle {
 }
 
 .wm-pills {
-    display: none;
+    display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 14px;
-    padding-bottom: 12px;
+    margin-top: 18px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(159, 179, 209, 0.2);
 }
 
 .wm-pills span {
     display: inline-flex;
     align-items: center;
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 44px;
+    padding: 0 16px;
     border: 1px solid rgba(62, 130, 204, 0.44);
     border-radius: 10px;
     background: rgba(21, 52, 93, 0.38);
     color: #c9d8ef;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 800;
 }
 
 .wm-scenario {
     position: relative;
-    margin-top: 14px;
+    margin-top: 16px;
     padding-left: 26px;
     color: var(--color-accent-blue);
-    font-size: 1.15rem;
+    font-size: 1.55rem;
     font-weight: 850;
     line-height: 1.35;
 }
@@ -724,34 +727,34 @@ details.card[open] .accordion-toggle {
 
 .wm-score-panel {
     display: grid;
-    gap: 10px;
-    margin-top: 16px;
+    gap: 12px;
+    margin-top: 20px;
 }
 
 .wm-score-row {
     display: grid;
-    grid-template-columns: minmax(68px, 0.9fr) minmax(42px, auto) minmax(38px, auto) minmax(72px, 1fr);
+    grid-template-columns: 128px 84px 54px minmax(120px, 1fr);
     align-items: center;
-    gap: 8px;
+    gap: 14px;
 }
 
 .wm-score-row span {
     color: var(--color-accent-blue);
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 850;
 }
 
 .wm-score-row strong,
 .wm-score-row small {
     color: #fff;
-    font-size: 1rem;
+    font-size: 1.3rem;
     font-weight: 850;
     font-feature-settings: "tnum";
 }
 
 .wm-score-row small {
     color: #d7e4f7;
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .wm-score-track {
@@ -760,7 +763,6 @@ details.card[open] .accordion-toggle {
     overflow: hidden;
     background: rgba(46, 239, 253, 0.16);
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-    min-width: 0;
 }
 
 .wm-score-track i {
@@ -783,13 +785,12 @@ details.card[open] .accordion-toggle {
 .wm-hero__grid {
     position: relative;
     z-index: 1;
-    grid-template-columns: 1fr 1fr;
     padding-top: 18px;
     border-top: 1px solid rgba(159, 179, 209, 0.17);
 }
 
 .wm-stat {
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(4, 18, 38, 0.72);
     border-color: rgba(62, 130, 204, 0.34);
 }
@@ -1025,7 +1026,7 @@ details.card[open] .accordion-toggle {
 .chart-shell {
     width: 100%;
     aspect-ratio: 12 / 7;
-    min-height: 220px;
+    min-height: 260px;
     border-radius: 14px;
     overflow: hidden;
     background: #0b1220;
@@ -1285,136 +1286,19 @@ details.card[open] .accordion-toggle {
     font-size: 0.82rem;
 }
 
-@container (min-width: 520px) {
+@media (min-width: 520px) {
     .history-filter {
         grid-template-columns: 1fr 1fr;
     }
 }
 
-@container (min-width: 760px) {
-    .card {
-        padding: 24px;
-        border-radius: 18px;
-    }
-
-    summary.card-header {
-        padding: 24px;
-    }
-
-    .accordion-content {
-        padding: 0 24px 24px 24px;
-    }
-
-    .price-display {
-        grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
-        gap: 16px;
-        padding: 18px 22px;
-        border-radius: 18px;
-    }
-
-    .price-display__head {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-    }
-
-    .price-value {
-        font-size: 2.35rem;
-    }
-
-    .manual-price-form {
-        grid-template-columns: minmax(0, 1fr) auto;
-        justify-self: end;
-    }
-
+@media (min-width: 760px) {
     .summary-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .target-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .wm-hero {
-        padding: 28px 32px;
-    }
-
-    .wm-hero::before {
-        width: 270px;
-        height: 270px;
-        right: 18px;
-        top: 46px;
-    }
-
-    .wm-hero__top {
-        flex-direction: row;
-        gap: 16px;
-    }
-
-    .wm-kicker {
-        font-size: 1.25rem;
-        margin-bottom: 16px;
-    }
-
-    .wm-direction {
-        font-size: 2.7rem;
-    }
-
-    .confidence-badge {
-        min-width: 120px;
-        padding: 10px 16px;
-    }
-
-    .wm-pills span {
-        min-height: 44px;
-        padding: 0 16px;
-        font-size: 1.1rem;
-    }
-
-    .wm-pills {
-        display: flex;
-        margin-top: 18px;
-        padding-bottom: 16px;
-    }
-
-    .wm-scenario {
-        font-size: 1.55rem;
-    }
-
-    .wm-score-row {
-        grid-template-columns: 128px 84px 54px minmax(120px, 1fr);
-        gap: 14px;
-    }
-
-    .wm-score-row span {
-        font-size: 1.1rem;
-    }
-
-    .wm-score-row strong,
-    .wm-score-row small {
-        font-size: 1.3rem;
-    }
-
-    .wm-score-row small {
-        font-size: 1rem;
-    }
-
-    .wm-score-track {
-        grid-column: auto;
-    }
-
-    .wm-hero__grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .wm-stat {
-        border-radius: 10px;
-    }
-
-    .chart-shell {
-        min-height: 260px;
-        aspect-ratio: 12 / 7;
     }
 
     .history-filter {
@@ -1562,7 +1446,7 @@ summary.accordion-summary::-webkit-details-marker {
     }
     .price-value { font-size: 2rem; }
     .manual-price-form {
-        grid-template-columns: minmax(0, 1fr) 76px;
+        grid-template-columns: 1fr;
         max-width: none;
         justify-self: stretch;
     }
@@ -1641,8 +1525,8 @@ summary.accordion-summary::-webkit-details-marker {
     }
 
     .wm-score-row {
-        grid-template-columns: minmax(68px, 0.9fr) minmax(42px, auto) minmax(38px, auto) minmax(72px, 1fr);
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 6px 10px;
     }
 
     .wm-score-row span {
@@ -1658,6 +1542,7 @@ summary.accordion-summary::-webkit-details-marker {
     }
 
     .wm-score-track {
+        grid-column: 1 / -1;
         min-width: 0;
     }
 
@@ -1672,7 +1557,7 @@ summary.accordion-summary::-webkit-details-marker {
     }
 
     .wm-stat {
-        min-height: 58px;
+        min-height: 62px;
         border-radius: 12px;
     }
 

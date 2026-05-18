@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>basecalc - Nikkei Bias</title>
-    <!-- 共通CSSの読み込み -->
+    <title>basecalc - 日経先物テクニカル分析</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=technical-20260518-6">
+    <script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -15,652 +15,527 @@
 
         <main class="content">
             {% if error %}
-            <div class="card" style="border-left: 4px solid var(--color-accent-red);">
-                <div class="card-title text-red">Error Occurred</div>
-                <div style="margin-top: 8px; color: #fca5a5; font-size: 0.95rem;">{{ error }}</div>
+            <div class="card error-card">
+                <div class="card-title text-red">エラー</div>
+                <div class="notice-text">{{ error }}</div>
                 {% if can_update_basecalc_data %}
-                <div style="margin-top: 16px; text-align: right;">
-                    <form method="post" action="" style="display: inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="update">
-                        <button type="submit" class="btn-base btn-outline">Retry</button>
-                    </form>
-                </div>
+                <form method="post" action="" class="single-action">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update">
+                    <button type="submit" class="btn-base btn-outline">再取得</button>
+                </form>
                 {% endif %}
             </div>
             {% else %}
 
-            <!-- 0. Futures Sentiment -->
-            <div class="card sentiment-card">
-                <div class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-green);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 17l6-6 4 4 8-8"></path>
-                            <path d="M14 7h7v7"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">Futures Sentiment</div>
-                </div>
-                <div class="sentiment-headline">
+            <section class="card wm-hero wm-{{ world_model.direction }}" data-field="wm_hero">
+                <div class="wm-hero__top">
                     <div>
-                        <span class="price-label">Market Bias</span>
-                        <div class="{{ data.sentiment_class|default:'value text-muted' }} sentiment-main" data-field="sentiment_label" data-sync-class>{{ data.sentiment_label|default:"" }}</div>
-                    </div>
-                    <div class="sentiment-action">
-                        <span class="price-label">Action</span>
-                        <div class="{{ data.sentiment_class|default:'value text-muted' }} sentiment-main" data-field="strategy_label" data-sync-class>{{ data.strategy_label|default:"" }}</div>
-                    </div>
-                </div>
-                <div class="summary-grid sentiment-grid">
-                    <div class="metric-box">
-                        <label>Move Type</label>
-                        <div class="value text-amber" data-field="continuity_label">{{ data.continuity_label|default:"" }}</div>
-                    </div>
-                    <div class="metric-box">
-                        <label>Daily</label>
-                        <div class="{{ data.sentiment_class|default:'value text-muted' }}" data-field="daily_change_pct_display" data-sync-class>{{ data.daily_change_pct_display|default:"" }}</div>
-                    </div>
-                    <div class="metric-box">
-                        <label>Upper Target</label>
-                        <div class="value text-green" data-field="upper_target_display">{{ data.upper_target_display|default:"" }}</div>
-                    </div>
-                    <div class="metric-box">
-                        <label>Lower Target</label>
-                        <div class="value text-red" data-field="lower_target_display">{{ data.lower_target_display|default:"" }}</div>
-                    </div>
-                </div>
-                <div class="sentiment-note" data-field="strategy_detail">{{ data.strategy_detail|default:"" }}</div>
-            </div>
-
-            <!-- 1. Fair Value Ranges -->
-            <div class="card fair-value-card">
-                <!-- Fair Range Detail -->
-                <div class="valuation-section">
-                    <h3 class="section-title">Fair Value Ranges</h3>
-                    <div class="data-list">
-                        <div class="data-row range-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Core)</span>
-                            </div>
-                            <div class="range-values">
-                                <span class="range-val text-blue" data-field="fair_price_core_low_display">{% if data.fair_price_core_low_display %}{{ data.fair_price_core_low_display }}{% endif %}</span>
-                                <span class="range-sep text-muted">~</span>
-                                <span class="range-val text-blue" data-field="fair_price_core_high_display">{% if data.fair_price_core_high_display %}{{ data.fair_price_core_high_display }}{% endif %}</span>
-                            </div>
+                        <div class="wm-kicker">
+                            <span class="wm-kicker__icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 17V7"></path>
+                                    <path d="M9 17V5"></path>
+                                    <path d="M14 17v-7"></path>
+                                    <path d="M19 17V8"></path>
+                                    <path d="M3 19h18"></path>
+                                </svg>
+                            </span>
+                            <span>現在の相場局面</span>
                         </div>
-                        <div class="data-row range-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range (Wide)</span>
-                            </div>
-                            <div class="range-values">
-                                <span class="range-val text-blue" data-field="fair_price_wide_low_display">{% if data.fair_price_wide_low_display %}{{ data.fair_price_wide_low_display }}{% endif %}</span>
-                                <span class="range-sep text-muted">~</span>
-                                <span class="range-val text-blue" data-field="fair_price_wide_high_display">{% if data.fair_price_wide_high_display %}{{ data.fair_price_wide_high_display }}{% endif %}</span>
-                            </div>
+                        <h1 class="wm-direction" data-field="direction_label">{{ world_model.direction_label }}</h1>
+                        <div class="wm-subline">
+                            <span data-field="state_label">{{ world_model.state_label }}</span>
+                            <span>｜</span>
+                            <span data-field="phase_label">{{ world_model.phase_label }}</span>
                         </div>
                     </div>
+                    <div class="confidence-badge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
+                        {{ world_model.confidence }}
+                    </div>
                 </div>
-            </div>
 
-            <!-- Fair Value Actions -->
-            <div class="action-row">
-                <button type="submit" class="btn-base btn-primary" form="erp-form">Apply ERP</button>
+                <div class="wm-pills">
+                    <span>{{ world_model.state_label }}</span>
+                    <span>{{ world_model.phase_label }}</span>
+                </div>
+
+                <div class="wm-scenario" data-field="main_scenario">{{ world_model.main_scenario }}</div>
+
+                <div class="wm-score-panel">
+                    <div class="wm-score-row">
+                        <span>方向評価</span>
+                        <strong>{{ world_model.sentiment_score_abs }}%</strong>
+                        <small>{{ world_model.sentiment_score }}</small>
+                        <div class="wm-score-track">
+                            <i data-value="{{ world_model.sentiment_score_abs }}"></i>
+                        </div>
+                    </div>
+                    <div class="wm-score-row">
+                        <span>判定強度</span>
+                        <strong>{{ world_model.continuation_score }}%</strong>
+                        <small>{{ world_model.confidence }}</small>
+                        <div class="wm-score-track is-cyan">
+                            <i data-value="{{ world_model.continuation_score }}"></i>
+                        </div>
+                    </div>
+                    <div class="wm-score-row">
+                        <span>データ鮮度</span>
+                        <strong>{% if world_model.is_stale %}42{% else %}96{% endif %}%</strong>
+                        <small>{% if world_model.is_stale %}要確認{% else %}良好{% endif %}</small>
+                        <div class="wm-score-track is-green">
+                            <i data-value="{% if world_model.is_stale %}42{% else %}96{% endif %}"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wm-hero__grid">
+                    <div class="wm-stat">
+                        <span>強度</span>
+                        <strong data-field="strength_label">{{ world_model.strength_label }}</strong>
+                    </div>
+                    <div class="wm-stat">
+                        <span>T1</span>
+                        <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong>
+                    </div>
+                    <div class="wm-stat">
+                        <span>T2</span>
+                        <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong>
+                    </div>
+                    <div class="wm-stat">
+                        <span>無効化</span>
+                        <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong>
+                    </div>
+                </div>
+
+                <div class="wm-invalidation" data-field="invalidation_text">{{ world_model.invalidation_text }}</div>
+            </section>
+
+            <div class="action-row top-actions">
+                <form method="get" action="" id="erp-form" class="inline-form">
+                    <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
+                    <input type="hidden" name="erp_method" value="{{ erp_method }}">
+                    {% if erp_growth_input %}
+                    <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
+                    {% endif %}
+                    <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}" data-field="growth_core_ratio_input">
+                    <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}" data-field="growth_wide_ratio_input">
+                    <button type="submit" class="btn-base btn-primary">再計算</button>
+                </form>
                 {% if can_update_basecalc_data %}
-                <form method="post" action="" id="price-refresh-form" style="display: inline;">
+                <form method="post" action="" id="price-refresh-form" class="inline-form">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="price" value="{{ price_param|default:'' }}">
                     <button type="submit" class="btn-base btn-outline" id="price-refresh">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 4v6h-6"></path>
-                        <path d="M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Refresh
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        更新
                     </button>
                 </form>
                 {% endif %}
+                <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
             </div>
 
-            <!-- 3. Independent Price Display -->
             <div class="price-display">
-                <span class="price-label">Current Price</span>
-                <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
-                <div id="price-warning" class="text-red" style="margin-top: 8px; font-size: 0.85rem;" hidden>
-                    価格取得に失敗しました。少し時間を置いて再実行してください。
+                <div class="price-display__head">
+                    <div>
+                        <span class="price-label">日経先物 現在値</span>
+                        <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
+                    </div>
+                    <div class="last-updated" data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</div>
+                </div>
+                <form method="get" action="" class="manual-price-form">
+                    <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 現在値" data-field="price_param">
+                    <input type="hidden" name="erp_method" value="{{ erp_method }}">
+                    {% if erp_growth_input %}
+                    <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
+                    {% endif %}
+                    <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}">
+                    <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}">
+                    <button type="submit" class="btn-base btn-primary">適用</button>
+                </form>
+                <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
+                    {{ world_model.data_warning }}
                 </div>
             </div>
 
-            <!-- 4. Controls -->
-            <form method="get" action="" class="erp-form" id="erp-form">
-                <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
-                <!-- Row 1: Inputs -->
-                <div class="control-row">
-                    <select name="erp_method" class="erp-input erp-select" aria-label="ERP算出方法">
-                        <option value="method_a" {% if erp_method == "method_a" %}selected{% endif %}>A 益回り</option>
-                        <option value="method_b" {% if erp_method == "method_b" %}selected{% endif %}>B 益回り+成長</option>
-                        <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
-                    </select>
-                    {% with growth_selected=erp_growth_input|default:"2.1" %}
-                    <input type="text" class="erp-input input-growth" id="growth-fixed" value="0.00" readonly {% if erp_method != "method_a" and erp_method != "method_c" %}hidden{% endif %}>
-                    <select name="erp_growth" class="erp-input erp-select input-growth" id="growth-select" aria-label="g 選択" {% if erp_method != "method_b" %}hidden disabled{% endif %}>
-                        <option value="1.7" {% if growth_selected == "1.7" %}selected{% endif %}>1.7</option>
-                        <option value="2.1" {% if growth_selected == "2.1" %}selected{% endif %}>2.1</option>
-                        <option value="2.7" {% if growth_selected == "2.7" %}selected{% endif %}>2.7</option>
-                    </select>
-                    {% endwith %}
-                </div>
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center;">
-                            <h3 class="section-title" style="margin: 0; border: none; padding: 0;">Range Tuning</h3>
-                            <button type="button" class="info-icon-btn" id="tuning-info-btn" aria-label="Show explanation">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="data-list">
-                        <div class="data-row" style="align-items: center;">
-                            <div class="label-group">
-                                <span class="label-main">GROWTH_CORE_RATIO</span>
-                            </div>
-                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'0.6' }}" data-field="growth_core_ratio_input">
-                        </div>
-                        <div class="data-row" style="align-items: center;">
-                            <div class="label-group">
-                                <span class="label-main">GROWTH_WIDE_RATIO</span>
-                            </div>
-                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'0.7' }}" data-field="growth_wide_ratio_input">
-                        </div>
-                    </div>
-                </div>
-            </form>
-
-            <!-- 5. Market Conditions -->
-            <details class="card">
-                <summary class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-amber);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                            <polyline points="17 6 23 6 23 12"></polyline>
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 12h4l3 7 4-14 3 7h4"></path>
                         </svg>
                     </div>
-                    <div class="card-title">Market Conditions</div>
-                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="accordion-content">
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">JGB 10Y</span>
-                                <span class="label-sub">日本国債10年利回り</span>
-                            </div>
-                            <span class="data-value" data-field="jgb10y_yield_percent">{% if data.jgb10y_yield_percent %}{{ data.jgb10y_yield_percent }}<span class="unit">%</span>{% endif %}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Forward PER</span>
-                                <span class="label-sub">予想PER（指数ベース）</span>
-                            </div>
-                            <span class="data-value" data-field="forward_per">{{ data.forward_per|default:"" }}<span class="unit">x</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Dividend Yield</span>
-                                <span class="label-sub">配当利回り（指数ベース）</span>
-                            </div>
-                            <span class="data-value" data-field="dividend_yield_index_percent">{% if data.dividend_yield_index_percent %}{{ data.dividend_yield_index_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</span>
-                        </div>
+                    <div class="card-title">センチメント</div>
+                </div>
+                <div class="sentiment-meter" data-score="{{ world_model.sentiment_score }}" data-field="sentiment_meter">
+                    <div class="sentiment-meter__track">
+                        <div class="sentiment-meter__fill"></div>
+                        <div class="sentiment-meter__zero"></div>
+                    </div>
+                    <div class="sentiment-meter__labels">
+                        <span>-100</span>
+                        <strong data-field="sentiment_score">{{ world_model.sentiment_score }}</strong>
+                        <span>+100</span>
                     </div>
                 </div>
-            </details>
+                <div class="summary-grid">
+                    <div class="metric-box">
+                        <label>センチメント</label>
+                        <div class="value" data-field="sentiment_label">{{ world_model.sentiment_label }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>継続性</label>
+                        <div class="value text-green" data-field="continuation_score">{{ world_model.continuation_score }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>突発性</label>
+                        <div class="value text-amber" data-field="shock_score">{{ world_model.shock_score }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>変動タイプ</label>
+                        <div class="value" data-field="shock_label">{{ world_model.shock_label }}</div>
+                    </div>
+                </div>
+            </section>
 
-            <!-- 6. Calculation Evidence -->
-            <details class="card">
-                <summary class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-purple);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-amber">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 19V5"></path>
+                            <path d="M9 19V9"></path>
+                            <path d="M14 19v-6"></path>
+                            <path d="M19 19V7"></path>
                         </svg>
                     </div>
-                    <div class="card-title">Calculation Evidence</div>
-                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                
-                <div class="accordion-content">
-                    <!-- Index Base -->
-                    <div class="valuation-section">
-                        <h3 class="section-title">Index Base (Nikkei Official)</h3>
-                        <div class="data-list">
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Forward EPS</span>
-                                    <span class="label-sub">予想EPS（指数ベース）</span>
-                                </div>
-                                <span class="data-value" data-field="forward_eps_display">{% if data.forward_eps_display %}{{ data.forward_eps_display }}{% endif %}</span>
-                            </div>
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Earnings Yield</span>
-                                    <span class="label-sub">益利回り（予想/指数ベース）</span>
-                                </div>
-                                <span class="data-value" data-field="earnings_yield_forward_from_eps">{{ data.earnings_yield_forward_from_eps|floatformat:4|default:"" }}</span>
-                            </div>
-                            <div class="data-row">
-                                <div class="label-group">
-                                    <span class="label-main">Implied Growth</span>
-                                    <span class="label-sub">暗黙成長率（指数ベース）</span>
-                                </div>
-                                <span class="data-value" data-field="g_implied_index">{{ data.g_implied_index|floatformat:4|default:"" }}</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="card-title">時間足</div>
                 </div>
-            </details>
+                <div class="timeframe-grid" data-field="timeframe_summary">
+                    {% for frame in world_model.timeframe_summary %}
+                    <div class="timeframe-box">
+                        <span>{{ frame.label }}</span>
+                        <strong>{{ frame.trend_label }}</strong>
+                        <small>1h {{ frame.change_1h_pct|floatformat:2 }}% / 突発 {{ frame.impulse_z|floatformat:1 }}</small>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">短時間足データ待ちです。</div>
+                    {% endfor %}
+                </div>
+            </section>
 
-            <!-- 7. Scenario -->
-            <details class="card">
-                <summary class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-green);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 19V5"></path>
+                            <path d="M4 19h16"></path>
+                            <path d="m7 14 4-4 3 3 5-7"></path>
                         </svg>
                     </div>
-                    <div class="card-title">
-                        Yield + Growth Rate
-                        <button type="button" class="info-icon-btn" id="scenario-info-btn" aria-label="Show explanation" style="margin-left: 8px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                        </button>
+                    <div class="card-title">ターゲット</div>
+                </div>
+                <div class="target-grid">
+                    <div>
+                        <h2 class="section-title">上値目標</h2>
+                        <div class="target-list" data-field="upside_targets">
+                            {% for target in world_model.upside_targets %}
+                            <div class="target-row">
+                                <span>{{ target.label }}</span>
+                                <strong>{{ target.price|floatformat:0|intcomma }}</strong>
+                                <small>{{ target.reason }} / {{ target.confidence }}</small>
+                            </div>
+                            {% empty %}
+                            <div class="target-row muted-row">N/A</div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    <svg class="accordion-toggle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </summary>
-                <div class="accordion-content">
-                    <div class="data-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Conservative Case</span>
-                                <span class="label-sub">内訳：0.7% + 1.0%</span>
+                    <div>
+                        <h2 class="section-title section-title-red">下値目標</h2>
+                        <div class="target-list" data-field="downside_targets">
+                            {% for target in world_model.downside_targets %}
+                            <div class="target-row">
+                                <span>{{ target.label }}</span>
+                                <strong>{{ target.price|floatformat:0|intcomma }}</strong>
+                                <small>{{ target.reason }} / {{ target.confidence }}</small>
                             </div>
-                            <span class="data-value">1.7<span class="unit">%</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Base Case</span>
-                                <span class="label-sub">内訳：0.6% + 1.5%</span>
-                            </div>
-                            <span class="data-value">2.1<span class="unit">%</span></span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Target Case</span>
-                                <span class="label-sub">内訳：0.7% + 2.0%</span>
-                            </div>
-                            <span class="data-value">2.7<span class="unit">%</span></span>
+                            {% empty %}
+                            <div class="target-row muted-row">N/A</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-            </details>
+            </section>
 
-            <!-- 2. Anchor Snapshot -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-blue);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-amber">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M5 10h14"></path>
+                            <path d="M7 16h10"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">局面と根拠</div>
+                </div>
+                <div class="phase-panel">
+                    <span>局面</span>
+                    <strong data-field="phase_label">{{ world_model.phase_label }}</strong>
+                    <small data-field="sub_scenario">{{ world_model.sub_scenario }}</small>
+                </div>
+                <ol class="evidence-list" data-field="evidence">
+                    {% for item in world_model.evidence %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ol>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-purple">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 17h16"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">過去類似局面</div>
+                </div>
+                <div class="summary-grid similar-grid" data-field="similar_summary">
+                    <div class="metric-box">
+                        <label>類似件数</label>
+                        <div class="value">{{ world_model.similar_summary.case_count }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>方向一致率</label>
+                        <div class="value">{{ world_model.similar_summary.directional_accuracy|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>平均3日</label>
+                        <div class="value">{{ world_model.similar_summary.average_return_pct|floatformat:2 }}%</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>T1到達率</label>
+                        <div class="value">{{ world_model.similar_summary.target_t1_hit_rate|floatformat:2 }}</div>
+                    </div>
+                </div>
+                <div class="case-list">
+                    {% for case in world_model.similar_summary.cases %}
+                    <div class="case-row">
+                        <span>{{ case.date }}</span>
+                        <strong>{{ case.return_3d|floatformat:2 }}%</strong>
+                        <small>5日 {{ case.return_5d|floatformat:2 }}% / 類似度 {{ case.similarity|floatformat:2 }}</small>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">過去データの足数が不足しています。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="m7 14 3-3 3 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">詳細チャート</div>
+                </div>
+                <div class="chart-shell">
+                    <div id="technical-chart"></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M9 11 12 14 22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">予測精度</div>
+                </div>
+                <div class="performance-grid" data-field="performance">
+                    {% for horizon, item in performance_by_horizon.items %}
+                    <div class="performance-box">
+                        <span>{{ horizon }}</span>
+                        <strong>{{ item.directional_accuracy|floatformat:2 }}</strong>
+                        <small>検証 {{ item.total_predictions }} / T1 {{ item.target_t1_hit_rate|floatformat:2 }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <details class="card auxiliary-card">
+                <summary class="card-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M7 11l5-8 5 8"></path>
                             <rect x="4" y="11" width="16" height="10" rx="2"></rect>
                         </svg>
                     </div>
-                    <div class="card-title">Anchor Snapshot</div>
-                </div>
-                <div class="data-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Status</span>
+                    <div class="card-title">補助材料</div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
+                    <form method="get" action="" class="erp-form">
+                        <input type="hidden" name="price" value="{{ price_param|default:'' }}">
+                        <div class="control-row">
+                            <select name="erp_method" class="erp-input erp-select" aria-label="ERP算出方法">
+                                <option value="method_a" {% if erp_method == "method_a" %}selected{% endif %}>A 益回り</option>
+                                <option value="method_b" {% if erp_method == "method_b" %}selected{% endif %}>B 益回り+成長</option>
+                                <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
+                            </select>
+                            {% with growth_selected=erp_growth_input|default:"2.1" %}
+                            <select name="erp_growth" class="erp-input erp-select input-growth" aria-label="g 選択">
+                                <option value="1.7" {% if growth_selected == "1.7" %}selected{% endif %}>1.7</option>
+                                <option value="2.1" {% if growth_selected == "2.1" %}selected{% endif %}>2.1</option>
+                                <option value="2.7" {% if growth_selected == "2.7" %}selected{% endif %}>2.7</option>
+                            </select>
+                            {% endwith %}
                         </div>
-                        <span class="data-value" data-field="anchor_status_display">{{ data.anchor_status_display|default:"" }}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Date</span>
+                        <div class="control-row">
+                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'0.6' }}" aria-label="Core幅">
+                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'0.7' }}" aria-label="Wide幅">
+                            <button type="submit" class="btn-base btn-primary">適用</button>
                         </div>
-                        <span class="data-value" data-field="anchor_date_display">{{ data.anchor_date_display|default:"" }}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Price</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_price_display">{% if data.anchor_price_display %}{{ data.anchor_price_display }}{% endif %}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">Anchor Forward PER</span>
-                        </div>
-                        <span class="data-value" data-field="anchor_forward_per_display">{% if data.anchor_forward_per_display %}{{ data.anchor_forward_per_display }}{% endif %}</span>
-                    </div>
-                </div>
-            </div>
+                    </form>
 
-            <!-- 8. Analysis Summary -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon" style="color: var(--color-accent-blue);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                    </div>
-                    <div class="card-title">Analysis Summary</div>
-                </div>
-                
-                <div class="summary-grid">
-                    <div class="metric-box">
-                        <label>Fair Value (Mid)</label>
-                        <div class="value text-blue" data-field="fair_price_mid">{% if data.fair_price_mid %}{{ data.fair_price_mid|floatformat:0|intcomma }}{% endif %}</div>
-                    </div>
-                    <div class="metric-box">
-                        <label>Valuation</label>
-                        <div class="{{ data.valuation_class|default:'value text-muted' }}" data-field="valuation_label" data-sync-class>{{ data.valuation_label|default:"" }}</div>
-                    </div>
-                    <div class="metric-box">
-                        <label>Gap vs Mid</label>
-                        <div class="{{ data.fair_price_gap_class|default:'value text-muted' }}" data-field="fair_price_gap_pct_display" data-sync-class>{{ data.fair_price_gap_pct_display|default:"" }}</div>
-                    </div>
-                    <div class="metric-box">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 6px;">
-                            <label style="margin-bottom: 0;">Assumed ERP</label>
-                            <button type="button" class="info-icon-btn" id="erp-info-btn" aria-label="Show explanation">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                            </button>
+                    <div class="data-list auxiliary-list">
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range Core</span>
+                                <span class="label-sub">補助的な割安・割高レンジ</span>
+                            </div>
+                            <span class="data-value">
+                                {{ data.fair_price_core_low_display }} ~ {{ data.fair_price_core_high_display }}
+                            </span>
                         </div>
-                        <div class="value text-purple" data-field="erp_percent">{% if data.erp_percent %}{{ data.erp_percent|floatformat:2 }}<span class="unit">%</span>{% endif %}</div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Fair Range Wide</span>
+                                <span class="label-sub">広めの確認レンジ</span>
+                            </div>
+                            <span class="data-value">
+                                {{ data.fair_price_wide_low_display }} ~ {{ data.fair_price_wide_high_display }}
+                            </span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Valuation</span>
+                                <span class="label-sub">主判断には使わない補助材料</span>
+                            </div>
+                            <span class="{{ data.valuation_class|default:'data-value text-muted' }}">{{ data.valuation_label|default:"" }}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Gap vs Mid</span>
+                            </div>
+                            <span class="{{ data.fair_price_gap_class|default:'data-value text-muted' }}">{{ data.fair_price_gap_pct_display|default:"" }}</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">Forward PER</span>
+                            </div>
+                            <span class="data-value">{{ data.forward_per|default:"" }}x</span>
+                        </div>
+                        <div class="data-row">
+                            <div class="label-group">
+                                <span class="label-main">JGB 10Y</span>
+                            </div>
+                            <span class="data-value">{{ data.jgb10y_yield_percent|floatformat:3 }}%</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </details>
 
+            <p class="disclaimer">このページは分析補助です。表示は条件付きシナリオであり、売買指示ではありません。</p>
 
-
+            {{ chart_data|json_script:"basecalc-chart-data" }}
             {% endif %}
         </main>
     </div>
 
-    <!-- Range Tuning Modal -->
-    <div class="modal-overlay" id="tuning-modal">
-        <div class="modal-content">
-            <button type="button" class="modal-close" id="tuning-modal-close">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">設定の説明と推奨値</h3>
-            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
-                <p style="margin-top: 0; margin-bottom: 12px;">GROWTH_CORE_RATIO_DEFAULT（推奨0.8〜1.2）とGROWTH_WIDE_RATIO_DEFAULT（推奨0.6〜1.4）は、成長率レンジ幅を調整する係数。要求収益率と成長率中心の差に基づく幅に対し、1.0を基準に値を大きくすると広がり、小さくすると狭まくなる。</p>
-                <p style="margin-bottom: 0;">WideはCore以上の設定が推奨され、下回った場合はCore幅に揃えられます。実レンジには上下限（Core:0.1〜0.5%、Wide:0.2〜1.0%）があり、入力値自体は0.1〜2.0に制限されます。まずは1.0から始め、広すぎる場合はCore→Wideの順で下げて調整してください。</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assumed ERP Modal -->
-    <div class="modal-overlay" id="erp-modal">
-        <div class="modal-content">
-            <button type="button" class="modal-close" id="erp-modal-close">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">Assumed ERPについて</h3>
-            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
-                <p style="margin-top: 0; margin-bottom: 12px;">Assumed ERPは、JGB10年利回りに上乗せする「株式リスクプレミアムの仮定値」で、Fair Value 算出の要求収益率の基準になります。選択した算出方法（A: 益回り、B: 益回り+成長、C: 配当+成長）と成長率に応じて値が変わり、Fair Rangeの中心値と幅に直接影響します。市場の暗黙ERP（イールドギャップ）とは別で、ユーザーが前提として置くERPを示す指標です。CはERPが0%未満になった場合は0%に丸めます。</p>
-                <ul style="margin-bottom: 0; padding-left: 20px; list-style-type: disc;">
-                    <li>A 益回り: 1 / 予想PER − JGB10Y利回り</li>
-                    <li>B 益回り+成長: 1 / 予想PER + 成長率(g) − JGB10Y利回り</li>
-                    <li>C 配当+成長: 配当利回り（指数） + 成長率(g)</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scenario Modal -->
-    <div class="modal-overlay" id="scenario-modal">
-        <div class="modal-content">
-            <button type="button" class="modal-close" id="scenario-modal-close">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: #fff;">益回り+成長率（g）シナリオについて</h3>
-            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted);">
-                <div style="margin-bottom: 12px;">
-                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">保守的シナリオ（PP寄り）</div>
-                    <div>成長率を低めに置き、下振れ局面のレンジ確認を目的とする。</div>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">中間シナリオ（レンジ中点）</div>
-                    <div>gの中位をベースケースとして採用し、中心レンジを把握する。</div>
-                </div>
-                <div style="margin-bottom: 0;">
-                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">目標整合シナリオ（TN寄り）</div>
-                    <div>成長率を高めに見積もり、上振れ時のレンジを確認する。</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Modal Logic
-            const setupModal = (btnId, modalId, closeId) => {
-                const btn = document.getElementById(btnId);
-                const modal = document.getElementById(modalId);
-                const close = document.getElementById(closeId);
-
-                if (btn && modal && close) {
-                    const toggleModal = (show) => {
-                        if (show) {
-                            modal.classList.add("active");
-                            document.body.style.overflow = "hidden";
-                        } else {
-                            modal.classList.remove("active");
-                            document.body.style.overflow = "";
-                        }
-                    };
-
-                    btn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleModal(true);
-                    });
-                    close.addEventListener("click", () => toggleModal(false));
-                    modal.addEventListener("click", (e) => {
-                        if (e.target === modal) {
-                            toggleModal(false);
-                        }
-                    });
-                }
-            };
-
-            setupModal("tuning-info-btn", "tuning-modal", "tuning-modal-close");
-            setupModal("erp-info-btn", "erp-modal", "erp-modal-close");
-            setupModal("scenario-info-btn", "scenario-modal", "scenario-modal-close");
-
-            const form = document.querySelector(".erp-form");
-            const priceValue = document.getElementById("current-price");
-            const priceInput = form ? form.querySelector('[name="price"]') : null;
             const refreshForm = document.getElementById("price-refresh-form");
             const refreshButton = document.getElementById("price-refresh");
-            const STORAGE_KEY = "basecalc_current_price";
             const priceWarning = document.getElementById("price-warning");
+            const forms = document.querySelectorAll("form[method='get']");
 
             const setPriceWarning = (visible) => {
-                if (!priceWarning) {
-                    return;
+                if (priceWarning) {
+                    priceWarning.hidden = !visible;
                 }
-                priceWarning.hidden = !visible;
-            };
-
-            if (form) {
-                const methodSelect = form.querySelector('[name="erp_method"]');
-                const growthSelect = form.querySelector("#growth-select");
-                const growthFixed = form.querySelector("#growth-fixed");
-                if (methodSelect && growthSelect && growthFixed) {
-                    const updateInputs = (method) => {
-                        const needsGrowth = method === "method_b";
-                        growthSelect.disabled = !needsGrowth;
-                        growthSelect.hidden = !needsGrowth;
-                        growthFixed.hidden = needsGrowth;
-                    };
-
-                    methodSelect.addEventListener("change", () => {
-                        updateInputs(methodSelect.value);
-                    });
-
-                    updateInputs(methodSelect.value);
-                }
-            }
-
-            const normalizePrice = (value) => {
-                if (value === null || value === undefined) {
-                    return null;
-                }
-                const cleaned = String(value).replace(/,/g, "");
-                const parsed = parseInt(cleaned, 10);
-                if (!Number.isFinite(parsed) || parsed <= 0) {
-                    return null;
-                }
-                return parsed;
-            };
-            const formatPriceDisplay = (value) =>
-                value.toLocaleString("en-US", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                });
-            const applyPrice = (value) => {
-                if (!priceValue) {
-                    return;
-                }
-                priceValue.textContent = formatPriceDisplay(value);
-                if (priceInput) {
-                    priceInput.value = String(value);
-                }
-            };
-            const readStorage = () => {
-                try {
-                    return localStorage.getItem(STORAGE_KEY);
-                } catch (e) {
-                    return null;
-                }
-            };
-            const writeStorage = (value) => {
-                try {
-                    localStorage.setItem(STORAGE_KEY, value);
-                } catch (e) {}
-            };
-
-            const storedPrice = normalizePrice(readStorage());
-            const inputPrice = priceInput ? normalizePrice(priceInput.value) : null;
-            const initialPrice = storedPrice !== null ? storedPrice : inputPrice;
-            if (initialPrice !== null) {
-                applyPrice(initialPrice);
-                writeStorage(String(initialPrice));
-            }
-
-            const buildUrlFromForm = () => {
-                const url = new URL(window.location.href);
-                url.search = "";
-                if (form) {
-                    const formData = new FormData(form);
-                    for (const [key, value] of formData.entries()) {
-                        if (value !== "") {
-                            url.searchParams.set(key, value);
-                        }
-                    }
-                }
-                return url;
             };
 
             const syncFieldsFromDoc = (doc) => {
-                const fields = document.querySelectorAll("[data-field]");
-                fields.forEach((field) => {
+                document.querySelectorAll("[data-field]").forEach((field) => {
                     const key = field.getAttribute("data-field");
                     const next = doc.querySelector(`[data-field="${key}"]`);
                     if (!next) {
                         return;
                     }
-                    if (
-                        field.tagName === "INPUT" ||
-                        field.tagName === "SELECT" ||
-                        field.tagName === "TEXTAREA"
-                    ) {
+                    if (field instanceof HTMLInputElement && next instanceof HTMLInputElement) {
                         field.value = next.value;
                     } else {
+                        if (key === "wm_hero") {
+                            field.className = next.className;
+                        }
                         field.innerHTML = next.innerHTML;
                     }
-                    if (field.hasAttribute("data-sync-class")) {
-                        field.className = next.className;
+                    if (next.hasAttribute("data-score")) {
+                        field.setAttribute("data-score", next.getAttribute("data-score"));
+                    }
+                    if (key === "data_warning") {
+                        field.hidden = next.hidden;
                     }
                 });
-
+                const nextPrice = doc.querySelector('[data-field="price_param"]');
+                if (nextPrice instanceof HTMLInputElement) {
+                    document.querySelectorAll('input[name="price"]').forEach((input) => {
+                        input.value = nextPrice.value;
+                    });
+                }
+                const nextChart = doc.getElementById("basecalc-chart-data");
+                const chartScript = document.getElementById("basecalc-chart-data");
+                if (nextChart && chartScript) {
+                    chartScript.textContent = nextChart.textContent;
+                    drawTechnicalChart();
+                }
+                updateSentimentMeter();
+                updateScoreBars();
             };
 
-            const syncStoredPrice = () => {
-                if (!priceInput) {
-                    return;
+            const buildUrlFromForm = (form) => {
+                const url = new URL(window.location.href);
+                url.search = "";
+                const formData = new FormData(form);
+                for (const [key, value] of formData.entries()) {
+                    if (value !== "") {
+                        url.searchParams.set(key, value);
+                    }
                 }
-                const value = normalizePrice(priceInput.value);
-                if (value !== null) {
-                    writeStorage(String(value));
-                }
-            };
-
-            const getRefreshCsrfToken = () => {
-                if (!refreshForm) {
-                    return "";
-                }
-                return new FormData(refreshForm).get("csrfmiddlewaretoken") || "";
-            };
-
-            const buildRefreshBody = () => {
-                const body = form ? new FormData(form) : new FormData();
-                body.delete("price");
-                body.set("action", "update");
-                const csrfToken = getRefreshCsrfToken();
-                if (csrfToken) {
-                    body.set("csrfmiddlewaretoken", csrfToken);
-                }
-                return body;
+                return url;
             };
 
             const requestUpdate = async (url, options = {}) => {
                 const method = options.method || "GET";
-                const headers = {
-                    "X-Requested-With": "XMLHttpRequest",
-                };
-                const csrfToken = getRefreshCsrfToken();
-                if (method === "POST" && csrfToken) {
-                    headers["X-CSRFToken"] = csrfToken;
+                const headers = {"X-Requested-With": "XMLHttpRequest"};
+                if (method === "POST") {
+                    const token = new FormData(refreshForm).get("csrfmiddlewaretoken");
+                    if (token) {
+                        headers["X-CSRFToken"] = token;
+                    }
                 }
                 try {
                     const response = await fetch(method === "POST" ? window.location.pathname : url.toString(), {
@@ -675,25 +550,21 @@
                     const html = await response.text();
                     const doc = new DOMParser().parseFromString(html, "text/html");
                     syncFieldsFromDoc(doc);
-                    syncStoredPrice();
-                    window.history.replaceState({}, "", buildUrlFromForm().toString());
+                    if (method === "GET") {
+                        window.history.replaceState({}, "", url.toString());
+                    }
                     return true;
-                } catch (e) {
+                } catch (error) {
                     return false;
                 }
             };
 
-            if (storedPrice !== null && storedPrice !== inputPrice) {
-                requestUpdate(buildUrlFromForm());
-            }
-
-            if (form) {
+            forms.forEach((form) => {
                 form.addEventListener("submit", (event) => {
                     event.preventDefault();
-                    const url = buildUrlFromForm();
-                    requestUpdate(url);
+                    requestUpdate(buildUrlFromForm(form));
                 });
-            }
+            });
 
             if (refreshForm) {
                 refreshForm.addEventListener("submit", async (event) => {
@@ -702,21 +573,176 @@
                     if (refreshButton) {
                         refreshButton.disabled = true;
                     }
-                    try {
-                        const updated = await requestUpdate(buildUrlFromForm(), {
-                            method: "POST",
-                            body: buildRefreshBody(),
-                        });
-                        if (!updated) {
-                            setPriceWarning(true);
-                        }
-                    } finally {
-                        if (refreshButton) {
-                            refreshButton.disabled = false;
-                        }
+                    const body = new FormData(refreshForm);
+                    const updated = await requestUpdate(new URL(window.location.href), {
+                        method: "POST",
+                        body,
+                    });
+                    if (!updated) {
+                        setPriceWarning(true);
+                    }
+                    if (refreshButton) {
+                        refreshButton.disabled = false;
                     }
                 });
             }
+
+            function updateSentimentMeter() {
+                document.querySelectorAll(".sentiment-meter").forEach((meter) => {
+                    const score = Number(meter.getAttribute("data-score") || 0);
+                    const fill = meter.querySelector(".sentiment-meter__fill");
+                    const value = Math.max(0, Math.min(1, (score + 100) / 200));
+                    if (fill) {
+                        fill.style.transform = `scaleX(${value})`;
+                        fill.classList.toggle("is-bearish", score < 0);
+                    }
+                });
+            }
+
+            function updateScoreBars() {
+                document.querySelectorAll(".wm-score-track i").forEach((bar) => {
+                    const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
+                    bar.style.transform = `scaleX(${value / 100})`;
+                });
+            }
+
+            function drawTechnicalChart() {
+                const container = document.getElementById("technical-chart");
+                const source = document.getElementById("basecalc-chart-data");
+                if (!container || !source) {
+                    return;
+                }
+                container.dataset.rendered = "pending";
+                let data;
+                try {
+                    data = JSON.parse(source.textContent);
+                } catch (error) {
+                    container.dataset.rendered = "error";
+                    return;
+                }
+                const points = data.points || [];
+                if (window.basecalcChart) {
+                    window.basecalcChart.remove();
+                    window.basecalcChart = null;
+                }
+                container.innerHTML = "";
+                if (!points.length) {
+                    container.innerHTML = '<div class="chart-fallback">チャートデータ待ち</div>';
+                    container.dataset.rendered = "empty";
+                    return;
+                }
+                if (!window.LightweightCharts) {
+                    container.innerHTML = '<div class="chart-fallback">チャートライブラリ読込待ち</div>';
+                    container.dataset.rendered = "fallback";
+                    return;
+                }
+
+                const chart = LightweightCharts.createChart(container, {
+                    width: container.clientWidth,
+                    height: container.clientHeight,
+                    layout: {
+                        background: { color: "#0b1220" },
+                        textColor: "#94a3b8",
+                    },
+                    grid: {
+                        vertLines: { color: "rgba(148, 163, 184, 0.08)" },
+                        horzLines: { color: "rgba(148, 163, 184, 0.12)" },
+                    },
+                    rightPriceScale: {
+                        borderColor: "rgba(148, 163, 184, 0.18)",
+                    },
+                    timeScale: {
+                        borderColor: "rgba(148, 163, 184, 0.18)",
+                        timeVisible: data.timeframe !== "1d",
+                        secondsVisible: false,
+                    },
+                    crosshair: {
+                        mode: LightweightCharts.CrosshairMode.Normal,
+                    },
+                });
+
+                const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+                    upColor: "#4ade80",
+                    downColor: "#f87171",
+                    borderVisible: false,
+                    wickUpColor: "#4ade80",
+                    wickDownColor: "#f87171",
+                });
+                candleSeries.setData(points.map((point) => ({
+                    time: point.time,
+                    open: point.open,
+                    high: point.high,
+                    low: point.low,
+                    close: point.close,
+                })));
+
+                addLineSeries(chart, points, "ema5", "#4ade80", 1);
+                addLineSeries(chart, points, "ema20", "#38bdf8", 1);
+                addLineSeries(chart, points, "ema60", "#a78bfa", 1);
+                addLineSeries(chart, points, "vwap", "#fbbf24", 1);
+                addLineSeries(chart, points, "bbUpper", "rgba(56, 189, 248, 0.55)", 1);
+                addLineSeries(chart, points, "bbLower", "rgba(56, 189, 248, 0.55)", 1);
+
+                (data.upsideTargets || []).slice(0, 2).forEach((target) => {
+                    addPriceLine(candleSeries, target.price, "#4ade80", target.label);
+                });
+                (data.downsideTargets || []).slice(0, 2).forEach((target) => {
+                    addPriceLine(candleSeries, target.price, "#f87171", target.label);
+                });
+                addPriceLine(candleSeries, data.invalidation, "#fbbf24", "無効化");
+                addPriceLine(candleSeries, data.recentHigh, "#38bdf8", "高値");
+                addPriceLine(candleSeries, data.recentLow, "#38bdf8", "安値");
+
+                chart.timeScale().fitContent();
+                window.basecalcChart = chart;
+                container.dataset.rendered = "true";
+            }
+
+            function addLineSeries(chart, points, key, color, lineWidth) {
+                const seriesData = points
+                    .filter((point) => Number.isFinite(point[key]))
+                    .map((point) => ({time: point.time, value: point[key]}));
+                if (!seriesData.length) {
+                    return;
+                }
+                const series = chart.addSeries(LightweightCharts.LineSeries, {
+                    color,
+                    lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                });
+                series.setData(seriesData);
+            }
+
+            function addPriceLine(series, price, color, title) {
+                if (!Number.isFinite(price)) {
+                    return;
+                }
+                series.createPriceLine({
+                    price,
+                    color,
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title,
+                });
+            }
+
+            function resizeTechnicalChart() {
+                const container = document.getElementById("technical-chart");
+                if (!container || !window.basecalcChart) {
+                    return;
+                }
+                window.basecalcChart.applyOptions({
+                    width: container.clientWidth,
+                    height: container.clientHeight,
+                });
+            }
+
+            updateSentimentMeter();
+            updateScoreBars();
+            drawTechnicalChart();
+            window.addEventListener("resize", resizeTechnicalChart);
         });
     </script>
 </body>

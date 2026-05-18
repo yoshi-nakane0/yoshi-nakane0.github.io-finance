@@ -1,0 +1,188 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>basecalc - 予測履歴</title>
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=technical-20260518-5">
+</head>
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="basecalc履歴" page_slug="basecalc" %}
+
+        <main class="content">
+            <div class="history-nav">
+                <a href="{% url 'basecalc:index' %}" class="btn-base btn-outline">判定へ戻る</a>
+            </div>
+
+            <section class="card wm-hero wm-neutral">
+                <div class="wm-hero__top">
+                    <div>
+                        <span class="eyebrow">Prediction History</span>
+                        <h1 class="wm-direction">予測履歴</h1>
+                        <div class="wm-subline">
+                            <span>{{ horizon }}</span>
+                            <span>｜</span>
+                            <span>検証数 {{ summary.total_predictions }}</span>
+                        </div>
+                    </div>
+                    <div class="confidence-badge confidence-middle">検証</div>
+                </div>
+                <div class="summary-grid history-summary">
+                    <div class="metric-box">
+                        <label>方向一致</label>
+                        <div class="value">{{ summary.directional_accuracy|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>T1到達</label>
+                        <div class="value">{{ summary.target_t1_hit_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>無効化</label>
+                        <div class="value">{{ summary.invalidation_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>平均損益</label>
+                        <div class="value">{{ summary.avg_return_pct|floatformat:2 }}%</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <form method="get" action="" class="history-filter">
+                    <select name="horizon" class="erp-input erp-select" aria-label="検証期間">
+                        {% for item in horizons %}
+                        <option value="{{ item }}" {% if horizon == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="state_key" class="erp-input erp-select" aria-label="局面">
+                        <option value="">すべて</option>
+                        {% for state in state_options %}
+                        <option value="{{ state.state_key }}" {% if state_key == state.state_key %}selected{% endif %}>{{ state.state_label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="date" name="from" class="erp-input" value="{{ date_from }}" aria-label="開始日">
+                    <input type="date" name="to" class="erp-input" value="{{ date_to }}" aria-label="終了日">
+                    <button type="submit" class="btn-base btn-primary">絞り込み</button>
+                </form>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-amber">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">改善候補</div>
+                </div>
+                <div class="insight-list">
+                    {% for insight in improvement_insights %}
+                    <article class="insight-item insight-{{ insight.severity }}">
+                        <div>
+                            <strong>{{ insight.title }}</strong>
+                            <span>{{ insight.metric }}</span>
+                        </div>
+                        <p>{{ insight.detail }}</p>
+                        <small>{{ insight.suggestion }}</small>
+                    </article>
+                    {% empty %}
+                    <div class="notice-text">改善候補はまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-purple">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 17h16"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">局面別</div>
+                </div>
+                <div class="state-table">
+                    {% for row in state_summaries %}
+                    <div class="state-row">
+                        <strong>{{ row.state_label }}</strong>
+                        <span>件数 {{ row.total_predictions }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>T1 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">検証済みデータはまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 12h10"></path>
+                            <path d="M7 16h6"></path>
+                            <path d="M7 8h8"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">予測一覧</div>
+                </div>
+                <div class="history-list">
+                    {% for row in history_rows %}
+                    <article class="history-item">
+                        <div class="history-item__head">
+                            <div>
+                                <time>{{ row.prediction.created_at|date:"Y-m-d H:i" }}</time>
+                                <strong>{{ row.prediction.state_label }}</strong>
+                            </div>
+                            <span class="history-direction direction-{{ row.prediction.direction }}">{{ row.direction_label }}</span>
+                        </div>
+                        <div class="history-item__grid">
+                            <div>
+                                <span>価格</span>
+                                <strong>{{ row.prediction.price|floatformat:0|intcomma }}</strong>
+                            </div>
+                            <div>
+                                <span>Score</span>
+                                <strong>{{ row.prediction.sentiment_score }}</strong>
+                            </div>
+                            <div>
+                                <span>T1 / T2</span>
+                                <strong>
+                                    {% if row.target_1 %}{{ row.target_1|floatformat:0|intcomma }}{% else %}N/A{% endif %}
+                                    /
+                                    {% if row.target_2 %}{{ row.target_2|floatformat:0|intcomma }}{% else %}N/A{% endif %}
+                                </strong>
+                            </div>
+                            <div>
+                                <span>無効化</span>
+                                <strong>{% if row.prediction.invalidation_price %}{{ row.prediction.invalidation_price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong>
+                            </div>
+                        </div>
+                        {% if row.outcome %}
+                        <div class="history-outcome">
+                            <span>結果 {{ row.outcome.realized_return_pct|floatformat:2 }}%</span>
+                            <span>方向 {% if row.outcome.direction_hit %}一致{% else %}不一致{% endif %}</span>
+                            <span>T1 {% if row.outcome.upside_t1_hit or row.outcome.downside_t1_hit %}到達{% else %}未達{% endif %}</span>
+                            <span>無効化 {% if row.outcome.invalidation_hit %}到達{% else %}未達{% endif %}</span>
+                        </div>
+                        {% else %}
+                        <div class="history-outcome muted-row">この期間の検証待ち</div>
+                        {% endif %}
+                    </article>
+                    {% empty %}
+                    <div class="notice-text">予測履歴はまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -5,4 +5,7 @@ app_name = 'basecalc'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('history/', views.history, name='history'),
+    path('api/snapshot/', views.snapshot_api, name='snapshot_api'),
+    path('api/performance/', views.performance_api, name='performance_api'),
 ]

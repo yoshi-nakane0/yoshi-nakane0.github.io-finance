@@ -1,10 +1,12 @@
 import logging
 import csv
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
 from .nikkei_bias import HEADERS, REQUEST_TIMEOUT_SEC
+from .data_sources import normalize_chart_payload, snapshot_from_quote_row
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,12 @@ YAHOO_CHART_URLS = (
 NIKKEI_FUTURES_SYMBOL = "NIY=F"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/"
 STOOQ_FALLBACK_SYMBOLS = ("nk.f", "^nkx")
+YAHOO_DAILY_CONFIG = ("6mo", "1d", "1d")
+YAHOO_INTRADAY_CONFIGS = {
+    "5m": ("5d", "5m", "5m"),
+    "15m": ("10d", "15m", "15m"),
+    "1h": ("1mo", "1h", "1h"),
+}
 
 
 def _to_float(value):
@@ -43,9 +51,31 @@ def _clean_numbers(values):
 
 
 def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
+    snapshot = _get_yahoo_chart_snapshot(symbol, *YAHOO_DAILY_CONFIG)
+    if snapshot is None:
+        fallback = _get_stooq_snapshot()
+        if fallback:
+            return fallback
+        return None
+
+    timeframes = {"1d": snapshot}
+    with ThreadPoolExecutor(max_workers=len(YAHOO_INTRADAY_CONFIGS)) as executor:
+        intraday_futures = {
+            key: executor.submit(_get_yahoo_chart_snapshot, symbol, *config)
+            for key, config in YAHOO_INTRADAY_CONFIGS.items()
+        }
+        for key, future in intraday_futures.items():
+            value = future.result()
+            if value and value.get("closes"):
+                timeframes[key] = value
+    snapshot["timeframes"] = timeframes
+    return snapshot
+
+
+def _get_yahoo_chart_snapshot(symbol, range_value, interval, timeframe):
     params = {
-        "range": "1mo",
-        "interval": "1d",
+        "range": range_value,
+        "interval": interval,
         "includePrePost": "true",
     }
     payload = None
@@ -64,53 +94,18 @@ def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
         except (requests.RequestException, ValueError) as exc:
             last_error = exc
     if payload is None:
-        fallback = _get_stooq_snapshot()
-        if fallback:
-            return fallback
         logger.warning("Nikkei futures fetch failed: %s", last_error)
         return None
 
-    result = (payload.get("chart", {}).get("result") or [None])[0]
-    if not isinstance(result, dict):
+    snapshot = normalize_chart_payload(
+        payload,
+        symbol,
+        timeframe=timeframe,
+        interval=interval,
+    )
+    if snapshot is None:
         return None
-
-    meta = result.get("meta") or {}
-    quote = (result.get("indicators", {}).get("quote") or [{}])[0]
-    closes = _clean_numbers(quote.get("close"))
-    highs = _clean_numbers(quote.get("high"))
-    lows = _clean_numbers(quote.get("low"))
-
-    price = _to_float(meta.get("regularMarketPrice"))
-    if price is None and closes:
-        price = closes[-1]
-    if price is None:
-        return None
-
-    previous_close = _to_float(meta.get("chartPreviousClose"))
-    if previous_close is None:
-        previous_close = _to_float(meta.get("regularMarketPreviousClose"))
-    if previous_close is None and len(closes) >= 2:
-        previous_close = closes[-2]
-
-    changes = [
-        abs(_pct_change(current, previous))
-        for previous, current in zip(closes, closes[1:])
-    ]
-    changes = [change for change in changes if change is not None]
-
-    return {
-        "symbol": symbol,
-        "name": meta.get("shortName") or meta.get("symbol") or symbol,
-        "price": round(price, 0),
-        "previous_close": previous_close,
-        "change_pct": _pct_change(price, previous_close),
-        "closes": closes,
-        "recent_high": max(highs[-10:] or closes[-10:] or [price]),
-        "recent_low": min(lows[-10:] or closes[-10:] or [price]),
-        "avg_abs_move_pct": (
-            sum(changes[-5:]) / len(changes[-5:]) if changes[-5:] else None
-        ),
-    }
+    return snapshot
 
 
 def _get_stooq_snapshot():
@@ -136,24 +131,10 @@ def _get_stooq_snapshot():
         if not rows:
             continue
         row = rows[0]
-        close = _to_float(row.get("Close"))
-        open_price = _to_float(row.get("Open"))
-        high = _to_float(row.get("High"))
-        low = _to_float(row.get("Low"))
-        if close is None:
+        snapshot = snapshot_from_quote_row(row, symbol, today)
+        if snapshot is None:
             continue
-        snapshot = {
-            "symbol": row.get("Symbol") or symbol.upper(),
-            "name": "Nikkei quote fallback",
-            "price": round(close, 0),
-            "previous_close": open_price,
-            "change_pct": _pct_change(close, open_price),
-            "closes": [value for value in (open_price, close) if value is not None],
-            "recent_high": high or close,
-            "recent_low": low or close,
-            "avg_abs_move_pct": _pct_change(high, low) if high and low else None,
-        }
-        if row.get("Date") == today:
+        if not snapshot.get("is_stale"):
             return snapshot
         stale_candidate = stale_candidate or snapshot
     return stale_candidate

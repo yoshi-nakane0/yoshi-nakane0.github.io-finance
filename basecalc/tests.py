@@ -7,9 +7,15 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .anchor_snapshot import load_anchor_snapshot
 from .futures_sentiment import calculate_futures_sentiment
+from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
+from .models import MarketSnapshot, PredictionOutcome, WorldModelPrediction
+from .outcomes import evaluate_due_predictions, improvement_insights
+from .targets import build_targets
+from .world_model import build_world_model
 
 
 class BasecalcUpdateSecurityTests(TestCase):
@@ -20,7 +26,6 @@ class BasecalcUpdateSecurityTests(TestCase):
         with (
             patch('basecalc.views.get_nikkei_per_values') as per_values,
             patch('basecalc.views.get_jgb10y_yield_percent') as jgb_yield,
-            patch('basecalc.views.get_nikkei_futures_snapshot') as futures_price,
         ):
             response = self.client.get(
                 reverse('basecalc:index'),
@@ -30,7 +35,6 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         per_values.assert_not_called()
         jgb_yield.assert_not_called()
-        futures_price.assert_not_called()
 
     def test_anonymous_post_update_is_forbidden(self):
         response = self.client.post(
@@ -41,9 +45,37 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_refresh_button_is_hidden_for_anonymous_users(self):
-        response = self.client.get(reverse('basecalc:index'))
+        response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
 
         self.assertNotContains(response, 'id="price-refresh"')
+
+    def test_get_without_price_uses_cached_manual_price_only(self):
+        cache.set('nikkei_price', 41000, timeout=300)
+
+        with (
+            patch('basecalc.views.get_nikkei_per_values') as per_values,
+            patch('basecalc.views.get_jgb10y_yield_percent') as jgb_yield,
+        ):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        per_values.assert_not_called()
+        jgb_yield.assert_not_called()
+        self.assertEqual(response.context['world_model']['price'], 41000)
+        self.assertEqual(cache.get('nikkei_price'), 41000)
+
+    def test_manual_price_input_is_kept_for_next_view(self):
+        response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(cache.get('nikkei_price'), 42000)
+        self.assertContains(response, 'name="price" class="erp-input price-input" value="42000"')
+
+        response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['world_model']['price'], 42000)
+        self.assertContains(response, 'name="price" class="erp-input price-input" value="42000"')
 
     def test_staff_post_update_fetches_external_data(self):
         user = User.objects.create_user(
@@ -65,18 +97,6 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'basecalc.views.get_jgb10y_yield_percent',
                 return_value=1.2,
             ) as jgb_yield,
-            patch(
-                'basecalc.views.get_nikkei_futures_snapshot',
-                return_value={
-                    'price': 41000,
-                    'previous_close': 40000,
-                    'change_pct': 2.5,
-                    'closes': [39000, 39500, 40000, 41000],
-                    'recent_high': 41000,
-                    'recent_low': 39000,
-                    'avg_abs_move_pct': 1.2,
-                },
-            ) as futures_price,
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -86,10 +106,9 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         per_values.assert_called_once()
         jgb_yield.assert_called_once()
-        futures_price.assert_called_once()
         self.assertEqual(cache.get('nikkei_forward_per'), 18.5)
         self.assertEqual(cache.get('nikkei_jgb10y_yield_percent'), 1.2)
-        self.assertEqual(cache.get('nikkei_price'), 41000)
+        self.assertEqual(cache.get('nikkei_price'), 40000)
 
 
 class BasecalcAnchorSnapshotTests(TestCase):
@@ -224,3 +243,305 @@ class BasecalcFuturesSentimentTests(TestCase):
         self.assertEqual(result['continuity_label'], '継続しやすい')
         self.assertEqual(result['strategy_label'], '戻り売り優勢')
         self.assertLess(result['lower_target'], 47000)
+
+
+class BasecalcTechnicalIndicatorTests(TestCase):
+    def test_indicators_return_latest_values(self):
+        closes = [100 + index for index in range(40)]
+        highs = [close + 2 for close in closes]
+        lows = [close - 2 for close in closes]
+
+        self.assertGreater(calculate_ema(closes, 5)[-1], calculate_ema(closes, 20)[-1])
+        self.assertGreater(calculate_rsi(closes, 14)[-1], 50)
+        self.assertGreater(calculate_macd(closes)['histogram'][-1], -1)
+        self.assertIsNotNone(calculate_atr(highs, lows, closes, 14)[-1])
+
+
+class BasecalcWorldModelTests(TestCase):
+    def test_world_model_outputs_required_dashboard_fields(self):
+        closes = [40000 + index * 80 for index in range(80)]
+        snapshot = {
+            'symbol': 'NIY=F',
+            'price': closes[-1],
+            'previous_close': closes[-2],
+            'change_pct': 0.2,
+            'opens': [close - 30 for close in closes],
+            'highs': [close + 120 for close in closes],
+            'lows': [close - 140 for close in closes],
+            'closes': closes,
+            'volumes': [1000 + index for index in range(80)],
+            'timestamps': [1700000000 + index * 86400 for index in range(80)],
+        }
+
+        result = build_world_model(closes[-1], snapshot)
+
+        self.assertTrue(result['is_ready'])
+        self.assertGreaterEqual(result['sentiment_score'], -100)
+        self.assertLessEqual(result['sentiment_score'], 100)
+        self.assertGreaterEqual(len(result['upside_targets']), 2)
+        self.assertGreaterEqual(len(result['downside_targets']), 2)
+        self.assertGreaterEqual(len(result['evidence']), 3)
+
+    def test_world_model_uses_intraday_timeframes(self):
+        daily_closes = [40000 + index * 30 for index in range(80)]
+        intraday_closes = [42300 + index * 10 for index in range(48)]
+        snapshot = {
+            'symbol': 'NIY=F',
+            'price': intraday_closes[-1],
+            'previous_close': daily_closes[-2],
+            'change_pct': 0.4,
+            'opens': [close - 20 for close in daily_closes],
+            'highs': [close + 100 for close in daily_closes],
+            'lows': [close - 100 for close in daily_closes],
+            'closes': daily_closes,
+            'volumes': [1000 for _ in daily_closes],
+            'timeframes': {
+                '1d': {
+                    'opens': [close - 20 for close in daily_closes],
+                    'highs': [close + 100 for close in daily_closes],
+                    'lows': [close - 100 for close in daily_closes],
+                    'closes': daily_closes,
+                    'volumes': [1000 for _ in daily_closes],
+                },
+                '15m': {
+                    'opens': [close - 5 for close in intraday_closes],
+                    'highs': [close + 20 for close in intraday_closes],
+                    'lows': [close - 20 for close in intraday_closes],
+                    'closes': intraday_closes,
+                    'volumes': [100 for _ in intraday_closes],
+                    'timestamps': [1700000000 + index * 900 for index in range(48)],
+                },
+            },
+        }
+
+        result = build_world_model(intraday_closes[-1], snapshot)
+
+        self.assertTrue(result['timeframe_summary'])
+        self.assertEqual(result['chart_points']['timeframe'], '15m')
+        self.assertIsInstance(result['chart_points']['points'][0]['time'], int)
+
+    def test_targets_are_split_above_and_below_price(self):
+        targets = build_targets(
+            {
+                'price': 41000,
+                'atr14': 300,
+                'previous_high': 41200,
+                'previous_low': 40700,
+                'recent_high': 41400,
+                'recent_low': 40500,
+                'vwap': 40850,
+                'ema20': 40900,
+                'pivots': {'r1': 41300, 'r2': 41600, 's1': 40600, 's2': 40300},
+            }
+        )
+
+        self.assertTrue(all(target['price'] > 41000 for target in targets['upside']))
+        self.assertTrue(all(target['price'] < 41000 for target in targets['downside']))
+
+    def test_snapshot_api_returns_world_model_json(self):
+        response = self.client.get(reverse('basecalc:snapshot_api'), {'price': '41000'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('sentiment_score', payload)
+        self.assertIn('targets', payload)
+
+    def test_staff_refresh_saves_prediction(self):
+        user = User.objects.create_user(
+            username='basecalc-world-model-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+        closes = [40000 + index * 50 for index in range(80)]
+
+        with (
+            patch(
+                'basecalc.views.get_nikkei_per_values',
+                return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
+            ),
+            patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
+        ):
+            response = self.client.post(
+                reverse('basecalc:index'),
+                {'action': 'update', 'price': str(closes[-1])},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(WorldModelPrediction.objects.count(), 1)
+
+    def test_staff_refresh_does_not_replace_manual_price_with_last_good_snapshot(self):
+        user = User.objects.create_user(
+            username='basecalc-fallback-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+        cache.set(
+            'nikkei_futures_snapshot_last_good',
+            {
+                'price': 41200,
+                'previous_close': 41000,
+                'change_pct': 0.49,
+                'opens': [41000, 41100],
+                'highs': [41300, 41400],
+                'lows': [40900, 41050],
+                'closes': [41000, 41200],
+                'volumes': [1000, 1000],
+            },
+            timeout=None,
+        )
+
+        with (
+            patch(
+                'basecalc.views.get_nikkei_per_values',
+                return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
+            ),
+            patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
+        ):
+            response = self.client.post(
+                reverse('basecalc:index'),
+                {'action': 'update', 'price': '40000'},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['world_model']['price'], 40000)
+        self.assertEqual(cache.get('nikkei_price'), 40000)
+
+    def test_history_page_shows_prediction_rows(self):
+        prediction = WorldModelPrediction.objects.create(
+            price=41000,
+            state_key='return_sell',
+            state_label='戻り売り',
+            direction='down',
+            sentiment_score=-45,
+            continuation_score=70,
+            shock_score=20,
+            confidence='Middle',
+            main_scenario='test',
+            invalidation_price=41400,
+            upside_targets=[{'price': 41400}, {'price': 41800}],
+            downside_targets=[{'price': 40600}, {'price': 40200}],
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=40500,
+            realized_return_pct=-1.22,
+            direction_hit=True,
+            downside_t1_hit=True,
+        )
+
+        response = self.client.get(reverse('basecalc:history'), {'horizon': '1d'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '予測履歴')
+        self.assertContains(response, '戻り売り')
+        self.assertContains(response, '方向 一致')
+
+    def test_improvement_insights_detect_weak_state(self):
+        for index in range(5):
+            prediction = WorldModelPrediction.objects.create(
+                price=41000,
+                state_key='return_sell',
+                state_label='戻り売り',
+                direction='down',
+                sentiment_score=-45,
+                continuation_score=70,
+                shock_score=20,
+                confidence='Middle',
+                main_scenario='test',
+                invalidation_price=41400,
+                upside_targets=[{'price': 41400}, {'price': 41800}],
+                downside_targets=[{'price': 40600}, {'price': 40200}],
+                evidence=[],
+                features={'symbol': 'NIY=F'},
+            )
+            PredictionOutcome.objects.create(
+                prediction=prediction,
+                horizon='1d',
+                evaluated_at=timezone.now(),
+                price_at_evaluation=41600 + index,
+                realized_return_pct=1.46,
+                direction_hit=False,
+                invalidation_hit=True,
+            )
+
+        insights = improvement_insights('1d')
+
+        self.assertTrue(any('方向判定' in item['title'] for item in insights))
+        self.assertTrue(any('無効化ライン' in item['title'] for item in insights))
+
+    def test_history_page_shows_improvement_insights(self):
+        for index in range(5):
+            prediction = WorldModelPrediction.objects.create(
+                price=41000,
+                state_key='dip_buy',
+                state_label='押し目買い',
+                direction='up',
+                sentiment_score=42,
+                continuation_score=62,
+                shock_score=25,
+                confidence='Middle',
+                main_scenario='test',
+                invalidation_price=40600,
+                upside_targets=[{'price': 41400}, {'price': 41800}],
+                downside_targets=[{'price': 40600}, {'price': 40200}],
+                evidence=[],
+                features={'symbol': 'NIY=F'},
+            )
+            PredictionOutcome.objects.create(
+                prediction=prediction,
+                horizon='1d',
+                evaluated_at=timezone.now(),
+                price_at_evaluation=40500 - index,
+                realized_return_pct=-1.22,
+                direction_hit=False,
+                invalidation_hit=True,
+            )
+
+        response = self.client.get(reverse('basecalc:history'), {'horizon': '1d'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '改善候補')
+        self.assertContains(response, '押し目買い')
+
+    def test_outcome_evaluation_includes_3d_and_5d_horizons(self):
+        created_at = timezone.now() - timezone.timedelta(days=6)
+        prediction = WorldModelPrediction.objects.create(
+            price=41000,
+            state_key='bull_trend_continuation',
+            state_label='上昇継続',
+            direction='up',
+            sentiment_score=55,
+            continuation_score=70,
+            shock_score=20,
+            confidence='Middle',
+            main_scenario='test',
+            invalidation_price=40500,
+            upside_targets=[{'price': 41400}, {'price': 41800}],
+            downside_targets=[{'price': 40600}, {'price': 40200}],
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+        )
+        WorldModelPrediction.objects.filter(id=prediction.id).update(created_at=created_at)
+        prediction.refresh_from_db()
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            price=41900,
+            timeframe='1d',
+            source='test',
+        )
+
+        evaluate_due_predictions(41600, now=timezone.now())
+
+        horizons = set(
+            PredictionOutcome.objects.filter(prediction=prediction).values_list(
+                'horizon',
+                flat=True,
+            )
+        )
+        self.assertTrue({'1h', '4h', '1d', '3d', '5d'}.issubset(horizons))
