@@ -32,10 +32,22 @@ fi
 if [ -n "${FRED_API_KEY:-}" ]; then
   if ! $PYTHON_BIN manage.py refresh_macro_data; then
     echo "Macro data refresh failed; continuing with existing data"
+    $PYTHON_BIN manage.py record_macro_update_status \
+      --source vercel_build \
+      --status failed \
+      --phase refresh_macro_data \
+      --message "refresh_macro_data failed during Vercel build" || true
   fi
 else
   echo "FRED_API_KEY is not set; skipping macro data refresh"
+  $PYTHON_BIN manage.py record_macro_update_status \
+    --source vercel_build \
+    --status skipped \
+    --message "FRED_API_KEY is not set; skipped macro data refresh" || true
 fi
+
+# 日次更新で増えた古い行を削除し、同梱 SQLite を無料枠内に保つ
+$PYTHON_BIN manage.py purge_old_data
 
 # Macro ページの重い計算結果を deploy 時に作り、アクセス時の 504 を防ぐ
 $PYTHON_BIN manage.py precompute_dashboard

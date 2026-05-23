@@ -12,12 +12,15 @@ import logging
 from datetime import date, datetime
 from typing import Any, Optional
 
+from django.utils import timezone
+
 logger = logging.getLogger(__name__)
 
 DASHBOARD_CACHE_KEY = 'macro_index_v3'
 LEGACY_DASHBOARD_CACHE_KEYS = ('macro_index_v2', 'macro_index_v1')
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
+UPDATE_STATUS_CACHE_KEY = 'macro_update_status_v1'
 
 
 def indicator_detail_cache_key(series_id: str) -> str:
@@ -64,6 +67,28 @@ def load_dashboard_payload() -> Optional[dict]:
     if cache_obj is None:
         return None
     return cache_obj.payload
+
+
+def load_dashboard_cache_meta() -> dict:
+    from ..models import DashboardCache
+    try:
+        cache_obj = DashboardCache.objects.filter(cache_key=DASHBOARD_CACHE_KEY).first()
+        if cache_obj is None and LEGACY_DASHBOARD_CACHE_KEYS:
+            cache_obj = (
+                DashboardCache.objects
+                .filter(cache_key__in=LEGACY_DASHBOARD_CACHE_KEYS)
+                .order_by('-computed_at')
+                .first()
+            )
+    except Exception:
+        logger.exception('failed to read DashboardCache meta')
+        return {}
+    if cache_obj is None:
+        return {}
+    return {
+        'cache_key': cache_obj.cache_key,
+        'computed_at': cache_obj.computed_at.isoformat(),
+    }
 
 
 def invalidate_dashboard_cache() -> None:
@@ -134,6 +159,36 @@ def invalidate_similar_detail_caches() -> None:
     ).delete()
 
 
+def save_macro_update_status(status: dict) -> None:
+    from ..models import DashboardCache
+    payload = {
+        **status,
+        'recorded_at': status.get('recorded_at') or timezone.now().isoformat(),
+    }
+    serialized = json.loads(json.dumps(payload, default=_json_default))
+    DashboardCache.objects.update_or_create(
+        cache_key=UPDATE_STATUS_CACHE_KEY,
+        defaults={'payload': serialized},
+    )
+
+
+def load_macro_update_status() -> Optional[dict]:
+    from ..models import DashboardCache
+    try:
+        cache_obj = DashboardCache.objects.filter(
+            cache_key=UPDATE_STATUS_CACHE_KEY,
+        ).first()
+    except Exception:
+        logger.exception('failed to read macro update status')
+        return None
+    if cache_obj is None:
+        return None
+    return {
+        **cache_obj.payload,
+        'status_cache_computed_at': cache_obj.computed_at.isoformat(),
+    }
+
+
 def precompute_dashboard_payload() -> dict:
     """ビューで使う重い計算結果をまとめて返す。"""
     from .dashboard import (
@@ -141,7 +196,7 @@ def precompute_dashboard_payload() -> dict:
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
-        build_market_shock_context,
+        build_monthly_model_status,
         build_similar_periods,
     )
     from .data_sync import get_latest_observation_date
@@ -155,7 +210,7 @@ def precompute_dashboard_payload() -> dict:
         'linkages': build_linkages(),
         'indicator_cards': build_indicator_cards(),
         'crash_alert': build_crash_alert_context(),
-        'market_shock': build_market_shock_context(),
+        'monthly_model_status': build_monthly_model_status(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }
 

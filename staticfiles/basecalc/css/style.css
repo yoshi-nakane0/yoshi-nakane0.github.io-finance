@@ -123,6 +123,128 @@ body {
     grid-column: 1 / -1;
 }
 
+.us-shock {
+    border-color: rgba(46, 239, 253, 0.18);
+}
+
+.us-shock--positive {
+    border-color: rgba(75, 240, 141, 0.28);
+}
+
+.us-shock--negative {
+    border-color: rgba(248, 113, 113, 0.34);
+}
+
+.us-shock .card-header {
+    align-items: flex-start;
+}
+
+.us-shock-summary {
+    margin-top: 3px;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.us-shock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.us-shock-card {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid rgba(46, 239, 253, 0.16);
+    border-radius: 10px;
+    background: rgba(4, 18, 38, 0.66);
+}
+
+.us-shock-card--positive {
+    border-color: rgba(75, 240, 141, 0.28);
+}
+
+.us-shock-card--negative {
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+.us-shock-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.us-shock-name {
+    color: var(--color-text-main);
+    font-size: 0.95rem;
+    font-weight: 850;
+}
+
+.us-shock-badge {
+    flex: 0 0 auto;
+    max-width: 10rem;
+    padding: 4px 7px;
+    border: 1px solid rgba(46, 239, 253, 0.22);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.78);
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.us-shock-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.us-shock-label {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+}
+
+.us-shock-value {
+    color: var(--color-text-main);
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.us-shock-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.us-shock-facts span {
+    min-width: 0;
+    padding: 6px 5px;
+    border: 1px solid rgba(46, 239, 253, 0.12);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--color-text-muted);
+    font-size: 0.68rem;
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.us-shock-reason {
+    margin: 10px 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
 /* Controls */
 .erp-form {
     display: flex;

@@ -1972,121 +1972,6 @@ body {
     box-shadow: 0 0 10px rgba(53, 231, 242, 0.55);
 }
 
-.macro-market-shock {
-    border-color: rgba(112, 168, 226, 0.26);
-}
-
-.macro-market-shock--positive {
-    border-color: rgba(57, 233, 129, 0.3);
-}
-
-.macro-market-shock--negative {
-    border-color: rgba(255, 98, 111, 0.34);
-}
-
-.macro-market-shock-summary {
-    margin: 0.15rem 0 0.75rem;
-    color: var(--macro-text);
-    font-size: 0.92rem;
-    font-weight: 800;
-    line-height: 1.5;
-}
-
-.macro-market-shock-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: 0.65rem;
-}
-
-.macro-market-shock-card {
-    min-width: 0;
-    padding: 0.72rem;
-    border: 1px solid rgba(112, 168, 226, 0.24);
-    border-radius: 8px;
-    background: rgba(6, 18, 32, 0.56);
-}
-
-.macro-market-shock-card--positive {
-    border-color: rgba(57, 233, 129, 0.32);
-}
-
-.macro-market-shock-card--negative {
-    border-color: rgba(255, 98, 111, 0.34);
-}
-
-.macro-market-shock-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.55rem;
-}
-
-.macro-market-shock-name {
-    color: var(--macro-text);
-    font-size: 0.92rem;
-    font-weight: 900;
-}
-
-.macro-market-shock-badge {
-    flex: 0 0 auto;
-    max-width: 9rem;
-    padding: 0.2rem 0.44rem;
-    border: 1px solid rgba(112, 168, 226, 0.28);
-    border-radius: 8px;
-    color: var(--macro-text-secondary);
-    background: rgba(15, 23, 42, 0.72);
-    font-size: 0.68rem;
-    font-weight: 850;
-    line-height: 1.25;
-    text-align: center;
-}
-
-.macro-market-shock-main {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.6rem;
-    margin-top: 0.58rem;
-}
-
-.macro-market-shock-label {
-    color: var(--macro-text-secondary);
-    font-size: 0.74rem;
-}
-
-.macro-market-shock-value {
-    font-size: 1.45rem;
-    font-weight: 950;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
-
-.macro-market-shock-facts {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-    margin-top: 0.62rem;
-}
-
-.macro-market-shock-facts span {
-    min-width: 0;
-    padding: 0.34rem 0.38rem;
-    border: 1px solid rgba(112, 168, 226, 0.16);
-    border-radius: 8px;
-    color: var(--macro-text-secondary);
-    background: rgba(15, 23, 42, 0.46);
-    font-size: 0.68rem;
-    line-height: 1.25;
-    text-align: center;
-}
-
-.macro-market-shock-reason {
-    margin: 0.58rem 0 0;
-    color: var(--macro-text-secondary);
-    font-size: 0.76rem;
-    line-height: 1.45;
-}
-
 .macro-crash-alert {
     border-radius: 8px;
     padding: 1.05rem 1rem 1rem;
@@ -2465,6 +2350,223 @@ body {
     line-height: 1.45;
 }
 
+.macro-reliability {
+    --reliability-color: var(--macro-good);
+    border-color: rgba(57, 233, 129, 0.3);
+}
+
+.macro-reliability--warning {
+    --reliability-color: var(--macro-warn);
+    border-color: rgba(251, 191, 36, 0.36);
+}
+
+.macro-reliability--danger {
+    --reliability-color: var(--macro-bad);
+    border-color: rgba(255, 98, 111, 0.42);
+}
+
+.macro-reliability-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.macro-reliability-item {
+    min-width: 0;
+    padding: 0.54rem 0.6rem;
+    border: 1px solid rgba(112, 168, 226, 0.22);
+    border-radius: 8px;
+    background: rgba(9, 31, 55, 0.62);
+}
+
+.macro-reliability-label,
+.macro-reliability-value {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.macro-reliability-label {
+    color: var(--macro-text-secondary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.macro-reliability-value {
+    margin-top: 0.2rem;
+    color: var(--reliability-color);
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-reliability-warning-list {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.68rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-reliability-warning-list li {
+    padding: 0.44rem 0.55rem;
+    border-left: 3px solid var(--reliability-color);
+    border-radius: 0 8px 8px 0;
+    background: color-mix(in srgb, var(--reliability-color) 12%, transparent);
+    color: #f8fafc;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.macro-reliability-details {
+    margin-top: 0.7rem;
+    border-top: 1px solid rgba(112, 168, 226, 0.18);
+    padding-top: 0.52rem;
+}
+
+.macro-reliability-details > summary {
+    color: var(--macro-accent);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.macro-reliability-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-top: 0.62rem;
+}
+
+.macro-reliability-detail-title {
+    display: block;
+    color: var(--macro-text-primary);
+    font-size: 0.8rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.macro-reliability-detail-list {
+    display: grid;
+    gap: 0.28rem;
+    margin: 0.42rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-reliability-detail-list li,
+.macro-reliability-empty {
+    margin: 0.4rem 0 0;
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.macro-monthly-status {
+    --monthly-status-color: var(--macro-good);
+    border-color: rgba(57, 233, 129, 0.28);
+}
+
+.macro-monthly-status--warning {
+    --monthly-status-color: var(--macro-warn);
+    border-color: rgba(251, 191, 36, 0.36);
+}
+
+.macro-monthly-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.macro-monthly-status-item {
+    min-width: 0;
+    padding: 0.54rem 0.6rem;
+    border: 1px solid rgba(112, 168, 226, 0.22);
+    border-radius: 8px;
+    background: rgba(9, 31, 55, 0.62);
+}
+
+.macro-monthly-status-label,
+.macro-monthly-status-value {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.macro-monthly-status-label {
+    color: var(--macro-text-secondary);
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.macro-monthly-status-value {
+    margin-top: 0.2rem;
+    color: var(--monthly-status-color);
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-monthly-warning-list {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.68rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-monthly-warning-list li {
+    padding: 0.44rem 0.55rem;
+    border-left: 3px solid var(--monthly-status-color);
+    border-radius: 0 8px 8px 0;
+    background: color-mix(in srgb, var(--monthly-status-color) 12%, transparent);
+    color: #f8fafc;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.macro-monthly-details {
+    margin-top: 0.7rem;
+    border-top: 1px solid rgba(112, 168, 226, 0.18);
+    padding-top: 0.52rem;
+}
+
+.macro-monthly-details > summary {
+    color: var(--macro-accent);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.macro-monthly-card-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.62rem;
+}
+
+.macro-monthly-card {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.58rem 0.62rem;
+    border: 1px solid rgba(112, 168, 226, 0.22);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.54);
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.macro-monthly-card-title {
+    color: var(--macro-text-primary);
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
 .macro-crash-backtest {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2519,6 +2621,12 @@ body {
 
 .macro-probability-validation {
     margin-top: 0.7rem;
+    display: grid;
+    gap: 0.32rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .macro-crash-component-list {
@@ -2547,4 +2655,14 @@ body {
 .macro-crash-component--missing .macro-crash-component-score {
     color: var(--macro-bad);
     font-weight: 800;
+}
+
+@media (max-width: 520px) {
+    .macro-reliability-grid,
+    .macro-reliability-detail-grid,
+    .macro-monthly-status-grid,
+    .macro-monthly-card-list,
+    .macro-crash-metrics {
+        grid-template-columns: 1fr;
+    }
 }

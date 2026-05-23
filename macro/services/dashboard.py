@@ -7,7 +7,7 @@ views.py を薄く保つために集約。
 import json
 import logging
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Optional
@@ -18,11 +18,10 @@ from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
-from .crash_alert import compute_crash_alert
+from .crash_alert import FRESHNESS_LIMIT_DAYS, compute_crash_alert
 from .historical_crash import find_similar_crash_months
 from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
-from .market_shock import build_market_shock_context
 from .similarity import find_similar_months
 from .sparkline import generate_sparkline_svg
 
@@ -180,6 +179,190 @@ def _name_lookup() -> Dict[str, str]:
     return {
         i.fred_series_id: i.name_ja
         for i in Indicator.objects.filter(is_active=True).only('fred_series_id', 'name_ja')
+    }
+
+
+def _format_date_for_display(value) -> str:
+    if value in (None, ''):
+        return '—'
+    if isinstance(value, datetime):
+        if timezone.is_aware(value):
+            value = timezone.localtime(value)
+        return value.strftime('%Y-%m-%d %H:%M')
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        try:
+            if 'T' in value:
+                parsed = datetime.fromisoformat(value)
+                if timezone.is_aware(parsed):
+                    parsed = timezone.localtime(parsed)
+                return parsed.strftime('%Y-%m-%d %H:%M')
+            return date.fromisoformat(value).isoformat()
+        except ValueError:
+            return value
+    return str(value)
+
+
+def _format_path_mtime(path: Path) -> str:
+    if not path.exists():
+        return '—'
+    try:
+        return _format_date_for_display(
+            datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.get_current_timezone())
+        )
+    except OSError:
+        return '—'
+
+
+def _failure_item_label(item: Dict) -> str:
+    series_id = (
+        item.get('series_id')
+        or item.get('ticker')
+        or item.get('target')
+        or item.get('phase')
+        or item.get('name')
+        or '更新処理'
+    )
+    error = item.get('error') or item.get('message') or ''
+    return f'{series_id}: {error}' if error else str(series_id)
+
+
+def _normalize_update_failures(update_status: Optional[Dict]) -> List[Dict]:
+    if not update_status:
+        return []
+    raw_items = (
+        update_status.get('failed')
+        or update_status.get('failed_items')
+        or update_status.get('failures')
+        or []
+    )
+    failures = []
+    for item in raw_items:
+        if isinstance(item, dict):
+            failures.append({
+                **item,
+                'label': _failure_item_label(item),
+            })
+        else:
+            failures.append({'label': str(item)})
+    return failures
+
+
+def _active_indicator_freshness() -> Dict:
+    latest_obs_qs = (
+        Observation.objects
+        .filter(indicator=OuterRef('pk'))
+        .order_by('-observation_date')
+    )
+    indicators = list(
+        Indicator.objects
+        .filter(is_active=True)
+        .annotate(
+            latest_obs_date=Subquery(
+                latest_obs_qs.values('observation_date')[:1],
+            ),
+        )
+        .order_by('display_order')
+    )
+    today = timezone.localdate()
+    missing = []
+    stale = []
+    for indicator in indicators:
+        latest_date = indicator.latest_obs_date
+        if latest_date is None:
+            missing.append({
+                'series_id': indicator.fred_series_id,
+                'name': indicator.name_ja,
+                'label': f'{indicator.name_ja}（{indicator.fred_series_id}）',
+            })
+            continue
+        limit_days = FRESHNESS_LIMIT_DAYS.get(indicator.frequency)
+        age_days = max((today - latest_date).days, 0)
+        if limit_days is not None and age_days > limit_days:
+            stale.append({
+                'series_id': indicator.fred_series_id,
+                'name': indicator.name_ja,
+                'label': (
+                    f'{indicator.name_ja}（{latest_date.isoformat()} / '
+                    f'{age_days}日経過）'
+                ),
+                'age_days': age_days,
+            })
+    total = len(indicators)
+    fresh_count = max(total - len(missing) - len(stale), 0)
+    freshness_pct = round(fresh_count / total * 100) if total else 0
+    return {
+        'total_count': total,
+        'fresh_count': fresh_count,
+        'missing': missing,
+        'stale': stale,
+        'freshness_pct': freshness_pct,
+    }
+
+
+def build_reliability_context(
+    *,
+    last_updated=None,
+    dashboard_cache_meta: Optional[Dict] = None,
+    update_status: Optional[Dict] = None,
+    regime_model_version: Optional[str] = None,
+) -> Dict:
+    freshness = _active_indicator_freshness()
+    failures = _normalize_update_failures(update_status)
+    outcome = (update_status or {}).get('status') or 'unknown'
+    outcome_label_map = {
+        'success': '成功',
+        'partial': '一部失敗',
+        'failed': '失敗',
+        'skipped': '未実行',
+        'unknown': '記録なし',
+    }
+    warnings = []
+    if failures:
+        warnings.append(f'前回更新で {len(failures)} 件の失敗があります。')
+    if outcome == 'skipped':
+        warnings.append((update_status or {}).get('message') or '前回更新は実行されませんでした。')
+    if freshness['missing']:
+        warnings.append(f'未取得の指標が {len(freshness["missing"])} 件あります。')
+
+    freshness_pct = freshness['freshness_pct']
+    if outcome == 'failed' or freshness_pct < 60:
+        tone = 'danger'
+        freshness_label = '不足'
+    elif failures or outcome in ('partial', 'skipped') or freshness_pct < 80:
+        tone = 'warning'
+        freshness_label = '注意'
+    else:
+        tone = 'good'
+        freshness_label = '十分'
+
+    cache_computed_at = (dashboard_cache_meta or {}).get('computed_at')
+    return {
+        'tone': tone,
+        'freshness_label': freshness_label,
+        'last_data_date': _format_date_for_display(last_updated),
+        'dashboard_cache_computed_at': (
+            _format_date_for_display(cache_computed_at)
+            if cache_computed_at else '表示時に再計算'
+        ),
+        'data_freshness_pct': freshness_pct,
+        'missing_count': len(freshness['missing']),
+        'stale_count': len(freshness['stale']),
+        'total_count': freshness['total_count'],
+        'failed_count': len(failures),
+        'failed_items': failures[:8],
+        'has_more_failed_items': len(failures) > 8,
+        'missing_items': freshness['missing'][:6],
+        'stale_items': freshness['stale'][:6],
+        'warnings': warnings,
+        'update_status_label': outcome_label_map.get(outcome, outcome),
+        'update_message': (update_status or {}).get('message', ''),
+        'last_update_finished_at': _format_date_for_display(
+            (update_status or {}).get('finished_at')
+            or (update_status or {}).get('recorded_at')
+        ),
+        'regime_model_version': regime_model_version or '—',
     }
 
 
@@ -752,6 +935,7 @@ def load_crash_alert_backtest() -> Optional[Dict]:
         'target': raw.get('target'),
         'horizon_days': raw.get('horizon_days'),
         'drawdown_threshold_pct': raw.get('drawdown_threshold_pct'),
+        'updated_at': _format_path_mtime(path),
         'sample_count': raw.get('sample_count'),
         'event_count': raw.get('event_count'),
         'roc_auc_display': f'{roc_auc:.2f}' if roc_auc is not None else '—',
@@ -817,4 +1001,91 @@ def load_crash_probability_model() -> Optional[Dict]:
             if threshold_10.get('recall') is not None else '—'
         ),
         'limitations': raw.get('limitations', []),
+    }
+
+
+def build_monthly_model_status() -> Dict:
+    """月次で更新する参考モデルの状態を表示用にまとめる。"""
+    backtest = load_crash_alert_backtest()
+    probability = load_crash_probability_model()
+    lightgbm = load_lightgbm_prediction()
+
+    cards = []
+    warnings = []
+
+    if backtest:
+        cards.append({
+            'label': '急落警戒スコア検証',
+            'updated_at': backtest.get('updated_at') or '—',
+            'sample_label': (
+                f"検証 {backtest.get('sample_count') or '—'}件 / "
+                f"イベント {backtest.get('event_count') or '—'}件"
+            ),
+            'metric_label': (
+                f"ROC-AUC {backtest.get('roc_auc_display')} / "
+                f"PR-AUC {backtest.get('pr_auc_display')}"
+            ),
+            'model_label': (
+                f"{backtest.get('target') or '—'} "
+                f"{backtest.get('horizon_days') or '—'}日 "
+                f"{backtest.get('drawdown_threshold_pct') or '—'}%"
+            ),
+        })
+    else:
+        warnings.append('急落警戒スコアの月次検証ファイルがありません。')
+
+    if probability:
+        cards.append({
+            'label': '急落確率モデル',
+            'updated_at': probability.get('trained_at') or '—',
+            'sample_label': (
+                f"検証 {probability.get('validation_samples') or '—'}件 / "
+                f"イベント {probability.get('validation_event_count') or '—'}件"
+            ),
+            'metric_label': (
+                f"ROC-AUC {probability.get('roc_auc_display')} / "
+                f"PR-AUC {probability.get('pr_auc_display')}"
+            ),
+            'model_label': probability.get('model_version') or '—',
+        })
+    else:
+        warnings.append('急落確率モデルの学習結果ファイルがありません。')
+
+    if lightgbm:
+        mae_labels = [
+            f"{h.get('months')}ヶ月 {h.get('validation_mae_display')}"
+            for h in lightgbm.get('horizons', [])
+            if h.get('months') and h.get('validation_mae_display')
+        ]
+        cards.append({
+            'label': 'LightGBM参考予測',
+            'updated_at': lightgbm.get('predicted_at') or '—',
+            'sample_label': (
+                f"学習 {lightgbm.get('training_samples') or '—'}件 / "
+                f"特徴量 {lightgbm.get('feature_count') or '—'}"
+            ),
+            'metric_label': '検証誤差 ' + ' / '.join(mae_labels) if mae_labels else '検証誤差 —',
+            'model_label': lightgbm.get('model_version') or '—',
+        })
+    else:
+        warnings.append('LightGBM参考予測の学習結果ファイルがありません。')
+
+    latest_training_candidates = [
+        value for value in (
+            probability.get('trained_at') if probability else None,
+            lightgbm.get('predicted_at') if lightgbm else None,
+        )
+        if value
+    ]
+    latest_training_date = max(latest_training_candidates) if latest_training_candidates else '—'
+    latest_backtest_date = backtest.get('updated_at') if backtest else '—'
+
+    return {
+        'tone': 'warning' if warnings else 'good',
+        'status_label': '要確認' if warnings else '更新済み',
+        'latest_training_date': latest_training_date,
+        'latest_backtest_date': latest_backtest_date,
+        'cards': cards,
+        'warnings': warnings,
+        'has_any': bool(cards),
     }

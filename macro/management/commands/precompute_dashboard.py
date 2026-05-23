@@ -18,6 +18,7 @@ from macro.services.dashboard_cache import (
     precompute_dashboard_payload,
     precompute_top_similar_details,
     save_dashboard_payload,
+    save_macro_update_status,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,17 @@ class Command(BaseCommand):
             # 古いキャッシュを残すと「最新だと誤認させる」リスクがあるため全消し。
             # 次回のビュー表示はその場で同期計算（フォールバック）にする。
             DashboardCache.objects.all().delete()
+            save_macro_update_status({
+                'source': 'precompute_dashboard',
+                'status': 'failed',
+                'message': '画面キャッシュ作成に失敗しました。',
+                'success_count': 0,
+                'failed_count': 1,
+                'failed': [{
+                    'phase': 'precompute_dashboard',
+                    'error': str(exc),
+                }],
+            })
             self.stdout.write(
                 'dashboard payload precompute failed; cleared all caches'
             )

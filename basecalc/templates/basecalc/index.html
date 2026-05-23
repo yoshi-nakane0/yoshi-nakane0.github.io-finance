@@ -164,6 +164,42 @@
                 </div>
             </div>
 
+            {% if market_shock and market_shock.has_data %}
+            <section class="card us-shock us-shock--{{ market_shock.tone }}">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 12h4l3 7 4-14 3 7h4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">米国3指数の急変判定</div>
+                        <div class="us-shock-summary">{{ market_shock.summary }}</div>
+                    </div>
+                </div>
+                <div class="us-shock-grid">
+                    {% for row in market_shock.rows %}
+                    <article class="us-shock-card us-shock-card--{{ row.tone }}">
+                        <div class="us-shock-head">
+                            <span class="us-shock-name">{{ row.label }}</span>
+                            <span class="us-shock-badge">{{ row.headline }}</span>
+                        </div>
+                        <div class="us-shock-main">
+                            <span class="us-shock-label">20営業日</span>
+                            <span class="us-shock-value {% if row.direction == 'surge' %}text-green{% elif row.direction == 'drop' %}text-red{% endif %}">{{ row.momentum_20d_display }}</span>
+                        </div>
+                        <div class="us-shock-facts">
+                            <span>200日線 {{ row.dd200_display }}</span>
+                            <span>52週高値 {{ row.dd52w_display }}</span>
+                            <span>継続目安 {{ row.continuation_score_display }}</span>
+                        </div>
+                        <p class="us-shock-reason">{{ row.reason }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
             <section class="card">
                 <div class="card-header compact-header">
                     <div class="card-icon text-blue">

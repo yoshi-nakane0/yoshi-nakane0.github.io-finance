@@ -18,6 +18,7 @@ from .anchor_snapshot import (
     normalize_growth_percent,
     normalize_ratio,
 )
+from .market_shock import build_market_shock_context
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
@@ -229,6 +230,7 @@ def build_context(request, force_update=False):
     return {
         "data": data,
         "world_model": world_model,
+        "market_shock": build_market_shock_context(),
         "chart_data": world_model.get("chart_points") or {},
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,

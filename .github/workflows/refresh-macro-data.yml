@@ -8,50 +8,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: refresh-macro-indicators
+  cancel-in-progress: true
+
 jobs:
-  refresh:
+  trigger-vercel-build:
     runs-on: ubuntu-latest
-    env:
-      DJANGO_SETTINGS_MODULE: myproject.settings
-      DEBUG: "False"
-      SQLITE_DB_PATH: /tmp/macro-data.sqlite3
-      SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+    timeout-minutes: 5
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-prod.txt
-
-      - name: Apply migrations
-        run: python manage.py migrate --noinput
-
-      - name: Refresh indicators
-        run: python manage.py refresh_macro_data
-
-      - name: Purge old data
-        run: python manage.py purge_old_data
-
-      - name: Precompute dashboard cache
-        run: python manage.py precompute_dashboard
-
-      - name: Trigger Vercel redeploy
+      - name: Trigger Vercel daily macro build
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
-          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
-            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
-            echo "Triggered Vercel redeploy"
-          else
-            echo "VERCEL_DEPLOY_HOOK_URL secret not set; skipping redeploy trigger"
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL secret is not set; daily macro update cannot run." >&2
+            exit 1
           fi
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          echo "Triggered Vercel daily macro build"

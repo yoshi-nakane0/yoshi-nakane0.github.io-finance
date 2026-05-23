@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -29,7 +30,6 @@ from .services import (
     historical_crash,
     judgment,
     linkage,
-    market_shock,
     regime,
     similarity,
     sparkline,
@@ -37,7 +37,7 @@ from .services import (
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
-    def test_refresh_workflow_does_not_publish_sqlite_database(self):
+    def test_refresh_workflow_only_triggers_vercel_daily_build(self):
         workflow = (
             Path(settings.BASE_DIR)
             / '.github'
@@ -45,7 +45,17 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             / 'refresh-macro-data.yml'
         ).read_text(encoding='utf-8')
 
-        self.assertIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
+        self.assertIn('cron: "30 5 * * *"', workflow)
+        self.assertIn('VERCEL_DEPLOY_HOOK_URL', workflow)
+        self.assertIn('curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"', workflow)
+        self.assertIn('timeout-minutes: 5', workflow)
+        self.assertIn('concurrency:', workflow)
+        self.assertNotIn('actions/setup-python', workflow)
+        self.assertNotIn('pip install -r requirements-prod.txt', workflow)
+        self.assertNotIn('python manage.py refresh_macro_data', workflow)
+        self.assertNotIn('python manage.py purge_old_data', workflow)
+        self.assertNotIn('python manage.py precompute_dashboard', workflow)
+        self.assertNotIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
         self.assertNotIn('git add db.sqlite3', workflow)
         self.assertNotIn('DATA_BRANCH', workflow)
 
@@ -59,6 +69,10 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('Running finance production build bootstrap', build_script)
         self.assertIn('BUNDLED_SQLITE_PATH', build_script)
         self.assertIn('manage.py refresh_macro_data', build_script)
+        self.assertIn('manage.py purge_old_data', build_script)
+        self.assertIn('manage.py record_macro_update_status', build_script)
+        self.assertIn('--phase refresh_macro_data', build_script)
+        self.assertIn('refresh_macro_data failed during Vercel build', build_script)
         self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
         self.assertNotIn('origin/${DATA_BRANCH}:db.sqlite3', build_script)
         self.assertNotIn('ensurepip', build_script)
@@ -89,6 +103,93 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         ).read_text(encoding='utf-8')
 
         self.assertNotIn("name='macro_observation'", wsgi_source)
+
+
+class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
+    def test_monthly_command_runs_local_steps_in_order(self):
+        with mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.call_command',
+        ) as call_command_mock:
+            out = StringIO()
+            call_command('monthly_macro_maintenance', stdout=out)
+
+        self.assertEqual(
+            [call.args[0] for call in call_command_mock.call_args_list],
+            [
+                'refresh_macro_data',
+                'purge_old_data',
+                'backtest_crash_alert',
+                'train_crash_probability_model',
+                'train_crash_model',
+                'precompute_dashboard',
+            ],
+        )
+        self.assertEqual(
+            call_command_mock.call_args_list[2],
+            mock.call(
+                'backtest_crash_alert',
+                target='GSPC',
+                horizon_days=63,
+                drawdown_threshold=-10.0,
+                output='static/macro/crash_alert_backtest.json',
+                csv_output='static/macro/crash_alert_backtest.csv',
+            ),
+        )
+        self.assertEqual(
+            call_command_mock.call_args_list[3],
+            mock.call(
+                'train_crash_probability_model',
+                target='GSPC',
+                horizon_days=63,
+                drawdown_threshold=-10.0,
+                validation_months=120,
+            ),
+        )
+
+    def test_monthly_command_can_skip_refresh_and_lightgbm(self):
+        with mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.call_command',
+        ) as call_command_mock:
+            call_command(
+                'monthly_macro_maintenance',
+                skip_refresh=True,
+                skip_lightgbm=True,
+                stdout=StringIO(),
+            )
+
+        self.assertEqual(
+            [call.args[0] for call in call_command_mock.call_args_list],
+            [
+                'purge_old_data',
+                'backtest_crash_alert',
+                'train_crash_probability_model',
+                'precompute_dashboard',
+            ],
+        )
+
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_monthly_command_rejects_serverless_runtime(self):
+        with self.assertRaises(CommandError):
+            call_command('monthly_macro_maintenance')
+
+
+class UpdateLocalDataCommandTest(SimpleTestCase):
+    def test_macro_task_refreshes_data_then_precomputes_dashboard(self):
+        from macro.management.commands.update_local_data import Command
+
+        command = Command()
+        with mock.patch(
+            'macro.management.commands.update_local_data.call_command',
+        ) as call_command_mock:
+            command._run_macro(history_years=10, full_history=True)
+
+        self.assertEqual(
+            call_command_mock.call_args_list,
+            [
+                mock.call('refresh_macro_data', history_years=10, full_history=True),
+                mock.call('precompute_dashboard'),
+            ],
+        )
 
 
 class _ObsStub:
@@ -371,6 +472,35 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(condition['regime_condition_pct_display'], '—%')
         self.assertEqual(condition['regime_condition_label'], '判定保留')
 
+    def test_reliability_top_warnings_do_not_include_stale_count(self):
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id='TEST_STALE_DAILY',
+            defaults={
+                'source': Indicator.Source.FRED,
+                'name_ja': '古い日次テスト',
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.B,
+                'frequency': Indicator.Frequency.DAILY,
+                'is_active': True,
+            },
+        )
+        Observation.objects.create(
+            indicator=indicator,
+            observation_date=date(2000, 1, 1),
+            value=1.0,
+        )
+
+        context = dashboard.build_reliability_context(
+            last_updated='2026-05-17',
+        )
+
+        self.assertGreaterEqual(context['stale_count'], 1)
+        self.assertTrue(context['stale_items'])
+        self.assertNotIn(
+            f'観測日が古い指標が {context["stale_count"]} 件あります。',
+            context['warnings'],
+        )
+
 
 class DashboardCacheTest(TestCase):
     def test_load_dashboard_payload_accepts_legacy_key(self):
@@ -467,8 +597,35 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '確度')
         self.assertNotContains(r, '主要指標の観測日が古い可能性があります。')
 
+    def test_index_shows_reliability_status_from_cache(self):
+        DashboardCache.objects.create(
+            cache_key='macro_update_status_v1',
+            payload={
+                'source': 'refresh_macro_data',
+                'status': 'partial',
+                'message': '日次更新を実行しました。',
+                'failed': [{'series_id': 'VIXCLS', 'error': 'timeout'}],
+                'finished_at': '2026-05-17T05:30:00+00:00',
+            },
+        )
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '更新信頼性')
+        self.assertContains(r, '前回更新')
+        self.assertContains(r, '一部失敗')
+        self.assertContains(r, 'VIXCLS: timeout')
+        self.assertContains(r, '欠損 / 古い')
+
+    @mock.patch('macro.views.build_monthly_model_status')
     @mock.patch('macro.views.load_dashboard_payload')
-    def test_index_crash_alert_copy_uses_market_stress_wording(self, cache_mock):
+    def test_index_crash_alert_copy_uses_market_stress_wording(
+        self,
+        cache_mock,
+        monthly_status_mock,
+    ):
+        monthly_status_mock.return_value = None
         cache_mock.return_value = {
             'has_observations': True,
             'last_updated': '2026-05-17',
@@ -511,30 +668,12 @@ class MacroUrlsTest(TestCase):
                     'score': 25,
                 }],
             },
-            'market_shock': {
-                'has_data': True,
-                'tone': 'negative',
-                'summary': 'S&P500の急落は継続寄りです。',
-                'rows': [{
-                    'label': 'S&P500',
-                    'headline': '急落 中 / 継続寄り',
-                    'tone': 'negative',
-                    'direction': 'drop',
-                    'momentum_20d_display': '-8.5%',
-                    'dd200_display': '-4.0%',
-                    'dd52w_display': '-14.0%',
-                    'continuation_score_display': '80%',
-                    'reason': '下落にボラ・信用・トレンド悪化が重なっています。',
-                }],
-            },
         }
 
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, '市場ストレス・急落警戒スコア')
-        self.assertContains(r, '急変判定')
-        self.assertContains(r, 'S&amp;P500の急落は継続寄りです。')
         self.assertContains(r, '将来の暴落確率ではありません')
         self.assertContains(r, '判定強度')
         self.assertContains(r, 'データ品質')
@@ -546,8 +685,14 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '平常表示時の取り逃し')
 
     @mock.patch('macro.views.load_crash_probability_model')
+    @mock.patch('macro.views.build_monthly_model_status')
     @mock.patch('macro.views.load_dashboard_payload')
-    def test_index_shows_crash_probability_model(self, cache_mock, probability_mock):
+    def test_index_shows_crash_probability_model(
+        self,
+        cache_mock,
+        monthly_status_mock,
+        probability_mock,
+    ):
         cache_mock.return_value = {
             'has_observations': True,
             'last_updated': '2026-05-17',
@@ -557,6 +702,7 @@ class MacroUrlsTest(TestCase):
             'historical_crash_similarity': [],
             'crash_alert': None,
         }
+        monthly_status_mock.return_value = None
         probability_mock.return_value = {
             'prediction_label': '今後63日相当でGSPCが-10%以上下落する推定確率',
             'current_probability_display': '11.1%',
@@ -580,15 +726,52 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '急落確率モデル v1')
         self.assertContains(r, '11.1%')
         self.assertContains(r, '月次校正済み')
-        self.assertNotContains(r, '検証: 84件')
-        self.assertNotContains(r, 'ROC-AUC 0.77')
+        self.assertContains(r, '検証 84件 / イベント 5件')
+        self.assertContains(r, 'ROC-AUC 0.77 / PR-AUC 0.37')
+        self.assertContains(r, '学習日 2026-05-17')
+        self.assertContains(r, 'モデル crash_probability_logistic_v1')
         self.assertNotContains(r, 'Brier 0.06')
         self.assertNotContains(r, '閾値10%')
         self.assertNotContains(r, '急落は発生回数が少ないため')
         self.assertNotContains(r, '投資判断や売買推奨としては使えません')
-        self.assertNotContains(r, '学習日 2026-05-17')
         self.assertNotContains(r, 'サンプル 180')
-        self.assertNotContains(r, 'モデル crash_probability_logistic_v1')
+
+    @mock.patch('macro.views.build_monthly_model_status')
+    @mock.patch('macro.views.load_dashboard_payload')
+    def test_index_shows_monthly_model_status(self, cache_mock, monthly_status_mock):
+        cache_mock.return_value = {
+            'has_observations': True,
+            'last_updated': '2026-05-17',
+            'similar_periods': [],
+            'linkages': [],
+            'indicator_cards': [],
+            'historical_crash_similarity': [],
+            'crash_alert': None,
+        }
+        monthly_status_mock.return_value = {
+            'tone': 'good',
+            'status_label': '更新済み',
+            'latest_training_date': '2026-05-17',
+            'latest_backtest_date': '2026-05-17 10:00',
+            'warnings': [],
+            'cards': [{
+                'label': '急落確率モデル',
+                'updated_at': '2026-05-17',
+                'sample_label': '検証 120件 / イベント 6件',
+                'metric_label': 'ROC-AUC 0.82 / PR-AUC 0.30',
+                'model_label': 'crash_probability_logistic_v1',
+            }],
+        }
+
+        r = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, '月次モデル状態')
+        self.assertContains(r, '最終学習日')
+        self.assertContains(r, '2026-05-17')
+        self.assertContains(r, '月次モデルの検証情報を確認')
+        self.assertContains(r, '検証 120件 / イベント 6件')
+        self.assertContains(r, 'ROC-AUC 0.82 / PR-AUC 0.30')
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})
     @mock.patch('macro.views.build_historical_crash_similarity')
@@ -1062,72 +1245,6 @@ class CrashAlertTest(TestCase):
         self.assertEqual(label, '高警戒')
 
 
-class MarketShockTest(TestCase):
-    """急変判定の表示用ロジック。"""
-
-    def _create_price_action(self, series_id, value):
-        indicator, _ = Indicator.objects.update_or_create(
-            fred_series_id=series_id,
-            defaults={
-                'name_ja': series_id,
-                'category': Indicator.Category.MARKET,
-                'importance': Indicator.Importance.B,
-                'frequency': Indicator.Frequency.DAILY,
-                'source': Indicator.Source.YFINANCE_DAILY,
-                'is_active': True,
-            },
-        )
-        Observation.objects.filter(indicator=indicator).delete()
-        Observation.objects.create(
-            indicator=indicator,
-            observation_date=date(2026, 5, 18),
-            value=value,
-        )
-
-    def test_drop_with_credit_stress_is_continuation_biased(self):
-        self._create_price_action('PA_GSPC_MOM20', -8.5)
-        self._create_price_action('PA_GSPC_DD200', -4.0)
-        self._create_price_action('PA_GSPC_DD52W', -14.0)
-        alert = {
-            'market_stress_score': 62,
-            'category_summary': [
-                {'category': 'volatility_sentiment', 'avg_score': 65},
-                {'category': 'credit_liquidity', 'avg_score': 72},
-            ],
-        }
-
-        result = market_shock.build_market_shock_context(
-            alert=alert,
-            as_of=date(2026, 5, 18),
-        )
-
-        gspc = next(row for row in result['rows'] if row['symbol'] == 'GSPC')
-        self.assertEqual(gspc['direction'], 'drop')
-        self.assertEqual(gspc['continuation_label'], '継続寄り')
-        self.assertIn('S&P500', result['summary'])
-
-    def test_surge_with_low_stress_is_continuation_biased(self):
-        self._create_price_action('PA_IXIC_MOM20', 8.1)
-        self._create_price_action('PA_IXIC_DD200', 6.0)
-        self._create_price_action('PA_IXIC_DD52W', -2.0)
-        alert = {
-            'market_stress_score': 18,
-            'category_summary': [
-                {'category': 'volatility_sentiment', 'avg_score': 24},
-                {'category': 'credit_liquidity', 'avg_score': 12},
-            ],
-        }
-
-        result = market_shock.build_market_shock_context(
-            alert=alert,
-            as_of=date(2026, 5, 18),
-        )
-
-        nasdaq = next(row for row in result['rows'] if row['symbol'] == 'IXIC')
-        self.assertEqual(nasdaq['direction'], 'surge')
-        self.assertEqual(nasdaq['continuation_label'], '継続寄り')
-
-
 class BacktestCrashAlertCommandTest(TestCase):
     """市場ストレス検証コマンド。"""
 
@@ -1200,6 +1317,46 @@ class LightgbmPredictionLoadTest(TestCase):
         # ここでは load 関数が None または dict を返す型のみ確認
         result = dashboard.load_lightgbm_prediction()
         self.assertTrue(result is None or isinstance(result, dict))
+
+    def test_monthly_model_status_collects_validation_metadata(self):
+        with TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            macro_dir = base / 'static' / 'macro'
+            macro_dir.mkdir(parents=True)
+            (macro_dir / 'crash_alert_backtest.json').write_text(
+                '{"target":"GSPC","horizon_days":63,'
+                '"drawdown_threshold_pct":-10.0,"sample_count":240,'
+                '"event_count":19,"roc_auc":0.7115,"pr_auc":0.3983,'
+                '"thresholds":[]}',
+                encoding='utf-8',
+            )
+            (macro_dir / 'crash_probability_model.json').write_text(
+                '{"model_version":"crash_probability_logistic_v1",'
+                '"trained_at":"2026-05-17","current_probability":0.1,'
+                '"validation_samples":120,"validation_event_count":6,'
+                '"validation":{"roc_auc":0.8209,"pr_auc":0.3008}}',
+                encoding='utf-8',
+            )
+            (macro_dir / 'lightgbm_prediction.json').write_text(
+                '{"predicted_at":"2026-05-06","horizons":['
+                '{"months":1,"predicted_return_pct":0.9,'
+                '"validation_mae_pct":2.44}],'
+                '"training_samples":157,"feature_count":21,'
+                '"model_version":"v1"}',
+                encoding='utf-8',
+            )
+
+            with override_settings(BASE_DIR=base):
+                result = dashboard.build_monthly_model_status()
+
+        self.assertEqual(result['tone'], 'good')
+        self.assertEqual(result['status_label'], '更新済み')
+        self.assertEqual(result['latest_training_date'], '2026-05-17')
+        self.assertEqual(len(result['cards']), 3)
+        self.assertEqual(result['warnings'], [])
+        self.assertIn('ROC-AUC 0.82 / PR-AUC 0.30', [
+            card['metric_label'] for card in result['cards']
+        ])
 
 
 class HistoricalCrashTest(TestCase):

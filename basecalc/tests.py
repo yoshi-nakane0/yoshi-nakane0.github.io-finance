@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -12,10 +13,12 @@ from django.utils import timezone
 from .anchor_snapshot import load_anchor_snapshot
 from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
+from . import market_shock
 from .models import MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import evaluate_due_predictions, improvement_insights
 from .targets import build_targets
 from .world_model import build_world_model
+from macro.models import Indicator, Observation
 
 
 class BasecalcUpdateSecurityTests(TestCase):
@@ -109,6 +112,97 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_forward_per'), 18.5)
         self.assertEqual(cache.get('nikkei_jgb10y_yield_percent'), 1.2)
         self.assertEqual(cache.get('nikkei_price'), 40000)
+
+
+class BasecalcMarketShockTest(TestCase):
+    """米国3指数の急変判定。"""
+
+    def _create_price_action(self, series_id, value):
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id=series_id,
+            defaults={
+                'name_ja': series_id,
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.B,
+                'frequency': Indicator.Frequency.DAILY,
+                'source': Indicator.Source.YFINANCE_DAILY,
+                'is_active': True,
+            },
+        )
+        Observation.objects.filter(indicator=indicator).delete()
+        Observation.objects.create(
+            indicator=indicator,
+            observation_date=date(2026, 5, 18),
+            value=value,
+        )
+
+    def test_drop_with_credit_stress_is_continuation_biased(self):
+        self._create_price_action('PA_GSPC_MOM20', -8.5)
+        self._create_price_action('PA_GSPC_DD200', -4.0)
+        self._create_price_action('PA_GSPC_DD52W', -14.0)
+        alert = {
+            'market_stress_score': 62,
+            'category_summary': [
+                {'category': 'volatility_sentiment', 'avg_score': 65},
+                {'category': 'credit_liquidity', 'avg_score': 72},
+            ],
+        }
+
+        result = market_shock.build_market_shock_context(
+            alert=alert,
+            as_of=date(2026, 5, 18),
+        )
+
+        gspc = next(row for row in result['rows'] if row['symbol'] == 'GSPC')
+        self.assertEqual(gspc['direction'], 'drop')
+        self.assertEqual(gspc['continuation_label'], '継続寄り')
+        self.assertIn('S&P500', result['summary'])
+
+    def test_surge_with_low_stress_is_continuation_biased(self):
+        self._create_price_action('PA_IXIC_MOM20', 8.1)
+        self._create_price_action('PA_IXIC_DD200', 6.0)
+        self._create_price_action('PA_IXIC_DD52W', -2.0)
+        alert = {
+            'market_stress_score': 18,
+            'category_summary': [
+                {'category': 'volatility_sentiment', 'avg_score': 24},
+                {'category': 'credit_liquidity', 'avg_score': 12},
+            ],
+        }
+
+        result = market_shock.build_market_shock_context(
+            alert=alert,
+            as_of=date(2026, 5, 18),
+        )
+
+        nasdaq = next(row for row in result['rows'] if row['symbol'] == 'IXIC')
+        self.assertEqual(nasdaq['direction'], 'surge')
+        self.assertEqual(nasdaq['continuation_label'], '継続寄り')
+
+    def test_basecalc_page_shows_us_index_shock_judgment(self):
+        with patch('basecalc.views.build_market_shock_context') as shock_mock:
+            shock_mock.return_value = {
+                'has_data': True,
+                'tone': 'negative',
+                'summary': 'S&P500の急落は継続寄りです。',
+                'rows': [{
+                    'label': 'S&P500',
+                    'headline': '急落 中 / 継続寄り',
+                    'tone': 'negative',
+                    'direction': 'drop',
+                    'momentum_20d_display': '-8.5%',
+                    'dd200_display': '-4.0%',
+                    'dd52w_display': '-14.0%',
+                    'continuation_score_display': '80%',
+                    'reason': '下落にボラ・信用・トレンド悪化が重なっています。',
+                }],
+            }
+            response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '米国3指数の急変判定')
+        self.assertContains(response, 'S&amp;P500の急落は継続寄りです。')
+        self.assertContains(response, '急落 中 / 継続寄り')
 
 
 class BasecalcAnchorSnapshotTests(TestCase):

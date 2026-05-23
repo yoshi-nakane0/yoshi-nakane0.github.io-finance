@@ -9,6 +9,7 @@ from django.core.management import call_command
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from myproject.auth import is_creator_user
@@ -24,7 +25,8 @@ from .services.dashboard import (
     build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
-    build_market_shock_context,
+    build_monthly_model_status,
+    build_reliability_context,
     build_regime_context,
     build_similar_periods,
     load_crash_probability_model,
@@ -34,11 +36,14 @@ from .services.dashboard_cache import (
     invalidate_dashboard_cache,
     invalidate_indicator_detail_caches,
     invalidate_similar_detail_caches,
+    load_dashboard_cache_meta,
     load_dashboard_payload,
+    load_macro_update_status,
     load_indicator_detail_payload,
     load_similar_detail_payload,
     precompute_dashboard_payload,
     save_dashboard_payload,
+    save_macro_update_status,
 )
 from .services.data_sync import (
     get_latest_observation_date,
@@ -81,12 +86,69 @@ def _can_run_macro_model_jobs(user):
     return is_creator_user(user) and not _is_serverless_runtime()
 
 
+def _record_macro_update_status(
+    *,
+    source: str,
+    result=None,
+    status=None,
+    message: str = '',
+    extra_failed=None,
+):
+    result = result or {}
+    failed = list(result.get('failed') or [])
+    failed.extend(extra_failed or [])
+    success = list(result.get('success') or [])
+    if status is None:
+        if failed and not success:
+            status = 'failed'
+        elif failed:
+            status = 'partial'
+        else:
+            status = 'success'
+    payload = {
+        'source': source,
+        'status': status,
+        'message': message,
+        'success_count': len(success),
+        'failed_count': len(failed),
+        'failed': failed,
+        'started_at': result.get('started_at'),
+        'finished_at': result.get('finished_at') or timezone.now().isoformat(),
+    }
+    try:
+        save_macro_update_status(payload)
+    except Exception:
+        logger.exception("Failed to save macro update status")
+
+
+def _attach_reliability_context(
+    context: dict,
+    latest_snapshot,
+    *,
+    dashboard_cache_meta=None,
+):
+    context.update(build_regime_context(latest_snapshot))
+    context['macro_reliability'] = build_reliability_context(
+        last_updated=context.get('last_updated'),
+        dashboard_cache_meta=dashboard_cache_meta,
+        update_status=load_macro_update_status(),
+        regime_model_version=context.get('regime_model_version'),
+    )
+    return context
+
+
 def _refresh_serverless_macro_data(request):
     """本番向けの軽量更新。即時性の高い市場ストレス指標だけ取得する。"""
     try:
         result = sync_all_indicators(series_ids=SERVERLESS_REFRESH_SERIES_IDS)
     except Exception as exc:
         logger.exception("Serverless lightweight macro sync failed")
+        _record_macro_update_status(
+            source='manual_lightweight',
+            status='failed',
+            message='即時指標の取得に失敗しました。',
+            extra_failed=[{'phase': 'sync_all_indicators', 'error': str(exc)}],
+        )
         messages.error(request, f"更新中にエラー: {exc}")
         return redirect(reverse('macro:index'))
 
@@ -94,13 +156,21 @@ def _refresh_serverless_macro_data(request):
     ng_count = len(result['failed'])
 
     if ok_count == 0:
+        _record_macro_update_status(
+            source='manual_lightweight',
+            result=result,
+            status='failed',
+            message='即時指標の取得に失敗しました。',
+        )
         messages.error(request, f"即時指標 {ng_count} 件の取得に失敗しました")
         return redirect(reverse('macro:index'))
 
+    extra_failed = []
     try:
         compute_current_regime()
-    except Exception:
+    except Exception as exc:
         logger.exception("Serverless regime recomputation failed")
+        extra_failed.append({'phase': 'regime', 'error': str(exc)})
         messages.warning(request, "即時指標は更新しましたが、判定更新でエラーが発生しました")
 
     try:
@@ -111,14 +181,20 @@ def _refresh_serverless_macro_data(request):
             'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
             'indicator_cards': build_indicator_cards(),
             'crash_alert': build_crash_alert_context(),
-            'market_shock': build_market_shock_context(),
         })
         save_dashboard_payload(payload)
         invalidate_indicator_detail_caches()
-    except Exception:
+    except Exception as exc:
         logger.exception("Serverless dashboard cache patch failed")
+        extra_failed.append({'phase': 'dashboard_cache', 'error': str(exc)})
         messages.warning(request, "即時指標は更新しましたが、画面キャッシュ更新でエラーが発生しました")
 
+    _record_macro_update_status(
+        source='manual_lightweight',
+        result=result,
+        message='即時指標を更新しました。',
+        extra_failed=extra_failed,
+    )
     if ng_count == 0:
         messages.success(request, f"即時指標 {ok_count} 件を更新しました")
     else:
@@ -131,6 +207,7 @@ def index(request):
     cache_payload = load_dashboard_payload()
 
     if cache_payload is not None:
+        dashboard_cache_meta = load_dashboard_cache_meta()
         latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
         context = dict(cache_payload)
         context['has_observations'] = context.get('has_observations', True)
@@ -143,13 +220,12 @@ def index(request):
             )
         ):
             context['crash_alert'] = build_crash_alert_context()
-        if context['has_observations'] and not context.get('market_shock'):
-            context['market_shock'] = build_market_shock_context()
         context['fred_key_present'] = bool(get_api_key())
         context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
         context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()
         context['crash_probability_model'] = load_crash_probability_model()
+        context['monthly_model_status'] = build_monthly_model_status()
         similar_periods = context.get('similar_periods', [])
         linkages = context.get('linkages', [])
         context['overview_commentary'] = build_overview_commentary(
@@ -157,7 +233,11 @@ def index(request):
         )
         context['similar_commentary'] = build_similar_explanation(similar_periods)
         context['linkage_commentary'] = build_linkage_explanation(linkages)
-        context.update(build_regime_context(latest_snapshot))
+        _attach_reliability_context(
+            context,
+            latest_snapshot,
+            dashboard_cache_meta=dashboard_cache_meta,
+        )
         return render(request, 'macro/index.html', context)
 
     latest_obs_date = get_latest_observation_date()
@@ -176,12 +256,10 @@ def index(request):
             'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
             'indicator_cards': build_indicator_cards() if has_observations else [],
             'crash_alert': None,
-            'market_shock': (
-                build_market_shock_context() if has_observations else None
-            ),
             'historical_crash_similarity': [],
             'lightgbm_prediction': load_lightgbm_prediction(),
             'crash_probability_model': load_crash_probability_model(),
+            'monthly_model_status': build_monthly_model_status(),
             'similar_periods': [],
             'linkages': [],
             'overview_commentary': None,
@@ -189,7 +267,7 @@ def index(request):
             'linkage_commentary': build_linkage_explanation([]),
             'dashboard_cache_missing': True,
         }
-        context.update(build_regime_context(latest_snapshot))
+        _attach_reliability_context(context, latest_snapshot)
         return render(request, 'macro/index.html', context)
 
     similar_periods = build_similar_periods() if has_observations else []
@@ -205,12 +283,12 @@ def index(request):
         'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
         'indicator_cards': build_indicator_cards() if has_observations else [],
         'crash_alert': build_crash_alert_context() if has_observations else None,
-        'market_shock': build_market_shock_context() if has_observations else None,
         'historical_crash_similarity': (
             build_historical_crash_similarity() if has_observations else []
         ),
         'lightgbm_prediction': load_lightgbm_prediction(),
         'crash_probability_model': load_crash_probability_model(),
+        'monthly_model_status': build_monthly_model_status(),
         'similar_periods': similar_periods,
         'linkages': linkages,
         'overview_commentary': (
@@ -220,7 +298,7 @@ def index(request):
         'similar_commentary': build_similar_explanation(similar_periods),
         'linkage_commentary': build_linkage_explanation(linkages),
     }
-    context.update(build_regime_context(latest_snapshot))
+    _attach_reliability_context(context, latest_snapshot)
     return render(request, 'macro/index.html', context)
 
 
@@ -234,6 +312,15 @@ def refresh(request):
         return _refresh_serverless_macro_data(request)
 
     if not get_api_key():
+        _record_macro_update_status(
+            source='manual_full',
+            status='failed',
+            message='FRED_API_KEY が未設定のため更新できません。',
+            extra_failed=[{
+                'phase': 'FRED_API_KEY',
+                'error': 'FRED_API_KEY が未設定です',
+            }],
+        )
         messages.error(
             request,
             "FRED_API_KEY が未設定のため取得できません。.env に設定してください。",
@@ -244,6 +331,12 @@ def refresh(request):
         result = sync_all_indicators()
     except Exception as exc:
         logger.exception("FRED sync failed")
+        _record_macro_update_status(
+            source='manual_full',
+            status='failed',
+            message='指標取得に失敗しました。',
+            extra_failed=[{'phase': 'sync_all_indicators', 'error': str(exc)}],
+        )
         messages.error(request, f"更新中にエラー: {exc}")
         return redirect(reverse('macro:index'))
 
@@ -259,12 +352,14 @@ def refresh(request):
             f"指標 {ok_count} 件成功、{ng_count} 件失敗",
         )
 
+    extra_failed = []
     regime_snapshot = None
     if ok_count > 0:
         try:
             regime_snapshot = compute_current_regime()
-        except Exception:
+        except Exception as exc:
             logger.exception("Regime recomputation failed")
+            extra_failed.append({'phase': 'regime', 'error': str(exc)})
             messages.warning(
                 request,
                 "指標は更新したがレジーム判定でエラーが発生しました（ログを確認）",
@@ -275,9 +370,17 @@ def refresh(request):
         price_result = sync_all_price_histories()
         price_ng = len(price_result['failed'])
         if price_ng > 0:
+            extra_failed.extend(
+                {
+                    'ticker': item.get('ticker'),
+                    'error': item.get('error'),
+                }
+                for item in price_result['failed']
+            )
             messages.warning(request, f"価格データ {price_ng} 銘柄の取得に失敗")
-    except Exception:
+    except Exception as exc:
         logger.exception("Price sync failed")
+        extra_failed.append({'phase': 'price_sync', 'error': str(exc)})
         messages.warning(request, "価格データ更新でエラー（ログを確認）")
 
     # キャッシュ無効化後、トップ画面用キャッシュまで作り直す。
@@ -291,13 +394,20 @@ def refresh(request):
             payload = precompute_dashboard_payload()
             save_dashboard_payload(payload)
             messages.success(request, "最新データで景気局面を再判定しました")
-        except Exception:
+        except Exception as exc:
             logger.exception("Dashboard cache refresh failed")
+            extra_failed.append({'phase': 'dashboard_cache', 'error': str(exc)})
             messages.warning(
                 request,
                 "判定は更新しましたが、重い分析の画面反映は次回表示時に再計算します",
             )
 
+    _record_macro_update_status(
+        source='manual_full',
+        result=result,
+        message='指標取得・判定・画面反映を実行しました。',
+        extra_failed=extra_failed,
+    )
     return redirect(reverse('macro:index'))
 
 

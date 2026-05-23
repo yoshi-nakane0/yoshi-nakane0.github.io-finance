@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""ローカルデータ更新メニュー。"""
+
+import subprocess
+import sys
+from datetime import date
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def ask(prompt, default=""):
+    suffix = f" [{default}]" if default else ""
+    value = input(f"{prompt}{suffix}: ").strip()
+    return value or default
+
+
+def run_manage(args):
+    command = [sys.executable, "manage.py", "update_local_data", *args]
+    return subprocess.call(command, cwd=BASE_DIR)
+
+
+def main():
+    if Path.cwd().resolve() != BASE_DIR:
+        print("このコマンドは yoshi-nakane0.github.io-finance の直下で実行してください。")
+        print(f"cd {BASE_DIR}")
+        print("./update")
+        return 1
+
+    print("更新するデータを選んでください")
+    print("1. 日経PER・配当利回り")
+    print("2. 経済イベント")
+    print("3. 決算データ")
+    print("4. マクロ指標・価格データ")
+    print("5. ニュース感情データ")
+    print("0. 終了")
+
+    choice = ask("番号")
+
+    if choice == "0":
+        print("終了しました。")
+        return 0
+    if choice == "1":
+        return run_manage(["--nikkei-per"])
+    if choice == "2":
+        months = ask("対象月を入力してください。例: 5 または 5,6", str(date.today().month))
+        return run_manage(["--events", "--events-months", months])
+    if choice == "3":
+        count = ask("スクレイピングする銘柄数を入力してください")
+        if not count.isdigit() or int(count) <= 0:
+            print("1以上の数字を入力してください。")
+            return 1
+        return run_manage(["--earnings", "--earnings-count", count])
+    if choice == "4":
+        return run_manage(["--macro"])
+    if choice == "5":
+        force = ask("直近実行済みでも強制更新しますか？ y/N", "N").lower()
+        args = ["--gdelt"]
+        if force == "y":
+            args.append("--gdelt-force")
+        return run_manage(args)
+
+    print("0〜5の番号を入力してください。")
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
