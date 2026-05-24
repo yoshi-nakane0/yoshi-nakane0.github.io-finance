@@ -28,87 +28,117 @@
             </div>
             {% else %}
 
-            <section class="card wm-hero wm-{{ world_model.direction }}" data-field="wm_hero">
-                <div class="wm-hero__top">
+            <section class="wm-dashboard wm-{{ world_model.direction }}" data-field="wm_hero">
+                <div class="wm-dashboard__header">
                     <div>
-                        <div class="wm-kicker">
-                            <span class="wm-kicker__icon">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M4 17V7"></path>
-                                    <path d="M9 17V5"></path>
-                                    <path d="M14 17v-7"></path>
-                                    <path d="M19 17V8"></path>
-                                    <path d="M3 19h18"></path>
-                                </svg>
-                            </span>
-                            <span>現在の相場局面</span>
-                        </div>
-                        <h1 class="wm-direction" data-field="direction_label">{{ world_model.direction_label }}</h1>
-                        <div class="wm-subline">
-                            <span data-field="state_label">{{ world_model.state_label }}</span>
-                            <span>｜</span>
-                            <span data-field="phase_label">{{ world_model.phase_label }}</span>
-                        </div>
+                        <div class="wm-dashboard__kicker">日経先物ダッシュボード</div>
+                        <h1 class="wm-dashboard__title">今見るべき3項目</h1>
                     </div>
-                    <div class="confidence-badge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
-                        {{ world_model.confidence }}<small>{{ world_model.confidence_score }}/100</small>
+                    <div class="wm-dashboard__meta">
+                        <span data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</span>
+                        <span>{{ world_model.data_quality.level|title }} / {{ world_model.data_quality.score }}/100</span>
                     </div>
                 </div>
 
-                <div class="wm-pills">
-                    <span>{{ world_model.state_label }}</span>
-                    <span>{{ world_model.phase_label }}</span>
+                <div class="wm-purpose-nav" aria-label="このページの確認項目">
+                    <span>01 テクニカル</span>
+                    <span>02 市場ストレス</span>
+                    <span>03 未来予測</span>
                 </div>
 
-                <div class="wm-scenario" data-field="main_scenario">{{ world_model.main_scenario }}</div>
+                <div class="wm-purpose-grid">
+                    <article class="wm-purpose-card wm-purpose-card--technical">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">01</span>
+                            <span class="wm-purpose-card__label">現在の日経先物のテクニカル状況</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2 data-field="direction_label">{{ world_model.direction_label }}</h2>
+                            <div class="wm-purpose-card__badge">{{ world_model.state_label }} / {{ world_model.phase_label }}</div>
+                        </div>
+                        <div class="wm-score-panel wm-score-panel--compact">
+                            <div class="wm-score-row">
+                                <span>方向評価</span>
+                                <strong>{{ world_model.sentiment_score_abs }}%</strong>
+                                <small>{{ world_model.sentiment_score }}</small>
+                                <div class="wm-score-track">
+                                    <i data-value="{{ world_model.sentiment_score_abs }}"></i>
+                                </div>
+                            </div>
+                            <div class="wm-score-row">
+                                <span>継続性</span>
+                                <strong>{{ world_model.continuation_score }}%</strong>
+                                <small>{{ world_model.shock_label }}</small>
+                                <div class="wm-score-track is-green">
+                                    <i data-value="{{ world_model.continuation_score }}"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wm-purpose-card__facts">
+                            <span>強度 <strong>{{ world_model.strength_label }}</strong></span>
+                            <span>価格 <strong>{{ data.price_display|default:"N/A" }}</strong></span>
+                        </div>
+                    </article>
 
-                <div class="wm-score-panel">
-                    <div class="wm-score-row">
-                        <span>方向評価</span>
-                        <strong>{{ world_model.sentiment_score_abs }}%</strong>
-                        <small>{{ world_model.sentiment_score }}</small>
-                        <div class="wm-score-track">
-                            <i data-value="{{ world_model.sentiment_score_abs }}"></i>
+                    <article class="wm-purpose-card wm-purpose-card--stress">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">02</span>
+                            <span class="wm-purpose-card__label">市場ストレス・急落予測</span>
                         </div>
-                    </div>
-                    <div class="wm-score-row">
-                        <span>信頼度</span>
-                        <strong>{{ world_model.confidence_score }}%</strong>
-                        <small>{{ world_model.confidence }}</small>
-                        <div class="wm-score-track is-cyan">
-                            <i data-value="{{ world_model.confidence_score }}"></i>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ world_model.shock_label }}</h2>
+                            <div class="wm-purpose-card__badge">突発性 {{ world_model.shock_score }}/100</div>
                         </div>
-                    </div>
-                    <div class="wm-score-row">
-                        <span>データ品質</span>
-                        <strong>{{ world_model.data_quality_score }}%</strong>
-                        <small>{{ world_model.data_quality_level|title }}</small>
-                        <div class="wm-score-track is-green">
-                            <i data-value="{{ world_model.data_quality_score }}"></i>
+                        <div class="stress-meter">
+                            <div class="stress-meter__track">
+                                <i data-value="{{ world_model.shock_score }}"></i>
+                            </div>
+                            <div class="stress-meter__labels">
+                                <span>通常</span>
+                                <span>警戒</span>
+                            </div>
                         </div>
-                    </div>
+                        <div class="wm-purpose-card__facts">
+                            <span>外部市場 <strong>{{ world_model.market_context.risk_label }}</strong></span>
+                            <span>リスク <strong>{{ world_model.market_context.risk_score }}</strong></span>
+                        </div>
+                        {% if market_shock and market_shock.has_data %}
+                        <p class="wm-purpose-card__note">{{ market_shock.summary }}</p>
+                        {% else %}
+                        <p class="wm-purpose-card__note">米国3指数の急変データ待ちです。</p>
+                        {% endif %}
+                    </article>
+
+                    <article class="wm-purpose-card wm-purpose-card--forecast">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">03</span>
+                            <span class="wm-purpose-card__label">未来予測</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2 data-field="main_scenario">{{ world_model.main_scenario }}</h2>
+                            <div class="confidence-badge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
+                                {{ world_model.confidence }}<small>{{ world_model.confidence_score }}/100</small>
+                            </div>
+                        </div>
+                        <div class="wm-purpose-targets">
+                            <span>T1 <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong></span>
+                            <span>T2 <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong></span>
+                            <span>無効化 <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong></span>
+                        </div>
+                        <div class="wm-purpose-card__facts">
+                            <span>期待1日 <strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
+                            <span>期待5日 <strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
+                        </div>
+                        <div class="wm-invalidation" data-field="invalidation_text">{{ world_model.invalidation_text }}</div>
+                    </article>
                 </div>
 
-                <div class="wm-hero__grid">
-                    <div class="wm-stat">
-                        <span>強度</span>
-                        <strong data-field="strength_label">{{ world_model.strength_label }}</strong>
-                    </div>
-                    <div class="wm-stat">
-                        <span>T1</span>
-                        <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong>
-                    </div>
-                    <div class="wm-stat">
-                        <span>T2</span>
-                        <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong>
-                    </div>
-                    <div class="wm-stat">
-                        <span>無効化</span>
-                        <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong>
-                    </div>
+                <div class="wm-data-strip">
+                    <span>データ品質 {{ world_model.data_quality_score }}%</span>
+                    <span>取得元 {{ world_model.data_quality.source|default:"N/A" }} / {{ world_model.data_quality.symbol|default:"N/A" }}</span>
+                    {% if world_model.data_quality.fallback_used %}<span>代替データ使用中</span>{% endif %}
+                    {% if world_model.data_warning %}<span class="text-red">{{ world_model.data_warning }}</span>{% endif %}
                 </div>
-
-                <div class="wm-invalidation" data-field="invalidation_text">{{ world_model.invalidation_text }}</div>
             </section>
 
             <div class="action-row top-actions">
@@ -141,7 +171,7 @@
                 <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
             </div>
 
-            <div class="price-display">
+            <div class="price-display compact-price-display">
                 <div class="price-display__head">
                     <div>
                         <span class="price-label">日経先物 現在値</span>
@@ -164,8 +194,8 @@
                 </div>
             </div>
 
-            <section class="card quality-card quality-{{ world_model.data_quality.level }}" data-field="data_quality">
-                <div class="card-header compact-header">
+            <details class="card quality-card quality-{{ world_model.data_quality.level }}" data-field="data_quality">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-blue">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
@@ -173,12 +203,16 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="card-title">データ品質</div>
+                        <div class="card-title">データ取得状態</div>
                         <div class="quality-summary">
                             {{ world_model.data_quality.level|title }} / {{ world_model.data_quality.score }}/100
                         </div>
                     </div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="summary-grid quality-grid">
                     <div class="metric-box">
                         <label>Source</label>
@@ -204,7 +238,8 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-            </section>
+                </div>
+            </details>
 
             {% if market_shock and market_shock.has_data %}
             <section class="card us-shock us-shock--{{ market_shock.tone }}">
@@ -215,7 +250,7 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="card-title">米国3指数の急変判定</div>
+                        <div class="card-title">市場ストレス・急落予測</div>
                         <div class="us-shock-summary">{{ market_shock.summary }}</div>
                     </div>
                 </div>
@@ -279,7 +314,7 @@
                             <path d="M3 12h4l3 7 4-14 3 7h4"></path>
                         </svg>
                     </div>
-                    <div class="card-title">センチメント</div>
+                    <div class="card-title">テクニカル詳細</div>
                 </div>
                 <div class="sentiment-meter" data-score="{{ world_model.sentiment_score }}" data-field="sentiment_meter">
                     <div class="sentiment-meter__track">
@@ -389,7 +424,7 @@
                             <path d="M4 18h16"></path>
                         </svg>
                     </div>
-                    <div class="card-title">World Model 詳細</div>
+                    <div class="card-title">未来予測詳細</div>
                 </div>
                 <div class="summary-grid model-grid">
                     <div class="metric-box">
@@ -750,6 +785,10 @@
 
             function updateScoreBars() {
                 document.querySelectorAll(".wm-score-track i").forEach((bar) => {
+                    const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
+                    bar.style.transform = `scaleX(${value / 100})`;
+                });
+                document.querySelectorAll(".stress-meter__track i").forEach((bar) => {
                     const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
                     bar.style.transform = `scaleX(${value / 100})`;
                 });

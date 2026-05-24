@@ -417,7 +417,7 @@ class BasecalcMarketShockTest(TestCase):
             response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '米国3指数の急変判定')
+        self.assertContains(response, '市場ストレス・急落予測')
         self.assertContains(response, 'S&amp;P500の急落は継続寄りです。')
         self.assertContains(response, '急落 中 / 継続寄り')
 

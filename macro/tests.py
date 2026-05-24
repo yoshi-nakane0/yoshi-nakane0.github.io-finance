@@ -1085,6 +1085,10 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'World Model の結論')
+        self.assertContains(r, '現在の景気の状況')
+        self.assertContains(r, '市場ストレス、急落予測')
+        self.assertContains(r, '未来予測')
         self.assertContains(r, '判定強度')
         self.assertContains(r, 'データ鮮度')
         self.assertContains(r, '一目で見る結論')

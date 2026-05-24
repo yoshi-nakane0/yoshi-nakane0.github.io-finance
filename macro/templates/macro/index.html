@@ -8,7 +8,7 @@
     <title>Macro</title>
 
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260524">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260524-world-summary">
 </head>
 
 <body>
@@ -29,10 +29,78 @@
                 </ul>
             {% endif %}
 
-            <section class="macro-regime-bar">
+            <section class="macro-section macro-world-conclusion">
+                <div class="macro-section-headline">
+                    <h2 class="macro-section-title macro-section-title--brain">World Model の結論</h2>
+                    <span class="macro-model-kind-badge macro-model-kind-badge--validated">3つの見方</span>
+                </div>
+                <div class="macro-conclusion-grid">
+                    <article class="macro-conclusion-card macro-conclusion-card--current">
+                        <span class="macro-conclusion-label">現在の景気の状況</span>
+                        <strong>{{ regime_plain_judgment }}</strong>
+                        <p>{{ regime_plain_detail }}</p>
+                        <div class="macro-conclusion-meta">
+                            <span>景気評価 {{ regime_condition_pct_display }}</span>
+                            <span>データ鮮度 {{ data_quality_pct }}%</span>
+                        </div>
+                        <a href="#macro-current-state" class="macro-conclusion-link">現在地を見る</a>
+                    </article>
+                    <article class="macro-conclusion-card macro-conclusion-card--stress">
+                        <span class="macro-conclusion-label">市場ストレス、急落予測</span>
+                        <strong>{% if crash_alert and crash_alert.level_label %}{{ crash_alert.level_label }}{% else %}判定待ち{% endif %}</strong>
+                        <p>
+                            {% if crash_alert and crash_alert.total_score is not None %}
+                                市場ストレス {{ crash_alert.total_score }}/100
+                            {% else %}
+                                市場ストレスは未判定です
+                            {% endif %}
+                            {% if crash_probability_model %}
+                                / 急落確率 {{ crash_probability_model.current_probability_display }}
+                            {% endif %}
+                        </p>
+                        <div class="macro-conclusion-meta">
+                            {% if crash_alert %}
+                                <span>品質 {{ crash_alert.data_quality_pct }}%</span>
+                                <span>{{ crash_alert.validation_status }}</span>
+                            {% else %}
+                                <span>データ待ち</span>
+                            {% endif %}
+                        </div>
+                        <a href="#macro-market-stress" class="macro-conclusion-link">ストレスを見る</a>
+                    </article>
+                    <article class="macro-conclusion-card macro-conclusion-card--forecast">
+                        <span class="macro-conclusion-label">未来予測</span>
+                        {% if lightgbm_prediction and lightgbm_prediction.horizons %}
+                            {% with h=lightgbm_prediction.horizons.0 %}
+                                <strong>{{ h.months }}ヶ月後 {{ h.predicted_return_display }}</strong>
+                                <p>主要指数リターン予測。検証誤差 {{ h.validation_mae_display }}</p>
+                            {% endwith %}
+                        {% elif forecast_models and forecast_models.rows %}
+                            {% with row=forecast_models.rows.0 %}
+                                <strong>{{ row.prediction_display }}</strong>
+                                <p>{{ row.target }} {{ row.horizon }} / MAE {{ row.mae_display }}</p>
+                            {% endwith %}
+                        {% else %}
+                            <strong>予測データ待ち</strong>
+                            <p>月次モデル更新後に表示されます。</p>
+                        {% endif %}
+                        <div class="macro-conclusion-meta">
+                            {% if monthly_model_status %}
+                                <span>{{ monthly_model_status.status_label }}</span>
+                                <span>学習 {{ monthly_model_status.latest_training_date }}</span>
+                            {% else %}
+                                <span>月次状態待ち</span>
+                            {% endif %}
+                        </div>
+                        <a href="#macro-future-forecast" class="macro-conclusion-link">予測を見る</a>
+                    </article>
+                </div>
+            </section>
+
+            <section class="macro-regime-bar" id="macro-current-state">
                 <div class="macro-regime-orbit" aria-hidden="true"></div>
                 <div class="macro-regime-head">
-                    <h2 class="macro-section-title macro-section-title--pulse">現在の景気局面</h2>
+                    <h2 class="macro-section-title macro-section-title--pulse">現在の景気の状況</h2>
                     <span class="macro-regime-status-pill">{{ regime_tone_label }}</span>
                 </div>
                 <div class="macro-regime-label">
@@ -190,7 +258,7 @@
             {% if world_state %}
                 <section class="macro-section macro-world-state">
                     <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--brain">World State</h2>
+                        <h2 class="macro-section-title macro-section-title--brain">World State（現在地）</h2>
                         <span class="macro-model-kind-badge macro-model-kind-badge--provisional">状態ベクトル</span>
                     </div>
                     <p class="macro-model-note">マクロ・金融・市場データを統合した現在の状態ベクトルです。予測そのものではなく、各モデルの入力状態を示します。</p>
@@ -428,9 +496,9 @@
             {% endif %}
 
             {% if forecast_models and forecast_models.rows %}
-                <section class="macro-section macro-forecast-models">
+                <section class="macro-section macro-forecast-models" id="macro-future-forecast">
                     <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--brain">予測モデル（後追い検証対象）</h2>
+                        <h2 class="macro-section-title macro-section-title--brain">未来予測（後追い検証対象）</h2>
                         <span class="macro-model-kind-badge macro-model-kind-badge--provisional">参考値</span>
                     </div>
                     <p class="macro-model-note">各モデルの出力は参考値です。実績が出た後に ForecastSnapshot で検証します。</p>
@@ -537,8 +605,8 @@
 
             {# クラッシュ警戒度 #}
             {% if crash_alert and crash_alert.total_score is not None %}
-                <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}">
-                    <h2 class="macro-section-title macro-section-title--shield">市場ストレス・急落警戒スコア</h2>
+                <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}" id="macro-market-stress">
+                    <h2 class="macro-section-title macro-section-title--shield">市場ストレス・急落予測</h2>
                     <div class="macro-crash-top">
                         <div class="macro-crash-banner">
                             <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
@@ -554,7 +622,7 @@
                     <div class="macro-crash-score-bar" aria-hidden="true">
                         <div class="macro-crash-score-fill" style="width: {{ crash_alert.total_score }}%;"></div>
                     </div>
-                    <p class="macro-crash-note">現在の市場がどれだけ緊張しているかを、信用・流動性、ボラ・需給、価格アクション、景気・金利の4項目から0〜100点で示します。点数が高いほど市場の不安が強い状態です。将来の暴落確率ではありません。</p>
+                    <p class="macro-crash-note">市場ストレス・急落警戒スコアは、現在の市場がどれだけ緊張しているかを、信用・流動性、ボラ・需給、価格アクション、景気・金利の4項目から0〜100点で示します。点数が高いほど市場の不安が強い状態です。将来の暴落確率ではありません。</p>
                     <div class="macro-crash-metrics">
                         <div class="macro-crash-metric">
                             <span class="macro-crash-metric-label">判定強度</span>
@@ -679,7 +747,7 @@
                 <section class="macro-section macro-lgbm">
                     <details class="macro-accordion">
                         <summary class="macro-accordion-summary">
-                            <span class="macro-section-title macro-section-title--brain">参考: リターン予測モデル（主要指数）</span>
+                            <span class="macro-section-title macro-section-title--brain">未来予測: リターン予測モデル（主要指数）</span>
                             <span class="macro-accordion-status">表示</span>
                         </summary>
                         <p class="macro-lgbm-note">景気局面判定や急落確率とは独立した参考値です。売買判断ではありません。</p>

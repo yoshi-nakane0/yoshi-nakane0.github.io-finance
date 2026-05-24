@@ -1336,6 +1336,100 @@ body {
         0 0 14px rgba(53, 231, 242, 0.3);
 }
 
+.macro-world-conclusion {
+    border-color: rgba(111, 242, 163, 0.28);
+}
+
+.macro-conclusion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.65rem;
+}
+
+.macro-conclusion-card {
+    display: grid;
+    grid-template-rows: auto auto minmax(3.7rem, auto) auto auto;
+    gap: 0.42rem;
+    min-width: 0;
+    padding: 0.78rem 0.72rem;
+    border: 1px solid rgba(112, 168, 226, 0.22);
+    border-radius: 8px;
+    background: rgba(6, 18, 32, 0.58);
+}
+
+.macro-conclusion-card--current {
+    border-color: rgba(111, 242, 163, 0.28);
+}
+
+.macro-conclusion-card--stress {
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.macro-conclusion-card--forecast {
+    border-color: rgba(112, 168, 226, 0.34);
+}
+
+.macro-conclusion-label {
+    color: var(--macro-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.macro-conclusion-card strong {
+    color: var(--macro-text-primary);
+    font-size: 1.02rem;
+    font-weight: 900;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+}
+
+.macro-conclusion-card p {
+    margin: 0;
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    font-weight: 750;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.macro-conclusion-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.32rem;
+    align-content: start;
+}
+
+.macro-conclusion-meta span,
+.macro-conclusion-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 1.58rem;
+    padding: 0.25rem 0.46rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--macro-text-secondary);
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+}
+
+.macro-conclusion-link {
+    margin-top: 0.08rem;
+    border-color: rgba(56, 189, 248, 0.34);
+    color: var(--macro-accent-strong);
+    text-decoration: none;
+}
+
+.macro-conclusion-link::after {
+    content: "→";
+    margin-left: 0.28rem;
+}
+
 .macro-regime-bar {
     min-height: 9.4rem;
     padding: 0.85rem 1rem 0.75rem;
@@ -3270,6 +3364,7 @@ body {
     .macro-scenario-grid,
     .macro-scenario-metrics,
     .macro-scenario-form-grid,
+    .macro-conclusion-grid,
     .macro-operations-grid,
     .macro-forecast-grid,
     .macro-forecast-row,
