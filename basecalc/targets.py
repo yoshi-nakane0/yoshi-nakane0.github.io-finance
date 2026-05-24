@@ -1,17 +1,16 @@
 def build_targets(features, similar_summary=None):
     price = features.get("price") or 0
     atr = features.get("atr14") or max(price * 0.008, 250)
+    indicator_validity = features.get("indicator_validity") or {}
     pivot = features.get("pivots") or {}
+    if not indicator_validity.get("pivot", True):
+        pivot = {}
     similar_move = abs(similar_summary.get("average_return_pct") or 0) if similar_summary else 0
     similar_step = price * similar_move / 100 if similar_move else atr * 1.2
-    highs = [features.get("intraday_high"), features.get("high_5d"), features.get("high_20d")]
-    lows = [features.get("intraday_low"), features.get("low_5d"), features.get("low_20d")]
-
     upside_candidates = [
         (features.get("previous_high"), "前日高値", "High", "previous_high"),
         (features.get("recent_high"), "直近10本高値", "High", "recent_high"),
         (features.get("high_5d"), "5日高値", "Middle", "high_5d"),
-        (features.get("intraday_high"), "短時間足高値", "Middle", "intraday_high"),
         (pivot.get("r1"), "Pivot R1", "Middle", "pivot_r1"),
         (features.get("high_20d"), "20日高値", "Middle", "high_20d"),
         (pivot.get("r2"), "Pivot R2", "Middle", "pivot_r2"),
@@ -29,7 +28,6 @@ def build_targets(features, similar_summary=None):
         (features.get("previous_low"), "前日安値", "High", "previous_low"),
         (features.get("recent_low"), "直近10本安値", "High", "recent_low"),
         (features.get("low_5d"), "5日安値", "Middle", "low_5d"),
-        (features.get("intraday_low"), "短時間足安値", "Middle", "intraday_low"),
         (features.get("vwap"), "VWAP", "High", "vwap"),
         (pivot.get("s1"), "Pivot S1", "Middle", "pivot_s1"),
         (features.get("low_20d"), "20日安値", "Middle", "low_20d"),
@@ -82,6 +80,9 @@ def build_targets(features, similar_summary=None):
         bearish_invalidation = _round_price(price + atr)
         bearish_reason = "ATR補正"
 
+    probability_cap = _probability_cap(features, similar_summary)
+    upside = _cap_probabilities(upside, probability_cap)
+    downside = _cap_probabilities(downside, probability_cap)
     return {
         "upside": upside[:4],
         "downside": downside[:4],
@@ -157,7 +158,7 @@ def _target_row(index, target_price, reason, confidence, source, price, atr, sim
 
 def _target_probability(index, target_price, price, atr, similar_summary, above):
     base = None
-    if similar_summary and similar_summary.get("case_count"):
+    if similar_summary and similar_summary.get("case_count") and similar_summary.get("is_statistically_valid"):
         hit_rate = similar_summary.get("target_t1_hit_rate") or 0.5
         sample_weight = min((similar_summary.get("case_count") or 0) / 12, 1)
         base = hit_rate * sample_weight + 0.5 * (1 - sample_weight)
@@ -179,6 +180,27 @@ def _target_probability(index, target_price, price, atr, similar_summary, above)
     if sentiment == "down" and above:
         base *= 0.75
     return round(max(0, min(1, base)), 2)
+
+
+def _probability_cap(features, similar_summary):
+    cap = 1.0
+    if features.get("readiness_level") != "ready":
+        cap = min(cap, 0.3)
+    if similar_summary and not similar_summary.get("is_statistically_valid"):
+        cap = min(cap, 0.5)
+    return cap
+
+
+def _cap_probabilities(targets, cap):
+    if cap >= 1:
+        return targets
+    capped = []
+    for target in targets:
+        row = dict(target)
+        row["probability"] = min(row.get("probability") or 0, cap)
+        row["expected_value_pct"] = round(abs(row.get("distance_pct") or 0) * row["probability"], 2)
+        capped.append(row)
+    return capped
 
 
 def _rank_score(confidence, probability, distance_pct):

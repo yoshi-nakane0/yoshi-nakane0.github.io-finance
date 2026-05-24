@@ -1,3 +1,6 @@
+from .instrument import normalize_instrument
+
+
 def normalize_chart_payload(payload, symbol, timeframe="1d", interval="1d"):
     result = (payload.get("chart", {}).get("result") or [None])[0]
     if not isinstance(result, dict):
@@ -30,10 +33,13 @@ def normalize_chart_payload(payload, symbol, timeframe="1d", interval="1d"):
     ]
     changes = [change for change in changes if change is not None]
 
+    instrument = normalize_instrument(symbol, "yahoo")
     return {
         "symbol": symbol,
         "name": meta.get("shortName") or meta.get("symbol") or symbol,
         "source": "yahoo",
+        "instrument_key": instrument["instrument_key"],
+        "instrument_type": instrument["instrument_type"],
         "timeframe": timeframe,
         "interval": interval,
         "price": round(price, 0),
@@ -61,10 +67,13 @@ def snapshot_from_quote_row(row, symbol, today):
     volume = _to_float(row.get("Volume"))
     if close is None:
         return None
+    instrument = normalize_instrument(symbol, "stooq")
     snapshot = {
-        "symbol": row.get("Symbol") or symbol.upper(),
+        "symbol": instrument["symbol"] or row.get("Symbol") or symbol.upper(),
         "name": "Nikkei quote fallback",
         "source": "stooq",
+        "instrument_key": instrument["instrument_key"],
+        "instrument_type": instrument["instrument_type"],
         "price": round(close, 0),
         "previous_close": open_price,
         "change_pct": _pct_change(close, open_price),

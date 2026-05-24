@@ -7,7 +7,6 @@
     <title>basecalc - 日経先物テクニカル分析</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=world-model-20260524">
-    <script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -45,6 +44,35 @@
                     <span>02 市場ストレス</span>
                     <span>03 未来予測</span>
                 </div>
+
+                <div class="wm-readiness-panel readiness-{{ world_model.readiness_level }}">
+                    <div class="wm-readiness-panel__status">
+                        <span>判定状態</span>
+                        <strong>
+                            {% if world_model.readiness_level == "ready" %}判定可能{% elif world_model.readiness_level == "limited" %}参考表示{% else %}判定不可{% endif %}
+                        </strong>
+                    </div>
+                    <div class="wm-readiness-panel__grid">
+                        <span>取得時刻 <strong>{{ world_model.last_updated_display }}</strong></span>
+                        <span>品質 <strong>{{ world_model.data_quality_score }}/100</strong></span>
+                        <span>Fallback <strong>{% if world_model.data_quality.fallback_used %}あり{% else %}なし{% endif %}</strong></span>
+                        <span>日足 <strong>{{ world_model.readiness_display.daily_bars }}本</strong></span>
+                        <span>主要指標 <strong>{{ world_model.readiness_display.valid_major_indicators }}/6</strong></span>
+                    </div>
+                    {% if world_model.readiness.reason_codes %}
+                    <div class="wm-readiness-panel__reasons">
+                        {% for reason in world_model.readiness.warnings %}
+                        <span>{{ reason }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if world_model.readiness_level != "ready" %}
+                <div class="wm-direction-stop">
+                    現在のデータは判定条件を満たしていないため、方向予測を停止しています。価格、取得元、足数、フォールバック有無を確認してください。
+                </div>
+                {% endif %}
 
                 <div class="wm-purpose-grid">
                     <article class="wm-purpose-card wm-purpose-card--technical">
@@ -110,35 +138,47 @@
                     </article>
 
                     <article class="wm-purpose-card wm-purpose-card--forecast">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">03</span>
-                            <span class="wm-purpose-card__label">未来予測</span>
+                        <div class="wm-forecast-head">
+                            <div class="wm-purpose-card__head">
+                                <span class="wm-purpose-card__number">03</span>
+                                <span class="wm-purpose-card__label">未来予測</span>
+                            </div>
                         </div>
-                        <div class="wm-purpose-card__main">
-                            <h2 data-field="main_scenario">{{ world_model.main_scenario }}</h2>
-                            <div class="confidence-badge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
-                                {{ world_model.confidence }}<small>{{ world_model.confidence_score }}/100</small>
+                        <div class="wm-forecast-hero">
+                            <div class="wm-forecast-gauge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
+                                <div class="wm-forecast-gauge__ring" style="--forecast-score: {{ world_model.confidence_score|default:0 }}%;">
+                                    <strong>{{ world_model.confidence }}</strong>
+                                    <span>センチメント</span>
+                                </div>
+                            </div>
+                            <div class="wm-forecast-score" data-field="confidence_score_panel">
+                                <div class="wm-forecast-score__value">
+                                    <strong>{{ world_model.confidence_score }}</strong><span>/100</span>
+                                </div>
+                                <div class="wm-forecast-meter">
+                                    <div class="wm-forecast-meter__bar">
+                                        <i data-value="{{ world_model.confidence_score }}"></i>
+                                    </div>
+                                    <div class="wm-forecast-meter__labels">
+                                        <span>0</span>
+                                        <span>50</span>
+                                        <span>100</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="wm-purpose-targets">
-                            <span>T1 <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong></span>
-                            <span>T2 <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong></span>
-                            <span>無効化 <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong></span>
+                            <span class="wm-purpose-targets__item">T1 <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong><small>ターゲット1</small></span>
+                            <span class="wm-purpose-targets__item">T2 <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong><small>ターゲット2</small></span>
+                            <span class="wm-purpose-targets__item is-warning">無効化 <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong><small>無効化ライン</small></span>
                         </div>
-                        <div class="wm-purpose-card__facts">
-                            <span>期待1日 <strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
-                            <span>期待5日 <strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
+                        <div class="wm-forecast-returns">
+                            <span><em>期待1日</em><strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
+                            <span><em>期待5日</em><strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
                         </div>
-                        <div class="wm-invalidation" data-field="invalidation_text">{{ world_model.invalidation_text }}</div>
                     </article>
                 </div>
 
-                <div class="wm-data-strip">
-                    <span>データ品質 {{ world_model.data_quality_score }}%</span>
-                    <span>取得元 {{ world_model.data_quality.source|default:"N/A" }} / {{ world_model.data_quality.symbol|default:"N/A" }}</span>
-                    {% if world_model.data_quality.fallback_used %}<span>代替データ使用中</span>{% endif %}
-                    {% if world_model.data_warning %}<span class="text-red">{{ world_model.data_warning }}</span>{% endif %}
-                </div>
             </section>
 
             <div class="action-row top-actions">
@@ -349,31 +389,6 @@
 
             <section class="card">
                 <div class="card-header compact-header">
-                    <div class="card-icon text-amber">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M4 19V5"></path>
-                            <path d="M9 19V9"></path>
-                            <path d="M14 19v-6"></path>
-                            <path d="M19 19V7"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">時間足</div>
-                </div>
-                <div class="timeframe-grid" data-field="timeframe_summary">
-                    {% for frame in world_model.timeframe_summary %}
-                    <div class="timeframe-box">
-                        <span>{{ frame.label }}</span>
-                        <strong>{{ frame.trend_label }}</strong>
-                        <small>1h {{ frame.change_1h_pct|floatformat:2 }}% / 突発 {{ frame.impulse_z|floatformat:1 }}</small>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">短時間足データ待ちです。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 19V5"></path>
@@ -523,21 +538,6 @@
 
             <section class="card">
                 <div class="card-header compact-header">
-                    <div class="card-icon text-blue">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 3v18h18"></path>
-                            <path d="m7 14 3-3 3 2 5-6"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">詳細チャート</div>
-                </div>
-                <div class="chart-shell">
-                    <div id="technical-chart"></div>
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M9 11 12 14 22 4"></path>
@@ -644,7 +644,6 @@
 
             <p class="disclaimer">このページは分析補助です。表示は条件付きシナリオであり、売買指示ではありません。</p>
 
-            {{ chart_data|json_script:"basecalc-chart-data" }}
             {% endif %}
         </main>
     </div>
@@ -689,12 +688,6 @@
                     document.querySelectorAll('input[name="price"]').forEach((input) => {
                         input.value = nextPrice.value;
                     });
-                }
-                const nextChart = doc.getElementById("basecalc-chart-data");
-                const chartScript = document.getElementById("basecalc-chart-data");
-                if (nextChart && chartScript) {
-                    chartScript.textContent = nextChart.textContent;
-                    drawTechnicalChart();
                 }
                 updateSentimentMeter();
                 updateScoreBars();
@@ -788,149 +781,14 @@
                     const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
                     bar.style.transform = `scaleX(${value / 100})`;
                 });
-                document.querySelectorAll(".stress-meter__track i").forEach((bar) => {
+                document.querySelectorAll(".stress-meter__track i, .wm-forecast-meter__bar i").forEach((bar) => {
                     const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
                     bar.style.transform = `scaleX(${value / 100})`;
                 });
             }
 
-            function drawTechnicalChart() {
-                const container = document.getElementById("technical-chart");
-                const source = document.getElementById("basecalc-chart-data");
-                if (!container || !source) {
-                    return;
-                }
-                container.dataset.rendered = "pending";
-                let data;
-                try {
-                    data = JSON.parse(source.textContent);
-                } catch (error) {
-                    container.dataset.rendered = "error";
-                    return;
-                }
-                const points = data.points || [];
-                if (window.basecalcChart) {
-                    window.basecalcChart.remove();
-                    window.basecalcChart = null;
-                }
-                container.innerHTML = "";
-                if (!points.length) {
-                    container.innerHTML = '<div class="chart-fallback">チャートデータ待ち</div>';
-                    container.dataset.rendered = "empty";
-                    return;
-                }
-                if (!window.LightweightCharts) {
-                    container.innerHTML = '<div class="chart-fallback">チャートライブラリ読込待ち</div>';
-                    container.dataset.rendered = "fallback";
-                    return;
-                }
-
-                const chart = LightweightCharts.createChart(container, {
-                    width: container.clientWidth,
-                    height: container.clientHeight,
-                    layout: {
-                        background: { color: "#0b1220" },
-                        textColor: "#94a3b8",
-                    },
-                    grid: {
-                        vertLines: { color: "rgba(148, 163, 184, 0.08)" },
-                        horzLines: { color: "rgba(148, 163, 184, 0.12)" },
-                    },
-                    rightPriceScale: {
-                        borderColor: "rgba(148, 163, 184, 0.18)",
-                    },
-                    timeScale: {
-                        borderColor: "rgba(148, 163, 184, 0.18)",
-                        timeVisible: data.timeframe !== "1d",
-                        secondsVisible: false,
-                    },
-                    crosshair: {
-                        mode: LightweightCharts.CrosshairMode.Normal,
-                    },
-                });
-
-                const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-                    upColor: "#4ade80",
-                    downColor: "#f87171",
-                    borderVisible: false,
-                    wickUpColor: "#4ade80",
-                    wickDownColor: "#f87171",
-                });
-                candleSeries.setData(points.map((point) => ({
-                    time: point.time,
-                    open: point.open,
-                    high: point.high,
-                    low: point.low,
-                    close: point.close,
-                })));
-
-                addLineSeries(chart, points, "ema5", "#4ade80", 1);
-                addLineSeries(chart, points, "ema20", "#38bdf8", 1);
-                addLineSeries(chart, points, "ema60", "#a78bfa", 1);
-                addLineSeries(chart, points, "vwap", "#fbbf24", 1);
-                addLineSeries(chart, points, "bbUpper", "rgba(56, 189, 248, 0.55)", 1);
-                addLineSeries(chart, points, "bbLower", "rgba(56, 189, 248, 0.55)", 1);
-
-                (data.upsideTargets || []).slice(0, 2).forEach((target) => {
-                    addPriceLine(candleSeries, target.price, "#4ade80", target.label);
-                });
-                (data.downsideTargets || []).slice(0, 2).forEach((target) => {
-                    addPriceLine(candleSeries, target.price, "#f87171", target.label);
-                });
-                addPriceLine(candleSeries, data.invalidation, "#fbbf24", "無効化");
-                addPriceLine(candleSeries, data.recentHigh, "#38bdf8", "高値");
-                addPriceLine(candleSeries, data.recentLow, "#38bdf8", "安値");
-
-                chart.timeScale().fitContent();
-                window.basecalcChart = chart;
-                container.dataset.rendered = "true";
-            }
-
-            function addLineSeries(chart, points, key, color, lineWidth) {
-                const seriesData = points
-                    .filter((point) => Number.isFinite(point[key]))
-                    .map((point) => ({time: point.time, value: point[key]}));
-                if (!seriesData.length) {
-                    return;
-                }
-                const series = chart.addSeries(LightweightCharts.LineSeries, {
-                    color,
-                    lineWidth,
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                });
-                series.setData(seriesData);
-            }
-
-            function addPriceLine(series, price, color, title) {
-                if (!Number.isFinite(price)) {
-                    return;
-                }
-                series.createPriceLine({
-                    price,
-                    color,
-                    lineWidth: 1,
-                    lineStyle: LightweightCharts.LineStyle.Dashed,
-                    axisLabelVisible: true,
-                    title,
-                });
-            }
-
-            function resizeTechnicalChart() {
-                const container = document.getElementById("technical-chart");
-                if (!container || !window.basecalcChart) {
-                    return;
-                }
-                window.basecalcChart.applyOptions({
-                    width: container.clientWidth,
-                    height: container.clientHeight,
-                });
-            }
-
             updateSentimentMeter();
             updateScoreBars();
-            drawTechnicalChart();
-            window.addEventListener("resize", resizeTechnicalChart);
         });
     </script>
 </body>

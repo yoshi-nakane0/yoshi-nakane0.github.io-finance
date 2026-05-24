@@ -26,6 +26,7 @@ from .scoring import (
 )
 from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
+from .instrument import normalize_instrument
 from .market_context import calculate_context_score
 from .model_version import BASECALC_MODEL_VERSION
 from .outcomes import (
@@ -35,39 +36,95 @@ from .outcomes import (
 from .similarity import find_similar_cases
 from .state_machine import estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
+from .readiness import evaluate_indicator_validity, evaluate_world_model_readiness
 
 JST = ZoneInfo("Asia/Tokyo")
 
 
-def build_world_model(price, market_snapshot=None, market_context=None):
+def build_world_model(price, market_snapshot=None, market_context=None, as_of=None):
     price = _to_float(price)
     snapshot = market_snapshot or {}
     if price is None or price <= 0:
-        return empty_world_model()
+        data_quality = evaluate_snapshot_quality(snapshot)
+        readiness = evaluate_world_model_readiness(
+            price=price,
+            snapshot=snapshot if isinstance(snapshot, dict) and snapshot else None,
+            data_quality=data_quality,
+            daily_ohlcv={},
+        )
+        return blocked_world_model(price, snapshot, data_quality, readiness)
 
     daily_snapshot = _snapshot_for_timeframe(snapshot, "1d")
     data_quality = (snapshot.get("quality") if isinstance(snapshot, dict) else None) or evaluate_snapshot_quality(snapshot)
     context_score = calculate_context_score(market_context or {})
-    ohlcv = _normalize_ohlcv(price, daily_snapshot)
-    intraday = build_intraday_context(price, snapshot)
-    features = build_features(price, daily_snapshot, ohlcv)
-    features.update(intraday["features"])
+    ohlcv = _normalize_ohlcv(price, daily_snapshot, allow_synthetic=False)
+    readiness = evaluate_world_model_readiness(
+        price=price,
+        snapshot=snapshot if isinstance(snapshot, dict) and snapshot else None,
+        data_quality=data_quality,
+        daily_ohlcv=ohlcv,
+    )
+    if readiness["level"] == "blocked":
+        return blocked_world_model(
+            price,
+            snapshot,
+            data_quality,
+            readiness,
+            ohlcv=ohlcv,
+            market_context=market_context,
+            context_score=context_score,
+        )
+
+    features = build_features(
+        price,
+        daily_snapshot,
+        ohlcv,
+        indicator_validity=readiness["indicator_validity"],
+    )
+    instrument = normalize_instrument(readiness.get("symbol"), readiness.get("source"))
     features.update(
         {
             "data_quality_score": data_quality["score"],
             "data_quality_level": data_quality["level"],
             "fallback_used": data_quality["fallback_used"],
-            "instrument_type": data_quality["instrument_type"],
+            "instrument_key": readiness["instrument_key"],
+            "instrument_type": readiness["instrument_type"],
+            "source_symbol": readiness["symbol"],
+            "source_name": readiness["source"],
             "data_quality": data_quality,
+            "readiness_level": readiness["level"],
+            "directional_allowed": readiness["directional_allowed"],
+            "readiness_reason_codes": readiness["reason_codes"],
+            "bar_counts": readiness["bar_counts"],
+            "indicator_validity": readiness["indicator_validity"],
+            "is_canonical_instrument": instrument.get("is_canonical"),
             "context_risk_score": context_score["risk_score"],
             "context_risk_label": context_score["risk_label"],
             "context_components": context_score["components"],
         }
     )
+    if readiness["level"] == "limited":
+        return limited_world_model(
+            price,
+            snapshot,
+            data_quality,
+            readiness,
+            features=features,
+            ohlcv=ohlcv,
+            market_context=market_context,
+            context_score=context_score,
+        )
+
     first_score = calculate_sentiment_score(features)
     direction = _direction_from_score(first_score["sentiment_score"])
     features["sentiment_score"] = first_score["sentiment_score"]
-    similar_summary = find_similar_cases(features, ohlcv)
+    similar_summary = find_similar_cases(
+        features,
+        ohlcv,
+        instrument_key=readiness["instrument_key"],
+        as_of=as_of,
+        timeframe="1d",
+    )
     sentiment = calculate_sentiment_score(features, similar_summary)
     direction = _direction_from_score(sentiment["sentiment_score"])
     features["sentiment_score"] = sentiment["sentiment_score"]
@@ -135,15 +192,6 @@ def build_world_model(price, market_snapshot=None, market_context=None):
         evidence.append(_performance_adjustment_text(performance_adjustment))
     main_scenario = build_main_scenario(direction, targets)
     sub_scenario = build_sub_scenario(direction, invalidation_price)
-    chart_ohlcv = intraday["chart_ohlcv"] or ohlcv
-    chart_timeframe = intraday["chart_timeframe"] or "1d"
-    chart_points = build_chart_points(
-        chart_ohlcv,
-        features,
-        targets,
-        invalidation_price,
-        timeframe=chart_timeframe,
-    )
     last_updated = _format_last_updated(snapshot)
     stale_minutes = _stale_minutes(snapshot)
 
@@ -151,6 +199,10 @@ def build_world_model(price, market_snapshot=None, market_context=None):
         "is_ready": True,
         "model_version": BASECALC_MODEL_VERSION,
         "price": round(price, 0),
+        "readiness": readiness,
+        "readiness_display": _readiness_display(readiness),
+        "readiness_level": readiness["level"],
+        "directional_allowed": readiness["directional_allowed"],
         "direction": direction,
         "direction_label": _direction_label(direction),
         "strength_label": _strength_label(sentiment["sentiment_score"]),
@@ -174,8 +226,9 @@ def build_world_model(price, market_snapshot=None, market_context=None):
         "source_status": {
             "source": data_quality.get("source"),
             "symbol": data_quality.get("symbol"),
+            "instrument_key": readiness.get("instrument_key"),
             "fallback_used": data_quality.get("fallback_used"),
-            "instrument_type": data_quality.get("instrument_type"),
+            "instrument_type": readiness.get("instrument_type"),
             "is_stale": data_quality.get("is_stale"),
         },
         "transition_probs": transition_probs,
@@ -206,8 +259,6 @@ def build_world_model(price, market_snapshot=None, market_context=None):
         "evidence": evidence[:6],
         "performance_adjustment": performance_adjustment or {"applied": False},
         "features": _json_safe_features(features),
-        "chart_points": chart_points,
-        "timeframe_summary": intraday["summary"],
         "last_updated_display": last_updated,
         "is_stale": bool(snapshot.get("is_stale")) or stale_minutes > 15,
         "stale_minutes": stale_minutes,
@@ -216,12 +267,13 @@ def build_world_model(price, market_snapshot=None, market_context=None):
     }
 
 
-def build_features(price, snapshot, ohlcv):
+def build_features(price, snapshot, ohlcv, indicator_validity=None):
     closes = ohlcv["closes"]
     highs = ohlcv["highs"]
     lows = ohlcv["lows"]
     opens = ohlcv["opens"]
     volumes = ohlcv["volumes"]
+    indicator_validity = indicator_validity or evaluate_indicator_validity(ohlcv, snapshot)
 
     ema5 = calculate_ema(closes, 5)
     ema20 = calculate_ema(closes, 20)
@@ -248,6 +300,7 @@ def build_features(price, snapshot, ohlcv):
     features = {
         "symbol": snapshot.get("symbol") or "NIY=F",
         "source": snapshot.get("source") or "cache",
+        "indicator_validity": indicator_validity,
         "price": price,
         "open": opens[-1] if opens else None,
         "high": highs[-1] if highs else None,
@@ -263,25 +316,25 @@ def build_features(price, snapshot, ohlcv):
         "low_5d": min(lows[-5:] or [price]),
         "high_20d": max(highs[-20:] or [price]),
         "low_20d": min(lows[-20:] or [price]),
-        "ema5": latest(ema5),
-        "ema20": latest(ema20),
-        "ema60": latest(ema60),
-        "ema200": latest(ema200),
-        "vwap": latest(vwap),
-        "rsi14": latest(rsi14),
-        "macd": latest(macd["macd"]),
-        "macd_signal": latest(macd["signal"]),
-        "macd_histogram": latest(macd["histogram"]),
-        "adx14": latest(adx["adx"]),
-        "dmi_plus": latest(adx["plus_di"]),
-        "dmi_minus": latest(adx["minus_di"]),
-        "atr14": latest_atr,
-        "atr_ratio": atr_ratio,
-        "bb_upper": latest(bands["upper"]),
-        "bb_mid": latest(bands["mid"]),
-        "bb_lower": latest(bands["lower"]),
-        "bb_width_pct": latest(bands["width"]),
-        "pivots": pivots,
+        "ema5": latest(ema5) if indicator_validity.get("ema5") else None,
+        "ema20": latest(ema20) if indicator_validity.get("ema20") else None,
+        "ema60": latest(ema60) if indicator_validity.get("ema60") else None,
+        "ema200": latest(ema200) if indicator_validity.get("ema200") else None,
+        "vwap": latest(vwap) if indicator_validity.get("vwap") else None,
+        "rsi14": latest(rsi14) if indicator_validity.get("rsi14") else None,
+        "macd": latest(macd["macd"]) if indicator_validity.get("macd") else None,
+        "macd_signal": latest(macd["signal"]) if indicator_validity.get("macd") else None,
+        "macd_histogram": latest(macd["histogram"]) if indicator_validity.get("macd") else None,
+        "adx14": latest(adx["adx"]) if indicator_validity.get("adx14") else None,
+        "dmi_plus": latest(adx["plus_di"]) if indicator_validity.get("adx14") else None,
+        "dmi_minus": latest(adx["minus_di"]) if indicator_validity.get("adx14") else None,
+        "atr14": latest_atr if indicator_validity.get("atr14") else None,
+        "atr_ratio": atr_ratio if indicator_validity.get("atr14") else None,
+        "bb_upper": latest(bands["upper"]) if indicator_validity.get("bollinger") else None,
+        "bb_mid": latest(bands["mid"]) if indicator_validity.get("bollinger") else None,
+        "bb_lower": latest(bands["lower"]) if indicator_validity.get("bollinger") else None,
+        "bb_width_pct": latest(bands["width"]) if indicator_validity.get("bollinger") else None,
+        "pivots": pivots if indicator_validity.get("pivot") else {},
         "structure_key": structure["key"],
         "structure_label": structure["label"],
         "structure_bias": structure["bias"],
@@ -295,90 +348,13 @@ def build_features(price, snapshot, ohlcv):
         "change_20d_pct": _change_from(closes, price, 20),
         "distance_recent_high_pct": _pct(price, max(highs[-10:] or [price])),
         "distance_recent_low_pct": _pct(price, min(lows[-10:] or [price])),
-        "ema5_gap_pct": _pct(price, latest(ema5)),
-        "ema20_gap_pct": _pct(price, latest(ema20)),
-        "ema60_gap_pct": _pct(price, latest(ema60)),
-        "vwap_gap_pct": _pct(price, latest(vwap)),
+        "ema5_gap_pct": _pct(price, latest(ema5)) if indicator_validity.get("ema5") else None,
+        "ema20_gap_pct": _pct(price, latest(ema20)) if indicator_validity.get("ema20") else None,
+        "ema60_gap_pct": _pct(price, latest(ema60)) if indicator_validity.get("ema60") else None,
+        "vwap_gap_pct": _pct(price, latest(vwap)) if indicator_validity.get("vwap") else None,
         "shock_candidate": abs(calculate_change_zscore(close_changes[:-1], daily_change_pct)) >= 2,
     }
     return features
-
-
-def build_intraday_context(price, snapshot):
-    timeframe_data = snapshot.get("timeframes") if isinstance(snapshot, dict) else None
-    timeframe_data = timeframe_data or {}
-    summary = []
-    features = {
-        "change_1h_pct": None,
-        "change_4h_pct": None,
-        "intraday_impulse_z": 0,
-        "intraday_trend_bias": 0,
-        "multi_timeframe_alignment": 0,
-        "intraday_high": None,
-        "intraday_low": None,
-    }
-    chart_ohlcv = None
-    chart_timeframe = None
-    direction_votes = []
-
-    for key in ("5m", "15m", "1h"):
-        frame_snapshot = _snapshot_for_timeframe(snapshot, key)
-        if not frame_snapshot or not frame_snapshot.get("closes"):
-            continue
-        frame_ohlcv = _normalize_ohlcv(price, frame_snapshot)
-        closes = frame_ohlcv["closes"]
-        if len(closes) < 2:
-            continue
-        periods_per_hour = {"5m": 12, "15m": 4, "1h": 1}[key]
-        change_1h = _change_from(closes, price, periods_per_hour)
-        change_4h = _change_from(closes, price, periods_per_hour * 4)
-        changes = [_pct(current, previous) for previous, current in zip(closes, closes[1:])]
-        impulse_z = abs(calculate_change_zscore(changes[:-1], changes[-1] if changes else None))
-        ema5 = latest(calculate_ema(closes, 5))
-        ema20 = latest(calculate_ema(closes, 20))
-        trend_bias = 1 if ema5 and ema20 and ema5 > ema20 else -1 if ema5 and ema20 and ema5 < ema20 else 0
-        if trend_bias:
-            direction_votes.append(trend_bias)
-        summary.append(
-            {
-                "key": key,
-                "label": {"5m": "5分", "15m": "15分", "1h": "1時間"}[key],
-                "change_1h_pct": _round(change_1h),
-                "change_4h_pct": _round(change_4h),
-                "impulse_z": _round(impulse_z),
-                "trend_bias": trend_bias,
-                "trend_label": "上向き" if trend_bias > 0 else "下向き" if trend_bias < 0 else "中立",
-                "point_count": len(closes),
-            }
-        )
-        if key == "1h":
-            features["change_1h_pct"] = change_1h
-            features["change_4h_pct"] = change_4h
-        if key in ("5m", "15m", "1h"):
-            frame_high = max(frame_ohlcv["highs"][-12:] or [price])
-            frame_low = min(frame_ohlcv["lows"][-12:] or [price])
-            features["intraday_high"] = max(
-                value for value in (features.get("intraday_high"), frame_high) if value is not None
-            )
-            features["intraday_low"] = min(
-                value for value in (features.get("intraday_low"), frame_low) if value is not None
-            )
-        if impulse_z > (features.get("intraday_impulse_z") or 0):
-            features["intraday_impulse_z"] = impulse_z
-        if chart_ohlcv is None and key in ("15m", "1h") and len(closes) >= 10:
-            chart_ohlcv = frame_ohlcv
-            chart_timeframe = key
-
-    if direction_votes:
-        vote_sum = sum(direction_votes)
-        features["intraday_trend_bias"] = 1 if vote_sum > 0 else -1 if vote_sum < 0 else 0
-        features["multi_timeframe_alignment"] = abs(vote_sum) / len(direction_votes)
-    return {
-        "features": features,
-        "summary": summary,
-        "chart_ohlcv": chart_ohlcv,
-        "chart_timeframe": chart_timeframe,
-    }
 
 
 def classify_state(features, direction, continuation_score, shock_score):
@@ -461,13 +437,6 @@ def build_evidence(features, similar_summary, direction):
         evidence.append("MACDがSignal上" if macd >= signal else "MACDがSignal下")
     if atr_ratio is not None:
         evidence.append(f"ATR比率は{atr_ratio:.2f}で変動幅を確認")
-    if features.get("intraday_impulse_z"):
-        evidence.append(f"短時間足の突発度は{features['intraday_impulse_z']:.1f}")
-    if features.get("multi_timeframe_alignment"):
-        label = "上向き" if features.get("intraday_trend_bias") > 0 else "下向き"
-        evidence.append(
-            f"5分・15分・1時間の方向一致は{features['multi_timeframe_alignment']:.0%}で{label}"
-        )
     if features.get("structure_label"):
         evidence.append(features["structure_label"])
     if similar_summary.get("case_count"):
@@ -521,72 +490,42 @@ def build_sub_scenario(direction, invalidation_price):
     return "レンジ上限または下限を終値で抜けるか確認"
 
 
-def build_chart_points(
-    ohlcv,
-    features,
-    targets,
-    invalidation_price,
-    limit=100,
-    timeframe="1d",
+def blocked_world_model(
+    price=None,
+    snapshot=None,
+    data_quality=None,
+    readiness=None,
+    *,
+    ohlcv=None,
+    market_context=None,
+    context_score=None,
 ):
-    closes = ohlcv["closes"][-limit:]
-    opens = ohlcv["opens"][-limit:]
-    highs = ohlcv["highs"][-limit:]
-    lows = ohlcv["lows"][-limit:]
-    timestamps = ohlcv["timestamps"][-limit:]
-    ema5 = calculate_ema(ohlcv["closes"], 5)[-limit:]
-    ema20 = calculate_ema(ohlcv["closes"], 20)[-limit:]
-    ema60 = calculate_ema(ohlcv["closes"], 60)[-limit:]
-    vwap = calculate_vwap(ohlcv)[-limit:]
-    bands = calculate_bollinger_bands(ohlcv["closes"])
-    bb_upper = bands["upper"][-limit:]
-    bb_lower = bands["lower"][-limit:]
-    points = []
-    for index, close in enumerate(closes):
-        points.append(
-            {
-                "time": _chart_time(
-                    timestamps[index] if index < len(timestamps) else None,
-                    index,
-                    timeframe,
-                ),
-                "label": _chart_label(timestamps[index] if index < len(timestamps) else None, index),
-                "open": _round(opens[index] if index < len(opens) else close),
-                "high": _round(highs[index] if index < len(highs) else close),
-                "low": _round(lows[index] if index < len(lows) else close),
-                "close": _round(close),
-                "ema5": _round(ema5[index] if index < len(ema5) else None),
-                "ema20": _round(ema20[index] if index < len(ema20) else None),
-                "ema60": _round(ema60[index] if index < len(ema60) else None),
-                "vwap": _round(vwap[index] if index < len(vwap) else None),
-                "bbUpper": _round(bb_upper[index] if index < len(bb_upper) else None),
-                "bbLower": _round(bb_lower[index] if index < len(bb_lower) else None),
-            }
-        )
-    return {
-        "points": points,
-        "timeframe": timeframe,
-        "upsideTargets": targets["upside"][:2],
-        "downsideTargets": targets["downside"][:2],
-        "invalidation": invalidation_price,
-        "recentHigh": features.get("recent_high"),
-        "recentLow": features.get("recent_low"),
-    }
-
-
-def empty_world_model():
+    snapshot = snapshot if isinstance(snapshot, dict) else {}
+    data_quality = data_quality or evaluate_snapshot_quality(snapshot)
+    readiness = readiness or evaluate_world_model_readiness(
+        price=price,
+        snapshot=snapshot or None,
+        data_quality=data_quality,
+        daily_ohlcv=ohlcv or {},
+    )
+    context_score = context_score or calculate_context_score(market_context or {})
+    evidence = readiness.get("warnings") or ["データ品質が不足しています"]
     return {
         "is_ready": False,
         "model_version": BASECALC_MODEL_VERSION,
-        "price": None,
+        "price": round(price, 0) if _to_float(price) else None,
+        "readiness": readiness,
+        "readiness_display": _readiness_display(readiness),
+        "readiness_level": "blocked",
+        "directional_allowed": False,
         "direction": "neutral",
         "direction_label": "判定不可",
         "strength_label": "弱い",
-        "state_key": "range_neutral",
-        "state_label": "価格待ち",
-        "phase_label": "様子見",
+        "state_key": "data_unavailable",
+        "state_label": "データ不足",
+        "phase_label": "判定停止",
         "sentiment_key": "neutral",
-        "sentiment_label": "価格データ待ち",
+        "sentiment_label": "判定不可",
         "sentiment_score": 0,
         "sentiment_score_abs": 0,
         "continuation_score": 0,
@@ -595,74 +534,166 @@ def empty_world_model():
         "confidence": "Low",
         "confidence_score": 0,
         "confidence_components": {},
-        "confidence_warnings": ["価格データ待ち"],
-        "data_quality": {
-            "score": 0,
-            "level": "bad",
-            "is_stale": True,
-            "source": "unknown",
-            "symbol": None,
-            "warnings": ["価格データがありません"],
-            "fallback_used": False,
-            "instrument_type": "unknown",
-        },
-        "data_quality_score": 0,
-        "data_quality_level": "bad",
-        "source_status": {},
+        "confidence_warnings": evidence,
+        "data_quality": data_quality,
+        "data_quality_score": data_quality.get("score", 0),
+        "data_quality_level": data_quality.get("level", "bad"),
+        "source_status": _source_status(data_quality, readiness),
         "transition_probs": [],
         "expected_returns": {},
         "expected_return_1d": 0,
         "expected_return_5d": 0,
-        "market_context": {
-            "risk_score": 0,
-            "risk_label": "neutral",
-            "components": {},
-            "evidence": ["外部市場データ待ち"],
-        },
-        "main_scenario": "価格更新後に判定します",
-        "sub_scenario": "",
+        "market_context": _json_safe_context(
+            {
+                **(market_context or {}),
+                "risk_score": context_score["risk_score"],
+                "risk_label": context_score["risk_label"],
+                "components": context_score["components"],
+                "evidence": context_score["evidence"],
+            }
+        ),
+        "main_scenario": "データ品質が不足しているため判定できません",
+        "sub_scenario": "価格データ、取得元、足数を確認してください",
         "invalidation_price": None,
         "invalidation": {},
         "invalidation_reason": "",
         "invalidation_display": "",
-        "invalidation_text": "N/A",
+        "invalidation_text": "方向判定停止中",
         "upside_targets": [],
         "downside_targets": [],
         "target_1_display": "",
         "target_2_display": "",
-        "similar_summary": {
-            "case_count": 0,
-            "up_rate": 0,
-            "down_rate": 0,
-            "range_rate": 0,
-            "average_return_pct": 0,
-            "target_t1_hit_rate": 0,
-            "invalidation_rate": 0,
-            "directional_accuracy": 0,
-            "cases": [],
-        },
-        "evidence": ["価格データの取得後に判定します"],
+        "similar_summary": _empty_similar_summary(),
+        "evidence": evidence[:6],
         "performance_adjustment": {"applied": False},
-        "features": {},
-        "chart_points": {"points": [], "upsideTargets": [], "downsideTargets": []},
-        "timeframe_summary": [],
-        "last_updated_display": _format_last_updated({}),
+        "features": {
+            "symbol": readiness.get("symbol"),
+            "source": readiness.get("source"),
+            "instrument_key": readiness.get("instrument_key"),
+            "instrument_type": readiness.get("instrument_type"),
+            "readiness_level": "blocked",
+            "directional_allowed": False,
+            "bar_counts": readiness.get("bar_counts") or {},
+            "indicator_validity": readiness.get("indicator_validity") or {},
+        },
+        "last_updated_display": _format_last_updated(snapshot),
         "is_stale": True,
-        "stale_minutes": 0,
-        "data_warning": "価格データの取得に失敗しました。現在の判定は前回取得データに基づいています。",
+        "stale_minutes": _stale_minutes(snapshot),
+        "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
         "components": {},
     }
 
 
-def _normalize_ohlcv(price, snapshot):
+def limited_world_model(
+    price,
+    snapshot,
+    data_quality,
+    readiness,
+    *,
+    features,
+    ohlcv,
+    market_context=None,
+    context_score=None,
+):
+    context_score = context_score or calculate_context_score(market_context or {})
+    evidence = (readiness.get("warnings") or []) + _quality_evidence(data_quality)
+    return {
+        "is_ready": True,
+        "model_version": BASECALC_MODEL_VERSION,
+        "price": round(price, 0),
+        "readiness": readiness,
+        "readiness_display": _readiness_display(readiness),
+        "readiness_level": "limited",
+        "directional_allowed": False,
+        "direction": "neutral",
+        "direction_label": "参考表示",
+        "strength_label": "弱い",
+        "state_key": "limited_reference",
+        "state_label": "参考表示",
+        "phase_label": "方向判定停止",
+        "sentiment_key": "neutral",
+        "sentiment_label": "参考表示",
+        "sentiment_score": 0,
+        "sentiment_score_abs": 0,
+        "continuation_score": 0,
+        "shock_score": 0,
+        "shock_label": "N/A",
+        "confidence": "Low",
+        "confidence_score": min(20, int((data_quality or {}).get("score") or 0)),
+        "confidence_components": {},
+        "confidence_warnings": evidence,
+        "data_quality": data_quality,
+        "data_quality_score": data_quality.get("score", 0),
+        "data_quality_level": data_quality.get("level", "warning"),
+        "source_status": _source_status(data_quality, readiness),
+        "transition_probs": estimate_transition_probabilities("limited_reference", features),
+        "expected_returns": {},
+        "expected_return_1d": 0,
+        "expected_return_5d": 0,
+        "market_context": _json_safe_context(
+            {
+                **(market_context or {}),
+                "risk_score": context_score["risk_score"],
+                "risk_label": context_score["risk_label"],
+                "components": context_score["components"],
+                "evidence": context_score["evidence"],
+            }
+        ),
+        "main_scenario": "データ品質が限定的なため方向判定は停止しています",
+        "sub_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+        "invalidation_price": None,
+        "invalidation": {},
+        "invalidation_reason": "",
+        "invalidation_display": "",
+        "invalidation_text": "方向判定停止中",
+        "upside_targets": [],
+        "downside_targets": [],
+        "target_1_display": "",
+        "target_2_display": "",
+        "similar_summary": _empty_similar_summary(),
+        "evidence": (evidence or ["方向判定を停止しています"])[:6],
+        "performance_adjustment": {"applied": False},
+        "features": _json_safe_features(features),
+        "last_updated_display": _format_last_updated(snapshot),
+        "is_stale": bool(snapshot.get("is_stale")),
+        "stale_minutes": _stale_minutes(snapshot),
+        "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
+        "components": {},
+    }
+
+
+def empty_world_model():
+    return blocked_world_model()
+
+
+def _normalize_ohlcv(price, snapshot, allow_synthetic=False):
+    snapshot = snapshot or {}
     closes = _positive_numbers(snapshot.get("closes"))
     highs = _positive_numbers(snapshot.get("highs"))
     lows = _positive_numbers(snapshot.get("lows"))
     opens = _positive_numbers(snapshot.get("opens"))
     volumes = _numbers(snapshot.get("volumes"))
     timestamps = list(snapshot.get("timestamps") or [])
+    real_counts = {
+        "opens": len(opens),
+        "highs": len(highs),
+        "lows": len(lows),
+        "closes": len(closes),
+        "volumes": len(volumes),
+    }
 
     if not closes:
+        if not allow_synthetic:
+            return {
+                "opens": [],
+                "highs": [],
+                "lows": [],
+                "closes": [],
+                "volumes": [],
+                "timestamps": [],
+                "real_counts": real_counts,
+                "synthetic": False,
+            }
         previous_close = _to_float(snapshot.get("previous_close")) or price
         closes = [previous_close, price]
     if abs(closes[-1] - price) > 1:
@@ -683,6 +714,8 @@ def _normalize_ohlcv(price, snapshot):
         "closes": closes[-length:],
         "volumes": volumes[-length:],
         "timestamps": timestamps[-length:],
+        "real_counts": real_counts,
+        "synthetic": allow_synthetic and real_counts["closes"] == 0,
     }
 
 
@@ -696,7 +729,7 @@ def _snapshot_for_timeframe(snapshot, timeframe):
     if not isinstance(frame, dict):
         return snapshot if timeframe == "1d" else {}
     merged = dict(frame)
-    for key in ("symbol", "name", "source", "fetched_at", "is_stale"):
+    for key in ("symbol", "name", "source", "fetched_at", "is_stale", "fallback_used", "instrument_key", "instrument_type"):
         if key not in merged and key in snapshot:
             merged[key] = snapshot[key]
     return merged
@@ -843,39 +876,21 @@ def _context_evidence(context_score):
     return [label] + list(context_score.get("evidence") or [])[:2]
 
 
-def _chart_label(timestamp, index):
-    if timestamp:
-        try:
-            return datetime.fromtimestamp(timestamp, JST).strftime("%m/%d")
-        except (TypeError, ValueError, OSError):
-            pass
-    return str(index + 1)
-
-
-def _chart_time(timestamp, index, timeframe):
-    if timestamp:
-        try:
-            if timeframe == "1d":
-                return datetime.fromtimestamp(timestamp, JST).strftime("%Y-%m-%d")
-            return int(timestamp)
-        except (TypeError, ValueError, OSError):
-            pass
-    if timeframe == "1d":
-        return f"2000-01-{index + 1:02d}" if index < 28 else f"2000-02-{index - 27:02d}"
-    return 946684800 + index * 60
-
-
 def _json_safe_features(features):
     safe = {}
     for key, value in features.items():
         if isinstance(value, dict):
             safe[key] = {
-                nested_key: _round(nested_value)
+                nested_key: nested_value
+                if isinstance(nested_value, bool)
+                else _round(nested_value)
                 if isinstance(nested_value, (int, float))
                 else nested_value
                 for nested_key, nested_value in value.items()
                 if isinstance(nested_value, (int, float, str, bool)) or nested_value is None
             }
+        elif isinstance(value, bool):
+            safe[key] = value
         elif isinstance(value, (int, float, str)) or value is None:
             safe[key] = _round(value) if isinstance(value, (int, float)) else value
     return safe
@@ -903,6 +918,53 @@ def _json_safe_context(context):
         elif isinstance(value, (int, float, str, bool)) or value is None:
             safe[key] = value
     return safe
+
+
+def _source_status(data_quality, readiness):
+    return {
+        "source": readiness.get("source") or data_quality.get("source"),
+        "symbol": readiness.get("symbol") or data_quality.get("symbol"),
+        "instrument_key": readiness.get("instrument_key"),
+        "fallback_used": data_quality.get("fallback_used"),
+        "instrument_type": readiness.get("instrument_type") or data_quality.get("instrument_type"),
+        "is_stale": data_quality.get("is_stale"),
+    }
+
+
+def _empty_targets():
+    return {"upside": [], "downside": [], "invalidation": {}}
+
+
+def _empty_similar_summary():
+    return {
+        "case_count": 0,
+        "searched_case_count": 0,
+        "used_case_count": 0,
+        "is_statistically_valid": False,
+        "sample_warning": "類似局面の件数が不足しています",
+        "up_rate": 0,
+        "down_rate": 0,
+        "range_rate": 0,
+        "average_return_pct": 0,
+        "target_t1_hit_rate": 0,
+        "invalidation_rate": 0,
+        "directional_accuracy": 0,
+        "cases": [],
+    }
+
+
+def _readiness_display(readiness):
+    bar_counts = readiness.get("bar_counts") or {}
+    indicator_validity = readiness.get("indicator_validity") or {}
+    valid_major = sum(
+        1
+        for key in ("ema20", "ema60", "rsi14", "atr14", "vwap", "pivot")
+        if indicator_validity.get(key)
+    )
+    return {
+        "daily_bars": bar_counts.get("1d", 0),
+        "valid_major_indicators": valid_major,
+    }
 
 
 def _change_from(closes, price, periods):

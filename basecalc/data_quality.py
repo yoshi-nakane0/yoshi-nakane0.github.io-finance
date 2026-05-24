@@ -3,6 +3,8 @@ from typing import Optional
 
 from django.utils import timezone
 
+from .instrument import normalize_instrument
+
 
 def evaluate_snapshot_quality(snapshot: Optional[dict], now=None) -> dict:
     """価格スナップショットの品質を 0-100 で評価する。"""
@@ -72,7 +74,6 @@ def detect_snapshot_anomaly(snapshot: Optional[dict], previous_snapshot: Optiona
     previous_price = _to_float((previous_snapshot or {}).get("price"))
     if price is not None and previous_price and abs((price - previous_price) / previous_price) > 0.08:
         warnings.append("前回取得値からの変化が大きすぎます")
-    warnings.extend(_timeframe_warnings(snapshot, price))
     return _dedupe(warnings)
 
 
@@ -94,31 +95,11 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     return 42
 
 
-def _timeframe_warnings(snapshot, price):
-    warnings = []
-    timeframes = snapshot.get("timeframes") if isinstance(snapshot, dict) else None
-    if not isinstance(timeframes, dict):
-        return warnings
-    for key, frame in timeframes.items():
-        if not isinstance(frame, dict):
-            continue
-        closes = [value for value in frame.get("closes") or [] if isinstance(value, (int, float)) and value > 0]
-        if price and closes and abs((closes[-1] - price) / price) > 0.01:
-            warnings.append(f"{key}終値と現在値の乖離が大きいです")
-        if key in {"5m", "15m", "1h"} and is_snapshot_stale(frame):
-            warnings.append(f"{key}データが古い可能性があります")
-    return warnings
-
-
 def _instrument_type(source, symbol, snapshot):
     explicit = (snapshot or {}).get("instrument_type")
     if explicit:
         return explicit
-    if (symbol or "").lower() == "^nkx":
-        return "index_fallback"
-    if (symbol or "").lower() in {"niy=f", "nk.f"}:
-        return "futures"
-    return "unknown"
+    return normalize_instrument(symbol, source).get("instrument_type") or "unknown"
 
 
 def _parse_timestamp(value):

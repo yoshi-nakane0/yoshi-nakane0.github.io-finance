@@ -21,7 +21,7 @@ from .anchor_snapshot import (
 )
 from .market_shock import build_market_shock_context
 from .futures_sentiment import get_nikkei_futures_snapshot
-from .market_bars import save_market_bars_from_snapshot
+from .market_bars import attach_saved_daily_bars, save_market_bars_from_snapshot
 from .market_context import calculate_context_score, get_market_context_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
@@ -81,6 +81,7 @@ def snapshot_api(request):
 
 
 def performance_api(request):
+    is_backtest = _parse_bool(request.GET.get("is_backtest"), default=False)
     summary = performance_summary(
         horizon=request.GET.get("horizon") or "1d",
         state_key=request.GET.get("state_key") or None,
@@ -88,18 +89,25 @@ def performance_api(request):
         date_to=_parse_date(request.GET.get("to")),
         model_version=request.GET.get("model_version") or None,
         confidence_min=parse_float_param(request.GET.get("confidence_min")),
+        instrument_key=request.GET.get("instrument_key") or "cme_nikkei_futures",
+        readiness_level=request.GET.get("readiness_level") or "ready",
+        is_backtest=is_backtest,
     )
     return JsonResponse(summary)
 
 
 def history(request):
     horizon = request.GET.get("horizon") or "1d"
-    if horizon not in ("1h", "4h", "1d", "3d", "5d"):
+    if horizon not in ("1d", "3d", "5d"):
         horizon = "1d"
     state_key = request.GET.get("state_key") or None
     date_from = _parse_date(request.GET.get("from"))
     date_to = _parse_date(request.GET.get("to"))
     model_version = request.GET.get("model_version") or None
+    instrument_key = request.GET.get("instrument_key") or "cme_nikkei_futures"
+    readiness_level = request.GET.get("readiness_level") or "ready"
+    is_backtest = _parse_bool(request.GET.get("is_backtest"), default=False)
+    confidence_min = parse_float_param(request.GET.get("confidence_min"))
     predictions = WorldModelPrediction.objects.all().order_by("-created_at")
     if state_key:
         predictions = predictions.filter(state_key=state_key)
@@ -109,6 +117,14 @@ def history(request):
         predictions = predictions.filter(created_at__date__lte=date_to)
     if model_version:
         predictions = predictions.filter(model_version=model_version)
+    if instrument_key:
+        predictions = predictions.filter(instrument_key=instrument_key)
+    if readiness_level:
+        predictions = predictions.filter(readiness_level=readiness_level)
+    if is_backtest is not None:
+        predictions = predictions.filter(is_backtest=is_backtest)
+    if confidence_min is not None:
+        predictions = predictions.filter(confidence_score__gte=confidence_min)
     predictions = predictions.prefetch_related("predictionoutcome_set")[:80]
     history_rows = [
         _prediction_history_row(prediction, horizon) for prediction in predictions
@@ -123,13 +139,23 @@ def history(request):
         .distinct()
         .order_by("model_version")
     )
+    instrument_options = (
+        WorldModelPrediction.objects.values_list("instrument_key", flat=True)
+        .distinct()
+        .order_by("instrument_key")
+    )
     context = {
         "horizon": horizon,
         "state_key": state_key or "",
         "date_from": request.GET.get("from") or "",
         "date_to": request.GET.get("to") or "",
         "model_version": model_version or "",
+        "instrument_key": instrument_key or "",
+        "readiness_level": readiness_level or "",
+        "is_backtest": "1" if is_backtest else "0",
+        "confidence_min": request.GET.get("confidence_min") or "",
         "model_versions": model_versions,
+        "instrument_options": instrument_options,
         "history_rows": history_rows,
         "state_options": state_options,
         "summary": performance_summary(
@@ -138,10 +164,14 @@ def history(request):
             date_from,
             date_to,
             model_version=model_version,
+            confidence_min=confidence_min,
+            instrument_key=instrument_key,
+            readiness_level=readiness_level,
+            is_backtest=is_backtest,
         ),
         "state_summaries": state_performance_summary(horizon),
         "improvement_insights": improvement_insights(horizon),
-        "horizons": ("1h", "4h", "1d", "3d", "5d"),
+        "horizons": ("1d", "3d", "5d"),
     }
     return render(request, "basecalc/history.html", context)
 
@@ -251,6 +281,7 @@ def build_context(request, force_update=False):
         anchor_enabled,
     )
 
+    futures_snapshot = attach_saved_daily_bars(futures_snapshot)
     world_model = build_world_model(price, futures_snapshot, market_context)
     data["world_model"] = world_model
     data.update(world_model)
@@ -267,7 +298,6 @@ def build_context(request, force_update=False):
         "world_model": world_model,
         "market_shock": build_market_shock_context(),
         "market_context": world_model.get("market_context") or {},
-        "chart_data": world_model.get("chart_points") or {},
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
         "updated": force_update,
@@ -316,11 +346,12 @@ def update_market_caches(
 
         futures_snapshot = futures["futures_snapshot"].result()
         if isinstance(futures_snapshot, dict):
-            cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
-            cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
             futures_snapshot["_market_bars_saved"] = save_market_bars_from_snapshot(
                 futures_snapshot
             )
+            futures_snapshot = attach_saved_daily_bars(futures_snapshot)
+            cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
+            cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
             snapshot_price = price_from_futures_snapshot(futures_snapshot)
             if update_price_from_futures and snapshot_price is not None:
                 price = snapshot_price
@@ -459,6 +490,8 @@ def get_stale_futures_snapshot():
         "symbol": latest_snapshot.symbol,
         "name": latest_snapshot.symbol,
         "source": latest_snapshot.source or "saved_snapshot",
+        "instrument_key": latest_snapshot.instrument_key,
+        "instrument_type": latest_snapshot.instrument_type,
         "price": latest_snapshot.price,
         "previous_close": latest_snapshot.close or latest_snapshot.price,
         "change_pct": None,
@@ -626,6 +659,7 @@ def _prediction_history_row(prediction, horizon):
             next_prediction and next_prediction.state_key in transition_keys
         ),
         "expected_return": (prediction.expected_returns or {}).get(horizon),
+        "bar_count_1d": (prediction.bar_counts or {}).get("1d", 0),
     }
 
 
@@ -716,6 +750,12 @@ def gap_class(value):
 def _parse_date(value):
     if not value:
         return None
+
+
+def _parse_bool(value, default=None):
+    if value in (None, ""):
+        return default
+    return str(value).lower() in {"1", "true", "yes", "on"}
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:

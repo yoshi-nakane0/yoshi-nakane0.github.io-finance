@@ -1,0 +1,23 @@
+{
+  "predicted_at": "2026-05-24",
+  "horizons": [
+    {
+      "months": 1,
+      "predicted_return_pct": 0.0296,
+      "validation_mae_pct": 2.7258
+    },
+    {
+      "months": 3,
+      "predicted_return_pct": 1.52,
+      "validation_mae_pct": 4.6921
+    },
+    {
+      "months": 6,
+      "predicted_return_pct": 3.2464,
+      "validation_mae_pct": 6.7287
+    }
+  ],
+  "training_samples": 275,
+  "feature_count": 110,
+  "model_version": "return_lightgbm_v2"
+}

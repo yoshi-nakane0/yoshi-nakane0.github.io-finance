@@ -75,6 +75,23 @@
                         <option value="{{ version }}" {% if model_version == version %}selected{% endif %}>{{ version }}</option>
                         {% endfor %}
                     </select>
+                    <select name="instrument_key" class="erp-input erp-select" aria-label="分析対象">
+                        <option value="">全銘柄</option>
+                        {% for item in instrument_options %}
+                        <option value="{{ item }}" {% if instrument_key == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="readiness_level" class="erp-input erp-select" aria-label="判定状態">
+                        <option value="">全状態</option>
+                        <option value="ready" {% if readiness_level == "ready" %}selected{% endif %}>ready</option>
+                        <option value="limited" {% if readiness_level == "limited" %}selected{% endif %}>limited</option>
+                        <option value="blocked" {% if readiness_level == "blocked" %}selected{% endif %}>blocked</option>
+                    </select>
+                    <select name="is_backtest" class="erp-input erp-select" aria-label="種別">
+                        <option value="0" {% if is_backtest == "0" %}selected{% endif %}>live</option>
+                        <option value="1" {% if is_backtest == "1" %}selected{% endif %}>backtest</option>
+                    </select>
+                    <input type="number" name="confidence_min" class="erp-input" value="{{ confidence_min }}" min="0" max="100" placeholder="信頼度下限" aria-label="信頼度下限">
                     <button type="submit" class="btn-base btn-primary">絞り込み</button>
                 </form>
             </section>
@@ -152,6 +169,7 @@
                             <div>
                                 <time>{{ row.prediction.created_at|date:"Y-m-d H:i" }}</time>
                                 <strong>{{ row.prediction.state_label }}</strong>
+                                <small>{{ row.prediction.readiness_level }} / {{ row.prediction.instrument_key }}{% if row.prediction.is_backtest %} / backtest{% endif %}</small>
                             </div>
                             <span class="history-direction direction-{{ row.prediction.direction }}">{{ row.direction_label }}</span>
                         </div>
@@ -200,6 +218,18 @@
                             <div>
                                 <span>Model</span>
                                 <strong>{{ row.prediction.model_version }}</strong>
+                            </div>
+                            <div>
+                                <span>保存時刻</span>
+                                <strong>{% if row.prediction.prediction_timestamp %}{{ row.prediction.prediction_timestamp|date:"Y-m-d H:i" }}{% else %}N/A{% endif %}</strong>
+                            </div>
+                            <div>
+                                <span>Source / Quality</span>
+                                <strong>{{ row.prediction.source_name|default:"N/A" }} {{ row.prediction.source_symbol|default:"" }} / {{ row.prediction.data_quality_score|default:"N/A" }}</strong>
+                            </div>
+                            <div>
+                                <span>日足 / 検証</span>
+                                <strong>{{ row.bar_count_1d }} / {% if row.prediction.readiness_level == "ready" and not row.prediction.is_backtest %}対象{% else %}参考{% endif %}</strong>
                             </div>
                         </div>
                         {% if row.outcome %}

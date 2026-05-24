@@ -92,7 +92,6 @@ def calculate_continuation_score(features, direction):
 def calculate_shock_score(features):
     score = 0
     daily_z = abs(features.get("daily_change_z") or 0)
-    intraday_z = abs(features.get("intraday_impulse_z") or 0)
     vwap_gap = abs(features.get("vwap_gap_pct") or 0)
     atr_ratio = features.get("atr_ratio") or 1
     rsi = features.get("rsi14")
@@ -101,10 +100,6 @@ def calculate_shock_score(features):
         score += 35
     elif daily_z >= 1.2:
         score += 18
-    if intraday_z >= 2.5:
-        score += 25
-    elif intraday_z >= 1.6:
-        score += 12
     if vwap_gap >= 1.5:
         score += 20
     elif vwap_gap >= 0.8:
@@ -136,16 +131,13 @@ def _trend_score(features):
     score += 22 * ema_bias
     score += 10 * _vwap_alignment(features)
     score += 8 * _macd_alignment(features)
-    score += 8 * (features.get("intraday_trend_bias") or 0) * (
-        features.get("multi_timeframe_alignment") or 0
-    )
     return clamp(score, -40, 40)
 
 
 def _momentum_score(features):
     score = 0
     rsi = features.get("rsi14")
-    if rsi is not None:
+    if rsi is not None and _indicator_valid(features, "rsi14"):
         if 55 <= rsi < 70:
             score += 9
         elif 45 <= rsi < 55:
@@ -157,13 +149,14 @@ def _momentum_score(features):
         elif rsi <= 30:
             score -= 3
     score += clamp((features.get("change_5d_pct") or 0) * 1.3, -8, 8)
-    score += clamp((features.get("change_1h_pct") or 0) * 2.0, -5, 5)
-    score += clamp((features.get("change_4h_pct") or 0) * 1.2, -5, 5)
-    score += clamp((features.get("macd_histogram") or 0) / max(features.get("atr14") or 1, 1) * 8, -8, 8)
+    if _indicator_valid(features, "macd") and _indicator_valid(features, "atr14"):
+        score += clamp((features.get("macd_histogram") or 0) / max(features.get("atr14") or 1, 1) * 8, -8, 8)
     return clamp(score, -25, 25)
 
 
 def _volatility_score(features):
+    if not _indicator_valid(features, "atr14"):
+        return 0
     change = features.get("daily_change_pct") or 0
     atr_ratio = features.get("atr_ratio") or 1
     if atr_ratio > 2.0:
@@ -178,6 +171,8 @@ def _structure_score(features):
 
 def _similar_case_score(similar_summary):
     if not similar_summary or not similar_summary.get("case_count"):
+        return 0
+    if not similar_summary.get("is_statistically_valid"):
         return 0
     up_rate = similar_summary.get("up_rate") or 0.5
     down_rate = similar_summary.get("down_rate") or 0.5
@@ -239,10 +234,6 @@ def resolve_conflicting_signals(features: dict, raw_score: int) -> dict:
     if raw_score < 0 and ema_bias < 0 and rsi is not None and rsi <= 25 and bb_lower and price and price <= bb_lower * 1.005:
         penalty += 15
         warnings.append("下落材料と売られすぎが競合しています")
-    intraday_bias = features.get("intraday_trend_bias") or 0
-    if intraday_bias and ema_bias and intraday_bias * ema_bias < 0:
-        penalty += 10
-        warnings.append("短時間足と日足の方向が一致していません")
     if (features.get("shock_score") or 0) >= 70 and (features.get("continuation_score") or 0) < 50:
         penalty += 10
         warnings.append("突発性が高く継続判定は控えめです")
@@ -275,6 +266,8 @@ def _ema_alignment(features):
 
 
 def _vwap_alignment(features):
+    if not _indicator_valid(features, "vwap"):
+        return 0
     price = features.get("price")
     vwap = features.get("vwap")
     if price is None or vwap is None:
@@ -287,6 +280,8 @@ def _vwap_alignment(features):
 
 
 def _macd_alignment(features):
+    if not _indicator_valid(features, "macd"):
+        return 0
     macd = features.get("macd")
     signal = features.get("macd_signal")
     if macd is None or signal is None:
@@ -299,6 +294,8 @@ def _macd_alignment(features):
 
 
 def _rsi_continuation(features, direction):
+    if not _indicator_valid(features, "rsi14"):
+        return 0
     rsi = features.get("rsi14")
     if rsi is None:
         return 0
@@ -310,6 +307,8 @@ def _rsi_continuation(features, direction):
 
 
 def _atr_continuation(features):
+    if not _indicator_valid(features, "atr14"):
+        return 0
     atr_ratio = features.get("atr_ratio")
     if atr_ratio is None:
         return 0
@@ -319,6 +318,11 @@ def _atr_continuation(features):
 def _trend_mismatch(features):
     sign = 1 if (features.get("daily_change_pct") or 0) > 0 else -1
     return sign * _ema_alignment(features) < 0
+
+
+def _indicator_valid(features, key):
+    validity = features.get("indicator_validity") or {}
+    return validity.get(key, True)
 
 
 def calculate_change_zscore(changes, current_change):

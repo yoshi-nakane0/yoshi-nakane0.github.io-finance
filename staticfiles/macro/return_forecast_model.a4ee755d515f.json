@@ -1,0 +1,139 @@
+{
+  "model_version": "return_lightgbm_v2",
+  "predicted_at": "2026-05-24",
+  "results": [
+    {
+      "target": "GSPC",
+      "horizon": "1m",
+      "horizon_months": 1,
+      "predicted_return_pct": 0.0296,
+      "validation_mae_pct": 2.7258,
+      "validation_rmse_pct": 3.4505,
+      "training_samples": 275,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "GSPC",
+      "horizon": "3m",
+      "horizon_months": 3,
+      "predicted_return_pct": 1.52,
+      "validation_mae_pct": 4.6921,
+      "validation_rmse_pct": 5.5519,
+      "training_samples": 273,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "GSPC",
+      "horizon": "6m",
+      "horizon_months": 6,
+      "predicted_return_pct": 3.2464,
+      "validation_mae_pct": 6.7287,
+      "validation_rmse_pct": 7.7552,
+      "training_samples": 270,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "IXIC",
+      "horizon": "1m",
+      "horizon_months": 1,
+      "predicted_return_pct": 0.7659,
+      "validation_mae_pct": 3.6912,
+      "validation_rmse_pct": 4.9166,
+      "training_samples": 275,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "IXIC",
+      "horizon": "3m",
+      "horizon_months": 3,
+      "predicted_return_pct": 2.1506,
+      "validation_mae_pct": 6.9804,
+      "validation_rmse_pct": 8.4089,
+      "training_samples": 273,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "IXIC",
+      "horizon": "6m",
+      "horizon_months": 6,
+      "predicted_return_pct": 4.6714,
+      "validation_mae_pct": 8.0971,
+      "validation_rmse_pct": 10.1564,
+      "training_samples": 270,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "DJI",
+      "horizon": "1m",
+      "horizon_months": 1,
+      "predicted_return_pct": 0.5439,
+      "validation_mae_pct": 2.7157,
+      "validation_rmse_pct": 3.4036,
+      "training_samples": 275,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "DJI",
+      "horizon": "3m",
+      "horizon_months": 3,
+      "predicted_return_pct": 1.3275,
+      "validation_mae_pct": 4.1095,
+      "validation_rmse_pct": 4.7765,
+      "training_samples": 273,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "DJI",
+      "horizon": "6m",
+      "horizon_months": 6,
+      "predicted_return_pct": 2.8683,
+      "validation_mae_pct": 5.087,
+      "validation_rmse_pct": 6.0211,
+      "training_samples": 270,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "N225",
+      "horizon": "1m",
+      "horizon_months": 1,
+      "predicted_return_pct": 0.6937,
+      "validation_mae_pct": 4.9108,
+      "validation_rmse_pct": 6.492,
+      "training_samples": 275,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "N225",
+      "horizon": "3m",
+      "horizon_months": 3,
+      "predicted_return_pct": 1.3578,
+      "validation_mae_pct": 7.6654,
+      "validation_rmse_pct": 9.9933,
+      "training_samples": 273,
+      "validation_samples": 24,
+      "feature_count": 110
+    },
+    {
+      "target": "N225",
+      "horizon": "6m",
+      "horizon_months": 6,
+      "predicted_return_pct": 3.4845,
+      "validation_mae_pct": 11.6699,
+      "validation_rmse_pct": 14.889,
+      "training_samples": 270,
+      "validation_samples": 24,
+      "feature_count": 110
+    }
+  ],
+  "skipped": []
+}

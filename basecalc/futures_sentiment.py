@@ -1,7 +1,6 @@
 import logging
 import csv
 import datetime
-from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from django.utils import timezone
@@ -9,6 +8,7 @@ from django.utils import timezone
 from .nikkei_bias import HEADERS, REQUEST_TIMEOUT_SEC
 from .data_sources import normalize_chart_payload, snapshot_from_quote_row
 from .data_quality import evaluate_snapshot_quality
+from .instrument import normalize_instrument
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +20,6 @@ NIKKEI_FUTURES_SYMBOL = "NIY=F"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/"
 STOOQ_FALLBACK_SYMBOLS = ("nk.f", "^nkx")
 YAHOO_DAILY_CONFIG = ("6mo", "1d", "1d")
-YAHOO_INTRADAY_CONFIGS = {
-    "5m": ("5d", "5m", "5m"),
-    "15m": ("10d", "15m", "15m"),
-    "1h": ("1mo", "1h", "1h"),
-}
 
 
 def _to_float(value):
@@ -60,17 +55,7 @@ def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
             return _attach_snapshot_quality(fallback)
         return None
 
-    timeframes = {"1d": dict(snapshot)}
-    with ThreadPoolExecutor(max_workers=len(YAHOO_INTRADAY_CONFIGS)) as executor:
-        intraday_futures = {
-            key: executor.submit(_get_yahoo_chart_snapshot, symbol, *config)
-            for key, config in YAHOO_INTRADAY_CONFIGS.items()
-        }
-        for key, future in intraday_futures.items():
-            value = future.result()
-            if value and value.get("closes"):
-                timeframes[key] = value
-    snapshot["timeframes"] = timeframes
+    snapshot["timeframes"] = {"1d": dict(snapshot)}
     return _attach_snapshot_quality(snapshot)
 
 
@@ -108,7 +93,9 @@ def _get_yahoo_chart_snapshot(symbol, range_value, interval, timeframe):
     if snapshot is None:
         return None
     snapshot["fetched_at"] = timezone.now()
-    snapshot["instrument_type"] = "futures"
+    instrument = normalize_instrument(symbol, "yahoo")
+    snapshot["instrument_key"] = instrument["instrument_key"]
+    snapshot["instrument_type"] = instrument["instrument_type"]
     snapshot["fallback_used"] = False
     return snapshot
 
@@ -141,7 +128,9 @@ def _get_stooq_snapshot():
             continue
         snapshot["fetched_at"] = timezone.now()
         snapshot["fallback_used"] = True
-        snapshot["instrument_type"] = "index_fallback" if symbol == "^nkx" else "futures"
+        instrument = normalize_instrument(symbol, "stooq")
+        snapshot["instrument_key"] = instrument["instrument_key"]
+        snapshot["instrument_type"] = instrument["instrument_type"]
         snapshot["timeframes"] = {"1d": dict(snapshot)}
         if not snapshot.get("is_stale"):
             return snapshot
@@ -154,7 +143,9 @@ def _attach_snapshot_quality(snapshot):
         return snapshot
     fetched_at = snapshot.get("fetched_at") or timezone.now()
     snapshot.setdefault("fetched_at", fetched_at)
-    snapshot.setdefault("instrument_type", "futures")
+    instrument = normalize_instrument(snapshot.get("symbol"), snapshot.get("source"))
+    snapshot.setdefault("instrument_key", instrument["instrument_key"])
+    snapshot.setdefault("instrument_type", instrument["instrument_type"])
     timeframes = snapshot.get("timeframes")
     if isinstance(timeframes, dict):
         for key, frame in timeframes.items():
@@ -164,6 +155,7 @@ def _attach_snapshot_quality(snapshot):
             frame.setdefault("source", snapshot.get("source"))
             frame.setdefault("fetched_at", fetched_at)
             frame.setdefault("fallback_used", snapshot.get("fallback_used", False))
+            frame.setdefault("instrument_key", snapshot.get("instrument_key"))
             frame.setdefault("instrument_type", snapshot.get("instrument_type"))
             frame["quality"] = evaluate_snapshot_quality(frame)
     snapshot["quality"] = evaluate_snapshot_quality(snapshot)

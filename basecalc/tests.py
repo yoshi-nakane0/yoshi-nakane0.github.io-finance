@@ -18,6 +18,7 @@ from .data_quality import evaluate_snapshot_quality
 from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock
+from .backtesting import run_basecalc_backtest
 from .market_context import calculate_context_score
 from .market_bars import prune_market_bars
 from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
@@ -27,9 +28,12 @@ from .outcomes import (
     confidence_adjustment_for_state,
     evaluate_due_predictions,
     improvement_insights,
+    performance_summary,
     save_prediction,
 )
 from .persistence import export_basecalc_history, import_basecalc_history
+from .readiness import evaluate_world_model_readiness
+from .similarity import find_similar_cases
 from .state_machine import STATE_DEFINITIONS, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
@@ -39,6 +43,48 @@ from .views import (
 )
 from .world_model import build_world_model
 from macro.models import Indicator, Observation
+
+
+def _ready_snapshot(length=80, symbol='NIY=F', source='yahoo', fetched_at=None, volume=1000):
+    closes = [40000 + index * 25 for index in range(length)]
+    return {
+        'symbol': symbol,
+        'source': source,
+        'price': closes[-1] if closes else 40000,
+        'previous_close': closes[-2] if len(closes) >= 2 else 39900,
+        'change_pct': 0.2,
+        'fetched_at': fetched_at or timezone.now(),
+        'fallback_used': source == 'stooq',
+        'opens': [close - 20 for close in closes],
+        'highs': [close + 80 for close in closes],
+        'lows': [close - 80 for close in closes],
+        'closes': closes,
+        'volumes': [volume for _ in closes],
+        'timestamps': [1700000000 + index * 86400 for index in range(length)],
+    }
+
+
+def _create_market_bar_series(count=80, symbol='NIY=F', instrument_key='cme_nikkei_futures', start=None):
+    start = start or (timezone.now() - timezone.timedelta(days=count + 10))
+    rows = []
+    for index in range(count):
+        close = 40000 + index * 25
+        rows.append(
+            MarketBar.objects.create(
+                symbol=symbol,
+                timeframe='1d',
+                timestamp=start + timezone.timedelta(days=index),
+                open=close - 20,
+                high=close + 80,
+                low=close - 80,
+                close=close,
+                volume=1000,
+                source='yahoo',
+                instrument_key=instrument_key,
+                instrument_type='futures' if instrument_key == 'cme_nikkei_futures' else 'index_fallback',
+            )
+        )
+    return rows
 
 
 class BasecalcUpdateSecurityTests(TestCase):
@@ -155,11 +201,6 @@ class BasecalcUpdateSecurityTests(TestCase):
             latest_ts - 86400,
             latest_ts,
         ]
-        intraday_timestamps = [
-            latest_ts - 7200,
-            latest_ts - 3600,
-            latest_ts,
-        ]
         snapshot = {
             'symbol': 'NIY=F',
             'source': 'yahoo',
@@ -176,16 +217,6 @@ class BasecalcUpdateSecurityTests(TestCase):
                     'closes': [40700, 40900, 41100],
                     'volumes': [100, 110, 120],
                     'timestamps': daily_timestamps,
-                },
-                '1h': {
-                    'symbol': 'NIY=F',
-                    'source': 'yahoo',
-                    'opens': [40900, 41000, 41050],
-                    'highs': [41050, 41120, 41180],
-                    'lows': [40880, 40980, 41020],
-                    'closes': [41000, 41050, 41100],
-                    'volumes': [10, 12, 14],
-                    'timestamps': intraday_timestamps,
                 },
             },
         }
@@ -208,7 +239,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_price'), 41100)
         self.assertEqual(cache.get('nikkei_futures_snapshot')['price'], 41100)
         self.assertEqual(cache.get('nikkei_futures_snapshot_last_good')['price'], 41100)
-        self.assertEqual(MarketBar.objects.count(), 6)
+        self.assertEqual(MarketBar.objects.count(), 3)
 
     def test_fresh_futures_cache_skips_external_refetch(self):
         cached = {
@@ -254,19 +285,19 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result, 1.2)
 
     def test_market_bar_pruning_keeps_storage_bounded(self):
-        old_time = timezone.now() - timezone.timedelta(days=30)
+        old_time = timezone.now() - timezone.timedelta(days=365 * 16)
         recent_time = timezone.now()
         for index in range(3):
             MarketBar.objects.create(
                 symbol='NIY=F',
-                timeframe='5m',
-                timestamp=old_time + timezone.timedelta(minutes=index * 5),
+                timeframe='1d',
+                timestamp=old_time + timezone.timedelta(days=index),
                 close=40000 + index,
                 source='test',
             )
         MarketBar.objects.create(
             symbol='NIY=F',
-            timeframe='5m',
+            timeframe='1d',
             timestamp=recent_time,
             close=41000,
             source='test',
@@ -630,6 +661,283 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertGreater(result['risk_score'], 0)
 
 
+class BasecalcReliabilitySpecTests(TestCase):
+    def test_good_yahoo_niy_snapshot_is_ready(self):
+        snapshot = _ready_snapshot(80)
+        data_quality = evaluate_snapshot_quality(snapshot)
+        readiness = evaluate_world_model_readiness(
+            price=snapshot['price'],
+            snapshot=snapshot,
+            data_quality=data_quality,
+            daily_ohlcv={
+                'opens': snapshot['opens'],
+                'highs': snapshot['highs'],
+                'lows': snapshot['lows'],
+                'closes': snapshot['closes'],
+                'volumes': snapshot['volumes'],
+                'real_counts': {'opens': 80, 'highs': 80, 'lows': 80, 'closes': 80, 'volumes': 80},
+            },
+        )
+
+        self.assertEqual(readiness['level'], 'ready')
+        self.assertTrue(readiness['directional_allowed'])
+
+    def test_stooq_fallback_is_limited_and_direction_blocked(self):
+        snapshot = _ready_snapshot(80, symbol='NK.F', source='stooq')
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertEqual(result['readiness_level'], 'limited')
+        self.assertFalse(result['directional_allowed'])
+        self.assertEqual(result['direction'], 'neutral')
+        self.assertEqual(result['state_key'], 'limited_reference')
+        self.assertEqual(result['confidence'], 'Low')
+
+    def test_index_fallback_is_blocked(self):
+        snapshot = _ready_snapshot(80, symbol='^NKX', source='stooq')
+        snapshot['instrument_type'] = 'index_fallback'
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertEqual(result['readiness_level'], 'blocked')
+        self.assertFalse(result['directional_allowed'])
+        self.assertEqual(result['state_key'], 'data_unavailable')
+
+    def test_insufficient_daily_bars_blocks_directional_state(self):
+        snapshot = _ready_snapshot(34)
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertEqual(result['readiness_level'], 'blocked')
+        self.assertEqual(result['direction'], 'neutral')
+        self.assertEqual(result['upside_targets'], [])
+
+    def test_35_to_59_daily_bars_is_limited(self):
+        snapshot = _ready_snapshot(45)
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertEqual(result['readiness_level'], 'limited')
+        self.assertEqual(result['direction'], 'neutral')
+        self.assertEqual(result['state_key'], 'limited_reference')
+
+    def test_vwap_invalid_when_volume_is_synthetic(self):
+        snapshot = _ready_snapshot(80, volume=1)
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertFalse(result['readiness']['indicator_validity']['vwap'])
+        self.assertEqual(result['features']['vwap'], None)
+        self.assertEqual(result['components'].get('trend', 0), result['components'].get('trend', 0))
+
+    def test_pivot_invalid_without_real_previous_high_low_close(self):
+        snapshot = _ready_snapshot(80)
+        snapshot['highs'] = []
+        snapshot['lows'] = []
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertFalse(result['readiness']['indicator_validity']['pivot'])
+        self.assertEqual(result['features']['pivots'], {})
+
+    def test_limited_world_model_does_not_show_bull_trend_continuation(self):
+        snapshot = _ready_snapshot(45, symbol='NK.F', source='stooq')
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertNotEqual(result['state_label'], '上昇継続')
+        self.assertNotEqual(result['state_label'], '押し目買い')
+        self.assertEqual(result['state_label'], '参考表示')
+
+    def test_similar_cases_require_same_instrument_key(self):
+        _create_market_bar_series(120, symbol='^NKX', instrument_key='nikkei_index_fallback')
+
+        result = find_similar_cases(
+            {'sentiment_score': 20, 'instrument_key': 'cme_nikkei_futures'},
+            {'opens': [], 'highs': [], 'lows': [], 'closes': [], 'volumes': []},
+            instrument_key='cme_nikkei_futures',
+        )
+
+        self.assertEqual(result['searched_case_count'], 0)
+        self.assertFalse(result['is_statistically_valid'])
+
+    def test_similar_cases_with_small_sample_are_not_statistically_valid(self):
+        snapshot = _ready_snapshot(80)
+        result = build_world_model(snapshot['price'], snapshot)
+
+        self.assertFalse(result['similar_summary']['is_statistically_valid'])
+        self.assertEqual(result['components']['similar'], 0)
+
+    def test_backtest_prediction_timestamp_uses_bar_timestamp(self):
+        bars = _create_market_bar_series(80)
+
+        result = run_basecalc_backtest(min_bars=80, limit=80, write=True)
+
+        self.assertEqual(result['created'], 1)
+        prediction = WorldModelPrediction.objects.get()
+        self.assertEqual(prediction.prediction_timestamp, bars[-1].timestamp)
+        self.assertTrue(prediction.is_backtest)
+
+    def test_backtest_does_not_mix_into_live_performance(self):
+        live = WorldModelPrediction.objects.create(
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=30,
+            shock_score=0,
+            confidence='Low',
+            main_scenario='test',
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        backtest = WorldModelPrediction.objects.create(
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=30,
+            shock_score=0,
+            confidence='Low',
+            main_scenario='test',
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+            is_backtest=True,
+        )
+        for prediction in (live, backtest):
+            PredictionOutcome.objects.create(
+                prediction=prediction,
+                horizon='1d',
+                evaluated_at=timezone.now(),
+                price_at_evaluation=41000,
+                realized_return_pct=0,
+                direction_hit=True,
+            )
+
+        self.assertEqual(performance_summary(is_backtest=False)['total_predictions'], 1)
+        self.assertEqual(performance_summary(is_backtest=True)['total_predictions'], 1)
+
+    def test_outcome_uses_prediction_timestamp_not_created_at(self):
+        prediction_time = timezone.now() - timezone.timedelta(days=5)
+        prediction = WorldModelPrediction.objects.create(
+            prediction_timestamp=prediction_time,
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=30,
+            shock_score=0,
+            confidence='Low',
+            main_scenario='test',
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=prediction_time + timezone.timedelta(days=1),
+            close=41050,
+            source='yahoo',
+            instrument_key='cme_nikkei_futures',
+        )
+
+        evaluate_due_predictions(now=timezone.now())
+
+        outcome = PredictionOutcome.objects.get(prediction=prediction, horizon='1d')
+        self.assertEqual(outcome.price_at_evaluation, 41050)
+
+    def test_export_import_v2_preserves_reliability_fields(self):
+        prediction = WorldModelPrediction.objects.create(
+            prediction_timestamp=timezone.now(),
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=30,
+            shock_score=0,
+            confidence='Low',
+            main_scenario='test',
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            source_symbol='NIY=F',
+            source_name='yahoo',
+            readiness_level='ready',
+            directional_allowed=True,
+            bar_counts={'1d': 80},
+            indicator_validity={'ema20': True},
+            is_backtest=True,
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'basecalc_history.json'
+            export_basecalc_history(str(path))
+            payload = json.loads(path.read_text(encoding='utf-8'))
+            WorldModelPrediction.objects.all().delete()
+            import_basecalc_history(str(path))
+
+        imported = WorldModelPrediction.objects.get()
+        self.assertEqual(payload['schema'], 'basecalc_history_v2')
+        self.assertEqual(imported.instrument_key, prediction.instrument_key)
+        self.assertEqual(imported.readiness_level, 'ready')
+        self.assertTrue(imported.directional_allowed)
+        self.assertTrue(imported.is_backtest)
+        self.assertEqual(imported.bar_counts['1d'], 80)
+        self.assertTrue(imported.indicator_validity['ema20'])
+
+    def test_import_v1_history_defaults_to_limited_or_blocked(self):
+        payload = {
+            'schema': 'basecalc_history_v1',
+            'predictions': [{
+                'created_at': timezone.now().isoformat(),
+                'price': 41000,
+                'state_key': 'dip_buy',
+                'state_label': '押し目買い',
+                'direction': 'up',
+                'sentiment_score': 40,
+                'continuation_score': 60,
+                'shock_score': 0,
+                'confidence': 'Middle',
+                'main_scenario': 'test',
+                'features': {'symbol': 'NIY=F', 'source': 'yahoo'},
+                'data_quality_score': 95,
+            }],
+        }
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'basecalc_history.json'
+            path.write_text(json.dumps(payload), encoding='utf-8')
+            import_basecalc_history(str(path))
+
+        prediction = WorldModelPrediction.objects.get()
+        self.assertEqual(prediction.readiness_level, 'limited')
+        self.assertFalse(prediction.directional_allowed)
+
+    def test_check_basecalc_data_integrity_detects_directional_limited_prediction(self):
+        payload = {
+            'schema': 'basecalc_history_v2',
+            'predictions': [{
+                'created_at': timezone.now().isoformat(),
+                'prediction_timestamp': timezone.now().isoformat(),
+                'price': 41000,
+                'state_key': 'dip_buy',
+                'state_label': '押し目買い',
+                'direction': 'up',
+                'readiness_level': 'limited',
+                'instrument_key': 'cme_nikkei_futures',
+                'source_symbol': 'NIY=F',
+            }],
+        }
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'basecalc_history.json'
+            path.write_text(json.dumps(payload), encoding='utf-8')
+            with self.assertRaises(Exception):
+                call_command('check_basecalc_data_integrity', '--input', str(path))
+
+
 class BasecalcTechnicalIndicatorTests(TestCase):
     def test_indicators_return_latest_values(self):
         closes = [100 + index for index in range(40)]
@@ -684,9 +992,11 @@ class BasecalcWorldModelTests(TestCase):
         closes = [40000 + index * 30 for index in range(80)]
         snapshot = {
             'symbol': 'NIY=F',
+            'source': 'yahoo',
             'price': closes[-1],
             'previous_close': closes[-2],
             'change_pct': 0.2,
+            'fetched_at': timezone.now(),
             'opens': [close - 30 for close in closes],
             'highs': [close + 120 for close in closes],
             'lows': [close - 140 for close in closes],
@@ -713,44 +1023,6 @@ class BasecalcWorldModelTests(TestCase):
 
         self.assertTrue(result['performance_adjustment']['applied'])
         self.assertIn(result['confidence'], ('Low', 'Middle'))
-
-    def test_world_model_uses_intraday_timeframes(self):
-        daily_closes = [40000 + index * 30 for index in range(80)]
-        intraday_closes = [42300 + index * 10 for index in range(48)]
-        snapshot = {
-            'symbol': 'NIY=F',
-            'price': intraday_closes[-1],
-            'previous_close': daily_closes[-2],
-            'change_pct': 0.4,
-            'opens': [close - 20 for close in daily_closes],
-            'highs': [close + 100 for close in daily_closes],
-            'lows': [close - 100 for close in daily_closes],
-            'closes': daily_closes,
-            'volumes': [1000 for _ in daily_closes],
-            'timeframes': {
-                '1d': {
-                    'opens': [close - 20 for close in daily_closes],
-                    'highs': [close + 100 for close in daily_closes],
-                    'lows': [close - 100 for close in daily_closes],
-                    'closes': daily_closes,
-                    'volumes': [1000 for _ in daily_closes],
-                },
-                '15m': {
-                    'opens': [close - 5 for close in intraday_closes],
-                    'highs': [close + 20 for close in intraday_closes],
-                    'lows': [close - 20 for close in intraday_closes],
-                    'closes': intraday_closes,
-                    'volumes': [100 for _ in intraday_closes],
-                    'timestamps': [1700000000 + index * 900 for index in range(48)],
-                },
-            },
-        }
-
-        result = build_world_model(intraday_closes[-1], snapshot)
-
-        self.assertTrue(result['timeframe_summary'])
-        self.assertEqual(result['chart_points']['timeframe'], '15m')
-        self.assertIsInstance(result['chart_points']['points'][0]['time'], int)
 
     def test_targets_are_split_above_and_below_price(self):
         targets = build_targets(
@@ -794,6 +1066,20 @@ class BasecalcWorldModelTests(TestCase):
         )
         self.client.force_login(user)
         closes = [40000 + index * 50 for index in range(80)]
+        snapshot = {
+            'symbol': 'NIY=F',
+            'source': 'yahoo',
+            'price': closes[-1],
+            'previous_close': closes[-2],
+            'change_pct': 0.2,
+            'fetched_at': timezone.now(),
+            'opens': [close - 20 for close in closes],
+            'highs': [close + 80 for close in closes],
+            'lows': [close - 80 for close in closes],
+            'closes': closes,
+            'volumes': [1000 for _ in closes],
+            'timestamps': [1700000000 + index * 86400 for index in range(80)],
+        }
 
         with (
             patch(
@@ -801,7 +1087,7 @@ class BasecalcWorldModelTests(TestCase):
                 return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
             ),
             patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
-            patch('basecalc.views.get_nikkei_futures_snapshot', return_value=None),
+            patch('basecalc.views.get_nikkei_futures_snapshot', return_value=snapshot),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -924,12 +1210,21 @@ class BasecalcWorldModelTests(TestCase):
             continuation_score=70,
             shock_score=20,
             confidence='Middle',
+            confidence_score=55,
             main_scenario='test',
             invalidation_price=41400,
             upside_targets=[{'price': 41400}, {'price': 41800}],
             downside_targets=[{'price': 40600}, {'price': 40200}],
             evidence=[],
             features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            source_symbol='NIY=F',
+            source_name='yahoo',
+            readiness_level='ready',
+            directional_allowed=True,
+            bar_counts={'1d': 80},
+            indicator_validity={'ema20': True, 'ema60': True, 'rsi14': True, 'atr14': True},
         )
         PredictionOutcome.objects.create(
             prediction=prediction,
@@ -965,6 +1260,13 @@ class BasecalcWorldModelTests(TestCase):
                 downside_targets=[{'price': 40600}, {'price': 40200}],
                 evidence=[],
                 features={'symbol': 'NIY=F'},
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+                source_symbol='NIY=F',
+                source_name='yahoo',
+                readiness_level='ready',
+                directional_allowed=True,
+                bar_counts={'1d': 80},
             )
             PredictionOutcome.objects.create(
                 prediction=prediction,
@@ -998,6 +1300,13 @@ class BasecalcWorldModelTests(TestCase):
                 downside_targets=[{'price': 40600}, {'price': 40200}],
                 evidence=[],
                 features={'symbol': 'NIY=F'},
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+                source_symbol='NIY=F',
+                source_name='yahoo',
+                readiness_level='ready',
+                directional_allowed=True,
+                bar_counts={'1d': 80},
             )
             PredictionOutcome.objects.create(
                 prediction=prediction,
@@ -1049,7 +1358,7 @@ class BasecalcWorldModelTests(TestCase):
         self.assertContains(response, '改善候補')
         self.assertContains(response, '押し目買い')
 
-    def test_outcome_evaluation_includes_3d_and_5d_horizons(self):
+    def test_outcome_evaluation_uses_daily_horizons(self):
         created_at = timezone.now() - timezone.timedelta(days=6)
         prediction = WorldModelPrediction.objects.create(
             price=41000,
@@ -1070,8 +1379,6 @@ class BasecalcWorldModelTests(TestCase):
         WorldModelPrediction.objects.filter(id=prediction.id).update(created_at=created_at)
         prediction.refresh_from_db()
         bar_specs = (
-            ('1h', timezone.timedelta(hours=1), '1h', 41100),
-            ('4h', timezone.timedelta(hours=4), '1h', 41200),
             ('1d', timezone.timedelta(days=1), '1d', 41450),
             ('3d', timezone.timedelta(days=3), '1d', 41650),
             ('5d', timezone.timedelta(days=5), '1d', 41900),
@@ -1096,7 +1403,7 @@ class BasecalcWorldModelTests(TestCase):
                 flat=True,
             )
         )
-        self.assertTrue({'1h', '4h', '1d', '3d', '5d'}.issubset(horizons))
+        self.assertTrue({'1d', '3d', '5d'}.issubset(horizons))
         one_day = PredictionOutcome.objects.get(prediction=prediction, horizon='1d')
         self.assertEqual(one_day.price_at_evaluation, 41450)
 

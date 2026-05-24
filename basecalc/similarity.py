@@ -11,7 +11,32 @@ from .indicators import (
 )
 
 
-def find_similar_cases(features, ohlcv, limit=12, min_similarity=0.35):
+def find_similar_cases(
+    features,
+    ohlcv,
+    *,
+    instrument_key="cme_nikkei_futures",
+    as_of=None,
+    timeframe="1d",
+    min_similarity=0.35,
+    limit=30,
+):
+    source_ohlcv = _market_bar_ohlcv(
+        instrument_key=instrument_key or features.get("instrument_key"),
+        as_of=as_of,
+        timeframe=timeframe,
+    )
+    if not source_ohlcv:
+        source_ohlcv = ohlcv
+    return _find_similar_cases_from_ohlcv(
+        features,
+        source_ohlcv,
+        limit=limit,
+        min_similarity=min_similarity,
+    )
+
+
+def _find_similar_cases_from_ohlcv(features, ohlcv, limit=30, min_similarity=0.35):
     closes = _clean(ohlcv.get("closes"))
     highs = _clean(ohlcv.get("highs"))
     lows = _clean(ohlcv.get("lows"))
@@ -94,10 +119,14 @@ def find_similar_cases(features, ohlcv, limit=12, min_similarity=0.35):
             }
         )
     cases = sorted(cases, key=lambda item: item["similarity"], reverse=True)[:limit]
-    if not cases:
+    if not cases or searched_case_count < 100 or len(cases) < 10:
         summary = _empty_summary()
         summary["searched_case_count"] = searched_case_count
+        summary["used_case_count"] = len(cases)
+        summary["case_count"] = len(cases)
         summary["min_similarity"] = min_similarity
+        summary["cases"] = cases[:3] if searched_case_count >= 100 else []
+        summary["sample_warning"] = _sample_warning(searched_case_count, len(cases))
         return summary
 
     up_cases = [case for case in cases if case["return_3d"] > 0]
@@ -112,6 +141,8 @@ def find_similar_cases(features, ohlcv, limit=12, min_similarity=0.35):
         "case_count": len(cases),
         "searched_case_count": searched_case_count,
         "used_case_count": len(cases),
+        "is_statistically_valid": len(cases) >= 30,
+        "sample_warning": "" if len(cases) >= 30 else "類似局面は参考件数です",
         "min_similarity": min_similarity,
         "up_rate": round(len(up_cases) / len(cases), 2),
         "down_rate": round(len(down_cases) / len(cases), 2),
@@ -161,6 +192,32 @@ def find_similar_cases(features, ohlcv, limit=12, min_similarity=0.35):
         ),
         "direction": direction,
         "cases": cases[:3],
+    }
+
+
+def _market_bar_ohlcv(instrument_key, as_of=None, timeframe="1d"):
+    try:
+        from .models import MarketBar
+    except Exception:
+        return None
+    try:
+        queryset = MarketBar.objects.filter(timeframe=timeframe)
+        if instrument_key:
+            queryset = queryset.filter(instrument_key=instrument_key)
+        if as_of is not None:
+            queryset = queryset.filter(timestamp__lt=as_of)
+        bars = list(queryset.order_by("timestamp")[:5000])
+    except Exception:
+        return None
+    if len(bars) < 35:
+        return None
+    return {
+        "opens": [bar.open or bar.close for bar in bars],
+        "highs": [bar.high or bar.close for bar in bars],
+        "lows": [bar.low or bar.close for bar in bars],
+        "closes": [bar.close for bar in bars],
+        "volumes": [bar.volume or 0 for bar in bars],
+        "timestamps": [int(bar.timestamp.timestamp()) for bar in bars],
     }
 
 
@@ -266,6 +323,8 @@ def _empty_summary():
         "case_count": 0,
         "searched_case_count": 0,
         "used_case_count": 0,
+        "is_statistically_valid": False,
+        "sample_warning": "類似局面の件数が不足しています",
         "min_similarity": 0.35,
         "up_rate": 0.0,
         "down_rate": 0.0,
@@ -286,3 +345,11 @@ def _empty_summary():
         "direction": "neutral",
         "cases": [],
     }
+
+
+def _sample_warning(searched_case_count, used_case_count):
+    if searched_case_count < 100:
+        return "検索対象の履歴が100件未満です"
+    if used_case_count < 10:
+        return "類似局面の件数が不足しています"
+    return "類似局面は参考件数です"

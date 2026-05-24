@@ -1,4 +1,18 @@
 STATE_DEFINITIONS = {
+    "data_unavailable": {
+        "label": "データ不足",
+        "phase_label": "判定停止",
+        "base_bias": "neutral",
+        "risk": "unknown",
+        "next_states": ["limited_reference", "range_neutral"],
+    },
+    "limited_reference": {
+        "label": "参考表示",
+        "phase_label": "方向判定停止",
+        "base_bias": "neutral",
+        "risk": "data_quality",
+        "next_states": ["range_neutral", "data_unavailable"],
+    },
     "bull_trend_continuation": {
         "label": "上昇継続",
         "phase_label": "押し目買い優勢",
@@ -143,7 +157,7 @@ def estimate_expected_returns(
     performance_stats = performance_stats or {}
     if performance_stats.get("avg_return_pct") is not None:
         base = (float(base) + float(performance_stats.get("avg_return_pct") or 0)) / 2
-    multipliers = {"1h": 0.18, "4h": 0.35, "1d": 0.6, "3d": 1.0, "5d": 1.25}
+    multipliers = {"1d": 0.6, "3d": 1.0, "5d": 1.25}
     return {horizon: round(float(base) * multiplier, 2) for horizon, multiplier in multipliers.items()}
 
 

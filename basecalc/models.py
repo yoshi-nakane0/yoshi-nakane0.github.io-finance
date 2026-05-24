@@ -12,6 +12,13 @@ class MarketSnapshot(models.Model):
     volume = models.FloatField(null=True, blank=True)
     timeframe = models.CharField(max_length=16)
     source = models.CharField(max_length=64)
+    instrument_key = models.CharField(max_length=64, default="unknown", db_index=True)
+    instrument_type = models.CharField(max_length=64, default="unknown")
+    source_symbol = models.CharField(max_length=32, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+    data_quality_score = models.IntegerField(null=True, blank=True)
+    data_quality_level = models.CharField(max_length=16, blank=True)
+    readiness_level = models.CharField(max_length=16, blank=True)
 
     class Meta:
         indexes = [
@@ -31,6 +38,9 @@ class MarketBar(models.Model):
     close = models.FloatField()
     volume = models.FloatField(null=True, blank=True)
     source = models.CharField(max_length=64)
+    instrument_key = models.CharField(max_length=64, default="unknown", db_index=True)
+    instrument_type = models.CharField(max_length=64, default="unknown")
+    data_quality_score = models.IntegerField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -47,6 +57,10 @@ class MarketBar(models.Model):
             models.Index(
                 fields=["timeframe", "-timestamp"],
                 name="basecalc_ma_timefra_a4436d_idx",
+            ),
+            models.Index(
+                fields=["instrument_key", "timeframe", "timestamp"],
+                name="basecalc_ma_inst_tf_ts_idx",
             ),
         ]
 
@@ -75,6 +89,7 @@ class TechnicalSnapshot(models.Model):
 
 class WorldModelPrediction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    prediction_timestamp = models.DateTimeField(null=True, blank=True, db_index=True)
     model_version = models.CharField(max_length=32, default="wm_v1")
     price = models.FloatField()
     state_key = models.CharField(max_length=64)
@@ -96,6 +111,16 @@ class WorldModelPrediction(models.Model):
     transition_probs = models.JSONField(default=list)
     expected_returns = models.JSONField(default=dict)
     context = models.JSONField(default=dict)
+    instrument_key = models.CharField(max_length=64, default="unknown", db_index=True)
+    instrument_type = models.CharField(max_length=64, default="unknown")
+    source_symbol = models.CharField(max_length=32, blank=True)
+    source_name = models.CharField(max_length=64, blank=True)
+    readiness_level = models.CharField(max_length=16, default="blocked", db_index=True)
+    directional_allowed = models.BooleanField(default=False)
+    readiness_reason_codes = models.JSONField(default=list)
+    bar_counts = models.JSONField(default=dict)
+    indicator_validity = models.JSONField(default=dict)
+    is_backtest = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         indexes = [
@@ -103,6 +128,10 @@ class WorldModelPrediction(models.Model):
             models.Index(fields=["state_key", "-created_at"]),
             models.Index(fields=["direction", "-created_at"]),
             models.Index(fields=["model_version", "-created_at"]),
+            models.Index(
+                fields=["instrument_key", "readiness_level", "is_backtest"],
+                name="basecalc_wo_instr__e857ed_idx",
+            ),
         ]
 
 

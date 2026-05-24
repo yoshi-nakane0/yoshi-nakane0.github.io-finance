@@ -2,10 +2,12 @@ import json
 from pathlib import Path
 
 from django.db import transaction
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import evaluate_due_predictions
+from .instrument import normalize_instrument
 
 
 def export_basecalc_history(output_path: str, limit_predictions: int = 5000) -> dict:
@@ -20,7 +22,8 @@ def export_basecalc_history(output_path: str, limit_predictions: int = 5000) -> 
     bars = MarketBar.objects.order_by("-timestamp")[: max(limit_predictions, 2000)]
     snapshots = MarketSnapshot.objects.order_by("-created_at")[: min(limit_predictions, 2000)]
     payload = {
-        "schema": "basecalc_history_v1",
+        "schema": "basecalc_history_v2",
+        "exported_at": _iso(timezone.now()),
         "predictions": [serialize_prediction(prediction) for prediction in predictions],
         "outcomes": [serialize_outcome(outcome) for outcome in outcomes],
         "market_bars": [serialize_market_bar(bar) for bar in bars],
@@ -43,6 +46,7 @@ def import_basecalc_history(input_path: str) -> dict:
     if not path.exists():
         return {"skipped": True, "reason": "missing", "input_path": str(path)}
     payload = json.loads(path.read_text(encoding="utf-8"))
+    schema = payload.get("schema") or "basecalc_history_v1"
     prediction_map = {}
     stats = {
         "skipped": False,
@@ -57,7 +61,7 @@ def import_basecalc_history(input_path: str) -> dict:
     }
     with transaction.atomic():
         for item in payload.get("predictions") or []:
-            prediction, created = _import_prediction(item)
+            prediction, created = _import_prediction(item, schema=schema)
             prediction_map[item.get("key") or _prediction_key_from_item(item)] = prediction
             stats["predictions_created" if created else "predictions_skipped"] += 1
         for item in payload.get("outcomes") or []:
@@ -81,6 +85,7 @@ def serialize_prediction(prediction: WorldModelPrediction) -> dict:
     return {
         "key": _prediction_key(prediction),
         "created_at": created_at,
+        "prediction_timestamp": _iso(getattr(prediction, "prediction_timestamp", None)),
         "price": prediction.price,
         "state_key": prediction.state_key,
         "state_label": prediction.state_label,
@@ -102,6 +107,16 @@ def serialize_prediction(prediction: WorldModelPrediction) -> dict:
         "transition_probs": getattr(prediction, "transition_probs", []),
         "expected_returns": getattr(prediction, "expected_returns", {}),
         "context": getattr(prediction, "context", {}),
+        "instrument_key": getattr(prediction, "instrument_key", "unknown"),
+        "instrument_type": getattr(prediction, "instrument_type", "unknown"),
+        "source_symbol": getattr(prediction, "source_symbol", ""),
+        "source_name": getattr(prediction, "source_name", ""),
+        "readiness_level": getattr(prediction, "readiness_level", "blocked"),
+        "directional_allowed": getattr(prediction, "directional_allowed", False),
+        "readiness_reason_codes": getattr(prediction, "readiness_reason_codes", []),
+        "bar_counts": getattr(prediction, "bar_counts", {}),
+        "indicator_validity": getattr(prediction, "indicator_validity", {}),
+        "is_backtest": getattr(prediction, "is_backtest", False),
     }
 
 
@@ -134,6 +149,9 @@ def serialize_market_bar(bar: MarketBar) -> dict:
         "close": bar.close,
         "volume": bar.volume,
         "source": bar.source,
+        "instrument_key": getattr(bar, "instrument_key", "unknown"),
+        "instrument_type": getattr(bar, "instrument_type", "unknown"),
+        "data_quality_score": getattr(bar, "data_quality_score", None),
     }
 
 
@@ -149,6 +167,13 @@ def serialize_market_snapshot(snapshot: MarketSnapshot) -> dict:
         "volume": snapshot.volume,
         "timeframe": snapshot.timeframe,
         "source": snapshot.source,
+        "instrument_key": getattr(snapshot, "instrument_key", "unknown"),
+        "instrument_type": getattr(snapshot, "instrument_type", "unknown"),
+        "source_symbol": getattr(snapshot, "source_symbol", ""),
+        "fetched_at": _iso(getattr(snapshot, "fetched_at", None)),
+        "data_quality_score": getattr(snapshot, "data_quality_score", None),
+        "data_quality_level": getattr(snapshot, "data_quality_level", ""),
+        "readiness_level": getattr(snapshot, "readiness_level", ""),
     }
 
 
@@ -156,12 +181,20 @@ def evaluate_imported_history():
     return evaluate_due_predictions()
 
 
-def _import_prediction(item):
+def _import_prediction(item, schema="basecalc_history_v1"):
     created_at = _dt(item.get("created_at"))
+    prediction_timestamp = _dt(item.get("prediction_timestamp")) or created_at
     existing = _find_prediction(item, created_at)
     if existing:
         return existing, False
+    features = item.get("features") or {}
+    instrument = normalize_instrument(
+        item.get("source_symbol") or features.get("symbol"),
+        item.get("source_name") or features.get("source"),
+    )
+    readiness_level = _readiness_level_from_item(item, schema)
     prediction = WorldModelPrediction.objects.create(
+        prediction_timestamp=prediction_timestamp,
         price=item["price"],
         state_key=item.get("state_key") or "range_neutral",
         state_label=item.get("state_label") or "レンジ中立",
@@ -176,13 +209,23 @@ def _import_prediction(item):
         upside_targets=item.get("upside_targets") or [],
         downside_targets=item.get("downside_targets") or [],
         evidence=item.get("evidence") or [],
-        features=item.get("features") or {},
+        features=features,
         model_version=item.get("model_version") or "wm_v1",
         confidence_score=item.get("confidence_score") or 0,
         data_quality_score=item.get("data_quality_score"),
         transition_probs=item.get("transition_probs") or [],
         expected_returns=item.get("expected_returns") or {},
         context=item.get("context") or {},
+        instrument_key=item.get("instrument_key") or instrument["instrument_key"],
+        instrument_type=item.get("instrument_type") or instrument["instrument_type"],
+        source_symbol=item.get("source_symbol") or instrument["symbol"] or features.get("symbol") or "",
+        source_name=item.get("source_name") or instrument["source"] or features.get("source") or "",
+        readiness_level=readiness_level,
+        directional_allowed=bool(item.get("directional_allowed")) and readiness_level == "ready",
+        readiness_reason_codes=item.get("readiness_reason_codes") or [],
+        bar_counts=item.get("bar_counts") or {},
+        indicator_validity=item.get("indicator_validity") or features.get("indicator_validity") or {},
+        is_backtest=bool(item.get("is_backtest")),
     )
     if created_at:
         WorldModelPrediction.objects.filter(id=prediction.id).update(created_at=created_at)
@@ -229,8 +272,9 @@ def _import_market_bar(item):
     timestamp = _dt(item.get("timestamp"))
     if timestamp is None:
         return None, False
+    instrument = normalize_instrument(item.get("symbol"), item.get("source"))
     return MarketBar.objects.get_or_create(
-        symbol=item.get("symbol") or "NIY=F",
+        symbol=instrument["symbol"] or item.get("symbol") or "NIY=F",
         timeframe=item.get("timeframe") or "1d",
         timestamp=timestamp,
         defaults={
@@ -240,21 +284,25 @@ def _import_market_bar(item):
             "close": item.get("close") or 0,
             "volume": item.get("volume"),
             "source": item.get("source") or "history_import",
+            "instrument_key": item.get("instrument_key") or instrument["instrument_key"],
+            "instrument_type": item.get("instrument_type") or instrument["instrument_type"],
+            "data_quality_score": item.get("data_quality_score"),
         },
     )
 
 
 def _import_market_snapshot(item):
     created_at = _dt(item.get("created_at"))
+    instrument = normalize_instrument(item.get("symbol"), item.get("source"))
     existing = MarketSnapshot.objects.filter(
-        symbol=item.get("symbol") or "NIY=F",
+        symbol=instrument["symbol"] or item.get("symbol") or "NIY=F",
         created_at=created_at,
         source=item.get("source") or "history_import",
     ).first()
     if existing:
         return existing, False
     snapshot = MarketSnapshot.objects.create(
-        symbol=item.get("symbol") or "NIY=F",
+        symbol=instrument["symbol"] or item.get("symbol") or "NIY=F",
         price=item.get("price") or 0,
         open=item.get("open"),
         high=item.get("high"),
@@ -263,6 +311,13 @@ def _import_market_snapshot(item):
         volume=item.get("volume"),
         timeframe=item.get("timeframe") or "1d",
         source=item.get("source") or "history_import",
+        instrument_key=item.get("instrument_key") or instrument["instrument_key"],
+        instrument_type=item.get("instrument_type") or instrument["instrument_type"],
+        source_symbol=item.get("source_symbol") or item.get("symbol") or "",
+        fetched_at=_dt(item.get("fetched_at")) or created_at,
+        data_quality_score=item.get("data_quality_score"),
+        data_quality_level=item.get("data_quality_level") or "",
+        readiness_level=item.get("readiness_level") or "",
     )
     if created_at:
         MarketSnapshot.objects.filter(id=snapshot.id).update(created_at=created_at)
@@ -290,6 +345,21 @@ def _prediction_key_from_item(item):
             str(round(float(item.get("price") or 0), 4)),
         ]
     )
+
+
+def _readiness_level_from_item(item, schema):
+    if item.get("readiness_level"):
+        return item["readiness_level"]
+    if schema == "basecalc_history_v2":
+        return "blocked"
+    score = item.get("data_quality_score")
+    try:
+        score = int(score)
+    except (TypeError, ValueError):
+        score = 0
+    if score >= 50:
+        return "limited"
+    return "blocked"
 
 
 def _iso(value):
