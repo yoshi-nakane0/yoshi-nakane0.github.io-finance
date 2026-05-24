@@ -1,0 +1,1999 @@
+{
+  "model_version": "regime_probability_v2_validated",
+  "evaluated_at": "2026-05-24",
+  "truth_source": "USREC",
+  "target": "US recession probability",
+  "horizon_months": 3,
+  "sample_count": 241,
+  "event_count": 20,
+  "event_rate_interval": [
+    0.054361796531018775,
+    0.12469927805761322
+  ],
+  "metrics": {
+    "roc_auc": 0.8952488687782806,
+    "pr_auc": 0.5871836303074595,
+    "brier_score": 0.10132794109836059,
+    "calibration_bins": [
+      {
+        "lower": 0.0,
+        "upper": 0.2,
+        "count": 145,
+        "event_count": 2,
+        "avg_probability": 0.07250583952485674,
+        "event_rate": 0.013793103448275862,
+        "smoothed_event_rate": 0.02040816326530612
+      },
+      {
+        "lower": 0.2,
+        "upper": 0.4,
+        "count": 55,
+        "event_count": 3,
+        "avg_probability": 0.3048864204241821,
+        "event_rate": 0.05454545454545454,
+        "smoothed_event_rate": 0.07017543859649122
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.6,
+        "count": 13,
+        "event_count": 2,
+        "avg_probability": 0.4789674316967299,
+        "event_rate": 0.15384615384615385,
+        "smoothed_event_rate": 0.2
+      },
+      {
+        "lower": 0.6,
+        "upper": 0.8,
+        "count": 4,
+        "event_count": 2,
+        "avg_probability": 0.662277878758315,
+        "event_rate": 0.5,
+        "smoothed_event_rate": 0.5
+      },
+      {
+        "lower": 0.8,
+        "upper": 1.0,
+        "count": 24,
+        "event_count": 11,
+        "avg_probability": 0.9505391083323866,
+        "event_rate": 0.4583333333333333,
+        "smoothed_event_rate": 0.46153846153846156
+      }
+    ]
+  },
+  "rows": [
+    {
+      "month": "2006-05-01",
+      "probability": 0.06368126947609166,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-06-01",
+      "probability": 0.056418776887612994,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-07-01",
+      "probability": 0.07149254224158544,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-08-01",
+      "probability": 0.02690894703189912,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-09-01",
+      "probability": 0.029045388378083552,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 71,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-10-01",
+      "probability": 0.05955991201131075,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-11-01",
+      "probability": 0.09752288139015616,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2006-12-01",
+      "probability": 0.0244225351744689,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 80,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-01-01",
+      "probability": 0.0920781067389253,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-02-01",
+      "probability": 0.052104904864104185,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 63,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-03-01",
+      "probability": 0.058461217747664676,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-04-01",
+      "probability": 0.09583535030477844,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-05-01",
+      "probability": 0.0692539975465126,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-06-01",
+      "probability": 0.1356294151740029,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-07-01",
+      "probability": 0.22822829035970685,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-08-01",
+      "probability": 0.14023904263621312,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-09-01",
+      "probability": 0.12317008485263806,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-10-01",
+      "probability": 0.13407491281978023,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-11-01",
+      "probability": 0.12905111822680887,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 63,
+      "data_quality": 67
+    },
+    {
+      "month": "2007-12-01",
+      "probability": 0.2771349229926333,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 60,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-01-01",
+      "probability": 0.3160908851421034,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-02-01",
+      "probability": 0.5823784533865893,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-03-01",
+      "probability": 0.6264354829565446,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-04-01",
+      "probability": 0.7694623824928398,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-05-01",
+      "probability": 0.9141009140287281,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 79,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-06-01",
+      "probability": 0.9266391746555837,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-07-01",
+      "probability": 0.944053939247517,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 74,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-08-01",
+      "probability": 0.9789802014710784,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 75,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-09-01",
+      "probability": 0.9813718271434715,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 83,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-10-01",
+      "probability": 0.9910104444933954,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-11-01",
+      "probability": 0.9916595942101987,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2008-12-01",
+      "probability": 0.9916595942101987,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-01-01",
+      "probability": 0.9901288477373478,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-02-01",
+      "probability": 0.9901288477373478,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-03-01",
+      "probability": 0.9910104444933954,
+      "event": true,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-04-01",
+      "probability": 0.9901288477373478,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-05-01",
+      "probability": 0.9895003150044456,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-06-01",
+      "probability": 0.9895003150044456,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 85,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-07-01",
+      "probability": 0.9848831597220961,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 84,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-08-01",
+      "probability": 0.9363640049641371,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 81,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-09-01",
+      "probability": 0.8927233035221199,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 80,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-10-01",
+      "probability": 0.857797732228573,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 78,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-11-01",
+      "probability": 0.8287291387264893,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 67
+    },
+    {
+      "month": "2009-12-01",
+      "probability": 0.8412086460279333,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-01-01",
+      "probability": 0.2714824529207582,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 64,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-02-01",
+      "probability": 0.28751638954970193,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-03-01",
+      "probability": 0.07329271773384646,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-04-01",
+      "probability": 0.05483230021634003,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-05-01",
+      "probability": 0.022467620526968542,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-06-01",
+      "probability": 0.06024818799087442,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-07-01",
+      "probability": 0.06784980657530798,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-08-01",
+      "probability": 0.10027975777319115,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-09-01",
+      "probability": 0.08834014525506372,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-10-01",
+      "probability": 0.052877535260328234,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-11-01",
+      "probability": 0.16806434813360613,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 67
+    },
+    {
+      "month": "2010-12-01",
+      "probability": 0.0599707710066375,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 67
+    },
+    {
+      "month": "2011-01-01",
+      "probability": 0.057712915203629346,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 67
+    },
+    {
+      "month": "2011-02-01",
+      "probability": 0.030981641443743067,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 67
+    },
+    {
+      "month": "2011-03-01",
+      "probability": 0.06374861485344897,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 67
+    },
+    {
+      "month": "2011-04-01",
+      "probability": 0.08658514670771762,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 67
+    },
+    {
+      "month": "2011-05-01",
+      "probability": 0.058889645190098705,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-06-01",
+      "probability": 0.08351100300973947,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-07-01",
+      "probability": 0.13330799612219923,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-08-01",
+      "probability": 0.10341059405846252,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-09-01",
+      "probability": 0.10841001201861275,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-10-01",
+      "probability": 0.06707042319911262,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-11-01",
+      "probability": 0.07990461750675872,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2011-12-01",
+      "probability": 0.05566101418991802,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-01-01",
+      "probability": 0.022191275382141495,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-02-01",
+      "probability": 0.021280505479351848,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-03-01",
+      "probability": 0.04652456730296782,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-04-01",
+      "probability": 0.06331376088908494,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-05-01",
+      "probability": 0.07564592313957619,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-06-01",
+      "probability": 0.06075922979384958,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-07-01",
+      "probability": 0.09538724140258756,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-08-01",
+      "probability": 0.11783619764996056,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-09-01",
+      "probability": 0.09447233443416075,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-10-01",
+      "probability": 0.15817609199302604,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-11-01",
+      "probability": 0.06539423550736903,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2012-12-01",
+      "probability": 0.07443289693987254,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-01-01",
+      "probability": 0.11336806012843689,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 74,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-02-01",
+      "probability": 0.09504348954104919,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-03-01",
+      "probability": 0.07236637022792723,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-04-01",
+      "probability": 0.09993030076013035,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-05-01",
+      "probability": 0.10598522185645376,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-06-01",
+      "probability": 0.1178221364895997,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-07-01",
+      "probability": 0.10807038475806646,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-08-01",
+      "probability": 0.06118290991766841,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-09-01",
+      "probability": 0.06651167832984511,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-10-01",
+      "probability": 0.04563914807346102,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-11-01",
+      "probability": 0.049959205902688306,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2013-12-01",
+      "probability": 0.06933593789306508,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-01-01",
+      "probability": 0.1213916472012267,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-02-01",
+      "probability": 0.08626723897450078,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-03-01",
+      "probability": 0.05263814907662835,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-04-01",
+      "probability": 0.017770227455279154,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-05-01",
+      "probability": 0.021553660353954684,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-06-01",
+      "probability": 0.02300211296646057,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-07-01",
+      "probability": 0.0457023980790758,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-08-01",
+      "probability": 0.060716503534682886,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-09-01",
+      "probability": 0.052928428785565945,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 71,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-10-01",
+      "probability": 0.025145387602394414,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-11-01",
+      "probability": 0.017511705507756346,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2014-12-01",
+      "probability": 0.021947095596789718,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-01-01",
+      "probability": 0.06538117209022797,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-02-01",
+      "probability": 0.12171133621058797,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-03-01",
+      "probability": 0.23437657881773194,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-04-01",
+      "probability": 0.22742854502754337,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-05-01",
+      "probability": 0.33635350366785477,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-06-01",
+      "probability": 0.34110290654183695,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-07-01",
+      "probability": 0.20964795649657725,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-08-01",
+      "probability": 0.23120064203376628,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-09-01",
+      "probability": 0.24814810160968787,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-10-01",
+      "probability": 0.29953470974601065,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-11-01",
+      "probability": 0.3189314311008864,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2015-12-01",
+      "probability": 0.3093088217126501,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-01-01",
+      "probability": 0.34361460619447454,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 65,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-02-01",
+      "probability": 0.35126739948463226,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-03-01",
+      "probability": 0.41898524432261913,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-04-01",
+      "probability": 0.44279961804841056,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-05-01",
+      "probability": 0.37227855007856586,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 65,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-06-01",
+      "probability": 0.2679473548981647,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-07-01",
+      "probability": 0.26515090712819256,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-08-01",
+      "probability": 0.31908123079579265,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-09-01",
+      "probability": 0.3809958328995574,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-10-01",
+      "probability": 0.3198759286964189,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-11-01",
+      "probability": 0.25886004817980546,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2016-12-01",
+      "probability": 0.09129085912935139,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-01-01",
+      "probability": 0.1552750170755608,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-02-01",
+      "probability": 0.09643930969686858,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-03-01",
+      "probability": 0.0970675381809019,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-04-01",
+      "probability": 0.027691599294580475,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-05-01",
+      "probability": 0.02295331622171791,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-06-01",
+      "probability": 0.028291776739937418,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-07-01",
+      "probability": 0.06728256175293074,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-08-01",
+      "probability": 0.10823792398952933,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-09-01",
+      "probability": 0.11229239423994632,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-10-01",
+      "probability": 0.01702168710415293,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 80,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-11-01",
+      "probability": 0.014400471284973767,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 80,
+      "data_quality": 89
+    },
+    {
+      "month": "2017-12-01",
+      "probability": 0.017456048046801793,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 80,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-01-01",
+      "probability": 0.023607685648358794,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-02-01",
+      "probability": 0.019950575029134374,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-03-01",
+      "probability": 0.01530659487403592,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-04-01",
+      "probability": 0.01747604241025047,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-05-01",
+      "probability": 0.01649442489002838,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-06-01",
+      "probability": 0.02384146879013669,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 77,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-07-01",
+      "probability": 0.062944100506481,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-08-01",
+      "probability": 0.01795854886549181,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-09-01",
+      "probability": 0.01831907209631056,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-10-01",
+      "probability": 0.023080051468385255,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 78,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-11-01",
+      "probability": 0.06947115533317251,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2018-12-01",
+      "probability": 0.14464265376701965,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-01-01",
+      "probability": 0.26333647309318714,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-02-01",
+      "probability": 0.2726555107527394,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-03-01",
+      "probability": 0.18094412722856124,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-04-01",
+      "probability": 0.3019387058068922,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-05-01",
+      "probability": 0.28104033738563994,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-06-01",
+      "probability": 0.1865440360120186,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 70,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-07-01",
+      "probability": 0.30266341405322816,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-08-01",
+      "probability": 0.31967436586383896,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-09-01",
+      "probability": 0.3344909927873059,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-10-01",
+      "probability": 0.3346282409392481,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-11-01",
+      "probability": 0.3140900332999811,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2019-12-01",
+      "probability": 0.2979038771798499,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-01-01",
+      "probability": 0.40175201711216957,
+      "event": true,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-02-01",
+      "probability": 0.46392891160278815,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-03-01",
+      "probability": 0.9554262898645447,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-04-01",
+      "probability": 0.9883409561032289,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 84,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-05-01",
+      "probability": 0.9646533887706682,
+      "event": false,
+      "regime_label": "contraction",
+      "rule_strength": 81,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-06-01",
+      "probability": 0.9029386728729887,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 79,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-07-01",
+      "probability": 0.011253745236586564,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-08-01",
+      "probability": 0.013271546871589166,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-09-01",
+      "probability": 0.3392630687178887,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-10-01",
+      "probability": 8.044593099558282e-05,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-11-01",
+      "probability": 0.000546800032500505,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2020-12-01",
+      "probability": 0.005457107172114832,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-01-01",
+      "probability": 0.004501919426691728,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-02-01",
+      "probability": 0.13537135209878515,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-03-01",
+      "probability": 0.05810543501563328,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-04-01",
+      "probability": 0.06575741176882535,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-05-01",
+      "probability": 0.009461968532702298,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 83,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-06-01",
+      "probability": 0.02041295550349833,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 84,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-07-01",
+      "probability": 0.019050541611272516,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 82,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-08-01",
+      "probability": 0.021877401677848435,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 82,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-09-01",
+      "probability": 0.059611156020209305,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-10-01",
+      "probability": 0.042434805608732716,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 77,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-11-01",
+      "probability": 0.014427855161940284,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 83,
+      "data_quality": 89
+    },
+    {
+      "month": "2021-12-01",
+      "probability": 0.008234639257989961,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 84,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-01-01",
+      "probability": 0.06625720608531802,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-02-01",
+      "probability": 0.0527864049316681,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 77,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-03-01",
+      "probability": 0.017522717659866884,
+      "event": false,
+      "regime_label": "expansion",
+      "rule_strength": 82,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-04-01",
+      "probability": 0.03847751919052371,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 77,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-05-01",
+      "probability": 0.06639973625678158,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-06-01",
+      "probability": 0.10818122412161929,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-07-01",
+      "probability": 0.13135545178497715,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-08-01",
+      "probability": 0.17989681624295367,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-09-01",
+      "probability": 0.07876168015909471,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 77,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-10-01",
+      "probability": 0.251104070578801,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-11-01",
+      "probability": 0.37072046895520094,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 89
+    },
+    {
+      "month": "2022-12-01",
+      "probability": 0.4330609401831982,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2023-01-01",
+      "probability": 0.37846344749473704,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2023-02-01",
+      "probability": 0.35281810907441885,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2023-03-01",
+      "probability": 0.2898504501390965,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 89
+    },
+    {
+      "month": "2023-04-01",
+      "probability": 0.1898242942616553,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 75,
+      "data_quality": 89
+    },
+    {
+      "month": "2023-05-01",
+      "probability": 0.3256237087194713,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-06-01",
+      "probability": 0.48977623599731224,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 74,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-07-01",
+      "probability": 0.36473384202653214,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-08-01",
+      "probability": 0.3772268341003848,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-09-01",
+      "probability": 0.24740170255817623,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-10-01",
+      "probability": 0.5766656635461411,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-11-01",
+      "probability": 0.38278766139717835,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2023-12-01",
+      "probability": 0.29385261060202394,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-01-01",
+      "probability": 0.6434542199789737,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 77,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-02-01",
+      "probability": 0.33307001681791926,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-03-01",
+      "probability": 0.3286466119519695,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-04-01",
+      "probability": 0.2033079499989556,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 73,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-05-01",
+      "probability": 0.315675927901957,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 66,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-06-01",
+      "probability": 0.29402331875445986,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 67,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-07-01",
+      "probability": 0.6097594296049017,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-08-01",
+      "probability": 0.5182677327077048,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-09-01",
+      "probability": 0.5585759835311801,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-10-01",
+      "probability": 0.38878171694889896,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 61,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-11-01",
+      "probability": 0.4884031301262693,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 61,
+      "data_quality": 100
+    },
+    {
+      "month": "2024-12-01",
+      "probability": 0.1489661521855673,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-01-01",
+      "probability": 0.09224219272387146,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 72,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-02-01",
+      "probability": 0.10778667971153197,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-03-01",
+      "probability": 0.2746732118359212,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 69,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-04-01",
+      "probability": 0.18398040273067678,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-05-01",
+      "probability": 0.2706180465615739,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 68,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-06-01",
+      "probability": 0.15819513492499304,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-07-01",
+      "probability": 0.17132430860160486,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-08-01",
+      "probability": 0.13858289042160604,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 61,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-09-01",
+      "probability": 0.15796654742208605,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 62,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-10-01",
+      "probability": 0.42629959734752276,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 60,
+      "data_quality": 97
+    },
+    {
+      "month": "2025-11-01",
+      "probability": 0.34813040095748654,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 60,
+      "data_quality": 100
+    },
+    {
+      "month": "2025-12-01",
+      "probability": 0.42568308414558337,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 60,
+      "data_quality": 100
+    },
+    {
+      "month": "2026-01-01",
+      "probability": 0.09590048071596365,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 75,
+      "data_quality": 100
+    },
+    {
+      "month": "2026-02-01",
+      "probability": 0.17047166734703223,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 74,
+      "data_quality": 100
+    },
+    {
+      "month": "2026-03-01",
+      "probability": 0.10122405433263434,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 75,
+      "data_quality": 100
+    },
+    {
+      "month": "2026-04-01",
+      "probability": 0.060009517417970636,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 80,
+      "data_quality": 99
+    },
+    {
+      "month": "2026-05-01",
+      "probability": 0.060432140563962414,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 80,
+      "data_quality": 90
+    }
+  ],
+  "limitations": [
+    "USRECの後追い判定を正解として使うため、直近月は確定が遅れます。",
+    "確率は売買判断ではなく、景気リスクの比較用です。"
+  ]
+}

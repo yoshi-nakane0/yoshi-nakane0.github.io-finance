@@ -3,21 +3,21 @@
   "horizons": [
     {
       "months": 1,
-      "predicted_return_pct": 1.5708,
-      "validation_mae_pct": 2.4571
+      "predicted_return_pct": 0.0296,
+      "validation_mae_pct": 2.7258
     },
     {
       "months": 3,
-      "predicted_return_pct": 3.8492,
-      "validation_mae_pct": 4.0509
+      "predicted_return_pct": 1.52,
+      "validation_mae_pct": 4.6921
     },
     {
       "months": 6,
-      "predicted_return_pct": 8.8551,
-      "validation_mae_pct": 4.6184
+      "predicted_return_pct": 3.2464,
+      "validation_mae_pct": 6.7287
     }
   ],
-  "training_samples": 216,
+  "training_samples": 275,
   "feature_count": 110,
   "model_version": "return_lightgbm_v2"
 }
