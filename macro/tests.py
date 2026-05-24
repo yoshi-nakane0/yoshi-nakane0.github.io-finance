@@ -663,6 +663,19 @@ class WorldModelOperationsTest(TestCase):
         self.assertEqual(monthly['status_label'], '成功')
         self.assertEqual(monthly['summary_label'], 'ok')
 
+    def test_operations_context_uses_static_monthly_outputs_as_fallback(self):
+        context = operations.build_operations_context()
+        rows = {row['cadence']: row for row in context['rows']}
+
+        self.assertNotEqual(
+            rows[WorldModelRun.Cadence.MONTHLY]['status_label'],
+            '記録なし',
+        )
+        self.assertNotEqual(
+            rows[WorldModelRun.Cadence.ARCHIVE]['status_label'],
+            '記録なし',
+        )
+
 
 class LinkageTest(TestCase):
     def test_pearson_perfect_positive(self):

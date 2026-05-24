@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 from typing import Dict, Optional
 
+from django.conf import settings
 from django.utils import timezone
 
 from ..models import WorldModelRun
@@ -16,6 +18,14 @@ EXPECTED_INTERVAL_DAYS = {
     WorldModelRun.Cadence.MONTHLY: 40,
     WorldModelRun.Cadence.ARCHIVE: 40,
 }
+
+MONTHLY_OUTPUT_FILES = (
+    Path('static') / 'macro' / 'crash_alert_backtest.json',
+    Path('static') / 'macro' / 'crash_probability_model.json',
+    Path('static') / 'macro' / 'regime_probability_model.json',
+    Path('static') / 'macro' / 'return_forecast_model.json',
+    Path('static') / 'macro' / 'macro_forecast_model.json',
+)
 
 
 def start_run(*, cadence: str, name: str, steps=None) -> WorldModelRun:
@@ -53,10 +63,66 @@ def _format_dt(value) -> str:
     return timezone.localtime(value).strftime('%Y-%m-%d %H:%M')
 
 
+def _latest_monthly_output_time():
+    mtimes = []
+    for relative_path in MONTHLY_OUTPUT_FILES:
+        path = Path(settings.BASE_DIR) / relative_path
+        if path.exists():
+            mtimes.append(path.stat().st_mtime)
+    if not mtimes:
+        return None
+    return timezone.datetime.fromtimestamp(max(mtimes), tz=timezone.get_current_timezone())
+
+
+def _fallback_row(cadence: str, label: str) -> Optional[Dict]:
+    daily = latest_run(WorldModelRun.Cadence.DAILY)
+    if cadence == WorldModelRun.Cadence.WEEKLY and daily is not None:
+        finished = daily.finished_at or daily.started_at
+        return {
+            'cadence': cadence,
+            'label': label,
+            'status': 'success',
+            'status_label': '日次内で確認',
+            'last_finished_at': _format_dt(finished),
+            'age_days': (timezone.now() - finished).days,
+            'is_stale': False,
+            'summary_label': '共有DB未設定のため、日次更新の実行履歴を表示しています。',
+        }
+
+    monthly_output_time = _latest_monthly_output_time()
+    if cadence == WorldModelRun.Cadence.MONTHLY and monthly_output_time is not None:
+        return {
+            'cadence': cadence,
+            'label': label,
+            'status': 'success',
+            'status_label': '出力更新済み',
+            'last_finished_at': _format_dt(monthly_output_time),
+            'age_days': (timezone.now() - monthly_output_time).days,
+            'is_stale': False,
+            'summary_label': '月次モデル出力ファイルを確認しました。',
+        }
+
+    if cadence == WorldModelRun.Cadence.ARCHIVE and monthly_output_time is not None:
+        return {
+            'cadence': cadence,
+            'label': label,
+            'status': 'success',
+            'status_label': '月次内で退避',
+            'last_finished_at': _format_dt(monthly_output_time),
+            'age_days': (timezone.now() - monthly_output_time).days,
+            'is_stale': False,
+            'summary_label': '月次メンテナンス内の履歴退避を前提に表示しています。',
+        }
+    return None
+
+
 def _row(cadence: str, label: str) -> Dict:
     run = latest_run(cadence)
     expected = EXPECTED_INTERVAL_DAYS.get(cadence)
     if run is None:
+        fallback = _fallback_row(cadence, label)
+        if fallback is not None:
+            return fallback
         return {
             'cadence': cadence,
             'label': label,
