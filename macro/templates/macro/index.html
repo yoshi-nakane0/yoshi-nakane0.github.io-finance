@@ -264,22 +264,6 @@
                             <span class="macro-reliability-label">更新完了時刻</span>
                             <span class="macro-reliability-value">{{ macro_reliability.last_update_finished_at }}</span>
                         </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">判定モデル</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.regime_model_version }}</span>
-                        </div>
-                        {% if raw_archive_status %}
-                            <div class="macro-reliability-item">
-                                <span class="macro-reliability-label">履歴アーカイブ</span>
-                                <span class="macro-reliability-value">
-                                    {% if raw_archive_status.has_archive %}
-                                        {{ raw_archive_status.archive_count }}件 / {{ raw_archive_status.latest_size_display }}
-                                    {% else %}
-                                        未作成
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
                     </div>
                     {% if macro_reliability.warnings %}
                         <ul class="macro-reliability-warning-list">
@@ -329,9 +313,11 @@
             {% if scenario_analysis and scenario_analysis.scenarios %}
                 <section class="macro-section macro-scenarios">
                     <h2 class="macro-section-title macro-section-title--brain">シナリオ分析</h2>
+                    <p class="macro-model-note">入力した仮定で、景気の見方がどちらへ寄るかを再計算します。%は株価やGDPの予測ではなく、表示された景気局面に近い度合いです。</p>
                     <div class="macro-scenario-base">
                         <span>現在基準</span>
-                        <strong>{{ scenario_analysis.base_regime_label }} {{ scenario_analysis.base_regime_probability_display }}</strong>
+                        <strong>{{ scenario_analysis.base_regime_view_display }}</strong>
+                        <span>{{ scenario_analysis.base_regime_fit_display }}</span>
                         <span>市場ストレス {{ scenario_analysis.base_market_stress_score|default_if_none:"—" }}</span>
                     </div>
                     <form method="get" class="macro-scenario-form">
@@ -356,10 +342,11 @@
                             <article class="macro-scenario-card{% if item.is_custom %} macro-scenario-card--custom{% endif %}">
                                 <div class="macro-scenario-head">
                                     <span class="macro-scenario-title">{{ item.title }}</span>
-                                    <span class="macro-scenario-regime">{{ item.regime_label }} {{ item.regime_probability_display }}</span>
+                                    <span class="macro-scenario-regime">{{ item.regime_view_display }}</span>
                                 </div>
                                 <p class="macro-scenario-assumption">{{ item.assumption }}</p>
                                 <div class="macro-scenario-metrics">
+                                    <span>{{ item.regime_fit_display }}</span>
                                     <span>景気後退 {{ item.recession_probability_display }}</span>
                                     <span>物価再加速 {{ item.inflation_probability_display }}</span>
                                     <span>金融ストレス {{ item.financial_stress_probability_display }}</span>

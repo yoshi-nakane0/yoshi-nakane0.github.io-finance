@@ -929,7 +929,11 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(len(result['scenarios']), 4)
         self.assertIn('base_regime_label', result)
+        self.assertIn('base_regime_view_display', result)
+        self.assertIn('base_regime_fit_display', result)
         self.assertIn('market_stress_delta_display', result['scenarios'][0])
+        self.assertIn('regime_view_display', result['scenarios'][0])
+        self.assertIn('regime_fit_display', result['scenarios'][0])
 
     def test_scenario_analysis_accepts_custom_inputs(self):
         custom = scenario.scenario_overrides_from_query({
@@ -1085,6 +1089,8 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '判定根拠')
         self.assertContains(r, 'macro-regime-details--evidence')
         self.assertContains(r, '鉱工業生産指数')
+        self.assertNotContains(r, '判定モデル')
+        self.assertNotContains(r, '履歴アーカイブ')
         self.assertNotContains(r, '確度')
         self.assertNotContains(r, '主要指標の観測日が古い可能性があります。')
 

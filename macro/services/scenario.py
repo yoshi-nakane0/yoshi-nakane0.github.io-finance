@@ -128,6 +128,18 @@ def _probability_display(value: Optional[float]) -> str:
     return f'{value * 100:.0f}%'
 
 
+def _regime_view_display(label: str) -> str:
+    if label in ('—', ''):
+        return '景気の見方: 判定保留'
+    if label == RegimeSnapshot.Label.UNKNOWN.label:
+        return '景気の見方: 判定保留'
+    return f'景気の見方: {label}寄り'
+
+
+def _regime_fit_display(value: Optional[float]) -> str:
+    return f'近さの目安 {_probability_display(value)}'
+
+
 def _signed_points_display(value: Optional[float]) -> str:
     if value is None:
         return '—'
@@ -326,6 +338,8 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
             'assumption': scenario['assumption'],
             'regime_label': label,
             'regime_probability_display': _probability_display(probability),
+            'regime_view_display': _regime_view_display(label),
+            'regime_fit_display': _regime_fit_display(probability),
             'recession_probability_display': _probability_display(risks.get('recession')),
             'inflation_probability_display': _probability_display(
                 risks.get('inflation_reacceleration')
@@ -349,6 +363,8 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
         'model_version': base_assessment.get('model_version'),
         'base_regime_label': base_label,
         'base_regime_probability_display': _probability_display(base_probability),
+        'base_regime_view_display': _regime_view_display(base_label),
+        'base_regime_fit_display': _regime_fit_display(base_probability),
         'base_market_stress_score': base_market_stress,
         'scenarios': scenarios,
         'custom_fields': [
