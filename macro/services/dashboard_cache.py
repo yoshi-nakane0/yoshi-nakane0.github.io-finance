@@ -16,8 +16,14 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_CACHE_KEY = 'macro_index_v3'
-LEGACY_DASHBOARD_CACHE_KEYS = ('macro_index_v2', 'macro_index_v1')
+DASHBOARD_CACHE_KEY = 'macro_index_v6'
+LEGACY_DASHBOARD_CACHE_KEYS = (
+    'macro_index_v5',
+    'macro_index_v4',
+    'macro_index_v3',
+    'macro_index_v2',
+    'macro_index_v1',
+)
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 UPDATE_STATUS_CACHE_KEY = 'macro_update_status_v1'
@@ -193,13 +199,17 @@ def precompute_dashboard_payload() -> dict:
     """ビューで使う重い計算結果をまとめて返す。"""
     from .dashboard import (
         build_crash_alert_context,
+        build_forecast_monitor_context,
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
         build_monthly_model_status,
+        build_raw_archive_context,
+        build_world_model_operations_context,
         build_similar_periods,
     )
     from .data_sync import get_latest_observation_date
+    from .scenario import build_scenario_analysis
 
     latest_obs_date = get_latest_observation_date()
 
@@ -211,6 +221,10 @@ def precompute_dashboard_payload() -> dict:
         'indicator_cards': build_indicator_cards(),
         'crash_alert': build_crash_alert_context(),
         'monthly_model_status': build_monthly_model_status(),
+        'forecast_monitor': build_forecast_monitor_context(),
+        'world_model_operations': build_world_model_operations_context(),
+        'raw_archive_status': build_raw_archive_context(),
+        'scenario_analysis': build_scenario_analysis(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }
 

@@ -81,6 +81,9 @@ class Observation(models.Model):
     prev_value = models.FloatField(null=True, blank=True)
     yoy_change = models.FloatField(null=True, blank=True)
     deviation_from_long_term = models.FloatField(null=True, blank=True)
+    expanding_z_score = models.FloatField(null=True, blank=True)
+    rolling_10y_z_score = models.FloatField(null=True, blank=True)
+    rolling_5y_z_score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -135,8 +138,10 @@ class RegimeSnapshot(models.Model):
     data_quality = models.FloatField(default=0.0)
     evidence = models.JSONField(default=list, blank=True)
     warnings = models.JSONField(default=list, blank=True)
-    model_version = models.CharField(max_length=32, default='regime_v1')
+    model_version = models.CharField(max_length=64, default='regime_v1')
     indicator_vector = models.JSONField(default=dict, blank=True)
+    regime_probabilities = models.JSONField(default=dict, blank=True)
+    risk_probabilities = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -192,3 +197,106 @@ class DashboardCache(models.Model):
 
     def __str__(self):
         return f'{self.cache_key} @ {self.computed_at:%Y-%m-%d %H:%M}'
+
+
+class RawArchiveManifest(models.Model):
+    """表示用DBから分離した履歴アーカイブの台帳。"""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=64)
+    storage_backend = models.CharField(max_length=32, default='local')
+    path = models.TextField()
+    row_count = models.IntegerField(default=0)
+    observation_count = models.IntegerField(default=0)
+    price_count = models.IntegerField(default=0)
+    regime_count = models.IntegerField(default=0)
+    size_bytes = models.BigIntegerField(default=0)
+    checksum = models.CharField(max_length=64, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['reason', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.reason}: {self.row_count} rows @ {self.created_at:%Y-%m-%d}'
+
+
+class WorldModelRun(models.Model):
+    """日次・週次・月次の運用実行履歴。"""
+
+    class Cadence(models.TextChoices):
+        DAILY = 'daily', '日次'
+        WEEKLY = 'weekly', '週次'
+        MONTHLY = 'monthly', '月次'
+        ARCHIVE = 'archive', 'アーカイブ'
+        MANUAL = 'manual', '手動'
+
+    class Status(models.TextChoices):
+        RUNNING = 'running', '実行中'
+        SUCCESS = 'success', '成功'
+        PARTIAL = 'partial', '一部失敗'
+        FAILED = 'failed', '失敗'
+
+    cadence = models.CharField(max_length=16, choices=Cadence.choices)
+    name = models.CharField(max_length=96)
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.RUNNING,
+    )
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True, blank=True)
+    steps = models.JSONField(default=list, blank=True)
+    summary = models.JSONField(default=dict, blank=True)
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-started_at']
+        indexes = [
+            models.Index(fields=['cadence', '-started_at']),
+            models.Index(fields=['status', '-started_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.get_cadence_display()} {self.name}: {self.status}'
+
+
+class ForecastSnapshot(models.Model):
+    """モデル予測を後から検証できる形で保存する。"""
+
+    as_of_date = models.DateField()
+    model_version = models.CharField(max_length=64)
+    target = models.CharField(max_length=32)
+    horizon = models.CharField(max_length=32)
+    prediction_value = models.FloatField()
+    prediction_interval = models.JSONField(null=True, blank=True)
+    features_hash = models.CharField(max_length=64, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    realized_value = models.FloatField(null=True, blank=True)
+    error = models.FloatField(null=True, blank=True)
+    realized_at = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-as_of_date', '-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['as_of_date', 'model_version', 'target', 'horizon'],
+                name='uq_forecast_snapshot_identity',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['target', 'as_of_date']),
+            models.Index(fields=['model_version', 'as_of_date']),
+        ]
+
+    def __str__(self):
+        return (
+            f'{self.as_of_date}: {self.model_version} '
+            f'{self.target} {self.horizon}={self.prediction_value}'
+        )

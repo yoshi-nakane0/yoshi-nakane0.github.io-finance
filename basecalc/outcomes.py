@@ -11,6 +11,11 @@ from .models import (
     TechnicalSnapshot,
     WorldModelPrediction,
 )
+from .market_bars import (
+    HORIZON_TOLERANCES,
+    market_bars_between,
+    nearest_bar_for_horizon,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +27,16 @@ HORIZONS = {
     "5d": timedelta(days=5),
 }
 
+CONFIDENCE_ORDER = ("Low", "Middle", "High")
+SAVE_PREDICTION_MIN_INTERVAL_MINUTES = 30
+SAVE_PREDICTION_MIN_PRICE_MOVE_PCT = 0.15
+MAX_STORED_PREDICTIONS = 5000
 
-def save_prediction(world_model):
+
+def save_prediction(world_model, min_interval_minutes=SAVE_PREDICTION_MIN_INTERVAL_MINUTES):
     if not world_model or not world_model.get("price"):
+        return None
+    if _recent_duplicate_prediction(world_model, min_interval_minutes):
         return None
     features = world_model.get("features") or {}
     try:
@@ -77,9 +89,23 @@ def save_prediction(world_model):
         return None
 
 
-def evaluate_due_predictions(current_price, now=None):
-    if not current_price:
+def prune_prediction_history(max_predictions=MAX_STORED_PREDICTIONS):
+    try:
+        old_ids = list(
+            WorldModelPrediction.objects.order_by("-created_at").values_list(
+                "id",
+                flat=True,
+            )[max_predictions:]
+        )
+        if not old_ids:
+            return 0
+        return WorldModelPrediction.objects.filter(id__in=old_ids).delete()[0]
+    except DatabaseError:
+        logger.exception("Failed to prune basecalc predictions")
         return 0
+
+
+def evaluate_due_predictions(current_price=None, now=None):
     now = now or timezone.now()
     created = 0
     try:
@@ -95,11 +121,109 @@ def evaluate_due_predictions(current_price, now=None):
                     horizon=horizon,
                 ).exists():
                     continue
-                _create_outcome(prediction, horizon, current_price, now)
+                observation = _observation_for_horizon(prediction, horizon, now)
+                if observation is None:
+                    continue
+                _create_outcome(prediction, horizon, observation)
                 created += 1
     except DatabaseError:
         logger.exception("Failed to evaluate basecalc predictions")
     return created
+
+
+def _recent_duplicate_prediction(world_model, min_interval_minutes):
+    if not min_interval_minutes:
+        return False
+    latest = WorldModelPrediction.objects.order_by("-created_at").first()
+    if latest is None:
+        return False
+    if latest.created_at < timezone.now() - timedelta(minutes=min_interval_minutes):
+        return False
+    if latest.state_key != world_model.get("state_key"):
+        return False
+    if latest.direction != world_model.get("direction"):
+        return False
+    price_gap_pct = _price_gap_pct(world_model.get("price"), latest.price)
+    return price_gap_pct is not None and price_gap_pct < SAVE_PREDICTION_MIN_PRICE_MOVE_PCT
+
+
+def _price_gap_pct(current_price, previous_price):
+    try:
+        current_price = float(current_price)
+        previous_price = float(previous_price)
+    except (TypeError, ValueError):
+        return None
+    if previous_price <= 0:
+        return None
+    return abs((current_price - previous_price) / previous_price) * 100
+
+
+def confidence_adjustment_for_state(state_key, horizon="1d", min_samples=5):
+    if not state_key:
+        return None
+    try:
+        outcomes = PredictionOutcome.objects.filter(
+            horizon=horizon,
+            prediction__state_key=state_key,
+        )
+        total = outcomes.count()
+        if total < min_samples:
+            return None
+        aggregate = outcomes.aggregate(avg_return=Avg("realized_return_pct"))
+        direction_accuracy = outcomes.filter(direction_hit=True).count() / total
+        invalidation_rate = outcomes.filter(invalidation_hit=True).count() / total
+        avg_return = aggregate["avg_return"] or 0
+        reasons = []
+        if direction_accuracy < 0.45:
+            reasons.append("方向一致率が低い")
+        if invalidation_rate > 0.35:
+            reasons.append("無効化到達が多い")
+        if avg_return < -0.2:
+            reasons.append("平均損益が弱い")
+        if not reasons:
+            return None
+        downgrade = 2 if direction_accuracy < 0.35 or invalidation_rate > 0.5 else 1
+        score_penalty = 10 * downgrade
+        if direction_accuracy < 0.35:
+            score_penalty += 8
+        if invalidation_rate > 0.5:
+            score_penalty += 8
+        return {
+            "applied": True,
+            "horizon": horizon,
+            "sample_count": total,
+            "directional_accuracy": round(direction_accuracy, 2),
+            "invalidation_rate": round(invalidation_rate, 2),
+            "avg_return_pct": round(avg_return, 2),
+            "downgrade": downgrade,
+            "score_penalty": min(score_penalty, 35),
+            "reasons": reasons,
+        }
+    except DatabaseError:
+        logger.exception("Failed to read basecalc confidence adjustment")
+        return None
+
+
+def apply_confidence_adjustment(confidence, adjustment):
+    if not adjustment:
+        return confidence
+    try:
+        index = CONFIDENCE_ORDER.index(confidence)
+    except ValueError:
+        return confidence
+    next_index = max(0, index - int(adjustment.get("downgrade") or 1))
+    return CONFIDENCE_ORDER[next_index]
+
+
+def apply_sentiment_score_adjustment(score, adjustment):
+    if not adjustment:
+        return score
+    penalty = int(adjustment.get("score_penalty") or 10)
+    if score > 0:
+        return max(0, score - penalty)
+    if score < 0:
+        return min(0, score + penalty)
+    return score
 
 
 def performance_summary(horizon="1d", state_key=None, date_from=None, date_to=None):
@@ -299,19 +423,56 @@ def improvement_insights(horizon="1d", min_samples=5, limit=6):
         return []
 
 
-def _create_outcome(prediction, horizon, current_price, now):
-    start_price = prediction.price
-    realized_return_pct = ((current_price - start_price) / start_price) * 100
-    observed_prices = list(
-        MarketSnapshot.objects.filter(
-            symbol=prediction.features.get("symbol") or "NIY=F",
-            created_at__gte=prediction.created_at,
-            created_at__lte=now,
-        ).values_list("price", flat=True)
+def _observation_for_horizon(prediction, horizon, now):
+    target_at = prediction.created_at + HORIZONS[horizon]
+    if target_at > now:
+        return None
+    symbol = prediction.features.get("symbol") or "NIY=F"
+    bar = nearest_bar_for_horizon(symbol, horizon, target_at)
+    if bar is not None:
+        return {
+            "price": bar.close,
+            "evaluated_at": bar.timestamp,
+            "timeframe": bar.timeframe,
+        }
+    snapshot = _nearest_market_snapshot(
+        symbol,
+        target_at,
+        HORIZON_TOLERANCES.get(horizon, timedelta(hours=36)),
     )
-    observed_prices.append(current_price)
-    max_price = max(observed_prices)
-    min_price = min(observed_prices)
+    if snapshot is None:
+        return None
+    return {
+        "price": snapshot.price,
+        "evaluated_at": snapshot.created_at,
+        "timeframe": snapshot.timeframe,
+    }
+
+
+def _nearest_market_snapshot(symbol, target_at, tolerance):
+    start = target_at - tolerance
+    end = target_at + tolerance
+    queryset = MarketSnapshot.objects.filter(
+        symbol=symbol,
+        created_at__gte=start,
+        created_at__lte=end,
+    )
+    before = queryset.filter(created_at__lte=target_at).order_by("-created_at").first()
+    after = queryset.filter(created_at__gte=target_at).order_by("created_at").first()
+    candidates = [snapshot for snapshot in (before, after) if snapshot is not None]
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda snapshot: abs((snapshot.created_at - target_at).total_seconds()),
+    )
+
+
+def _create_outcome(prediction, horizon, observation):
+    start_price = prediction.price
+    current_price = observation["price"]
+    realized_return_pct = ((current_price - start_price) / start_price) * 100
+    max_price, min_price = _observed_price_range(prediction, observation)
     upside_targets = prediction.upside_targets or []
     downside_targets = prediction.downside_targets or []
     invalidation = prediction.invalidation_price
@@ -347,7 +508,7 @@ def _create_outcome(prediction, horizon, current_price, now):
     return PredictionOutcome.objects.create(
         prediction=prediction,
         horizon=horizon,
-        evaluated_at=now,
+        evaluated_at=observation["evaluated_at"],
         price_at_evaluation=current_price,
         realized_return_pct=realized_return_pct,
         direction_hit=direction_hit,
@@ -361,8 +522,36 @@ def _create_outcome(prediction, horizon, current_price, now):
     )
 
 
+def _observed_price_range(prediction, observation):
+    symbol = prediction.features.get("symbol") or "NIY=F"
+    start_at = prediction.created_at
+    end_at = observation["evaluated_at"]
+    high_values = [observation["price"]]
+    low_values = [observation["price"]]
+    if end_at >= start_at and observation.get("timeframe"):
+        bars = market_bars_between(
+            symbol,
+            observation["timeframe"],
+            start_at,
+            end_at,
+        )
+        if bars:
+            high_values.extend((bar.high or bar.close) for bar in bars)
+            low_values.extend((bar.low or bar.close) for bar in bars)
+    snapshots = MarketSnapshot.objects.filter(
+        symbol=symbol,
+        created_at__gte=start_at,
+        created_at__lte=end_at,
+    )
+    high_values.extend(snapshot.price for snapshot in snapshots)
+    low_values.extend(snapshot.price for snapshot in snapshots)
+    return max(high_values), min(low_values)
+
+
 def _target_hit(current_price, targets, index, above):
     if len(targets) <= index:
         return False
     target = targets[index].get("price") if isinstance(targets[index], dict) else targets[index]
+    if target is None:
+        return False
     return current_price >= target if above else current_price <= target

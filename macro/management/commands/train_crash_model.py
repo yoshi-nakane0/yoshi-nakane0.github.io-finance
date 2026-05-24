@@ -14,6 +14,7 @@
 """
 
 import json
+import hashlib
 import logging
 from datetime import date, timedelta
 from pathlib import Path
@@ -24,7 +25,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-from macro.models import Indicator, Observation, PriceObservation
+from macro.models import ForecastSnapshot, Indicator, Observation, PriceObservation
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,39 @@ class Command(BaseCommand):
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding='utf-8',
         )
+
+        latest_feature_payload = {
+            key: float(value)
+            for key, value in feature_df.iloc[-1].to_dict().items()
+        }
+        features_hash = hashlib.sha256(
+            json.dumps(
+                latest_feature_payload,
+                sort_keys=True,
+                separators=(',', ':'),
+            ).encode('utf-8')
+        ).hexdigest()
+        as_of_date = timezone.localdate()
+        for result in results:
+            ForecastSnapshot.objects.update_or_create(
+                as_of_date=as_of_date,
+                model_version=f'lightgbm_return_{MODEL_VERSION}',
+                target='GSPC',
+                horizon=f"{result['months']}m",
+                defaults={
+                    'prediction_value': result['predicted_return_pct'],
+                    'prediction_interval': {
+                        'type': 'validation_mae_pct',
+                        'mae_pct': result['validation_mae_pct'],
+                    },
+                    'features_hash': features_hash,
+                    'metadata': {
+                        'prediction_kind': 'return_pct',
+                        'horizon_months': result['months'],
+                        'validation_mae_pct': result['validation_mae_pct'],
+                    },
+                },
+            )
 
         self.stdout.write(self.style.SUCCESS(
             f'予測 JSON 書き出し: {out_path.relative_to(settings.BASE_DIR)}'

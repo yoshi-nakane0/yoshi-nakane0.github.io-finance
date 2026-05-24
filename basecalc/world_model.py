@@ -21,7 +21,13 @@ from .scoring import (
     calculate_continuation_score,
     calculate_sentiment_score,
     calculate_shock_score,
+    sentiment_label,
     shock_label,
+)
+from .outcomes import (
+    apply_confidence_adjustment,
+    apply_sentiment_score_adjustment,
+    confidence_adjustment_for_state,
 )
 from .similarity import find_similar_cases
 from .targets import build_targets
@@ -57,6 +63,23 @@ def build_world_model(price, market_snapshot=None):
         continuation_score,
         shock_score,
     )
+    performance_adjustment = confidence_adjustment_for_state(state_key)
+    adjusted_score = apply_sentiment_score_adjustment(
+        sentiment["sentiment_score"],
+        performance_adjustment,
+    )
+    if adjusted_score != sentiment["sentiment_score"]:
+        sentiment = _sentiment_with_score(sentiment, adjusted_score)
+        direction = _direction_from_score(adjusted_score)
+        features["sentiment_score"] = adjusted_score
+        continuation_score = calculate_continuation_score(features, direction)
+        targets = build_targets(features, similar_summary)
+        state_key, state_label, phase_label = classify_state(
+            features,
+            direction,
+            continuation_score,
+            shock_score,
+        )
     confidence = classify_confidence(
         sentiment["sentiment_score"],
         continuation_score,
@@ -64,8 +87,11 @@ def build_world_model(price, market_snapshot=None):
         similar_summary,
         len(ohlcv["closes"]),
     )
+    confidence = apply_confidence_adjustment(confidence, performance_adjustment)
     invalidation_price = _invalidation_price(direction, targets, price)
     evidence = build_evidence(features, similar_summary, direction)
+    if performance_adjustment:
+        evidence.append(_performance_adjustment_text(performance_adjustment))
     main_scenario = build_main_scenario(direction, targets)
     sub_scenario = build_sub_scenario(direction, invalidation_price)
     chart_ohlcv = intraday["chart_ohlcv"] or ohlcv
@@ -108,6 +134,7 @@ def build_world_model(price, market_snapshot=None):
         "target_2_display": _target_display(direction, targets, 1),
         "similar_summary": similar_summary,
         "evidence": evidence[:6],
+        "performance_adjustment": performance_adjustment or {"applied": False},
         "features": _json_safe_features(features),
         "chart_points": chart_points,
         "timeframe_summary": intraday["summary"],
@@ -371,6 +398,26 @@ def build_evidence(features, similar_summary, direction):
     return evidence
 
 
+def _sentiment_with_score(sentiment, score):
+    key, label = sentiment_label(score)
+    updated = dict(sentiment)
+    updated["sentiment_score"] = score
+    updated["sentiment_key"] = key
+    updated["sentiment_label"] = label
+    updated["components"] = dict(sentiment.get("components") or {})
+    updated["components"]["performance"] = -abs(
+        (sentiment.get("sentiment_score") or 0) - score
+    )
+    return updated
+
+
+def _performance_adjustment_text(adjustment):
+    return (
+        f"過去{adjustment['sample_count']}件の検証が弱いため信頼度を"
+        f"{adjustment['downgrade']}段階下げ、方向スコアも抑えています"
+    )
+
+
 def build_main_scenario(direction, targets):
     if direction == "up":
         first = _target_price(targets["upside"], 0)
@@ -483,6 +530,7 @@ def empty_world_model():
             "cases": [],
         },
         "evidence": ["価格データの取得後に判定します"],
+        "performance_adjustment": {"applied": False},
         "features": {},
         "chart_points": {"points": [], "upsideTargets": [], "downsideTargets": []},
         "timeframe_summary": [],

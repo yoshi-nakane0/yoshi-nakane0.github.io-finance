@@ -1,5 +1,6 @@
 """macro モジュールのユニットテスト。"""
 
+import gzip
 from io import StringIO
 from datetime import date
 from pathlib import Path
@@ -18,19 +19,28 @@ from django.urls import reverse
 
 from .models import (
     DashboardCache,
+    ForecastSnapshot,
     Indicator,
     Observation,
     PriceObservation,
+    RawArchiveManifest,
     RegimeSnapshot,
+    WorldModelRun,
 )
 from .services import (
     crash_alert,
     dashboard,
+    data_sync,
     detail_analysis,
+    forecast_tracking,
     historical_crash,
     judgment,
     linkage,
+    operations,
+    raw_archive,
     regime,
+    regime_probability,
+    scenario,
     similarity,
     sparkline,
 )
@@ -70,6 +80,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('BUNDLED_SQLITE_PATH', build_script)
         self.assertIn('manage.py refresh_macro_data', build_script)
         self.assertIn('manage.py purge_old_data', build_script)
+        self.assertIn('manage.py settle_forecast_snapshots', build_script)
         self.assertIn('manage.py record_macro_update_status', build_script)
         self.assertIn('--phase refresh_macro_data', build_script)
         self.assertIn('refresh_macro_data failed during Vercel build', build_script)
@@ -109,23 +120,31 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
     def test_monthly_command_runs_local_steps_in_order(self):
         with mock.patch(
             'macro.management.commands.monthly_macro_maintenance.call_command',
-        ) as call_command_mock:
+        ) as call_command_mock, mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.start_run',
+            return_value=mock.Mock(),
+        ), mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.finish_run',
+        ):
             out = StringIO()
             call_command('monthly_macro_maintenance', stdout=out)
 
         self.assertEqual(
             [call.args[0] for call in call_command_mock.call_args_list],
             [
+                'archive_macro_data',
                 'refresh_macro_data',
                 'purge_old_data',
+                'settle_forecast_snapshots',
                 'backtest_crash_alert',
                 'train_crash_probability_model',
+                'train_regime_probability_model',
                 'train_crash_model',
                 'precompute_dashboard',
             ],
         )
         self.assertEqual(
-            call_command_mock.call_args_list[2],
+            call_command_mock.call_args_list[4],
             mock.call(
                 'backtest_crash_alert',
                 target='GSPC',
@@ -136,7 +155,7 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
             ),
         )
         self.assertEqual(
-            call_command_mock.call_args_list[3],
+            call_command_mock.call_args_list[5],
             mock.call(
                 'train_crash_probability_model',
                 target='GSPC',
@@ -149,7 +168,12 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
     def test_monthly_command_can_skip_refresh_and_lightgbm(self):
         with mock.patch(
             'macro.management.commands.monthly_macro_maintenance.call_command',
-        ) as call_command_mock:
+        ) as call_command_mock, mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.start_run',
+            return_value=mock.Mock(),
+        ), mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.finish_run',
+        ):
             call_command(
                 'monthly_macro_maintenance',
                 skip_refresh=True,
@@ -160,9 +184,12 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
         self.assertEqual(
             [call.args[0] for call in call_command_mock.call_args_list],
             [
+                'archive_macro_data',
                 'purge_old_data',
+                'settle_forecast_snapshots',
                 'backtest_crash_alert',
                 'train_crash_probability_model',
+                'train_regime_probability_model',
                 'precompute_dashboard',
             ],
         )
@@ -171,6 +198,75 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
     def test_monthly_command_rejects_serverless_runtime(self):
         with self.assertRaises(CommandError):
             call_command('monthly_macro_maintenance')
+
+
+class CrashProbabilityModelCommandTest(TestCase):
+    def test_training_command_stores_forecast_snapshot(self):
+        rows = [
+            {
+                'month': f'2020-{(idx % 12) + 1:02d}-01',
+                'event': idx % 10 == 0,
+                'max_drawdown_pct': -12.0 if idx % 10 == 0 else -2.0,
+                'lead_time_days': 30 if idx % 10 == 0 else None,
+                'features': {'market_stress_score': float(idx % 100)},
+            }
+            for idx in range(100)
+        ]
+
+        with TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            with override_settings(BASE_DIR=base), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.build_dataset',
+                return_value=rows,
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.train_logistic_model',
+                return_value={
+                    'feature_names': ['market_stress_score'],
+                    'weights': [0.0, 0.1],
+                    'means': [0.0],
+                    'scales': [1.0],
+                },
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.predict_probability',
+                return_value=0.2,
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.calibration_bins',
+                return_value=[],
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.calibrated_probability',
+                return_value=0.12,
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.current_features',
+                return_value={'market_stress_score': 42.0},
+            ), mock.patch(
+                'macro.management.commands.train_crash_probability_model.'
+                'crash_probability.coefficient_rows',
+                return_value=[],
+            ):
+                call_command(
+                    'train_crash_probability_model',
+                    validation_months=20,
+                    output='static/macro/test_crash_probability_model.json',
+                    stdout=StringIO(),
+                )
+
+        snapshot = ForecastSnapshot.objects.get(
+            model_version='crash_probability_logistic_v1',
+            target='GSPC',
+            horizon='63d',
+        )
+        self.assertEqual(snapshot.prediction_value, 0.12)
+        self.assertEqual(len(snapshot.features_hash), 64)
+        self.assertEqual(
+            snapshot.prediction_interval['type'],
+            'validation_event_rate_wilson_95',
+        )
 
 
 class UpdateLocalDataCommandTest(SimpleTestCase):
@@ -239,6 +335,137 @@ class SimilarityTest(TestCase):
         # sqrt((9+16)/2) = sqrt(12.5) ≈ 3.535
         d = similarity.vector_distance(v1, v2)
         self.assertAlmostEqual(d, 3.5355339, places=4)
+
+
+class DataSyncNormalizationTest(TestCase):
+    def test_z_score_uses_only_data_available_at_that_date(self):
+        indicator = Indicator.objects.create(
+            fred_series_id='TEST_Z',
+            name_ja='テスト標準化',
+            category=Indicator.Category.GROWTH,
+            importance=Indicator.Importance.A,
+        )
+        raw = [
+            (date(2000, month, 1), float(month))
+            for month in range(1, 13)
+        ] + [
+            (date(2001, month, 1), float(month + 12))
+            for month in range(1, 13)
+        ] + [
+            (date(2002, 1, 1), 1000.0)
+        ]
+
+        rows = data_sync._build_observation_rows(indicator, raw)
+
+        self.assertIsNone(rows[22].expanding_z_score)
+        self.assertIsNotNone(rows[23].expanding_z_score)
+        mean_24 = sum(range(1, 25)) / 24
+        std_24 = (
+            sum((value - mean_24) ** 2 for value in range(1, 25)) / 24
+        ) ** 0.5
+        expected_24th = (24 - mean_24) / std_24
+        self.assertAlmostEqual(rows[23].expanding_z_score, expected_24th)
+        self.assertEqual(
+            rows[23].deviation_from_long_term,
+            rows[23].expanding_z_score,
+        )
+        self.assertGreater(rows[24].expanding_z_score, rows[23].expanding_z_score)
+
+
+class RawArchiveTest(TestCase):
+    def test_archive_macro_rows_writes_gzip_csv_outside_serving_db(self):
+        indicator = Indicator.objects.create(
+            fred_series_id='ARCHIVE_TEST',
+            name_ja='アーカイブテスト',
+            category=Indicator.Category.GROWTH,
+            importance=Indicator.Importance.C,
+        )
+        Observation.objects.create(
+            indicator=indicator,
+            observation_date=date(1999, 1, 1),
+            value=123.4,
+            expanding_z_score=1.2,
+        )
+        PriceObservation.objects.create(
+            ticker=PriceObservation.Ticker.SP500,
+            observation_month=date(1999, 1, 1),
+            close_price=1000,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(1999, 1, 1),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            inflation_flag=RegimeSnapshot.InflationFlag.NORMAL,
+            regime_probabilities={'slowdown': 0.7},
+            risk_probabilities={'recession': 0.4},
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            summary = raw_archive.archive_macro_rows(
+                reason='test',
+                output_dir=Path(tmpdir),
+            )
+            path = Path(summary['path'])
+            with gzip.open(path, 'rt', encoding='utf-8') as handle:
+                content = handle.read()
+
+        self.assertTrue(summary['created'])
+        self.assertEqual(summary['row_count'], 3)
+        self.assertIn('ARCHIVE_TEST', content)
+        self.assertIn('price_observation', content)
+        self.assertIn('regime_snapshot', content)
+        self.assertEqual(RawArchiveManifest.objects.count(), 1)
+
+
+class ForecastTrackingTest(TestCase):
+    def test_settle_return_forecast_writes_realized_value(self):
+        PriceObservation.objects.create(
+            ticker=PriceObservation.Ticker.SP500,
+            observation_month=date(2025, 1, 1),
+            close_price=100.0,
+        )
+        PriceObservation.objects.create(
+            ticker=PriceObservation.Ticker.SP500,
+            observation_month=date(2025, 2, 1),
+            close_price=110.0,
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2025, 1, 15),
+            model_version='lightgbm_return_v1',
+            target='GSPC',
+            horizon='1m',
+            prediction_value=6.0,
+            metadata={'prediction_kind': 'return_pct', 'horizon_months': 1},
+        )
+
+        summary = forecast_tracking.settle_due_forecasts()
+        snapshot = ForecastSnapshot.objects.get()
+
+        self.assertEqual(summary['settled_count'], 1)
+        self.assertAlmostEqual(snapshot.realized_value, 10.0)
+        self.assertAlmostEqual(snapshot.error, 4.0)
+        self.assertEqual(snapshot.realized_at, date(2025, 2, 1))
+
+
+class WorldModelOperationsTest(TestCase):
+    def test_operations_context_uses_latest_runs(self):
+        run = operations.start_run(
+            cadence=WorldModelRun.Cadence.MONTHLY,
+            name='test monthly',
+        )
+        operations.finish_run(
+            run,
+            status=WorldModelRun.Status.SUCCESS,
+            summary={'message': 'ok'},
+        )
+
+        context = operations.build_operations_context()
+        monthly = [
+            row for row in context['rows']
+            if row['cadence'] == WorldModelRun.Cadence.MONTHLY
+        ][0]
+
+        self.assertEqual(monthly['status_label'], '成功')
+        self.assertEqual(monthly['summary_label'], 'ok')
 
 
 class LinkageTest(TestCase):
@@ -359,6 +586,35 @@ class RegimeClassificationTest(TestCase):
 
         self.assertTrue(assessment['evidence'])
         self.assertEqual(assessment['model_version'], regime.MODEL_VERSION)
+        self.assertIn('expansion', assessment['regime_probabilities'])
+        self.assertIn('recession', assessment['risk_probabilities'])
+
+    def test_regime_probability_distribution_sums_to_one(self):
+        metrics = {
+            'indpro_yoy': 2.4,
+            'indpro_3m_change_pct': 0.7,
+            'unrate_6m_change': -0.1,
+            'gdp_yoy': 2.0,
+            'hy_spread': 3.2,
+            'vix': 15.0,
+            'core_pce_yoy': 2.4,
+            'core_pce_yoy_3m_ago': 2.6,
+        }
+        probabilities = regime.regime_probability_distribution(metrics)
+
+        self.assertAlmostEqual(sum(probabilities.values()), 1.0, places=5)
+        self.assertEqual(set(probabilities), {
+            RegimeSnapshot.Label.EXPANSION,
+            RegimeSnapshot.Label.SLOWDOWN,
+            RegimeSnapshot.Label.CONTRACTION,
+            RegimeSnapshot.Label.RECOVERY,
+        })
+
+    def test_regime_probability_validation_handles_empty_dataset(self):
+        payload = regime_probability.validate_regime_probability_model()
+
+        self.assertEqual(payload['sample_count'], 0)
+        self.assertEqual(payload['model_version'], regime.PROBABILITY_MODEL_VERSION)
 
 
 class DashboardFormatTest(TestCase):
@@ -471,6 +727,24 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(condition['regime_condition_bar_pct'], 0)
         self.assertEqual(condition['regime_condition_pct_display'], '—%')
         self.assertEqual(condition['regime_condition_label'], '判定保留')
+
+    def test_scenario_analysis_returns_preset_scenarios(self):
+        result = scenario.build_scenario_analysis()
+
+        self.assertEqual(len(result['scenarios']), 4)
+        self.assertIn('base_regime_label', result)
+        self.assertIn('market_stress_delta_display', result['scenarios'][0])
+
+    def test_scenario_analysis_accepts_custom_inputs(self):
+        custom = scenario.scenario_overrides_from_query({
+            'scenario_vix': '30',
+            'scenario_hy_spread': '1.5',
+        })
+        result = scenario.build_scenario_analysis(custom)
+
+        self.assertTrue(result['has_custom'])
+        self.assertEqual(result['scenarios'][0]['title'], 'カスタム')
+        self.assertTrue(result['scenarios'][0]['is_custom'])
 
     def test_reliability_top_warnings_do_not_include_stale_count(self):
         indicator, _ = Indicator.objects.update_or_create(
@@ -706,14 +980,21 @@ class MacroUrlsTest(TestCase):
         probability_mock.return_value = {
             'prediction_label': '今後63日相当でGSPCが-10%以上下落する推定確率',
             'current_probability_display': '11.1%',
+            'raw_probability_display': '42.0%',
+            'raw_calibration_gap_display': '30.9%',
             'validation_samples': 84,
             'validation_event_count': 5,
+            'validation_event_rate_display': '6.0%',
+            'validation_event_interval_display': '2.6%〜13.1%',
             'roc_auc_display': '0.77',
             'pr_auc_display': '0.37',
             'brier_score_display': '0.06',
             'threshold_10_precision_display': '6.9%',
             'threshold_10_recall_display': '100.0%',
             'limitations': ['急落は発生回数が少ないため、確率は参考値です。'],
+            'reliability_label': '低',
+            'reliability_tone': 'danger',
+            'reliability_warnings': ['検証イベントが5件と少ないため、確率は参考値です。'],
             'trained_at': '2026-05-17',
             'sample_count': 180,
             'event_count': 8,
@@ -725,14 +1006,16 @@ class MacroUrlsTest(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, '急落確率モデル v1')
         self.assertContains(r, '11.1%')
-        self.assertContains(r, '月次校正済み')
+        self.assertContains(r, '信頼性 低')
         self.assertContains(r, '検証 84件 / イベント 5件')
-        self.assertContains(r, 'ROC-AUC 0.77 / PR-AUC 0.37')
+        self.assertContains(r, 'ROC-AUC 0.77 / PR-AUC 0.37 / Brier 0.06')
+        self.assertContains(r, 'raw 42.0%')
+        self.assertContains(r, '乖離 30.9%')
+        self.assertContains(r, '目安範囲 2.6%〜13.1%')
+        self.assertContains(r, '検証イベントが5件と少ないため')
         self.assertContains(r, '学習日 2026-05-17')
         self.assertContains(r, 'モデル crash_probability_logistic_v1')
-        self.assertNotContains(r, 'Brier 0.06')
-        self.assertNotContains(r, '閾値10%')
-        self.assertNotContains(r, '急落は発生回数が少ないため')
+        self.assertContains(r, '閾値10% 精度 6.9% / 捕捉 100.0%')
         self.assertNotContains(r, '投資判断や売買推奨としては使えません')
         self.assertNotContains(r, 'サンプル 180')
 
@@ -1349,12 +1632,12 @@ class LightgbmPredictionLoadTest(TestCase):
             with override_settings(BASE_DIR=base):
                 result = dashboard.build_monthly_model_status()
 
-        self.assertEqual(result['tone'], 'good')
-        self.assertEqual(result['status_label'], '更新済み')
+        self.assertEqual(result['tone'], 'warning')
+        self.assertEqual(result['status_label'], '要確認')
         self.assertEqual(result['latest_training_date'], '2026-05-17')
         self.assertEqual(len(result['cards']), 3)
-        self.assertEqual(result['warnings'], [])
-        self.assertIn('ROC-AUC 0.82 / PR-AUC 0.30', [
+        self.assertIn('急落確率モデル: 検証イベントが6件と少ないため', result['warnings'][0])
+        self.assertIn('ROC-AUC 0.82 / PR-AUC 0.30 / 信頼性 低', [
             card['metric_label'] for card in result['cards']
         ])
 

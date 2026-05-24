@@ -302,6 +302,30 @@ def brier_score(records: List[Dict]) -> Optional[float]:
     ])
 
 
+def wilson_interval(
+    event_count: int,
+    sample_count: int,
+    *,
+    z_value: float = 1.96,
+) -> Optional[Tuple[float, float]]:
+    """少数イベントでも極端になりにくい実現率の目安範囲。"""
+    if sample_count <= 0 or event_count < 0 or event_count > sample_count:
+        return None
+    p_hat = event_count / sample_count
+    z2 = z_value ** 2
+    denominator = 1 + z2 / sample_count
+    center = (p_hat + z2 / (2 * sample_count)) / denominator
+    spread = (
+        z_value
+        * math.sqrt(
+            (p_hat * (1 - p_hat) / sample_count)
+            + z2 / (4 * sample_count ** 2)
+        )
+        / denominator
+    )
+    return max(0.0, center - spread), min(1.0, center + spread)
+
+
 def threshold_metrics(records: List[Dict], thresholds=(0.1, 0.2, 0.3, 0.5)) -> List[Dict]:
     out = []
     for threshold in thresholds:

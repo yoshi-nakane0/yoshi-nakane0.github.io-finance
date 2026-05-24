@@ -1,6 +1,6 @@
 """指標間の連動関係（相関・リードラグ）分析。
 
-各ペアの月次標準化値で相関を計算し、ラグを±k月でずらして最大相関を探す。
+各ペアの月次・時点別標準化値で相関を計算し、ラグを±k月でずらして最大相関を探す。
 最も連動の強いペア上位N件を返す。
 """
 
@@ -76,13 +76,13 @@ def _load_monthly_data(history_years: int) -> Dict[str, Dict[date, float]]:
         .filter(
             indicator__fred_series_id__in=series_ids,
             observation_date__gte=cutoff,
-            deviation_from_long_term__isnull=False,
+            expanding_z_score__isnull=False,
         )
         .order_by('indicator', 'observation_date')
         .values_list(
             'indicator__fred_series_id',
             'observation_date',
-            'deviation_from_long_term',
+            'expanding_z_score',
         )
     )
 

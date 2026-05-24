@@ -5,6 +5,7 @@
 """
 
 import logging
+import math
 from datetime import date, timedelta
 from typing import Dict, List, Optional, Tuple
 
@@ -16,6 +17,7 @@ from ..models import Indicator, Observation, RegimeSnapshot
 logger = logging.getLogger(__name__)
 
 MODEL_VERSION = 'regime_v2_score'
+PROBABILITY_MODEL_VERSION = 'regime_probability_v2_validated'
 
 # 主要シグナル指標
 GROWTH_KEY_SERIES = 'INDPRO'
@@ -392,6 +394,121 @@ def _classify_regime_detail(metrics: Dict[str, Optional[float]]) -> Dict:
     }
 
 
+def _sigmoid(value: float) -> float:
+    if value >= 0:
+        z = math.exp(-value)
+        return 1.0 / (1.0 + z)
+    z = math.exp(value)
+    return z / (1.0 + z)
+
+
+def _softmax(logits: Dict[str, float]) -> Dict[str, float]:
+    if not logits:
+        return {}
+    max_logit = max(logits.values())
+    exps = {
+        key: math.exp(max(min(value - max_logit, 30), -30))
+        for key, value in logits.items()
+    }
+    total = sum(exps.values())
+    if total <= 0:
+        return {key: 0 for key in logits}
+    return {key: value / total for key, value in exps.items()}
+
+
+def _score_or_zero(value: Optional[float]) -> float:
+    return float(value) if value is not None else 0.0
+
+
+def regime_probability_distribution(
+    metrics: Dict[str, Optional[float]],
+    regime_detail: Optional[Dict] = None,
+) -> Dict[str, float]:
+    """景気4分類を割合で返す。
+
+    v1 は既存スコアを確率分布へ変換する説明可能モデル。
+    """
+    detail = regime_detail or _classify_regime_detail(metrics)
+    if not detail.get('records'):
+        return {}
+
+    activity = _score_or_zero(detail.get('activity_score'))
+    growth = _score_or_zero(detail.get('growth_score'))
+    labor = _score_or_zero(detail.get('labor_score'))
+    financial = _score_or_zero(detail.get('financial_score'))
+    indpro_3m = _score_or_zero(metrics.get('indpro_3m_change_pct'))
+    unrate_6m = _score_or_zero(metrics.get('unrate_6m_change'))
+
+    recovery_signal = (
+        max(indpro_3m, 0.0) * 0.55
+        + max(-unrate_6m, 0.0) * 1.20
+        + max(growth, 0.0) * 0.012
+    )
+    logits = {
+        RegimeSnapshot.Label.EXPANSION: (
+            activity * 0.040 + growth * 0.018 + labor * 0.014 + financial * 0.006
+        ),
+        RegimeSnapshot.Label.SLOWDOWN: (
+            0.55 + max(-growth, 0.0) * 0.018 + max(-financial, 0.0) * 0.010
+            - abs(activity) * 0.006
+        ),
+        RegimeSnapshot.Label.CONTRACTION: (
+            -activity * 0.045 + max(-growth, 0.0) * 0.020
+            + max(-labor, 0.0) * 0.018 + max(-financial, 0.0) * 0.014
+        ),
+        RegimeSnapshot.Label.RECOVERY: (
+            0.20 + recovery_signal - max(activity, 0.0) * 0.012
+            - max(-financial, 0.0) * 0.004
+        ),
+    }
+    label = detail.get('label')
+    if label in logits:
+        logits[label] += 0.35
+    return _softmax(logits)
+
+
+def risk_probability_distribution(
+    metrics: Dict[str, Optional[float]],
+    regime_probabilities: Dict[str, float],
+) -> Dict[str, float]:
+    """主要リスクを0〜1の割合で返す。"""
+    core_pce = metrics.get('core_pce_yoy')
+    core_pce_3m_ago = metrics.get('core_pce_yoy_3m_ago')
+    breakeven = metrics.get('breakeven_5y')
+    hy_spread = metrics.get('hy_spread')
+    vix = metrics.get('vix')
+    spread_2y10y = metrics.get('yield_curve_2y10y')
+
+    pce_momentum = (
+        core_pce - core_pce_3m_ago
+        if core_pce is not None and core_pce_3m_ago is not None else 0.0
+    )
+    inflation_logit = (
+        ((core_pce or 2.2) - 2.6) * 1.35
+        + pce_momentum * 3.0
+        + max((breakeven or 2.2) - 2.4, 0.0) * 1.15
+    )
+    stress_logit = (
+        ((hy_spread or 4.0) - 4.5) * 0.55
+        + ((vix or 18.0) - 22.0) * 0.08
+        + max(-(spread_2y10y or 0.0), 0.0) * 0.45
+    )
+    recession = (
+        regime_probabilities.get(RegimeSnapshot.Label.CONTRACTION, 0.0)
+        + regime_probabilities.get(RegimeSnapshot.Label.SLOWDOWN, 0.0) * 0.35
+    )
+    acceleration = (
+        regime_probabilities.get(RegimeSnapshot.Label.EXPANSION, 0.0)
+        + regime_probabilities.get(RegimeSnapshot.Label.RECOVERY, 0.0) * 0.35
+    )
+    return {
+        'recession': min(max(recession, 0.0), 1.0),
+        'acceleration': min(max(acceleration, 0.0), 1.0),
+        'inflation_reacceleration': _sigmoid(inflation_logit),
+        'financial_stress': _sigmoid(stress_logit),
+    }
+
+
 def _rule_strength(label: str, activity_score: float, records: List[Dict]) -> int:
     if label == RegimeSnapshot.Label.UNKNOWN or not records:
         return 0
@@ -578,9 +695,12 @@ def _extra_warnings(
     return warnings
 
 
-def build_current_regime_assessment(as_of: Optional[date] = None) -> Dict:
-    """現在または指定日時点の判定結果を構造化して返す。"""
-    metrics = collect_key_metrics(as_of=as_of)
+def build_regime_assessment_from_metrics(
+    metrics: Dict[str, Optional[float]],
+    *,
+    as_of: Optional[date] = None,
+) -> Dict:
+    """与えた指標セットでレジーム判定を返す。"""
     regime_detail = _classify_regime_detail(metrics)
     inflation_flag, inflation_strength = classify_inflation(metrics)
     inflation_records = _inflation_records(metrics)
@@ -600,6 +720,9 @@ def build_current_regime_assessment(as_of: Optional[date] = None) -> Dict:
     if len(evidence) < 5:
         warnings.append('判定根拠に使える主要指標が5件未満です。')
 
+    regime_probabilities = regime_probability_distribution(metrics, regime_detail)
+    risk_probabilities = risk_probability_distribution(metrics, regime_probabilities)
+
     return {
         'regime_label': regime_detail['label'],
         'inflation_flag': inflation_flag,
@@ -608,7 +731,10 @@ def build_current_regime_assessment(as_of: Optional[date] = None) -> Dict:
         'evidence': evidence,
         'warnings': warnings,
         'model_version': MODEL_VERSION,
+        'probability_model_version': PROBABILITY_MODEL_VERSION,
         'metrics': metrics,
+        'regime_probabilities': regime_probabilities,
+        'risk_probabilities': risk_probabilities,
         'scores': {
             'activity': regime_detail.get('activity_score'),
             'growth': regime_detail.get('growth_score'),
@@ -618,8 +744,14 @@ def build_current_regime_assessment(as_of: Optional[date] = None) -> Dict:
     }
 
 
+def build_current_regime_assessment(as_of: Optional[date] = None) -> Dict:
+    """現在または指定日時点の判定結果を構造化して返す。"""
+    metrics = collect_key_metrics(as_of=as_of)
+    return build_regime_assessment_from_metrics(metrics, as_of=as_of)
+
+
 def build_current_indicator_vector() -> Dict[str, float]:
-    """重要度A指標の現状値ベクトル（標準化済み）を作る。"""
+    """重要度A指標の現状値ベクトル（時点別標準化済み）を作る。"""
     indicators = Indicator.objects.filter(is_active=True, importance='A').order_by('display_order')
     vector: Dict[str, float] = {}
     for ind in indicators:
@@ -629,8 +761,8 @@ def build_current_indicator_vector() -> Dict[str, float]:
             .order_by('-observation_date')
             .first()
         )
-        if latest and latest.deviation_from_long_term is not None:
-            vector[ind.fred_series_id] = latest.deviation_from_long_term
+        if latest and latest.expanding_z_score is not None:
+            vector[ind.fred_series_id] = latest.expanding_z_score
     return vector
 
 
@@ -653,6 +785,8 @@ def compute_current_regime() -> Optional[RegimeSnapshot]:
                 'warnings': assessment['warnings'],
                 'model_version': assessment['model_version'],
                 'indicator_vector': vector,
+                'regime_probabilities': assessment['regime_probabilities'],
+                'risk_probabilities': assessment['risk_probabilities'],
             },
         )
     return snapshot

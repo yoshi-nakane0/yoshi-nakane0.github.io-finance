@@ -20,6 +20,37 @@ class MarketSnapshot(models.Model):
         ]
 
 
+class MarketBar(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    symbol = models.CharField(max_length=32)
+    timeframe = models.CharField(max_length=16)
+    timestamp = models.DateTimeField()
+    open = models.FloatField(null=True, blank=True)
+    high = models.FloatField(null=True, blank=True)
+    low = models.FloatField(null=True, blank=True)
+    close = models.FloatField()
+    volume = models.FloatField(null=True, blank=True)
+    source = models.CharField(max_length=64)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["symbol", "timeframe", "timestamp"],
+                name="unique_basecalc_market_bar",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["symbol", "timeframe", "timestamp"],
+                name="basecalc_ma_symbol_bf4cf8_idx",
+            ),
+            models.Index(
+                fields=["timeframe", "-timestamp"],
+                name="basecalc_ma_timefra_a4436d_idx",
+            ),
+        ]
+
+
 class TechnicalSnapshot(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     market_snapshot = models.ForeignKey(MarketSnapshot, on_delete=models.CASCADE)

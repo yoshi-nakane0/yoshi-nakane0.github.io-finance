@@ -49,6 +49,9 @@ fi
 # 日次更新で増えた古い行を削除し、同梱 SQLite を無料枠内に保つ
 $PYTHON_BIN manage.py purge_old_data
 
+# 期限が来た過去予測に実績値を入れて、予測履歴を検証可能にする
+$PYTHON_BIN manage.py settle_forecast_snapshots || true
+
 # Macro ページの重い計算結果を deploy 時に作り、アクセス時の 504 を防ぐ
 $PYTHON_BIN manage.py precompute_dashboard
 

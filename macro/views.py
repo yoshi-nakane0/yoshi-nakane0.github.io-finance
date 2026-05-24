@@ -22,16 +22,20 @@ from .services.commentary import (
 )
 from .services.dashboard import (
     build_crash_alert_context,
+    build_forecast_monitor_context,
     build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
     build_monthly_model_status,
+    build_raw_archive_context,
     build_reliability_context,
     build_regime_context,
     build_similar_periods,
+    build_world_model_operations_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
 )
+from .services.scenario import build_scenario_analysis, scenario_overrides_from_query
 from .services.dashboard_cache import (
     invalidate_dashboard_cache,
     invalidate_indicator_detail_caches,
@@ -204,6 +208,7 @@ def _refresh_serverless_macro_data(request):
 
 def index(request):
     """macro モジュールのトップ画面。重い計算は事前計算キャッシュから取得。"""
+    custom_scenario = scenario_overrides_from_query(request.GET)
     cache_payload = load_dashboard_payload()
 
     if cache_payload is not None:
@@ -226,6 +231,19 @@ def index(request):
         context['lightgbm_prediction'] = load_lightgbm_prediction()
         context['crash_probability_model'] = load_crash_probability_model()
         context['monthly_model_status'] = build_monthly_model_status()
+        context['forecast_monitor'] = (
+            context.get('forecast_monitor') or build_forecast_monitor_context()
+        )
+        context['world_model_operations'] = (
+            context.get('world_model_operations')
+            or build_world_model_operations_context()
+        )
+        context['raw_archive_status'] = (
+            context.get('raw_archive_status') or build_raw_archive_context()
+        )
+        context['scenario_analysis'] = build_scenario_analysis(custom_scenario) if custom_scenario else (
+            context.get('scenario_analysis') or build_scenario_analysis()
+        )
         similar_periods = context.get('similar_periods', [])
         linkages = context.get('linkages', [])
         context['overview_commentary'] = build_overview_commentary(
@@ -260,6 +278,10 @@ def index(request):
             'lightgbm_prediction': load_lightgbm_prediction(),
             'crash_probability_model': load_crash_probability_model(),
             'monthly_model_status': build_monthly_model_status(),
+            'forecast_monitor': build_forecast_monitor_context(),
+            'world_model_operations': build_world_model_operations_context(),
+            'raw_archive_status': build_raw_archive_context(),
+            'scenario_analysis': build_scenario_analysis(custom_scenario),
             'similar_periods': [],
             'linkages': [],
             'overview_commentary': None,
@@ -289,6 +311,10 @@ def index(request):
         'lightgbm_prediction': load_lightgbm_prediction(),
         'crash_probability_model': load_crash_probability_model(),
         'monthly_model_status': build_monthly_model_status(),
+        'forecast_monitor': build_forecast_monitor_context(),
+        'world_model_operations': build_world_model_operations_context(),
+        'raw_archive_status': build_raw_archive_context(),
+        'scenario_analysis': build_scenario_analysis(custom_scenario),
         'similar_periods': similar_periods,
         'linkages': linkages,
         'overview_commentary': (

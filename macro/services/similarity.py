@@ -1,6 +1,6 @@
 """過去類似局面の検索。
 
-重要度A指標の標準化済みベクトルを使い、現在のベクトルと過去各月のベクトルの距離で
+重要度A指標の時点別標準化ベクトルを使い、現在のベクトルと過去各月のベクトルの距離で
 最も近い月を上位N件返す。
 """
 
@@ -40,19 +40,19 @@ def _build_observation_lookup(
     series_ids: List[str],
     cutoff_date: Optional[date] = None,
 ):
-    """series_id -> (sorted_dates, sorted_deviations) のマップを作る。
+    """series_id -> (sorted_dates, sorted_z_scores) のマップを作る。
 
     cutoff_date 以降のみロードしてメモリ消費を抑える。Observation モデルでは
     なく values_list でタプルだけ取り出して大量行のオブジェクト生成を回避。
     """
     qs = Observation.objects.filter(
         indicator__fred_series_id__in=series_ids,
-        deviation_from_long_term__isnull=False,
+        expanding_z_score__isnull=False,
     )
     if cutoff_date is not None:
         qs = qs.filter(observation_date__gte=cutoff_date)
     rows = qs.order_by('indicator', 'observation_date').values_list(
-        'indicator__fred_series_id', 'observation_date', 'deviation_from_long_term',
+        'indicator__fred_series_id', 'observation_date', 'expanding_z_score',
     )
     lookup: Dict[str, Tuple[List[date], List[float]]] = {}
     for sid, obs_date, dev in rows:

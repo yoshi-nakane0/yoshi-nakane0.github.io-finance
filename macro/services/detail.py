@@ -89,11 +89,15 @@ def _summary_stats(observations: List[Observation]) -> Dict:
     }
 
 
+def _standardized_score(observation: Observation) -> Optional[float]:
+    return observation.expanding_z_score
+
+
 def _extreme_months(observations: List[Observation], top: int = 5):
     """最も高かった月と最も低かった月を返す。"""
-    valid = [o for o in observations if o.deviation_from_long_term is not None]
-    by_dev_desc = sorted(valid, key=lambda o: o.deviation_from_long_term, reverse=True)
-    by_dev_asc = sorted(valid, key=lambda o: o.deviation_from_long_term)
+    valid = [o for o in observations if _standardized_score(o) is not None]
+    by_dev_desc = sorted(valid, key=_standardized_score, reverse=True)
+    by_dev_asc = sorted(valid, key=_standardized_score)
     return by_dev_desc[:top], by_dev_asc[:top]
 
 
@@ -101,9 +105,9 @@ def _top_correlations(target_indicator: Indicator, top: int = 5) -> List[Dict]:
     """target と他の重要度A/B指標との相関上位を返す。"""
     target_obs = list(
         Observation.objects
-        .filter(indicator=target_indicator, deviation_from_long_term__isnull=False)
+        .filter(indicator=target_indicator, expanding_z_score__isnull=False)
         .order_by('observation_date')
-        .values_list('observation_date', 'deviation_from_long_term')
+        .values_list('observation_date', 'expanding_z_score')
     )
     if len(target_obs) < 24:
         return []
@@ -118,9 +122,9 @@ def _top_correlations(target_indicator: Indicator, top: int = 5) -> List[Dict]:
     for other in others:
         other_obs = list(
             Observation.objects
-            .filter(indicator=other, deviation_from_long_term__isnull=False)
+            .filter(indicator=other, expanding_z_score__isnull=False)
             .order_by('observation_date')
-            .values_list('observation_date', 'deviation_from_long_term')
+            .values_list('observation_date', 'expanding_z_score')
         )
         if len(other_obs) < 24:
             continue
@@ -182,12 +186,12 @@ def build_indicator_detail_context(
     high_rows = [{
         'date': o.observation_date.isoformat(),
         'value_display': format_value(o.value, indicator.unit),
-        'deviation_display': format_signed(o.deviation_from_long_term, 2),
+        'deviation_display': format_signed(_standardized_score(o), 2),
     } for o in high_months]
     low_rows = [{
         'date': o.observation_date.isoformat(),
         'value_display': format_value(o.value, indicator.unit),
-        'deviation_display': format_signed(o.deviation_from_long_term, 2),
+        'deviation_display': format_signed(_standardized_score(o), 2),
     } for o in low_months]
 
     correlations = _top_correlations(indicator, top=5)
@@ -228,7 +232,7 @@ def build_indicator_detail_context(
         'latest_date': latest.observation_date,
         'latest_value_display': format_value(latest.value, indicator.unit),
         'yoy_display': format_pct(latest.yoy_change),
-        'deviation_display': format_signed(latest.deviation_from_long_term, 2),
+        'deviation_display': format_signed(_standardized_score(latest), 2),
         'stats': {
             'count': stats['count'],
             'mean_display': format_value(stats['mean'], indicator.unit),
@@ -309,7 +313,7 @@ def build_similar_detail_context(month_start: date) -> Dict:
             'value_display': format_value(obs.value, ind.unit),
             'unit': ind.unit,
             'yoy_display': format_pct(obs.yoy_change),
-            'deviation_display': format_signed(obs.deviation_from_long_term, 2),
+            'deviation_display': format_signed(_standardized_score(obs), 2),
         })
 
     # 月次価格と、+1m/+3m/+6m リターン

@@ -4,6 +4,7 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+from django.utils import timezone
 
 from .nikkei_bias import HEADERS, REQUEST_TIMEOUT_SEC
 from .data_sources import normalize_chart_payload, snapshot_from_quote_row
@@ -58,7 +59,7 @@ def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
             return fallback
         return None
 
-    timeframes = {"1d": snapshot}
+    timeframes = {"1d": dict(snapshot)}
     with ThreadPoolExecutor(max_workers=len(YAHOO_INTRADAY_CONFIGS)) as executor:
         intraday_futures = {
             key: executor.submit(_get_yahoo_chart_snapshot, symbol, *config)
@@ -105,6 +106,7 @@ def _get_yahoo_chart_snapshot(symbol, range_value, interval, timeframe):
     )
     if snapshot is None:
         return None
+    snapshot["fetched_at"] = timezone.now()
     return snapshot
 
 
@@ -134,6 +136,7 @@ def _get_stooq_snapshot():
         snapshot = snapshot_from_quote_row(row, symbol, today)
         if snapshot is None:
             continue
+        snapshot["fetched_at"] = timezone.now()
         if not snapshot.get("is_stale"):
             return snapshot
         stale_candidate = stale_candidate or snapshot

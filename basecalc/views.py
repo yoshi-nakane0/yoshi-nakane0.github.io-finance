@@ -1,9 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone
 
 from django.core.cache import cache
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .anchor_snapshot import (
@@ -19,6 +20,8 @@ from .anchor_snapshot import (
     normalize_ratio,
 )
 from .market_shock import build_market_shock_context
+from .futures_sentiment import get_nikkei_futures_snapshot
+from .market_bars import save_market_bars_from_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
@@ -37,8 +40,13 @@ CACHE_KEY_FUTURES = "nikkei_futures_snapshot"
 CACHE_KEY_FUTURES_LAST_GOOD = "nikkei_futures_snapshot_last_good"
 CACHE_KEY_JGB = "nikkei_jgb10y_yield_percent"
 CACHE_KEY_DIVIDEND_INDEX = "nikkei_dividend_yield_index"
+CACHE_KEY_PER_FETCHED_AT = "nikkei_per_fetched_at"
+CACHE_KEY_JGB_FETCHED_AT = "nikkei_jgb10y_fetched_at"
 CACHE_TTL_PRICE = 300
 CACHE_TTL_JGB = 3600
+PER_FETCH_MIN_INTERVAL_SEC = 21600
+JGB_FETCH_MIN_INTERVAL_SEC = 3600
+FUTURES_FETCH_MIN_INTERVAL_SEC = 60
 
 
 @ensure_csrf_cookie
@@ -128,6 +136,8 @@ def build_context(request, force_update=False):
         if price_override is not None
         else normalize_price(cache.get(CACHE_KEY_PRICE))
     )
+    if price_override is None and price is None:
+        price = price_from_futures_snapshot(futures_snapshot)
     jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
     dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
 
@@ -137,6 +147,7 @@ def build_context(request, force_update=False):
             jgb10y_yield_percent,
             dividend_yield_index_percent,
             price,
+            update_price_from_futures=price_override is None,
         )
 
     if price_override is not None:
@@ -249,11 +260,13 @@ def update_market_caches(
     jgb10y_yield_percent,
     dividend_yield_index_percent,
     price,
+    update_price_from_futures=False,
 ):
     with ThreadPoolExecutor() as executor:
         futures = {
-            "per_values": executor.submit(get_nikkei_per_values),
-            "jgb": executor.submit(get_jgb10y_yield_percent),
+            "per_values": executor.submit(get_nikkei_per_values_for_update),
+            "jgb": executor.submit(get_jgb10y_yield_for_update),
+            "futures_snapshot": executor.submit(get_futures_snapshot_for_update),
         }
 
         per_vals = futures["per_values"].result()
@@ -276,11 +289,26 @@ def update_market_caches(
             jgb10y_yield_percent = val
             cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
 
+        futures_snapshot = futures["futures_snapshot"].result()
+        if isinstance(futures_snapshot, dict):
+            cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
+            cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
+            save_market_bars_from_snapshot(futures_snapshot)
+            snapshot_price = price_from_futures_snapshot(futures_snapshot)
+            if update_price_from_futures and snapshot_price is not None:
+                price = snapshot_price
+                cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
+        else:
+            futures_snapshot = get_cached_futures_snapshot()
+            snapshot_price = price_from_futures_snapshot(futures_snapshot)
+            if update_price_from_futures and price is None and snapshot_price is not None:
+                price = snapshot_price
+
     return (
         forward_per,
         jgb10y_yield_percent,
         dividend_yield_index_percent,
-        get_cached_futures_snapshot(),
+        futures_snapshot,
         price,
     )
 
@@ -290,6 +318,83 @@ def get_cached_futures_snapshot():
     if isinstance(snapshot, dict):
         return snapshot
     return get_stale_futures_snapshot()
+
+
+def price_from_futures_snapshot(snapshot):
+    if not isinstance(snapshot, dict):
+        return None
+    return normalize_price(snapshot.get("price"))
+
+
+def get_futures_snapshot_for_update():
+    snapshot = cache.get(CACHE_KEY_FUTURES)
+    if isinstance(snapshot, dict) and not futures_snapshot_needs_refresh(snapshot):
+        return snapshot
+    return get_nikkei_futures_snapshot()
+
+
+def get_nikkei_per_values_for_update():
+    forward_per = cache.get(CACHE_KEY_FWD)
+    dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
+    if (
+        forward_per is not None
+        and dividend_yield_index_percent is not None
+        and not cache_value_needs_refresh(
+            CACHE_KEY_PER_FETCHED_AT,
+            PER_FETCH_MIN_INTERVAL_SEC,
+        )
+    ):
+        return {
+            "index_based": forward_per,
+            "dividend_yield_index_based": dividend_yield_index_percent,
+        }
+    values = get_nikkei_per_values()
+    if values:
+        cache.set(CACHE_KEY_PER_FETCHED_AT, timezone.now(), timeout=None)
+    return values
+
+
+def get_jgb10y_yield_for_update():
+    cached_value = cache.get(CACHE_KEY_JGB)
+    if cached_value is not None and not cache_value_needs_refresh(
+        CACHE_KEY_JGB_FETCHED_AT,
+        JGB_FETCH_MIN_INTERVAL_SEC,
+    ):
+        return cached_value
+    value = get_jgb10y_yield_percent()
+    if value is not None:
+        cache.set(CACHE_KEY_JGB_FETCHED_AT, timezone.now(), timeout=None)
+    return value
+
+
+def cache_value_needs_refresh(cache_key, min_interval_sec, now=None):
+    fetched_at = cache.get(cache_key)
+    if not fetched_at:
+        return True
+    return timestamp_needs_refresh(fetched_at, min_interval_sec, now=now)
+
+
+def futures_snapshot_needs_refresh(snapshot, now=None):
+    fetched_at = snapshot.get("fetched_at") if isinstance(snapshot, dict) else None
+    if not fetched_at:
+        return True
+    return timestamp_needs_refresh(
+        fetched_at,
+        FUTURES_FETCH_MIN_INTERVAL_SEC,
+        now=now,
+    )
+
+
+def timestamp_needs_refresh(fetched_at, min_interval_sec, now=None):
+    if isinstance(fetched_at, str):
+        try:
+            fetched_at = datetime.fromisoformat(fetched_at)
+        except ValueError:
+            return True
+    if timezone.is_naive(fetched_at):
+        fetched_at = timezone.make_aware(fetched_at, timezone=dt_timezone.utc)
+    now = now or timezone.now()
+    return (now - fetched_at).total_seconds() >= min_interval_sec
 
 
 def get_stale_futures_snapshot():

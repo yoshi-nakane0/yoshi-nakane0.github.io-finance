@@ -19,9 +19,11 @@ from django.utils import timezone
 
 from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
 from .crash_alert import FRESHNESS_LIMIT_DAYS, compute_crash_alert
+from .crash_probability import wilson_interval
 from .historical_crash import find_similar_crash_months
 from .judgment import evaluate as evaluate_judgment
 from .linkage import compute_pair_relationships
+from .raw_archive import latest_archive_status
 from .similarity import find_similar_months
 from .sparkline import generate_sparkline_svg
 
@@ -36,6 +38,10 @@ SPARKLINE_MONTHS = 24
 LIGHTGBM_PREDICTION_PATH = Path('static') / 'macro' / 'lightgbm_prediction.json'
 CRASH_ALERT_BACKTEST_PATH = Path('static') / 'macro' / 'crash_alert_backtest.json'
 CRASH_PROBABILITY_MODEL_PATH = Path('static') / 'macro' / 'crash_probability_model.json'
+REGIME_PROBABILITY_MODEL_PATH = Path('static') / 'macro' / 'regime_probability_model.json'
+MIN_CRASH_PROBABILITY_VALIDATION_EVENTS = 10
+CRASH_PROBABILITY_STALE_DAYS = 90
+RAW_CALIBRATION_GAP_WARNING = 0.20
 
 
 def format_value(value: Optional[float], unit: str) -> str:
@@ -215,6 +221,40 @@ def _format_path_mtime(path: Path) -> str:
         return '—'
 
 
+def _parse_iso_date(value) -> Optional[date]:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value).date()
+        except ValueError:
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                return None
+    return None
+
+
+def _pct_probability_display(value: Optional[float]) -> str:
+    return f'{value * 100:.1f}%' if value is not None else '—'
+
+
+def _validation_event_interval_display(
+    event_count: Optional[int],
+    sample_count: Optional[int],
+) -> str:
+    if event_count is None or sample_count in (None, 0):
+        return '—'
+    interval = wilson_interval(int(event_count), int(sample_count))
+    if interval is None:
+        return '—'
+    return f'{interval[0] * 100:.1f}%〜{interval[1] * 100:.1f}%'
+
+
 def _failure_item_label(item: Dict) -> str:
     series_id = (
         item.get('series_id')
@@ -366,6 +406,10 @@ def build_reliability_context(
     }
 
 
+def build_raw_archive_context() -> Dict:
+    return latest_archive_status()
+
+
 def build_similar_periods(top_n: int = 5) -> List[Dict]:
     try:
         raw = find_similar_months(top_n=top_n)
@@ -505,6 +549,8 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
             'regime_warnings': ['判定に必要なデータがまだ揃っていません。'],
             'regime_model_version': '—',
             'snapshot_date': None,
+            'regime_probability_rows': [],
+            'risk_probability_rows': [],
         }
     summary = _regime_summary(
         snapshot.regime_label,
@@ -565,7 +611,57 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
         'regime_warnings': getattr(snapshot, 'warnings', []) or [],
         'regime_model_version': getattr(snapshot, 'model_version', 'regime_v1'),
         'snapshot_date': snapshot.snapshot_date,
+        'regime_probability_rows': _regime_probability_rows(
+            getattr(snapshot, 'regime_probabilities', {}) or {}
+        ),
+        'risk_probability_rows': _risk_probability_rows(
+            getattr(snapshot, 'risk_probabilities', {}) or {}
+        ),
     }
+
+
+def _probability_pct(value: Optional[float]) -> int:
+    return int(round((value or 0.0) * 100))
+
+
+def _regime_probability_rows(probabilities: Dict[str, float]) -> List[Dict]:
+    label_order = [
+        RegimeSnapshot.Label.EXPANSION,
+        RegimeSnapshot.Label.SLOWDOWN,
+        RegimeSnapshot.Label.CONTRACTION,
+        RegimeSnapshot.Label.RECOVERY,
+    ]
+    rows = []
+    for key in label_order:
+        value = probabilities.get(key)
+        pct = _probability_pct(value)
+        rows.append({
+            'key': key,
+            'label': RegimeSnapshot.Label(key).label,
+            'pct': pct,
+            'display': f'{pct}%',
+        })
+    return rows
+
+
+def _risk_probability_rows(probabilities: Dict[str, float]) -> List[Dict]:
+    labels = {
+        'recession': '景気後退',
+        'acceleration': '景気加速',
+        'inflation_reacceleration': '物価再加速',
+        'financial_stress': '金融ストレス',
+    }
+    rows = []
+    for key, label in labels.items():
+        value = probabilities.get(key)
+        pct = _probability_pct(value)
+        rows.append({
+            'key': key,
+            'label': label,
+            'pct': pct,
+            'display': f'{pct}%',
+        })
+    return rows
 
 
 def _format_regime_evidence(evidence: List[Dict]) -> List[Dict]:
@@ -965,6 +1061,7 @@ def load_crash_probability_model() -> Optional[Dict]:
         return None
 
     probability = raw.get('current_probability')
+    raw_probability = raw.get('current_raw_probability')
     validation = raw.get('validation') or {}
     roc_auc = validation.get('roc_auc')
     pr_auc = validation.get('pr_auc')
@@ -974,21 +1071,76 @@ def load_crash_probability_model() -> Optional[Dict]:
         (row for row in thresholds if row.get('threshold') == 0.1),
         {},
     )
+    validation_samples = raw.get('validation_samples')
+    validation_event_count = raw.get('validation_event_count')
+    baseline_rate = (
+        validation_event_count / validation_samples
+        if validation_event_count is not None and validation_samples
+        else None
+    )
+    trained_date = _parse_iso_date(raw.get('trained_at'))
+    model_age_days = (
+        (timezone.localdate() - trained_date).days
+        if trained_date is not None else None
+    )
+    raw_gap = (
+        abs(raw_probability - probability)
+        if raw_probability is not None and probability is not None
+        else None
+    )
+    reliability_warnings = []
+    if (
+        validation_event_count is not None
+        and validation_event_count < MIN_CRASH_PROBABILITY_VALIDATION_EVENTS
+    ):
+        reliability_warnings.append(
+            f'検証イベントが{validation_event_count}件と少ないため、確率は参考値です。'
+        )
+    if raw_gap is not None and raw_gap >= RAW_CALIBRATION_GAP_WARNING:
+        reliability_warnings.append(
+            'raw推定と校正後の差が大きく、モデル校正は不安定です。'
+        )
+    if model_age_days is not None and model_age_days > CRASH_PROBABILITY_STALE_DAYS:
+        reliability_warnings.append(
+            f'学習から{model_age_days}日経過しており、モデル鮮度に注意が必要です。'
+        )
+    if not reliability_warnings:
+        reliability_warnings.extend(raw.get('limitations', [])[:1])
+
+    if (
+        validation_event_count is not None
+        and validation_event_count < MIN_CRASH_PROBABILITY_VALIDATION_EVENTS
+    ):
+        reliability_label = '低'
+        reliability_tone = 'danger'
+    elif reliability_warnings:
+        reliability_label = '注意'
+        reliability_tone = 'warning'
+    else:
+        reliability_label = '通常'
+        reliability_tone = 'good'
+
     return {
         'model_version': raw.get('model_version'),
         'trained_at': raw.get('trained_at'),
+        'model_age_days': model_age_days,
         'prediction_label': raw.get('prediction_label'),
         'current_probability_pct': round(probability * 100, 1) if probability is not None else None,
-        'current_probability_display': (
-            f'{probability * 100:.1f}%' if probability is not None else '—'
-        ),
+        'current_probability_display': _pct_probability_display(probability),
+        'raw_probability_display': _pct_probability_display(raw_probability),
+        'raw_calibration_gap_display': _pct_probability_display(raw_gap),
         'target': raw.get('target'),
         'horizon_days': raw.get('horizon_days'),
         'drawdown_threshold_pct': raw.get('drawdown_threshold_pct'),
         'sample_count': raw.get('sample_count'),
         'event_count': raw.get('event_count'),
-        'validation_samples': raw.get('validation_samples'),
-        'validation_event_count': raw.get('validation_event_count'),
+        'validation_samples': validation_samples,
+        'validation_event_count': validation_event_count,
+        'validation_event_rate_display': _pct_probability_display(baseline_rate),
+        'validation_event_interval_display': _validation_event_interval_display(
+            validation_event_count,
+            validation_samples,
+        ),
         'roc_auc_display': f'{roc_auc:.2f}' if roc_auc is not None else '—',
         'pr_auc_display': f'{pr_auc:.2f}' if pr_auc is not None else '—',
         'brier_score_display': f'{brier:.2f}' if brier is not None else '—',
@@ -1001,6 +1153,59 @@ def load_crash_probability_model() -> Optional[Dict]:
             if threshold_10.get('recall') is not None else '—'
         ),
         'limitations': raw.get('limitations', []),
+        'reliability_label': reliability_label,
+        'reliability_tone': reliability_tone,
+        'reliability_warnings': reliability_warnings,
+    }
+
+
+def load_regime_probability_model() -> Optional[Dict]:
+    """景気確率モデルの履歴検証 JSON を読み込む。"""
+    path = Path(settings.BASE_DIR) / REGIME_PROBABILITY_MODEL_PATH
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        logger.exception("Regime probability model JSON の読み込みに失敗")
+        return None
+
+    metrics = raw.get('metrics') or {}
+    event_interval = raw.get('event_rate_interval')
+    event_interval_display = '—'
+    if event_interval:
+        event_interval_display = (
+            f'{event_interval[0] * 100:.1f}%〜{event_interval[1] * 100:.1f}%'
+        )
+    sample_count = raw.get('sample_count') or 0
+    event_count = raw.get('event_count') or 0
+    warnings = []
+    if sample_count < 60:
+        warnings.append('検証サンプルが少ないため、景気確率は暫定です。')
+    if event_count < 5:
+        warnings.append('景気後退イベントが少ないため、確率の振れに注意が必要です。')
+    return {
+        'model_version': raw.get('model_version'),
+        'evaluated_at': raw.get('evaluated_at'),
+        'target': raw.get('target'),
+        'horizon_months': raw.get('horizon_months'),
+        'sample_count': sample_count,
+        'event_count': event_count,
+        'event_interval_display': event_interval_display,
+        'roc_auc_display': (
+            f"{metrics.get('roc_auc'):.2f}"
+            if metrics.get('roc_auc') is not None else '—'
+        ),
+        'pr_auc_display': (
+            f"{metrics.get('pr_auc'):.2f}"
+            if metrics.get('pr_auc') is not None else '—'
+        ),
+        'brier_score_display': (
+            f"{metrics.get('brier_score'):.2f}"
+            if metrics.get('brier_score') is not None else '—'
+        ),
+        'warnings': warnings,
+        'tone': 'warning' if warnings else 'good',
     }
 
 
@@ -1009,6 +1214,7 @@ def build_monthly_model_status() -> Dict:
     backtest = load_crash_alert_backtest()
     probability = load_crash_probability_model()
     lightgbm = load_lightgbm_prediction()
+    regime_probability = load_regime_probability_model()
 
     cards = []
     warnings = []
@@ -1035,6 +1241,7 @@ def build_monthly_model_status() -> Dict:
         warnings.append('急落警戒スコアの月次検証ファイルがありません。')
 
     if probability:
+        reliability_label = probability.get('reliability_label') or '—'
         cards.append({
             'label': '急落確率モデル',
             'updated_at': probability.get('trained_at') or '—',
@@ -1044,10 +1251,16 @@ def build_monthly_model_status() -> Dict:
             ),
             'metric_label': (
                 f"ROC-AUC {probability.get('roc_auc_display')} / "
-                f"PR-AUC {probability.get('pr_auc_display')}"
+                f"PR-AUC {probability.get('pr_auc_display')} / "
+                f"信頼性 {reliability_label}"
             ),
             'model_label': probability.get('model_version') or '—',
         })
+        if probability.get('reliability_tone') != 'good':
+            warnings.extend(
+                f"急落確率モデル: {warning}"
+                for warning in probability.get('reliability_warnings', [])[:2]
+            )
     else:
         warnings.append('急落確率モデルの学習結果ファイルがありません。')
 
@@ -1070,10 +1283,33 @@ def build_monthly_model_status() -> Dict:
     else:
         warnings.append('LightGBM参考予測の学習結果ファイルがありません。')
 
+    if regime_probability:
+        cards.append({
+            'label': '景気確率モデル',
+            'updated_at': regime_probability.get('evaluated_at') or '—',
+            'sample_label': (
+                f"検証 {regime_probability.get('sample_count') or '—'}件 / "
+                f"後退 {regime_probability.get('event_count') or '—'}件"
+            ),
+            'metric_label': (
+                f"ROC-AUC {regime_probability.get('roc_auc_display')} / "
+                f"PR-AUC {regime_probability.get('pr_auc_display')} / "
+                f"Brier {regime_probability.get('brier_score_display')}"
+            ),
+            'model_label': regime_probability.get('model_version') or '—',
+        })
+        warnings.extend(
+            f"景気確率モデル: {warning}"
+            for warning in regime_probability.get('warnings', [])[:2]
+        )
+    else:
+        warnings.append('景気確率モデルの検証ファイルがありません。')
+
     latest_training_candidates = [
         value for value in (
             probability.get('trained_at') if probability else None,
             lightgbm.get('predicted_at') if lightgbm else None,
+            regime_probability.get('evaluated_at') if regime_probability else None,
         )
         if value
     ]
@@ -1089,3 +1325,13 @@ def build_monthly_model_status() -> Dict:
         'warnings': warnings,
         'has_any': bool(cards),
     }
+
+
+def build_forecast_monitor_context() -> Dict:
+    from .forecast_tracking import build_forecast_monitor_context as _build
+    return _build()
+
+
+def build_world_model_operations_context() -> Dict:
+    from .operations import build_operations_context
+    return build_operations_context()

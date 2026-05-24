@@ -1,5 +1,6 @@
 """急落確率モデル v1 を学習して JSON を出力する。"""
 
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -8,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from macro.models import ForecastSnapshot
 from macro.services import crash_probability
 
 
@@ -30,6 +32,11 @@ def _fmt(value, digits=3):
     if value is None:
         return '—'
     return f'{value:.{digits}f}'
+
+
+def _features_hash(features):
+    normalized = json.dumps(features, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(normalized.encode('utf-8')).hexdigest()
 
 
 class Command(BaseCommand):
@@ -94,6 +101,11 @@ class Command(BaseCommand):
             current_raw_probability,
             raw_calibration_bins,
         )
+        validation_event_count = sum(1 for row in scored_validation if row['event'])
+        event_rate_interval = crash_probability.wilson_interval(
+            validation_event_count,
+            len(scored_validation),
+        )
 
         payload = {
             'model_version': crash_probability.MODEL_VERSION,
@@ -113,7 +125,8 @@ class Command(BaseCommand):
             'training_samples': len(train_rows),
             'training_event_count': sum(1 for row in train_rows if row['event']),
             'validation_samples': len(scored_validation),
-            'validation_event_count': sum(1 for row in scored_validation if row['event']),
+            'validation_event_count': validation_event_count,
+            'validation_event_rate_interval': event_rate_interval,
             'validation': {
                 'roc_auc': crash_probability.roc_auc(scored_validation),
                 'pr_auc': crash_probability.pr_auc(scored_validation),
@@ -140,6 +153,33 @@ class Command(BaseCommand):
         out_path.write_text(
             json.dumps(_clean(payload), ensure_ascii=False, indent=2),
             encoding='utf-8',
+        )
+
+        as_of_date = timezone.localdate()
+        ForecastSnapshot.objects.update_or_create(
+            as_of_date=as_of_date,
+            model_version=crash_probability.MODEL_VERSION,
+            target=options['target'],
+            horizon=f"{options['horizon_days']}d",
+            defaults={
+                'prediction_value': current_probability,
+                'prediction_interval': {
+                    'type': 'validation_event_rate_wilson_95',
+                    'lower': event_rate_interval[0] if event_rate_interval else None,
+                    'upper': event_rate_interval[1] if event_rate_interval else None,
+                    'horizon_days': options['horizon_days'],
+                    'drawdown_threshold_pct': options['drawdown_threshold'],
+                },
+                'features_hash': _features_hash(current_features),
+                'metadata': {
+                    'prediction_kind': 'drawdown_event_probability',
+                    'horizon_days': options['horizon_days'],
+                    'drawdown_threshold_pct': options['drawdown_threshold'],
+                    'raw_probability': current_raw_probability,
+                    'validation_event_count': validation_event_count,
+                    'validation_samples': len(scored_validation),
+                },
+            },
         )
 
         validation = payload['validation']

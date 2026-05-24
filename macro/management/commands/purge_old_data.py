@@ -20,6 +20,7 @@ from macro.models import (
     PriceObservation,
     RegimeSnapshot,
 )
+from macro.services.raw_archive import archive_macro_rows
 
 # 観測値の頻度別保持年数。
 # 日次は類似度検索（過去15年遡る）と整合させて15年。
@@ -58,6 +59,10 @@ class Command(BaseCommand):
         prefix = '[dry-run] ' if dry_run else ''
 
         total = 0
+        archive_observation_querysets = []
+        archive_price_queryset = None
+        archive_regime_queryset = None
+        delete_targets = []
 
         # Observation: 頻度別の保持期間で削除
         for frequency, years in OBSERVATION_RETENTION_BY_FREQUENCY.items():
@@ -70,49 +75,62 @@ class Command(BaseCommand):
             total += count
             label = f'Observation({frequency})'
             condition = f'{years}年より古い'
+            delete_targets.append((label, condition, qs))
+            archive_observation_querysets.append(qs)
             if dry_run:
                 self.stdout.write(f'[dry-run] {label}: {count} 件 ({condition})')
-            else:
-                qs.delete()
-                self.stdout.write(f'{label}: {count} 件削除 ({condition})')
 
         # PriceObservation
         price_cutoff = _years_ago(PRICE_RETENTION_YEARS)
         qs = PriceObservation.objects.filter(observation_month__lt=price_cutoff)
         count = qs.count()
         total += count
+        archive_price_queryset = qs
         condition = f'{PRICE_RETENTION_YEARS}年より古い'
+        delete_targets.append(('PriceObservation', condition, qs))
         if dry_run:
             self.stdout.write(f'[dry-run] PriceObservation: {count} 件 ({condition})')
-        else:
-            qs.delete()
-            self.stdout.write(f'PriceObservation: {count} 件削除 ({condition})')
 
         # RegimeSnapshot
         regime_cutoff = _years_ago(REGIME_RETENTION_YEARS)
         qs = RegimeSnapshot.objects.filter(snapshot_date__lt=regime_cutoff)
         count = qs.count()
         total += count
+        archive_regime_queryset = qs
         condition = f'{REGIME_RETENTION_YEARS}年より古い'
+        delete_targets.append(('RegimeSnapshot', condition, qs))
         if dry_run:
             self.stdout.write(f'[dry-run] RegimeSnapshot: {count} 件 ({condition})')
-        else:
-            qs.delete()
-            self.stdout.write(f'RegimeSnapshot: {count} 件削除 ({condition})')
 
         # DashboardCache
         cache_cutoff = timezone.now() - timedelta(
             days=DASHBOARD_CACHE_RETENTION_DAYS,
         )
-        qs = DashboardCache.objects.filter(computed_at__lt=cache_cutoff)
-        count = qs.count()
-        total += count
+        cache_qs = DashboardCache.objects.filter(computed_at__lt=cache_cutoff)
+        cache_count = cache_qs.count()
+        total += cache_count
         condition = f'{DASHBOARD_CACHE_RETENTION_DAYS}日より古い'
         if dry_run:
-            self.stdout.write(f'[dry-run] DashboardCache: {count} 件 ({condition})')
+            self.stdout.write(f'[dry-run] DashboardCache: {cache_count} 件 ({condition})')
         else:
-            qs.delete()
-            self.stdout.write(f'DashboardCache: {count} 件削除 ({condition})')
+            if total > cache_count:
+                summary = archive_macro_rows(
+                    observation_querysets=archive_observation_querysets,
+                    price_queryset=archive_price_queryset,
+                    regime_queryset=archive_regime_queryset,
+                    reason='purge_old_data',
+                )
+                if summary['created']:
+                    self.stdout.write(
+                        f"RawArchive: {summary['row_count']} 件退避 "
+                        f"({summary['path']})"
+                    )
+            for label, condition, qs in delete_targets:
+                count = qs.count()
+                qs.delete()
+                self.stdout.write(f'{label}: {count} 件削除 ({condition})')
+            cache_qs.delete()
+            self.stdout.write(f'DashboardCache: {cache_count} 件削除 ({condition})')
 
         # SQLite ファイルを実際に縮める
         if not dry_run and total > 0:

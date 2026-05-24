@@ -188,3 +188,4 @@ cython_debug/
 .pypirc
 .vercel
 .superpowers/
+static/macro/raw_archive/*.csv.gz

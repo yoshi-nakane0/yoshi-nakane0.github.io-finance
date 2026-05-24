@@ -37,13 +37,27 @@ MIN_SAMPLES_FOR_STATS = 24
 
 
 def _compute_long_term_stats(values: List[float]) -> Tuple[float, float]:
-    """長期平均と標準偏差を返す。サンプル不足時は (0.0, 0.0)。"""
+    """平均と標準偏差を返す。サンプル不足時は (0.0, 0.0)。"""
     if len(values) < MIN_SAMPLES_FOR_STATS:
         return 0.0, 0.0
     mean = sum(values) / len(values)
     variance = sum((v - mean) ** 2 for v in values) / len(values)
     std = math.sqrt(variance)
     return mean, std
+
+
+def _safe_years_ago(value: date, years: int) -> date:
+    try:
+        return value.replace(year=value.year - years)
+    except ValueError:
+        return value.replace(year=value.year - years, day=28)
+
+
+def _z_score(value: float, values: List[float]) -> Optional[float]:
+    mean, std = _compute_long_term_stats(values)
+    if std <= 0:
+        return None
+    return (value - mean) / std
 
 
 def _find_yoy_old_value(
@@ -76,8 +90,6 @@ def _build_observation_rows(
     sorted_dates = [d for d, _ in sorted_obs]
     sorted_values = [v for _, v in sorted_obs]
 
-    long_term_mean, long_term_std = _compute_long_term_stats(sorted_values)
-
     rows: List[Observation] = []
     for i, (obs_date, value) in enumerate(sorted_obs):
         prev_value = sorted_values[i - 1] if i > 0 else None
@@ -93,9 +105,30 @@ def _build_observation_rows(
             if yoy_base not in (None, 0):
                 yoy_change = (value - yoy_base) / abs(yoy_base) * 100.0
 
-        deviation = None
-        if long_term_std > 0:
-            deviation = (value - long_term_mean) / long_term_std
+        available_values = sorted_values[:i + 1]
+        expanding_z_score = _z_score(value, available_values)
+
+        rolling_10y_start = bisect_left(
+            sorted_dates,
+            _safe_years_ago(obs_date, 10),
+            0,
+            i + 1,
+        )
+        rolling_10y_z_score = _z_score(
+            value,
+            sorted_values[rolling_10y_start:i + 1],
+        )
+
+        rolling_5y_start = bisect_left(
+            sorted_dates,
+            _safe_years_ago(obs_date, 5),
+            0,
+            i + 1,
+        )
+        rolling_5y_z_score = _z_score(
+            value,
+            sorted_values[rolling_5y_start:i + 1],
+        )
 
         rows.append(
             Observation(
@@ -104,7 +137,10 @@ def _build_observation_rows(
                 value=value,
                 prev_value=prev_value,
                 yoy_change=yoy_change,
-                deviation_from_long_term=deviation,
+                deviation_from_long_term=expanding_z_score,
+                expanding_z_score=expanding_z_score,
+                rolling_10y_z_score=rolling_10y_z_score,
+                rolling_5y_z_score=rolling_5y_z_score,
             )
         )
     return rows
@@ -263,11 +299,17 @@ def sync_indicator(
             or existing_obs.prev_value != new_obs.prev_value
             or existing_obs.yoy_change != new_obs.yoy_change
             or existing_obs.deviation_from_long_term != new_obs.deviation_from_long_term
+            or existing_obs.expanding_z_score != new_obs.expanding_z_score
+            or existing_obs.rolling_10y_z_score != new_obs.rolling_10y_z_score
+            or existing_obs.rolling_5y_z_score != new_obs.rolling_5y_z_score
         ):
             existing_obs.value = new_obs.value
             existing_obs.prev_value = new_obs.prev_value
             existing_obs.yoy_change = new_obs.yoy_change
             existing_obs.deviation_from_long_term = new_obs.deviation_from_long_term
+            existing_obs.expanding_z_score = new_obs.expanding_z_score
+            existing_obs.rolling_10y_z_score = new_obs.rolling_10y_z_score
+            existing_obs.rolling_5y_z_score = new_obs.rolling_5y_z_score
             updates.append(existing_obs)
 
     with transaction.atomic():
@@ -279,6 +321,9 @@ def sync_indicator(
                     'prev_value',
                     'yoy_change',
                     'deviation_from_long_term',
+                    'expanding_z_score',
+                    'rolling_10y_z_score',
+                    'rolling_5y_z_score',
                 ],
                 batch_size=500,
             )
