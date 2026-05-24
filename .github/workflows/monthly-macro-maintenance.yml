@@ -21,6 +21,7 @@ jobs:
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'monthly-macro-maintenance-secret' }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MACRO_RAW_ARCHIVE_DIR: /tmp/macro_raw_archive
       MACRO_RAW_ARCHIVE_STORAGE_BACKEND: github_artifact
       MACRO_RAW_ARCHIVE_PATH_PREFIX: github-actions-artifact://macro-raw-archive
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
@@ -33,9 +34,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Configure runtime paths
-        run: echo "MACRO_RAW_ARCHIVE_DIR=$RUNNER_TEMP/macro_raw_archive" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: |
@@ -72,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macro-raw-archive
-          path: ${{ runner.temp }}/macro_raw_archive/*.csv.gz
+          path: /tmp/macro_raw_archive/*.csv.gz
           if-no-files-found: ignore
 
       - name: Trigger Vercel rebuild
