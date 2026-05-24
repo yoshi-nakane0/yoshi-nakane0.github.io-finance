@@ -30,7 +30,10 @@ from .services.dashboard import (
     build_raw_archive_context,
     build_reliability_context,
     build_regime_context,
+    build_forecast_model_context,
+    build_model_validation_context,
     build_similar_periods,
+    build_world_state_context,
     build_world_model_operations_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
@@ -62,6 +65,7 @@ from .services.detail import (
 )
 from .services.fred_client import get_api_key
 from .services.regime import compute_current_regime
+from .services.world_state import compute_current_world_state
 from .services.yfinance_client import sync_all_price_histories
 
 logger = logging.getLogger(__name__)
@@ -176,6 +180,11 @@ def _refresh_serverless_macro_data(request):
         logger.exception("Serverless regime recomputation failed")
         extra_failed.append({'phase': 'regime', 'error': str(exc)})
         messages.warning(request, "即時指標は更新しましたが、判定更新でエラーが発生しました")
+    try:
+        compute_current_world_state()
+    except Exception as exc:
+        logger.exception("Serverless world state recomputation failed")
+        extra_failed.append({'phase': 'world_state', 'error': str(exc)})
 
     try:
         payload = load_dashboard_payload() or {}
@@ -185,6 +194,7 @@ def _refresh_serverless_macro_data(request):
             'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
             'indicator_cards': build_indicator_cards(),
             'crash_alert': build_crash_alert_context(),
+            'world_state': build_world_state_context(),
         })
         save_dashboard_payload(payload)
         invalidate_indicator_detail_caches()
@@ -234,6 +244,15 @@ def index(request):
         context['forecast_monitor'] = (
             context.get('forecast_monitor') or build_forecast_monitor_context()
         )
+        context['world_state'] = (
+            context.get('world_state') or build_world_state_context()
+        )
+        context['forecast_models'] = (
+            context.get('forecast_models') or build_forecast_model_context()
+        )
+        context['model_validation'] = (
+            context.get('model_validation') or build_model_validation_context()
+        )
         context['world_model_operations'] = (
             context.get('world_model_operations')
             or build_world_model_operations_context()
@@ -279,6 +298,9 @@ def index(request):
             'crash_probability_model': load_crash_probability_model(),
             'monthly_model_status': build_monthly_model_status(),
             'forecast_monitor': build_forecast_monitor_context(),
+            'world_state': build_world_state_context(),
+            'forecast_models': build_forecast_model_context(),
+            'model_validation': build_model_validation_context(),
             'world_model_operations': build_world_model_operations_context(),
             'raw_archive_status': build_raw_archive_context(),
             'scenario_analysis': build_scenario_analysis(custom_scenario),
@@ -312,6 +334,9 @@ def index(request):
         'crash_probability_model': load_crash_probability_model(),
         'monthly_model_status': build_monthly_model_status(),
         'forecast_monitor': build_forecast_monitor_context(),
+        'world_state': build_world_state_context(),
+        'forecast_models': build_forecast_model_context(),
+        'model_validation': build_model_validation_context(),
         'world_model_operations': build_world_model_operations_context(),
         'raw_archive_status': build_raw_archive_context(),
         'scenario_analysis': build_scenario_analysis(custom_scenario),
@@ -390,6 +415,12 @@ def refresh(request):
                 request,
                 "指標は更新したがレジーム判定でエラーが発生しました（ログを確認）",
             )
+        try:
+            compute_current_world_state()
+        except Exception as exc:
+            logger.exception("World State recomputation failed")
+            extra_failed.append({'phase': 'world_state', 'error': str(exc)})
+            messages.warning(request, "World State 更新でエラーが発生しました")
 
     # 価格データも併せて更新
     try:

@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 import requests
 from django.db import transaction
 
-from ..models import PriceObservation
+from ..models import DailyPriceObservation, PriceObservation
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +111,96 @@ def fetch_monthly_history(
     return history
 
 
+def _to_observation_date(timestamp: int) -> date:
+    return datetime.fromtimestamp(timestamp, tz=dt_timezone.utc).date()
+
+
+def fetch_daily_history(
+    symbol: str,
+    *,
+    years: int = DEFAULT_HISTORY_YEARS,
+    days: Optional[int] = None,
+    start_date: Optional[date] = None,
+) -> List[dict]:
+    """指定銘柄の日次終値履歴を取得する。"""
+    end_ts = int(time.time())
+    if start_date is not None:
+        start_ts = int(
+            datetime(
+                start_date.year,
+                start_date.month,
+                start_date.day,
+                tzinfo=dt_timezone.utc,
+            ).timestamp()
+        )
+    elif days is not None:
+        start_ts = end_ts - days * 86400
+    else:
+        start_ts = end_ts - years * 366 * 86400
+
+    params = {
+        'period1': start_ts,
+        'period2': end_ts,
+        'interval': '1d',
+        'events': 'history',
+        'includeAdjustedClose': 'true',
+    }
+    headers = {'User-Agent': USER_AGENT}
+    try:
+        response = requests.get(
+            YAHOO_CHART_URL.format(symbol=symbol),
+            params=params,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise YahooFinanceError(f"Yahoo Finance daily fetch failed for {symbol}: {exc}")
+
+    chart = data.get('chart') or {}
+    if chart.get('error'):
+        raise YahooFinanceError(f"Yahoo Finance error: {chart['error']}")
+    results = chart.get('result') or []
+    if not results:
+        raise YahooFinanceError(f"Yahoo Finance returned empty daily results for {symbol}")
+
+    result = results[0]
+    timestamps = result.get('timestamp') or []
+    indicators = result.get('indicators') or {}
+    quotes = (indicators.get('quote') or [{}])[0]
+    adj_closes = (indicators.get('adjclose') or [{}])[0].get('adjclose') or []
+    closes = quotes.get('close') or []
+    volumes = quotes.get('volume') or []
+
+    rows = []
+    seen_dates = set()
+    for idx, timestamp in enumerate(timestamps):
+        close = closes[idx] if idx < len(closes) else None
+        if close is None:
+            continue
+        obs_date = _to_observation_date(timestamp)
+        if obs_date in seen_dates:
+            continue
+        seen_dates.add(obs_date)
+        rows.append({
+            'observation_date': obs_date,
+            'close_price': float(close),
+            'adjusted_close_price': (
+                float(adj_closes[idx])
+                if idx < len(adj_closes) and adj_closes[idx] is not None
+                else None
+            ),
+            'volume': (
+                int(volumes[idx])
+                if idx < len(volumes) and volumes[idx] is not None
+                else None
+            ),
+        })
+    rows.sort(key=lambda item: item['observation_date'])
+    return rows
+
+
 def _resolve_price_fetch_start(ticker: str) -> Tuple[Optional[date], bool]:
     """既存データから差分取得の開始日を決める。
     既存があれば最新月から REFRESH_BUFFER_MONTHS 遡る。
@@ -198,6 +288,70 @@ def sync_all_price_histories(years: int = DEFAULT_HISTORY_YEARS) -> dict:
             results['success'].append(summary)
         except YahooFinanceError as exc:
             logger.warning("Price sync failed for %s: %s", ticker, exc)
+            results['failed'].append({'ticker': ticker, 'error': str(exc)})
+    return results
+
+
+def sync_daily_price_history(
+    ticker: str,
+    *,
+    years: int = DEFAULT_HISTORY_YEARS,
+    days: Optional[int] = None,
+) -> dict:
+    """1銘柄の日次終値を Yahoo Finance から取得し保存する。"""
+    symbol = TICKER_TO_SYMBOL[ticker]
+    rows = fetch_daily_history(symbol, years=years, days=days)
+    existing = {
+        item.observation_date: item
+        for item in DailyPriceObservation.objects.filter(ticker=ticker)
+    }
+    creates = []
+    updates = []
+    for row in rows:
+        current = existing.get(row['observation_date'])
+        if current is None:
+            creates.append(DailyPriceObservation(ticker=ticker, **row))
+            continue
+        changed = False
+        for field in ('close_price', 'adjusted_close_price', 'volume'):
+            if getattr(current, field) != row[field]:
+                setattr(current, field, row[field])
+                changed = True
+        if changed:
+            updates.append(current)
+    with transaction.atomic():
+        if creates:
+            DailyPriceObservation.objects.bulk_create(creates, batch_size=1000)
+        if updates:
+            DailyPriceObservation.objects.bulk_update(
+                updates,
+                fields=['close_price', 'adjusted_close_price', 'volume'],
+                batch_size=1000,
+            )
+    latest_date = rows[-1]['observation_date'] if rows else None
+    return {
+        'ticker': ticker,
+        'fetched': len(rows),
+        'created': len(creates),
+        'updated': len(updates),
+        'latest_date': latest_date,
+    }
+
+
+def sync_all_daily_price_histories(
+    *,
+    tickers: Optional[List[str]] = None,
+    years: int = DEFAULT_HISTORY_YEARS,
+    days: Optional[int] = None,
+) -> dict:
+    results: Dict[str, list] = {'success': [], 'failed': []}
+    for ticker in tickers or list(TICKER_TO_SYMBOL):
+        try:
+            results['success'].append(
+                sync_daily_price_history(ticker, years=years, days=days)
+            )
+        except (KeyError, YahooFinanceError) as exc:
+            logger.warning("Daily price sync failed for %s: %s", ticker, exc)
             results['failed'].append({'ticker': ticker, 'error': str(exc)})
     return results
 

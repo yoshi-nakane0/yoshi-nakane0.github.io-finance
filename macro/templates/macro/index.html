@@ -104,8 +104,10 @@
                 </div>
                 {% if regime_probability_rows or risk_probability_rows %}
                     <details class="macro-regime-probability">
-                        <summary>景気分布と主要リスク</summary>
+                        <summary>景気分布（ルールスコア由来）と主要リスク</summary>
                         {% if regime_probability_rows %}
+                            <p class="macro-model-note">これは統計モデルの的中確率ではなく、現在の指標が各局面にどれだけ近いかを示す参考分布です。</p>
+                            <span class="macro-model-kind-badge macro-model-kind-badge--rule">ルール由来</span>
                             <div class="macro-probability-bars">
                                 {% for row in regime_probability_rows %}
                                     <div class="macro-probability-row">
@@ -119,6 +121,7 @@
                             </div>
                         {% endif %}
                         {% if risk_probability_rows %}
+                            <p class="macro-model-note">主要リスクスコア（ルール由来）</p>
                             <div class="macro-risk-probabilities">
                                 {% for row in risk_probability_rows %}
                                     <div class="macro-risk-probability">
@@ -183,6 +186,55 @@
                     </div>
                 {% endif %}
             </section>
+
+            {% if world_state %}
+                <section class="macro-section macro-world-state">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title macro-section-title--brain">World State</h2>
+                        <span class="macro-model-kind-badge macro-model-kind-badge--provisional">状態ベクトル</span>
+                    </div>
+                    <p class="macro-model-note">マクロ・金融・市場データを統合した現在の状態ベクトルです。予測そのものではなく、各モデルの入力状態を示します。</p>
+                    <div class="macro-world-state-summary">
+                        <strong>{{ world_state.summary }}</strong>
+                        <span>基準日 {{ world_state.as_of_date }} / 品質 {{ world_state.data_quality_display }} / {{ world_state.model_version }}</span>
+                    </div>
+                    {% if world_state.score_rows %}
+                        <div class="macro-world-state-grid">
+                            {% for row in world_state.score_rows %}
+                                <div class="macro-world-state-score">
+                                    <span>{{ row.label }}</span>
+                                    <strong>{{ row.display }}</strong>
+                                    <div class="macro-world-state-bar" aria-hidden="true">
+                                        <div style="width: {{ row.bar_pct }}%;"></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="macro-world-state-drivers">
+                        <div>
+                            <span>支援材料</span>
+                            <ul>
+                                {% for item in world_state.positive_drivers %}
+                                    <li>{{ item }}</li>
+                                {% empty %}
+                                    <li>目立った支援材料はまだ少ないです。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div>
+                            <span>注意材料</span>
+                            <ul>
+                                {% for item in world_state.negative_drivers %}
+                                    <li>{{ item }}</li>
+                                {% empty %}
+                                    <li>大きな注意材料は限定的です。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            {% endif %}
 
             {% if macro_reliability %}
                 <section class="macro-section macro-reliability macro-reliability--{{ macro_reliability.tone }}">
@@ -313,6 +365,13 @@
                                     <span>金融ストレス {{ item.financial_stress_probability_display }}</span>
                                     <span>市場ストレス {{ item.market_stress_score|default_if_none:"—" }} / {{ item.market_stress_delta_display }}</span>
                                 </div>
+                                {% if item.world_state_delta_rows %}
+                                    <div class="macro-scenario-world-delta">
+                                        {% for delta in item.world_state_delta_rows %}
+                                            <span class="{% if delta.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ delta.label }} {{ delta.delta_display }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </article>
                         {% endfor %}
                     </div>
@@ -381,6 +440,49 @@
                 </section>
             {% endif %}
 
+            {% if forecast_models and forecast_models.rows %}
+                <section class="macro-section macro-forecast-models">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title macro-section-title--brain">予測モデル（後追い検証対象）</h2>
+                        <span class="macro-model-kind-badge macro-model-kind-badge--provisional">参考値</span>
+                    </div>
+                    <p class="macro-model-note">各モデルの出力は参考値です。実績が出た後に ForecastSnapshot で検証します。</p>
+                    <div class="macro-forecast-model-list">
+                        {% for row in forecast_models.rows %}
+                            <div class="macro-forecast-model-row">
+                                <span>{{ row.target }}</span>
+                                <span>{{ row.horizon }}</span>
+                                <strong>{{ row.prediction_display }}</strong>
+                                <span>MAE {{ row.mae_display }}</span>
+                                <span>{{ row.model_version }}</span>
+                                <span>{{ row.trained_at }}</span>
+                                <span>品質 {{ row.data_quality_display }}</span>
+                                <span class="macro-model-kind-badge macro-model-kind-badge--provisional">{{ row.kind_label }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            {% if model_validation and model_validation.rows %}
+                <section class="macro-section macro-model-validation">
+                    <h2 class="macro-section-title macro-section-title--brain">最新モデル検証</h2>
+                    <div class="macro-model-validation-list">
+                        {% for row in model_validation.rows %}
+                            <div class="macro-model-validation-row">
+                                <span>{{ row.model_version }}</span>
+                                <span>{{ row.target }} {{ row.horizon }}</span>
+                                <span>件数 {{ row.sample_count }}</span>
+                                <span>MAE {{ row.mae_display }}</span>
+                                <span>RMSE {{ row.rmse_display }}</span>
+                                <span>方向 {{ row.direction_accuracy_display }}</span>
+                                <span>ROC {{ row.roc_auc_display }} / PR {{ row.pr_auc_display }} / Brier {{ row.brier_score_display }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
             {% if forecast_monitor %}
                 <section class="macro-section macro-forecast-monitor macro-forecast-monitor--{{ forecast_monitor.tone }}">
                     <h2 class="macro-section-title macro-section-title--brain">予測の後追い検証</h2>
@@ -398,6 +500,24 @@
                             <strong>{{ forecast_monitor.avg_abs_error_display }}</strong>
                         </div>
                     </div>
+                    {% if forecast_monitor.summary_rows %}
+                        <details class="macro-forecast-details">
+                            <summary>モデル別の検証集計</summary>
+                            <div class="macro-forecast-summary-list">
+                                {% for row in forecast_monitor.summary_rows %}
+                                    <div class="macro-forecast-summary-row">
+                                        <span>{{ row.model_version }}</span>
+                                        <span>{{ row.target }} {{ row.horizon }}</span>
+                                        <span>確定 {{ row.settled_count }} / 未確定 {{ row.pending_count }}</span>
+                                        <span>平均 {{ row.avg_abs_error_display }}</span>
+                                        <span>中央値 {{ row.median_abs_error_display }}</span>
+                                        <span>方向 {{ row.direction_accuracy_display }}</span>
+                                        <span>Brier {{ row.probability_brier_score_display }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
                     {% if forecast_monitor.latest_rows %}
                         <details class="macro-forecast-details">
                             <summary>直近の検証済み予測</summary>
@@ -529,9 +649,11 @@
                 <section class="macro-section macro-crash-probability macro-crash-probability--{{ crash_probability_model.reliability_tone }}">
                     <details class="macro-accordion">
                         <summary class="macro-accordion-summary">
-                            <span class="macro-section-title macro-section-title--shield">参考: 急落確率モデル v1</span>
+                            <span class="macro-section-title macro-section-title--shield">急落確率モデル（検証済み参考確率）</span>
+                            <span class="macro-model-kind-badge macro-model-kind-badge--validated">検証済み参考確率</span>
                             <span class="macro-accordion-status">表示</span>
                         </summary>
+                        <p class="macro-model-note">過去データで検証したモデルによる参考確率です。イベント数が少ない場合は信頼性が下がります。</p>
                         <div class="macro-probability-top">
                             <div>
                                 <div class="macro-probability-label">{{ crash_probability_model.prediction_label }}</div>
@@ -548,6 +670,7 @@
                         {% endif %}
                         <div class="macro-probability-validation">
                             <span>学習日 {{ crash_probability_model.trained_at }}</span>
+                            <span>目的変数 {{ crash_probability_model.target_mode_label }} / 日次カバー {{ crash_probability_model.daily_price_coverage_display }}</span>
                             <span>検証 {{ crash_probability_model.validation_samples }}件 / イベント {{ crash_probability_model.validation_event_count }}件</span>
                             <span>ROC-AUC {{ crash_probability_model.roc_auc_display }} / PR-AUC {{ crash_probability_model.pr_auc_display }} / Brier {{ crash_probability_model.brier_score_display }}</span>
                             <span>モデル {{ crash_probability_model.model_version }}</span>
@@ -569,10 +692,10 @@
                 <section class="macro-section macro-lgbm">
                     <details class="macro-accordion">
                         <summary class="macro-accordion-summary">
-                            <span class="macro-section-title macro-section-title--brain">参考: LightGBM予測（SP500リターン）</span>
+                            <span class="macro-section-title macro-section-title--brain">参考: リターン予測モデル（主要指数）</span>
                             <span class="macro-accordion-status">表示</span>
                         </summary>
-                        <p class="macro-lgbm-note">景気局面判定とは独立した参考値です。</p>
+                        <p class="macro-lgbm-note">景気局面判定や急落確率とは独立した参考値です。売買判断ではありません。</p>
                         <div class="macro-lgbm-grid">
                             {% for h in lightgbm_prediction.horizons %}
                                 <div class="macro-lgbm-card macro-lgbm-card--{{ h.level }}">

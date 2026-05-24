@@ -1,18 +1,23 @@
 {
-  "predicted_at": "2026-05-06",
+  "predicted_at": "2026-05-24",
   "horizons": [
     {
       "months": 1,
-      "predicted_return_pct": 0.9,
-      "validation_mae_pct": 2.44
+      "predicted_return_pct": 1.5708,
+      "validation_mae_pct": 2.4571
     },
     {
       "months": 3,
-      "predicted_return_pct": 3.08,
-      "validation_mae_pct": 4.07
+      "predicted_return_pct": 3.8492,
+      "validation_mae_pct": 4.0509
+    },
+    {
+      "months": 6,
+      "predicted_return_pct": 8.8551,
+      "validation_mae_pct": 4.6184
     }
   ],
-  "training_samples": 157,
-  "feature_count": 21,
-  "model_version": "v1"
+  "training_samples": 216,
+  "feature_count": 110,
+  "model_version": "return_lightgbm_v2"
 }

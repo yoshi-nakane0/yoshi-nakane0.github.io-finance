@@ -24,28 +24,46 @@ from .scoring import (
     sentiment_label,
     shock_label,
 )
+from .confidence import calculate_confidence_score
+from .data_quality import evaluate_snapshot_quality
+from .market_context import calculate_context_score
+from .model_version import BASECALC_MODEL_VERSION
 from .outcomes import (
-    apply_confidence_adjustment,
     apply_sentiment_score_adjustment,
     confidence_adjustment_for_state,
 )
 from .similarity import find_similar_cases
+from .state_machine import estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
 
 JST = ZoneInfo("Asia/Tokyo")
 
 
-def build_world_model(price, market_snapshot=None):
+def build_world_model(price, market_snapshot=None, market_context=None):
     price = _to_float(price)
     snapshot = market_snapshot or {}
     if price is None or price <= 0:
         return empty_world_model()
 
     daily_snapshot = _snapshot_for_timeframe(snapshot, "1d")
+    data_quality = (snapshot.get("quality") if isinstance(snapshot, dict) else None) or evaluate_snapshot_quality(snapshot)
+    context_score = calculate_context_score(market_context or {})
     ohlcv = _normalize_ohlcv(price, daily_snapshot)
     intraday = build_intraday_context(price, snapshot)
     features = build_features(price, daily_snapshot, ohlcv)
     features.update(intraday["features"])
+    features.update(
+        {
+            "data_quality_score": data_quality["score"],
+            "data_quality_level": data_quality["level"],
+            "fallback_used": data_quality["fallback_used"],
+            "instrument_type": data_quality["instrument_type"],
+            "data_quality": data_quality,
+            "context_risk_score": context_score["risk_score"],
+            "context_risk_label": context_score["risk_label"],
+            "context_components": context_score["components"],
+        }
+    )
     first_score = calculate_sentiment_score(features)
     direction = _direction_from_score(first_score["sentiment_score"])
     features["sentiment_score"] = first_score["sentiment_score"]
@@ -56,6 +74,8 @@ def build_world_model(price, market_snapshot=None):
 
     continuation_score = calculate_continuation_score(features, direction)
     shock_score = calculate_shock_score(features)
+    features["continuation_score"] = continuation_score
+    features["shock_score"] = shock_score
     targets = build_targets(features, similar_summary)
     state_key, state_label, phase_label = classify_state(
         features,
@@ -73,6 +93,7 @@ def build_world_model(price, market_snapshot=None):
         direction = _direction_from_score(adjusted_score)
         features["sentiment_score"] = adjusted_score
         continuation_score = calculate_continuation_score(features, direction)
+        features["continuation_score"] = continuation_score
         targets = build_targets(features, similar_summary)
         state_key, state_label, phase_label = classify_state(
             features,
@@ -80,16 +101,36 @@ def build_world_model(price, market_snapshot=None):
             continuation_score,
             shock_score,
         )
-    confidence = classify_confidence(
+    transition_probs = estimate_transition_probabilities(
+        state_key,
+        features,
+        similar_summary=similar_summary,
+    )
+    expected_returns = estimate_expected_returns(
+        state_key,
+        features,
+        similar_summary=similar_summary,
+    )
+    confidence_result = calculate_confidence_score(
+        features,
         sentiment["sentiment_score"],
         continuation_score,
         shock_score,
         similar_summary,
-        len(ohlcv["closes"]),
+        performance_adjustment,
+        data_quality,
     )
-    confidence = apply_confidence_adjustment(confidence, performance_adjustment)
+    confidence = confidence_result["label"]
     invalidation_price = _invalidation_price(direction, targets, price)
     evidence = build_evidence(features, similar_summary, direction)
+    evidence.extend(_quality_evidence(data_quality))
+    evidence.extend(_context_evidence(context_score))
+    if transition_probs:
+        evidence.append(
+            f"次に移りやすい局面は{transition_probs[0]['label']}（{transition_probs[0]['probability']:.0%}）"
+        )
+    if confidence_result["warnings"]:
+        evidence.extend(confidence_result["warnings"])
     if performance_adjustment:
         evidence.append(_performance_adjustment_text(performance_adjustment))
     main_scenario = build_main_scenario(direction, targets)
@@ -108,6 +149,7 @@ def build_world_model(price, market_snapshot=None):
 
     return {
         "is_ready": True,
+        "model_version": BASECALC_MODEL_VERSION,
         "price": round(price, 0),
         "direction": direction,
         "direction_label": _direction_label(direction),
@@ -123,9 +165,37 @@ def build_world_model(price, market_snapshot=None):
         "shock_score": shock_score,
         "shock_label": shock_label(shock_score),
         "confidence": confidence,
+        "confidence_score": confidence_result["score"],
+        "confidence_components": confidence_result["components"],
+        "confidence_warnings": confidence_result["warnings"],
+        "data_quality": data_quality,
+        "data_quality_score": data_quality["score"],
+        "data_quality_level": data_quality["level"],
+        "source_status": {
+            "source": data_quality.get("source"),
+            "symbol": data_quality.get("symbol"),
+            "fallback_used": data_quality.get("fallback_used"),
+            "instrument_type": data_quality.get("instrument_type"),
+            "is_stale": data_quality.get("is_stale"),
+        },
+        "transition_probs": transition_probs,
+        "expected_returns": expected_returns,
+        "expected_return_1d": expected_returns.get("1d"),
+        "expected_return_5d": expected_returns.get("5d"),
+        "market_context": _json_safe_context(
+            {
+                **(market_context or {}),
+                "risk_score": context_score["risk_score"],
+                "risk_label": context_score["risk_label"],
+                "components": context_score["components"],
+                "evidence": context_score["evidence"],
+            }
+        ),
         "main_scenario": main_scenario,
         "sub_scenario": sub_scenario,
         "invalidation_price": invalidation_price,
+        "invalidation": targets["invalidation"],
+        "invalidation_reason": _invalidation_reason(direction, targets["invalidation"]),
         "invalidation_display": _price_display(invalidation_price),
         "invalidation_text": _invalidation_text(direction, invalidation_price),
         "upside_targets": targets["upside"],
@@ -189,6 +259,8 @@ def build_features(price, snapshot, ohlcv):
         "previous_low": lows[-2] if len(lows) >= 2 else None,
         "recent_high": max(highs[-10:] or [price]),
         "recent_low": min(lows[-10:] or [price]),
+        "high_5d": max(highs[-5:] or [price]),
+        "low_5d": min(lows[-5:] or [price]),
         "high_20d": max(highs[-20:] or [price]),
         "low_20d": min(lows[-20:] or [price]),
         "ema5": latest(ema5),
@@ -242,6 +314,8 @@ def build_intraday_context(price, snapshot):
         "intraday_impulse_z": 0,
         "intraday_trend_bias": 0,
         "multi_timeframe_alignment": 0,
+        "intraday_high": None,
+        "intraday_low": None,
     }
     chart_ohlcv = None
     chart_timeframe = None
@@ -280,6 +354,15 @@ def build_intraday_context(price, snapshot):
         if key == "1h":
             features["change_1h_pct"] = change_1h
             features["change_4h_pct"] = change_4h
+        if key in ("5m", "15m", "1h"):
+            frame_high = max(frame_ohlcv["highs"][-12:] or [price])
+            frame_low = min(frame_ohlcv["lows"][-12:] or [price])
+            features["intraday_high"] = max(
+                value for value in (features.get("intraday_high"), frame_high) if value is not None
+            )
+            features["intraday_low"] = min(
+                value for value in (features.get("intraday_low"), frame_low) if value is not None
+            )
         if impulse_z > (features.get("intraday_impulse_z") or 0):
             features["intraday_impulse_z"] = impulse_z
         if chart_ohlcv is None and key in ("15m", "1h") and len(closes) >= 10:
@@ -494,6 +577,7 @@ def build_chart_points(
 def empty_world_model():
     return {
         "is_ready": False,
+        "model_version": BASECALC_MODEL_VERSION,
         "price": None,
         "direction": "neutral",
         "direction_label": "判定不可",
@@ -509,9 +593,37 @@ def empty_world_model():
         "shock_score": 0,
         "shock_label": "N/A",
         "confidence": "Low",
+        "confidence_score": 0,
+        "confidence_components": {},
+        "confidence_warnings": ["価格データ待ち"],
+        "data_quality": {
+            "score": 0,
+            "level": "bad",
+            "is_stale": True,
+            "source": "unknown",
+            "symbol": None,
+            "warnings": ["価格データがありません"],
+            "fallback_used": False,
+            "instrument_type": "unknown",
+        },
+        "data_quality_score": 0,
+        "data_quality_level": "bad",
+        "source_status": {},
+        "transition_probs": [],
+        "expected_returns": {},
+        "expected_return_1d": 0,
+        "expected_return_5d": 0,
+        "market_context": {
+            "risk_score": 0,
+            "risk_label": "neutral",
+            "components": {},
+            "evidence": ["外部市場データ待ち"],
+        },
         "main_scenario": "価格更新後に判定します",
         "sub_scenario": "",
         "invalidation_price": None,
+        "invalidation": {},
+        "invalidation_reason": "",
         "invalidation_display": "",
         "invalidation_text": "N/A",
         "upside_targets": [],
@@ -650,6 +762,14 @@ def _invalidation_text(direction, invalidation_price):
     return "重要価格帯の終値突破を確認"
 
 
+def _invalidation_reason(direction, invalidation):
+    if direction == "up":
+        return invalidation.get("bullish_reason") or ""
+    if direction == "down":
+        return invalidation.get("bearish_reason") or ""
+    return ""
+
+
 def _target_display(direction, targets, index):
     target_list = targets["upside"] if direction == "up" else targets["downside"]
     if direction == "neutral":
@@ -693,11 +813,34 @@ def _stale_minutes(snapshot):
 
 
 def _data_warning(snapshot, stale_minutes):
+    quality = snapshot.get("quality") if isinstance(snapshot, dict) else None
+    if quality and quality.get("warnings"):
+        return " / ".join(quality["warnings"][:2])
     if not snapshot:
         return "価格データの取得に失敗しました。現在の判定は前回取得データに基づいています。"
     if snapshot.get("is_stale") or stale_minutes > 15:
         return "価格データが15分以上古い可能性があります。"
     return ""
+
+
+def _quality_evidence(quality):
+    if not quality:
+        return []
+    evidence = [f"データ品質は{quality['level']}（{quality['score']}/100）"]
+    if quality.get("fallback_used"):
+        evidence.append("フォールバックデータを使用しています")
+    for warning in quality.get("warnings") or []:
+        evidence.append(warning)
+    return evidence[:3]
+
+
+def _context_evidence(context_score):
+    label = {
+        "risk_on": "外部市場はリスクオン寄り",
+        "risk_off": "外部市場はリスクオフ寄り",
+        "neutral": "外部市場は中立寄り",
+    }.get(context_score.get("risk_label"), "外部市場は中立寄り")
+    return [label] + list(context_score.get("evidence") or [])[:2]
 
 
 def _chart_label(timestamp, index):
@@ -726,9 +869,39 @@ def _json_safe_features(features):
     safe = {}
     for key, value in features.items():
         if isinstance(value, dict):
-            safe[key] = {nested_key: _round(nested_value) for nested_key, nested_value in value.items()}
+            safe[key] = {
+                nested_key: _round(nested_value)
+                if isinstance(nested_value, (int, float))
+                else nested_value
+                for nested_key, nested_value in value.items()
+                if isinstance(nested_value, (int, float, str, bool)) or nested_value is None
+            }
         elif isinstance(value, (int, float, str)) or value is None:
             safe[key] = _round(value) if isinstance(value, (int, float)) else value
+    return safe
+
+
+def _json_safe_context(context):
+    if not isinstance(context, dict):
+        return {}
+    safe = {}
+    for key, value in context.items():
+        if isinstance(value, dict):
+            safe[key] = _json_safe_context(value)
+        elif isinstance(value, list):
+            safe[key] = [
+                _json_safe_context(item)
+                if isinstance(item, dict)
+                else item.isoformat()
+                if hasattr(item, "isoformat")
+                else item
+                for item in value
+                if isinstance(item, (dict, int, float, str, bool)) or item is None or hasattr(item, "isoformat")
+            ]
+        elif hasattr(value, "isoformat"):
+            safe[key] = value.isoformat()
+        elif isinstance(value, (int, float, str, bool)) or value is None:
+            safe[key] = value
     return safe
 
 

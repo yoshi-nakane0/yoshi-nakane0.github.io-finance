@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import math
 from datetime import date
+from statistics import median
 from typing import Dict, Optional
 
 from dateutil.relativedelta import relativedelta
-from django.db.models import Avg, Count
+from django.db.models import Count
 from django.utils import timezone
 
-from ..models import ForecastSnapshot, PriceObservation
+from ..models import ForecastSnapshot, Observation, PriceObservation
 from .crash_probability import TARGET_TICKERS, future_drawdown, load_price_series
 
 
@@ -120,13 +121,56 @@ def _settle_return_forecast(snapshot: ForecastSnapshot) -> Optional[Dict]:
     }
 
 
+def _settle_macro_forecast(snapshot: ForecastSnapshot) -> Optional[Dict]:
+    horizon_months = (
+        snapshot.metadata.get('horizon_months')
+        or _parse_months(snapshot.horizon)
+    )
+    if horizon_months is None:
+        return None
+    month_start = snapshot.as_of_date.replace(day=1)
+    future_month = month_start + relativedelta(months=horizon_months)
+    base = (
+        Observation.objects
+        .filter(
+            indicator__fred_series_id=snapshot.target,
+            observation_date__lte=month_start,
+        )
+        .order_by('-observation_date')
+        .first()
+    )
+    future = (
+        Observation.objects
+        .filter(
+            indicator__fred_series_id=snapshot.target,
+            observation_date__lte=future_month,
+        )
+        .order_by('-observation_date')
+        .first()
+    )
+    if base is None or future is None:
+        return None
+    realized = future.value - base.value
+    return {
+        'realized_value': realized,
+        'realized_at': future.observation_date,
+        'error': realized - snapshot.prediction_value,
+        'metadata': {
+            **(snapshot.metadata or {}),
+            'settled_kind': snapshot.metadata.get('prediction_kind') or 'level_change',
+        },
+    }
+
+
 def settle_snapshot(snapshot: ForecastSnapshot) -> bool:
     if snapshot.realized_value is not None:
         return False
     if snapshot.model_version.startswith('crash_probability_logistic'):
         result = _settle_crash_probability(snapshot)
-    elif snapshot.model_version.startswith('lightgbm_return'):
+    elif snapshot.model_version.startswith(('lightgbm_return', 'return_lightgbm')):
         result = _settle_return_forecast(snapshot)
+    elif snapshot.model_version.startswith('macro_forecast'):
+        result = _settle_macro_forecast(snapshot)
     else:
         result = None
     if result is None:
@@ -190,12 +234,70 @@ def build_forecast_monitor_context() -> Dict:
         .filter(realized_value__isnull=False)
         .order_by('-realized_at', '-as_of_date')[:4]
     )
+    summary_rows = []
+    groups = (
+        ForecastSnapshot.objects
+        .values('model_version', 'target', 'horizon')
+        .annotate(total=Count('id'))
+        .order_by('model_version', 'target', 'horizon')
+    )
+    for group in groups:
+        qs = ForecastSnapshot.objects.filter(
+            model_version=group['model_version'],
+            target=group['target'],
+            horizon=group['horizon'],
+            realized_value__isnull=False,
+        )
+        rows = list(qs.only('prediction_value', 'realized_value', 'error'))
+        settled_group_count = len(rows)
+        errors = [row.error for row in rows if row.error is not None]
+        abs_errors = [abs(error) for error in errors]
+        direction_hits = [
+            row for row in rows
+            if (
+                (row.prediction_value >= 0 and row.realized_value >= 0)
+                or (row.prediction_value < 0 and row.realized_value < 0)
+            )
+        ]
+        probability_rows = [
+            row for row in rows
+            if row.prediction_value is not None
+            and row.realized_value in (0, 1, 0.0, 1.0)
+        ]
+        brier = None
+        if probability_rows:
+            brier = sum(
+                (row.prediction_value - row.realized_value) ** 2
+                for row in probability_rows
+            ) / len(probability_rows)
+        summary_rows.append({
+            'model_version': group['model_version'],
+            'target': group['target'],
+            'horizon': group['horizon'],
+            'total_count': group['total'],
+            'settled_count': settled_group_count,
+            'pending_count': max(group['total'] - settled_group_count, 0),
+            'avg_abs_error_display': _fmt_pct(
+                sum(abs_errors) / len(abs_errors) if abs_errors else None
+            ),
+            'median_abs_error_display': _fmt_pct(
+                median(abs_errors) if abs_errors else None
+            ),
+            'direction_accuracy_display': (
+                f'{len(direction_hits) / settled_group_count * 100:.1f}%'
+                if settled_group_count else '—'
+            ),
+            'probability_brier_score_display': (
+                f'{brier:.3f}' if brier is not None else '—'
+            ),
+        })
     return {
         'total_count': total,
         'settled_count': settled_count,
         'pending_count': pending_count,
         'avg_abs_error_display': _fmt_pct(avg_abs_error),
         'by_model': list(by_model),
+        'summary_rows': summary_rows,
         'latest_rows': [
             {
                 'as_of_date': row.as_of_date,

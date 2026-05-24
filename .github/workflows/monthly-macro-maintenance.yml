@@ -55,7 +55,9 @@ jobs:
             static/macro/crash_alert_backtest.json \
             static/macro/crash_probability_model.json \
             static/macro/lightgbm_prediction.json \
-            static/macro/regime_probability_model.json
+            static/macro/regime_probability_model.json \
+            static/macro/return_forecast_model.json \
+            static/macro/macro_forecast_model.json
           if git diff --cached --quiet; then
             echo "No model output changes."
             exit 0

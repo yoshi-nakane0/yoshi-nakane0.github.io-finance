@@ -15,10 +15,14 @@ from django.utils import timezone
 
 from macro.models import (
     DashboardCache,
+    FeatureSnapshot,
+    ForecastSnapshot,
     Indicator,
+    ModelValidationReport,
     Observation,
     PriceObservation,
     RegimeSnapshot,
+    WorldStateSnapshot,
 )
 from macro.services.raw_archive import archive_macro_rows
 
@@ -32,7 +36,11 @@ OBSERVATION_RETENTION_BY_FREQUENCY = {
     Indicator.Frequency.QUARTERLY: 30,
 }
 PRICE_RETENTION_YEARS = 25
-REGIME_RETENTION_YEARS = 5
+REGIME_RETENTION_YEARS = 15
+WORLD_STATE_RETENTION_YEARS = 25
+FEATURE_SNAPSHOT_RETENTION_YEARS = 25
+FORECAST_SNAPSHOT_RETENTION_YEARS = 25
+MODEL_VALIDATION_REPORT_RETENTION_YEARS = 10
 DASHBOARD_CACHE_RETENTION_DAYS = 7
 
 
@@ -62,6 +70,10 @@ class Command(BaseCommand):
         archive_observation_querysets = []
         archive_price_queryset = None
         archive_regime_queryset = None
+        archive_world_state_queryset = None
+        archive_feature_queryset = None
+        archive_forecast_queryset = None
+        archive_validation_queryset = None
         delete_targets = []
 
         # Observation: 頻度別の保持期間で削除
@@ -102,6 +114,50 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(f'[dry-run] RegimeSnapshot: {count} 件 ({condition})')
 
+        # WorldStateSnapshot
+        world_state_cutoff = _years_ago(WORLD_STATE_RETENTION_YEARS)
+        qs = WorldStateSnapshot.objects.filter(as_of_date__lt=world_state_cutoff)
+        count = qs.count()
+        total += count
+        archive_world_state_queryset = qs
+        condition = f'{WORLD_STATE_RETENTION_YEARS}年より古い'
+        delete_targets.append(('WorldStateSnapshot', condition, qs))
+        if dry_run:
+            self.stdout.write(f'[dry-run] WorldStateSnapshot: {count} 件 ({condition})')
+
+        # FeatureSnapshot
+        feature_cutoff = _years_ago(FEATURE_SNAPSHOT_RETENTION_YEARS)
+        qs = FeatureSnapshot.objects.filter(as_of_date__lt=feature_cutoff)
+        count = qs.count()
+        total += count
+        archive_feature_queryset = qs
+        condition = f'{FEATURE_SNAPSHOT_RETENTION_YEARS}年より古い'
+        delete_targets.append(('FeatureSnapshot', condition, qs))
+        if dry_run:
+            self.stdout.write(f'[dry-run] FeatureSnapshot: {count} 件 ({condition})')
+
+        # ForecastSnapshot
+        forecast_cutoff = _years_ago(FORECAST_SNAPSHOT_RETENTION_YEARS)
+        qs = ForecastSnapshot.objects.filter(as_of_date__lt=forecast_cutoff)
+        count = qs.count()
+        total += count
+        archive_forecast_queryset = qs
+        condition = f'{FORECAST_SNAPSHOT_RETENTION_YEARS}年より古い'
+        delete_targets.append(('ForecastSnapshot', condition, qs))
+        if dry_run:
+            self.stdout.write(f'[dry-run] ForecastSnapshot: {count} 件 ({condition})')
+
+        # ModelValidationReport
+        validation_cutoff = _years_ago(MODEL_VALIDATION_REPORT_RETENTION_YEARS)
+        qs = ModelValidationReport.objects.filter(evaluated_at__date__lt=validation_cutoff)
+        count = qs.count()
+        total += count
+        archive_validation_queryset = qs
+        condition = f'{MODEL_VALIDATION_REPORT_RETENTION_YEARS}年より古い'
+        delete_targets.append(('ModelValidationReport', condition, qs))
+        if dry_run:
+            self.stdout.write(f'[dry-run] ModelValidationReport: {count} 件 ({condition})')
+
         # DashboardCache
         cache_cutoff = timezone.now() - timedelta(
             days=DASHBOARD_CACHE_RETENTION_DAYS,
@@ -118,6 +174,10 @@ class Command(BaseCommand):
                     observation_querysets=archive_observation_querysets,
                     price_queryset=archive_price_queryset,
                     regime_queryset=archive_regime_queryset,
+                    world_state_queryset=archive_world_state_queryset,
+                    feature_queryset=archive_feature_queryset,
+                    forecast_queryset=archive_forecast_queryset,
+                    validation_queryset=archive_validation_queryset,
                     reason='purge_old_data',
                 )
                 if summary['created']:

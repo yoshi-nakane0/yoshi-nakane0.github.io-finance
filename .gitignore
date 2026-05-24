@@ -145,6 +145,10 @@ celerybeat.pid
 .venv
 env/
 docs/
+!docs/
+docs/*
+!docs/macro_world_model.md
+!docs/macro_operations.md
 venv/
 ENV/
 env.bak/

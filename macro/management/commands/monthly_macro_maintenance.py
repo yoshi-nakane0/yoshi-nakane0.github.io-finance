@@ -32,7 +32,17 @@ class Command(BaseCommand):
         parser.add_argument(
             '--skip-lightgbm',
             action='store_true',
-            help='LightGBM 学習を省略する。requirements-train 未導入時に使う。',
+            help='リターン予測学習を省略する。requirements-train 未導入時に使う。',
+        )
+        parser.add_argument(
+            '--skip-macro-forecast',
+            action='store_true',
+            help='マクロ予測モデル学習を省略する。',
+        )
+        parser.add_argument(
+            '--skip-model-validation',
+            action='store_true',
+            help='モデル検証レポート作成を省略する。',
         )
         parser.add_argument(
             '--skip-archive',
@@ -53,6 +63,7 @@ class Command(BaseCommand):
         parser.add_argument('--horizon-days', type=int, default=63)
         parser.add_argument('--drawdown-threshold', type=float, default=-10.0)
         parser.add_argument('--validation-months', type=int, default=120)
+        parser.add_argument('--world-state-years', type=int, default=3)
 
     def handle(self, *args, **options):
         if _is_serverless_runtime():
@@ -103,6 +114,7 @@ class Command(BaseCommand):
         horizon_days = options['horizon_days']
         drawdown_threshold = options['drawdown_threshold']
         validation_months = options['validation_months']
+        world_state_years = options['world_state_years']
 
         steps = []
         if not options['skip_archive']:
@@ -116,8 +128,15 @@ class Command(BaseCommand):
             steps.append(('最新データ取得・景気判定', 'refresh_macro_data', (), {}))
 
         steps.extend([
+            ('日次価格履歴同期', 'sync_daily_prices', (), {'years': 25}),
             ('古いデータ削除', 'purge_old_data', (), {}),
             ('期限到来予測の実績反映', 'settle_forecast_snapshots', (), {}),
+            (
+                'World State 月次バックフィル',
+                'backfill_world_state',
+                (),
+                {'years': world_state_years},
+            ),
             (
                 '急落警戒スコアの月次検証',
                 'backtest_crash_alert',
@@ -152,7 +171,23 @@ class Command(BaseCommand):
             ))
 
         if not options['skip_lightgbm']:
-            steps.append(('LightGBM 参考予測更新', 'train_crash_model', (), {}))
+            steps.append(('リターン参考予測更新', 'train_return_model', (), {'all': True}))
+
+        if not options['skip_macro_forecast']:
+            steps.append((
+                'マクロ予測モデル更新',
+                'train_macro_forecast_model',
+                (),
+                {'all': True},
+            ))
+
+        if not options['skip_model_validation']:
+            steps.append((
+                'モデル walk-forward 検証',
+                'run_model_validation',
+                (),
+                {'all': True},
+            ))
 
         steps.append(('Macro 表示キャッシュ更新', 'precompute_dashboard', (), {}))
         return steps

@@ -11,7 +11,7 @@ from .indicators import (
 )
 
 
-def find_similar_cases(features, ohlcv, limit=8):
+def find_similar_cases(features, ohlcv, limit=12, min_similarity=0.35):
     closes = _clean(ohlcv.get("closes"))
     highs = _clean(ohlcv.get("highs"))
     lows = _clean(ohlcv.get("lows"))
@@ -31,10 +31,12 @@ def find_similar_cases(features, ohlcv, limit=8):
     current_vector = _vector_from_features(features)
     direction = _direction_from_score(features.get("sentiment_score"))
     cases = []
+    searched_case_count = 0
     last_index = len(closes) - 1
     for index in range(60, last_index - 5):
         if closes[index] in (None, 0):
             continue
+        searched_case_count += 1
         local_structure = detect_price_structure(
             {
                 "highs": highs[max(0, index - 12) : index + 1],
@@ -74,6 +76,8 @@ def find_similar_cases(features, ohlcv, limit=8):
         atr_pct = ((atr14[index] or 0) / closes[index]) * 100 if closes[index] else 0.8
         upside_threshold = max(0.8, atr_pct)
         downside_threshold = -max(0.8, atr_pct)
+        if similarity < min_similarity:
+            continue
         cases.append(
             {
                 "date": _label_from_timestamp(timestamps[index] if index < len(timestamps) else None),
@@ -91,16 +95,24 @@ def find_similar_cases(features, ohlcv, limit=8):
         )
     cases = sorted(cases, key=lambda item: item["similarity"], reverse=True)[:limit]
     if not cases:
-        return _empty_summary()
+        summary = _empty_summary()
+        summary["searched_case_count"] = searched_case_count
+        summary["min_similarity"] = min_similarity
+        return summary
 
     up_cases = [case for case in cases if case["return_3d"] > 0]
     down_cases = [case for case in cases if case["return_3d"] < 0]
     direction_cases = up_cases if direction == "up" else down_cases if direction == "down" else []
-    returns = [case["return_3d"] for case in cases]
+    returns_1d = sorted(case["return_1d"] for case in cases)
+    returns = sorted(case["return_3d"] for case in cases)
+    returns_5d = sorted(case["return_5d"] for case in cases)
     mfe_values = sorted(case["mfe_pct"] for case in cases)
     mae_values = sorted(case["mae_pct"] for case in cases)
     return {
         "case_count": len(cases),
+        "searched_case_count": searched_case_count,
+        "used_case_count": len(cases),
+        "min_similarity": min_similarity,
         "up_rate": round(len(up_cases) / len(cases), 2),
         "down_rate": round(len(down_cases) / len(cases), 2),
         "range_rate": round(
@@ -112,6 +124,18 @@ def find_similar_cases(features, ohlcv, limit=8):
             sum(case["return_5d"] for case in cases) / len(cases),
             2,
         ),
+        "median_return_1d_pct": _median(returns_1d),
+        "median_return_3d_pct": _median(returns),
+        "median_return_5d_pct": _median(returns_5d),
+        "best_case_pct": max(returns),
+        "worst_case_pct": min(returns),
+        "return_distribution": {
+            "p10": _percentile(returns, 10),
+            "p25": _percentile(returns, 25),
+            "p50": _percentile(returns, 50),
+            "p75": _percentile(returns, 75),
+            "p90": _percentile(returns, 90),
+        },
         "median_mfe_pct": _median(mfe_values),
         "median_mae_pct": _median(mae_values),
         "target_t1_hit_rate": round(
@@ -135,6 +159,7 @@ def find_similar_cases(features, ohlcv, limit=8):
             else max(len(up_cases), len(down_cases)) / len(cases),
             2,
         ),
+        "direction": direction,
         "cases": cases[:3],
     }
 
@@ -223,18 +248,41 @@ def _median(values):
     return round((values[midpoint - 1] + values[midpoint]) / 2, 2)
 
 
+def _percentile(values, percentile):
+    if not values:
+        return 0.0
+    values = sorted(values)
+    index = (len(values) - 1) * percentile / 100
+    lower = int(index)
+    upper = min(lower + 1, len(values) - 1)
+    if lower == upper:
+        return round(values[lower], 2)
+    weight = index - lower
+    return round(values[lower] * (1 - weight) + values[upper] * weight, 2)
+
+
 def _empty_summary():
     return {
         "case_count": 0,
+        "searched_case_count": 0,
+        "used_case_count": 0,
+        "min_similarity": 0.35,
         "up_rate": 0.0,
         "down_rate": 0.0,
         "range_rate": 0.0,
         "average_return_pct": 0.0,
         "average_return_5d_pct": 0.0,
+        "median_return_1d_pct": 0.0,
+        "median_return_3d_pct": 0.0,
+        "median_return_5d_pct": 0.0,
+        "best_case_pct": 0.0,
+        "worst_case_pct": 0.0,
+        "return_distribution": {"p10": 0.0, "p25": 0.0, "p50": 0.0, "p75": 0.0, "p90": 0.0},
         "median_mfe_pct": 0.0,
         "median_mae_pct": 0.0,
         "target_t1_hit_rate": 0.0,
         "invalidation_rate": 0.0,
         "directional_accuracy": 0.0,
+        "direction": "neutral",
         "cases": [],
     }

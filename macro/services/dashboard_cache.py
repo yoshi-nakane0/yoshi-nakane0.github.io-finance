@@ -16,8 +16,9 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_CACHE_KEY = 'macro_index_v6'
+DASHBOARD_CACHE_KEY = 'macro_index_v7'
 LEGACY_DASHBOARD_CACHE_KEYS = (
+    'macro_index_v6',
     'macro_index_v5',
     'macro_index_v4',
     'macro_index_v3',
@@ -203,8 +204,11 @@ def precompute_dashboard_payload() -> dict:
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
+        build_forecast_model_context,
+        build_model_validation_context,
         build_monthly_model_status,
         build_raw_archive_context,
+        build_world_state_context,
         build_world_model_operations_context,
         build_similar_periods,
     )
@@ -222,6 +226,9 @@ def precompute_dashboard_payload() -> dict:
         'crash_alert': build_crash_alert_context(),
         'monthly_model_status': build_monthly_model_status(),
         'forecast_monitor': build_forecast_monitor_context(),
+        'world_state': build_world_state_context(),
+        'forecast_models': build_forecast_model_context(),
+        'model_validation': build_model_validation_context(),
         'world_model_operations': build_world_model_operations_context(),
         'raw_archive_status': build_raw_archive_context(),
         'scenario_analysis': build_scenario_analysis(),

@@ -30,18 +30,20 @@ def calculate_sentiment_score(features, similar_summary=None):
     volatility_score = _volatility_score(features)
     structure_score = _structure_score(features)
     similar_score = _similar_case_score(similar_summary)
-    score = clamp(
-        round(
-            trend_score
-            + momentum_score
-            + volatility_score
-            + structure_score
-            + similar_score
-        ),
-        -100,
-        100,
+    context_score = calculate_context_component(features)
+    raw_score = round(
+        trend_score
+        + momentum_score
+        + volatility_score
+        + structure_score
+        + similar_score
+        + context_score
     )
+    conflict = resolve_conflicting_signals(features, raw_score)
+    after_conflict = _reduce_absolute(raw_score, conflict["penalty"])
+    score = apply_quality_penalty(after_conflict, features.get("data_quality"))
     key, label = sentiment_label(score)
+    quality_penalty = -abs(after_conflict - score)
     return {
         "sentiment_score": score,
         "sentiment_key": key,
@@ -52,7 +54,11 @@ def calculate_sentiment_score(features, similar_summary=None):
             "volatility": round(volatility_score, 1),
             "structure": round(structure_score, 1),
             "similar": round(similar_score, 1),
+            "context": round(context_score, 1),
+            "quality_penalty": round(quality_penalty, 1),
+            "conflict_penalty": -round(conflict["penalty"], 1),
         },
+        "warnings": conflict["warnings"],
     }
 
 
@@ -176,6 +182,79 @@ def _similar_case_score(similar_summary):
     up_rate = similar_summary.get("up_rate") or 0.5
     down_rate = similar_summary.get("down_rate") or 0.5
     return clamp((up_rate - down_rate) * 10, -10, 10)
+
+
+def calculate_context_component(features: dict) -> float:
+    risk_score = features.get("context_risk_score")
+    try:
+        risk_score = float(risk_score or 0)
+    except (TypeError, ValueError):
+        risk_score = 0
+    return clamp(risk_score / 100 * 15, -15, 15)
+
+
+def calculate_volatility_regime(features: dict) -> dict:
+    atr_ratio = features.get("atr_ratio")
+    bb_width = features.get("bb_width_pct")
+    if atr_ratio is None:
+        return {"label": "unknown", "atr_ratio": None, "bb_width_pct": bb_width}
+    if atr_ratio >= 1.6:
+        label = "high"
+    elif atr_ratio <= 0.75:
+        label = "low"
+    else:
+        label = "normal"
+    return {"label": label, "atr_ratio": round(atr_ratio, 2), "bb_width_pct": bb_width}
+
+
+def apply_quality_penalty(score: int, data_quality) -> int:
+    quality = data_quality or {}
+    quality_score = quality.get("score")
+    if quality_score is None:
+        penalty = 18
+    elif quality_score < 50:
+        penalty = 30
+    elif quality_score < 80:
+        penalty = 14
+    else:
+        penalty = 0
+    if quality.get("instrument_type") == "index_fallback":
+        penalty = max(penalty, 22)
+    if quality.get("is_stale"):
+        penalty = max(penalty, 18)
+    return clamp(_reduce_absolute(score, penalty), -100, 100)
+
+
+def resolve_conflicting_signals(features: dict, raw_score: int) -> dict:
+    warnings = []
+    penalty = 0
+    price = features.get("price")
+    rsi = features.get("rsi14")
+    bb_upper = features.get("bb_upper")
+    bb_lower = features.get("bb_lower")
+    ema_bias = _ema_alignment(features)
+    if raw_score > 0 and ema_bias > 0 and rsi is not None and rsi >= 75 and bb_upper and price and price >= bb_upper * 0.995:
+        penalty += 15
+        warnings.append("上昇材料と過熱感が競合しています")
+    if raw_score < 0 and ema_bias < 0 and rsi is not None and rsi <= 25 and bb_lower and price and price <= bb_lower * 1.005:
+        penalty += 15
+        warnings.append("下落材料と売られすぎが競合しています")
+    intraday_bias = features.get("intraday_trend_bias") or 0
+    if intraday_bias and ema_bias and intraday_bias * ema_bias < 0:
+        penalty += 10
+        warnings.append("短時間足と日足の方向が一致していません")
+    if (features.get("shock_score") or 0) >= 70 and (features.get("continuation_score") or 0) < 50:
+        penalty += 10
+        warnings.append("突発性が高く継続判定は控えめです")
+    return {"penalty": min(penalty, 20), "warnings": warnings}
+
+
+def _reduce_absolute(score, penalty):
+    if score > 0:
+        return max(0, score - penalty)
+    if score < 0:
+        return min(0, score + penalty)
+    return 0
 
 
 def _ema_alignment(features):

@@ -22,6 +22,7 @@ from .anchor_snapshot import (
 from .market_shock import build_market_shock_context
 from .futures_sentiment import get_nikkei_futures_snapshot
 from .market_bars import save_market_bars_from_snapshot
+from .market_context import calculate_context_score, get_market_context_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
@@ -38,6 +39,8 @@ CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
 CACHE_KEY_FUTURES = "nikkei_futures_snapshot"
 CACHE_KEY_FUTURES_LAST_GOOD = "nikkei_futures_snapshot_last_good"
+CACHE_KEY_MARKET_CONTEXT = "basecalc_market_context"
+CACHE_KEY_MARKET_CONTEXT_FETCHED_AT = "basecalc_market_context_fetched_at"
 CACHE_KEY_JGB = "nikkei_jgb10y_yield_percent"
 CACHE_KEY_DIVIDEND_INDEX = "nikkei_dividend_yield_index"
 CACHE_KEY_PER_FETCHED_AT = "nikkei_per_fetched_at"
@@ -83,6 +86,8 @@ def performance_api(request):
         state_key=request.GET.get("state_key") or None,
         date_from=_parse_date(request.GET.get("from")),
         date_to=_parse_date(request.GET.get("to")),
+        model_version=request.GET.get("model_version") or None,
+        confidence_min=parse_float_param(request.GET.get("confidence_min")),
     )
     return JsonResponse(summary)
 
@@ -94,6 +99,7 @@ def history(request):
     state_key = request.GET.get("state_key") or None
     date_from = _parse_date(request.GET.get("from"))
     date_to = _parse_date(request.GET.get("to"))
+    model_version = request.GET.get("model_version") or None
     predictions = WorldModelPrediction.objects.all().order_by("-created_at")
     if state_key:
         predictions = predictions.filter(state_key=state_key)
@@ -101,6 +107,8 @@ def history(request):
         predictions = predictions.filter(created_at__date__gte=date_from)
     if date_to:
         predictions = predictions.filter(created_at__date__lte=date_to)
+    if model_version:
+        predictions = predictions.filter(model_version=model_version)
     predictions = predictions.prefetch_related("predictionoutcome_set")[:80]
     history_rows = [
         _prediction_history_row(prediction, horizon) for prediction in predictions
@@ -110,14 +118,27 @@ def history(request):
         .distinct()
         .order_by("state_label")
     )
+    model_versions = (
+        WorldModelPrediction.objects.values_list("model_version", flat=True)
+        .distinct()
+        .order_by("model_version")
+    )
     context = {
         "horizon": horizon,
         "state_key": state_key or "",
         "date_from": request.GET.get("from") or "",
         "date_to": request.GET.get("to") or "",
+        "model_version": model_version or "",
+        "model_versions": model_versions,
         "history_rows": history_rows,
         "state_options": state_options,
-        "summary": performance_summary(horizon, state_key, date_from, date_to),
+        "summary": performance_summary(
+            horizon,
+            state_key,
+            date_from,
+            date_to,
+            model_version=model_version,
+        ),
         "state_summaries": state_performance_summary(horizon),
         "improvement_insights": improvement_insights(horizon),
         "horizons": ("1h", "4h", "1d", "3d", "5d"),
@@ -149,6 +170,9 @@ def build_context(request, force_update=False):
             price,
             update_price_from_futures=price_override is None,
         )
+        market_context = update_market_context_cache()
+    else:
+        market_context = get_cached_market_context()
 
     if price_override is not None:
         price = price_override
@@ -227,7 +251,7 @@ def build_context(request, force_update=False):
         anchor_enabled,
     )
 
-    world_model = build_world_model(price, futures_snapshot)
+    world_model = build_world_model(price, futures_snapshot, market_context)
     data["world_model"] = world_model
     data.update(world_model)
     performance = performance_summary("1d")
@@ -242,6 +266,7 @@ def build_context(request, force_update=False):
         "data": data,
         "world_model": world_model,
         "market_shock": build_market_shock_context(),
+        "market_context": world_model.get("market_context") or {},
         "chart_data": world_model.get("chart_points") or {},
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
@@ -293,7 +318,9 @@ def update_market_caches(
         if isinstance(futures_snapshot, dict):
             cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
             cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
-            save_market_bars_from_snapshot(futures_snapshot)
+            futures_snapshot["_market_bars_saved"] = save_market_bars_from_snapshot(
+                futures_snapshot
+            )
             snapshot_price = price_from_futures_snapshot(futures_snapshot)
             if update_price_from_futures and snapshot_price is not None:
                 price = snapshot_price
@@ -331,6 +358,27 @@ def get_futures_snapshot_for_update():
     if isinstance(snapshot, dict) and not futures_snapshot_needs_refresh(snapshot):
         return snapshot
     return get_nikkei_futures_snapshot()
+
+
+def get_cached_market_context():
+    context = cache.get(CACHE_KEY_MARKET_CONTEXT)
+    if isinstance(context, dict):
+        return context
+    latest_prediction = (
+        WorldModelPrediction.objects.exclude(context={}).order_by("-created_at").first()
+    )
+    if latest_prediction and isinstance(latest_prediction.context, dict):
+        return latest_prediction.context
+    return calculate_context_score({})
+
+
+def update_market_context_cache():
+    context = get_market_context_snapshot()
+    if not context:
+        context = calculate_context_score({})
+    cache.set(CACHE_KEY_MARKET_CONTEXT, context, timeout=CACHE_TTL_JGB)
+    cache.set(CACHE_KEY_MARKET_CONTEXT_FETCHED_AT, timezone.now(), timeout=None)
+    return context
 
 
 def get_nikkei_per_values_for_update():
@@ -534,6 +582,16 @@ def decorate_valuation_data(
 def _prediction_history_row(prediction, horizon):
     outcomes = list(prediction.predictionoutcome_set.all())
     outcome = next((item for item in outcomes if item.horizon == horizon), None)
+    next_prediction = (
+        WorldModelPrediction.objects.filter(created_at__gt=prediction.created_at)
+        .order_by("created_at")
+        .first()
+    )
+    transition_keys = {
+        item.get("state_key")
+        for item in (prediction.transition_probs or [])
+        if isinstance(item, dict)
+    }
     return {
         "prediction": prediction,
         "outcome": outcome,
@@ -554,6 +612,20 @@ def _prediction_history_row(prediction, horizon):
             "down": "下落",
             "neutral": "中立",
         }.get(prediction.direction, prediction.direction),
+        "target_1_probability": _target_probability(
+            prediction.upside_targets
+            if prediction.direction == "up"
+            else prediction.downside_targets,
+            0,
+        ),
+        "transition_top": (prediction.transition_probs or [{}])[0]
+        if prediction.transition_probs
+        else {},
+        "actual_next_state": next_prediction.state_label if next_prediction else "",
+        "transition_matched": bool(
+            next_prediction and next_prediction.state_key in transition_keys
+        ),
+        "expected_return": (prediction.expected_returns or {}).get(horizon),
     }
 
 
@@ -564,6 +636,15 @@ def _target_price(targets, index):
     if isinstance(target, dict):
         return target.get("price")
     return target
+
+
+def _target_probability(targets, index):
+    if not targets or len(targets) <= index:
+        return None
+    target = targets[index]
+    if isinstance(target, dict):
+        return target.get("probability")
+    return None
 
 
 def parse_float_param(value):

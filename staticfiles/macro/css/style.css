@@ -3076,6 +3076,189 @@ body {
     font-weight: 800;
 }
 
+.macro-section-headline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.macro-model-note {
+    margin: 0.38rem 0 0.68rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.macro-model-kind-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.28rem 0.52rem;
+    border: 1px solid rgba(112, 168, 226, 0.24);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.52);
+    color: var(--macro-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 900;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.macro-model-kind-badge--rule {
+    border-color: rgba(148, 163, 184, 0.34);
+    color: #cbd5e1;
+}
+
+.macro-model-kind-badge--validated {
+    border-color: rgba(57, 233, 129, 0.34);
+    color: #86efac;
+}
+
+.macro-model-kind-badge--provisional {
+    border-color: rgba(251, 191, 36, 0.34);
+    color: #fde68a;
+}
+
+.macro-world-state-summary {
+    display: grid;
+    gap: 0.22rem;
+    margin-top: 0.5rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.macro-world-state-summary strong {
+    color: var(--macro-text-primary);
+    font-size: 0.95rem;
+}
+
+.macro-world-state-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.macro-world-state-score {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+    padding: 0.52rem 0.58rem;
+    border: 1px solid rgba(112, 168, 226, 0.2);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.macro-world-state-score strong {
+    color: var(--macro-text-primary);
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-world-state-bar {
+    height: 0.34rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.16);
+}
+
+.macro-world-state-bar div {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #70a8e2, #6ff2a3);
+}
+
+.macro-world-state-drivers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.72rem;
+}
+
+.macro-world-state-drivers div,
+.macro-scenario-world-delta {
+    min-width: 0;
+    padding: 0.52rem 0.6rem;
+    border: 1px solid rgba(112, 168, 226, 0.18);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.macro-world-state-drivers span {
+    color: var(--macro-text-primary);
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.macro-world-state-drivers ul {
+    display: grid;
+    gap: 0.22rem;
+    margin: 0.32rem 0 0;
+    padding-left: 1.05rem;
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    line-height: 1.42;
+}
+
+.macro-scenario-world-delta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.macro-forecast-model-list,
+.macro-model-validation-list,
+.macro-forecast-summary-list {
+    display: grid;
+    gap: 0.42rem;
+    margin-top: 0.62rem;
+}
+
+.macro-forecast-model-row,
+.macro-model-validation-row,
+.macro-forecast-summary-row {
+    display: grid;
+    grid-template-columns: minmax(4rem, 0.7fr) minmax(3.5rem, 0.42fr) minmax(5rem, 0.75fr) minmax(5rem, 0.7fr) minmax(7rem, 1fr) minmax(5.5rem, 0.72fr) minmax(5rem, 0.58fr) auto;
+    gap: 0.42rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.48rem 0.55rem;
+    border: 1px solid rgba(112, 168, 226, 0.18);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.46);
+    color: var(--macro-text-secondary);
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.macro-model-validation-row,
+.macro-forecast-summary-row {
+    grid-template-columns: minmax(7rem, 1fr) minmax(5rem, 0.7fr) repeat(5, minmax(4rem, 0.6fr));
+}
+
+.macro-forecast-model-row > *,
+.macro-model-validation-row > *,
+.macro-forecast-summary-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.macro-forecast-model-row strong {
+    color: var(--macro-text-primary);
+    font-size: 0.9rem;
+}
+
 @media (max-width: 520px) {
     .macro-reliability-grid,
     .macro-reliability-detail-grid,
@@ -3089,7 +3272,12 @@ body {
     .macro-scenario-form-grid,
     .macro-operations-grid,
     .macro-forecast-grid,
-    .macro-forecast-row {
+    .macro-forecast-row,
+    .macro-world-state-grid,
+    .macro-world-state-drivers,
+    .macro-forecast-model-row,
+    .macro-model-validation-row,
+    .macro-forecast-summary-row {
         grid-template-columns: 1fr;
     }
 

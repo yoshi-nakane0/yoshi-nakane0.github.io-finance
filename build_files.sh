@@ -23,6 +23,10 @@ fi
 # DATABASE_URL がある場合は外部 DB へ、ない場合は一時 SQLite を更新する。
 $PYTHON_BIN manage.py migrate --noinput
 
+if [ -f basecalc/data/basecalc_history.json ]; then
+  $PYTHON_BIN manage.py import_basecalc_history --input basecalc/data/basecalc_history.json || true
+fi
+
 # Earnings CSV を一時 SQLite に取り込む（CSV を deploy 時の真実として再投入）
 $PYTHON_BIN manage.py import_earnings_csv static/earning/data/data.csv
 if [ -f static/earning/data/eps_sales.csv ]; then

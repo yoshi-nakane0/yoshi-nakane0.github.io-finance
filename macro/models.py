@@ -188,6 +188,35 @@ class PriceObservation(models.Model):
         return f'{self.ticker} {self.observation_month}: {self.close_price}'
 
 
+class DailyPriceObservation(models.Model):
+    """主要指数の日次終値。急落検証用。"""
+
+    ticker = models.CharField(max_length=16)
+    observation_date = models.DateField()
+    close_price = models.FloatField()
+    adjusted_close_price = models.FloatField(null=True, blank=True)
+    volume = models.BigIntegerField(null=True, blank=True)
+    source = models.CharField(max_length=32, default='yfinance')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['ticker', 'observation_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ticker', 'observation_date'],
+                name='uq_daily_price_ticker_date',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['ticker', 'observation_date']),
+            models.Index(fields=['ticker', '-observation_date']),
+        ]
+
+    def __str__(self):
+        return f'{self.ticker} {self.observation_date}: {self.close_price}'
+
+
 class DashboardCache(models.Model):
     """重い計算結果を JSON で保存し、ビューが高速に読めるようにする。"""
 
@@ -300,3 +329,121 @@ class ForecastSnapshot(models.Model):
             f'{self.as_of_date}: {self.model_version} '
             f'{self.target} {self.horizon}={self.prediction_value}'
         )
+
+
+class WorldStateSnapshot(models.Model):
+    """World Model の中核となる経済・市場状態ベクトル。"""
+
+    class Cadence(models.TextChoices):
+        DAILY = 'daily', '日次'
+        WEEKLY = 'weekly', '週次'
+        MONTHLY = 'monthly', '月次'
+        MANUAL = 'manual', '手動'
+
+    as_of_date = models.DateField(unique=True)
+    cadence = models.CharField(
+        max_length=16,
+        choices=Cadence.choices,
+        default=Cadence.DAILY,
+    )
+
+    growth_score = models.FloatField(null=True, blank=True)
+    labor_score = models.FloatField(null=True, blank=True)
+    inflation_score = models.FloatField(null=True, blank=True)
+    policy_pressure_score = models.FloatField(null=True, blank=True)
+    liquidity_score = models.FloatField(null=True, blank=True)
+    credit_score = models.FloatField(null=True, blank=True)
+    risk_appetite_score = models.FloatField(null=True, blank=True)
+    market_trend_score = models.FloatField(null=True, blank=True)
+    external_shock_score = models.FloatField(null=True, blank=True)
+
+    market_stress_score = models.FloatField(null=True, blank=True)
+    recession_risk_score = models.FloatField(null=True, blank=True)
+    inflation_reacceleration_score = models.FloatField(null=True, blank=True)
+    financial_stress_score = models.FloatField(null=True, blank=True)
+
+    data_quality = models.FloatField(default=0.0)
+    source_freshness = models.JSONField(default=dict, blank=True)
+    feature_vector = models.JSONField(default=dict, blank=True)
+    explanation = models.JSONField(default=dict, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+    model_version = models.CharField(max_length=64, default='world_state_v1')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-as_of_date']
+        indexes = [
+            models.Index(fields=['-as_of_date']),
+            models.Index(fields=['cadence', '-as_of_date']),
+        ]
+
+    def __str__(self):
+        return f'{self.as_of_date}: {self.model_version}'
+
+
+class FeatureSnapshot(models.Model):
+    """予測・検証に使った特徴量を再現可能に保存する。"""
+
+    as_of_date = models.DateField()
+    namespace = models.CharField(max_length=64)
+    target = models.CharField(max_length=32)
+    horizon = models.CharField(max_length=32)
+    model_version = models.CharField(max_length=64)
+    feature_hash = models.CharField(max_length=64)
+    feature_vector = models.JSONField(default=dict, blank=True)
+    source_dates = models.JSONField(default=dict, blank=True)
+    data_quality = models.FloatField(default=0.0)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-as_of_date', '-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'as_of_date',
+                    'namespace',
+                    'target',
+                    'horizon',
+                    'model_version',
+                ],
+                name='uq_feature_snapshot_identity',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['namespace', 'target', 'as_of_date']),
+            models.Index(fields=['model_version', 'as_of_date']),
+        ]
+
+    def __str__(self):
+        return (
+            f'{self.as_of_date}: {self.namespace} '
+            f'{self.target} {self.horizon}'
+        )
+
+
+class ModelValidationReport(models.Model):
+    """モデル別・対象別の検証結果。"""
+
+    evaluated_at = models.DateTimeField(auto_now_add=True)
+    model_version = models.CharField(max_length=64)
+    target = models.CharField(max_length=32)
+    horizon = models.CharField(max_length=32)
+    validation_method = models.CharField(max_length=64, default='walk_forward')
+    sample_count = models.IntegerField(default=0)
+    event_count = models.IntegerField(null=True, blank=True)
+    metrics = models.JSONField(default=dict, blank=True)
+    rows = models.JSONField(default=list, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-evaluated_at']
+        indexes = [
+            models.Index(fields=['model_version', 'target', 'horizon']),
+            models.Index(fields=['-evaluated_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.model_version} {self.target} {self.horizon}'

@@ -1,12 +1,16 @@
 from django.contrib import admin
 
 from .models import (
+    DailyPriceObservation,
+    FeatureSnapshot,
     ForecastSnapshot,
     Indicator,
+    ModelValidationReport,
     Observation,
     PriceObservation,
     RawArchiveManifest,
     RegimeSnapshot,
+    WorldStateSnapshot,
     WorldModelRun,
 )
 
@@ -66,6 +70,14 @@ class PriceObservationAdmin(admin.ModelAdmin):
     ordering = ('ticker', '-observation_month')
 
 
+@admin.register(DailyPriceObservation)
+class DailyPriceObservationAdmin(admin.ModelAdmin):
+    list_display = ('ticker', 'observation_date', 'close_price', 'source')
+    list_filter = ('ticker', 'source')
+    date_hierarchy = 'observation_date'
+    ordering = ('ticker', '-observation_date')
+
+
 @admin.register(ForecastSnapshot)
 class ForecastSnapshotAdmin(admin.ModelAdmin):
     list_display = (
@@ -82,6 +94,55 @@ class ForecastSnapshotAdmin(admin.ModelAdmin):
     date_hierarchy = 'as_of_date'
     search_fields = ('model_version', 'target', 'horizon', 'features_hash')
     ordering = ('-as_of_date', '-created_at')
+
+
+@admin.register(WorldStateSnapshot)
+class WorldStateSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        'as_of_date',
+        'cadence',
+        'growth_score',
+        'market_stress_score',
+        'data_quality',
+        'model_version',
+    )
+    list_filter = ('cadence', 'model_version')
+    date_hierarchy = 'as_of_date'
+    search_fields = ('model_version',)
+    ordering = ('-as_of_date',)
+
+
+@admin.register(FeatureSnapshot)
+class FeatureSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        'as_of_date',
+        'namespace',
+        'target',
+        'horizon',
+        'model_version',
+        'data_quality',
+    )
+    list_filter = ('namespace', 'target', 'horizon', 'model_version')
+    date_hierarchy = 'as_of_date'
+    search_fields = ('namespace', 'target', 'model_version', 'feature_hash')
+    ordering = ('-as_of_date', '-created_at')
+
+
+@admin.register(ModelValidationReport)
+class ModelValidationReportAdmin(admin.ModelAdmin):
+    list_display = (
+        'evaluated_at',
+        'model_version',
+        'target',
+        'horizon',
+        'validation_method',
+        'sample_count',
+        'event_count',
+    )
+    list_filter = ('model_version', 'target', 'horizon', 'validation_method')
+    date_hierarchy = 'evaluated_at'
+    search_fields = ('model_version', 'target', 'horizon')
+    ordering = ('-evaluated_at',)
 
 
 @admin.register(RawArchiveManifest)

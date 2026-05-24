@@ -75,6 +75,7 @@ class TechnicalSnapshot(models.Model):
 
 class WorldModelPrediction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    model_version = models.CharField(max_length=32, default="wm_v1")
     price = models.FloatField()
     state_key = models.CharField(max_length=64)
     state_label = models.CharField(max_length=64)
@@ -83,6 +84,8 @@ class WorldModelPrediction(models.Model):
     continuation_score = models.IntegerField()
     shock_score = models.IntegerField()
     confidence = models.CharField(max_length=16)
+    confidence_score = models.IntegerField(default=0)
+    data_quality_score = models.IntegerField(null=True, blank=True)
     main_scenario = models.TextField()
     sub_scenario = models.TextField(blank=True)
     invalidation_price = models.FloatField(null=True, blank=True)
@@ -90,12 +93,16 @@ class WorldModelPrediction(models.Model):
     downside_targets = models.JSONField(default=list)
     evidence = models.JSONField(default=list)
     features = models.JSONField(default=dict)
+    transition_probs = models.JSONField(default=list)
+    expected_returns = models.JSONField(default=dict)
+    context = models.JSONField(default=dict)
 
     class Meta:
         indexes = [
             models.Index(fields=["-created_at"]),
             models.Index(fields=["state_key", "-created_at"]),
             models.Index(fields=["direction", "-created_at"]),
+            models.Index(fields=["model_version", "-created_at"]),
         ]
 
 

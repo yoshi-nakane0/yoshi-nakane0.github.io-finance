@@ -11,6 +11,7 @@ from .regime import (
     build_regime_assessment_from_metrics,
     collect_key_metrics,
 )
+from .world_state import build_world_state_assessment_from_metrics
 
 CUSTOM_SCENARIO_FIELDS = [
     {
@@ -244,9 +245,40 @@ def _scenario_value_lookup(scenario: Dict):
     return lookup
 
 
-def _market_stress_score(scenario: Dict) -> Optional[int]:
-    alert = compute_crash_alert(value_lookup=_scenario_value_lookup(scenario))
+def _scenario_crash_alert(scenario: Dict) -> Dict:
+    return compute_crash_alert(value_lookup=_scenario_value_lookup(scenario))
+
+
+def _market_stress_score_from_alert(alert: Dict) -> Optional[int]:
     return alert.get('market_stress_score')
+
+
+def _world_state_delta_rows(base_world: Dict, scenario_world: Dict) -> list[Dict]:
+    labels = {
+        'growth_score': '成長',
+        'inflation_score': '物価',
+        'policy_pressure_score': '政策圧力',
+        'market_stress_score': '市場ストレス',
+        'credit_score': '信用',
+        'risk_appetite_score': 'リスク選好',
+    }
+    rows = []
+    for key, label in labels.items():
+        base = base_world.get(key)
+        scenario = scenario_world.get(key)
+        if base is None or scenario is None:
+            continue
+        delta = scenario - base
+        if abs(delta) < 0.5:
+            continue
+        rows.append({
+            'key': key,
+            'label': label,
+            'delta': round(delta, 1),
+            'delta_display': f'{delta:+.1f}',
+            'is_negative': delta < 0,
+        })
+    return rows
 
 
 def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
@@ -255,7 +287,12 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
     base_label, base_probability = _top_regime_probability(
         base_assessment.get('regime_probabilities', {})
     )
-    base_market_stress = compute_crash_alert().get('market_stress_score')
+    base_alert = compute_crash_alert()
+    base_market_stress = base_alert.get('market_stress_score')
+    base_world = build_world_state_assessment_from_metrics(
+        base_metrics,
+        crash_alert_payload=base_alert,
+    )
 
     scenarios = []
     scenario_list = [*SCENARIOS]
@@ -270,7 +307,13 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
         label, probability = _top_regime_probability(
             assessment.get('regime_probabilities', {})
         )
-        market_stress = _market_stress_score(scenario)
+        scenario_alert = _scenario_crash_alert(scenario)
+        market_stress = _market_stress_score_from_alert(scenario_alert)
+        scenario_world = build_world_state_assessment_from_metrics(
+            metrics,
+            crash_alert_payload=scenario_alert,
+        )
+        world_state_delta_rows = _world_state_delta_rows(base_world, scenario_world)
         stress_delta = (
             market_stress - base_market_stress
             if market_stress is not None and base_market_stress is not None
@@ -294,6 +337,11 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
             'market_stress_delta_display': (
                 _signed_points_display(stress_delta)
             ),
+            'world_state_delta': {
+                row['key']: row['delta']
+                for row in world_state_delta_rows
+            },
+            'world_state_delta_rows': world_state_delta_rows,
             'is_custom': scenario.get('is_custom', False),
         })
 

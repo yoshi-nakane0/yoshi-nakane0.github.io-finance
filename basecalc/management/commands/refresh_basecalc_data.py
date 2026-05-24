@@ -17,11 +17,31 @@ class Command(BaseCommand):
             action="store_true",
             help="Run without the basecalc refresh lock.",
         )
+        parser.add_argument(
+            "--export-history",
+            action="store_true",
+            help="Export basecalc history JSON after refresh.",
+        )
+        parser.add_argument(
+            "--export-path",
+            default="basecalc/data/basecalc_history.json",
+            help="Path for exported basecalc history JSON.",
+        )
+        parser.add_argument(
+            "--skip-off-hours",
+            action="store_true",
+            help="Skip refresh during low-value market hours. Initial implementation always runs.",
+        )
 
     def handle(self, *args, **options):
+        if options["skip_off_hours"] and should_skip_basecalc_refresh():
+            self.stdout.write(self.style.WARNING("basecalc refresh skipped: off_hours"))
+            return
         result = refresh_basecalc_data(
             save=not options["no_save_prediction"],
             use_lock=not options["no_lock"],
+            export_history=options["export_history"],
+            export_path=options["export_path"],
         )
         if result.get("updated"):
             self.stdout.write(
@@ -31,7 +51,8 @@ class Command(BaseCommand):
                     f"state={result.get('state_key')}, "
                     f"direction={result.get('direction')}, "
                     f"prediction_saved={result.get('prediction_saved')}, "
-                    f"outcomes={result.get('outcomes_created')}"
+                    f"outcomes={result.get('outcomes_created')}, "
+                    f"exported={result.get('exported')}"
                 )
             )
         else:
@@ -40,3 +61,8 @@ class Command(BaseCommand):
                     f"basecalc refresh skipped: {result.get('skipped_reason')}"
                 )
             )
+
+
+def should_skip_basecalc_refresh(now=None) -> bool:
+    """JST 基準で更新スキップ可否を返す。初期実装は False 固定。"""
+    return False

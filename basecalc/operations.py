@@ -5,6 +5,8 @@ from .outcomes import (
     prune_prediction_history,
     save_prediction,
 )
+from .persistence import export_basecalc_history
+from .market_context import get_market_context_snapshot
 from .views import (
     CACHE_KEY_DIVIDEND_INDEX,
     CACHE_KEY_FWD,
@@ -22,7 +24,12 @@ CACHE_KEY_REFRESH_LOCK = "basecalc_refresh_lock"
 REFRESH_LOCK_TTL_SEC = 300
 
 
-def refresh_basecalc_data(save=True, use_lock=True):
+def refresh_basecalc_data(
+    save=True,
+    use_lock=True,
+    export_history=False,
+    export_path="basecalc/data/basecalc_history.json",
+):
     if use_lock and not cache.add(CACHE_KEY_REFRESH_LOCK, "1", REFRESH_LOCK_TTL_SEC):
         return {
             "updated": False,
@@ -49,10 +56,15 @@ def refresh_basecalc_data(save=True, use_lock=True):
             price,
             update_price_from_futures=True,
         )
-        world_model = build_world_model(price or 0, futures_snapshot)
-        outcomes_created = evaluate_due_predictions()
+        market_context = get_market_context_snapshot()
+        world_model = build_world_model(price or 0, futures_snapshot, market_context)
         prediction = save_prediction(world_model) if save else None
+        outcomes_created = evaluate_due_predictions()
         pruned_predictions = prune_prediction_history()
+        exported = False
+        if export_history:
+            export_basecalc_history(export_path)
+            exported = True
         return {
             "updated": True,
             "price": world_model.get("price"),
@@ -62,6 +74,13 @@ def refresh_basecalc_data(save=True, use_lock=True):
             "prediction_saved": prediction is not None,
             "outcomes_created": outcomes_created,
             "pruned_predictions": pruned_predictions,
+            "market_bars_saved": (futures_snapshot or {}).get("_market_bars_saved", 0)
+            if isinstance(futures_snapshot, dict)
+            else 0,
+            "exported": exported,
+            "export_path": export_path if exported else None,
+            "data_quality_score": world_model.get("data_quality_score"),
+            "source_status": world_model.get("source_status") or {},
         }
     finally:
         if use_lock:

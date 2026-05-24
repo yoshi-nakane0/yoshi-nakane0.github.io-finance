@@ -17,7 +17,15 @@ from django.conf import settings
 from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 
-from ..models import Indicator, Observation, PriceObservation, RegimeSnapshot
+from ..models import (
+    ForecastSnapshot,
+    Indicator,
+    ModelValidationReport,
+    Observation,
+    PriceObservation,
+    RegimeSnapshot,
+    WorldStateSnapshot,
+)
 from .crash_alert import FRESHNESS_LIMIT_DAYS, compute_crash_alert
 from .crash_probability import wilson_interval
 from .historical_crash import find_similar_crash_months
@@ -241,6 +249,18 @@ def _parse_iso_date(value) -> Optional[date]:
 
 def _pct_probability_display(value: Optional[float]) -> str:
     return f'{value * 100:.1f}%' if value is not None else '—'
+
+
+def _number_display(value: Optional[float], digits: int = 2) -> str:
+    if value is None:
+        return '—'
+    return f'{value:.{digits}f}'
+
+
+def _ratio_pct_display(value: Optional[float]) -> str:
+    if value is None:
+        return '—'
+    return f'{value * 100:.1f}%'
 
 
 def _validation_event_interval_display(
@@ -1132,6 +1152,18 @@ def load_crash_probability_model() -> Optional[Dict]:
         'target': raw.get('target'),
         'horizon_days': raw.get('horizon_days'),
         'drawdown_threshold_pct': raw.get('drawdown_threshold_pct'),
+        'target_mode': raw.get('target_mode'),
+        'target_mode_label': (
+            '日次最大ドローダウン'
+            if raw.get('target_mode') == 'daily_max_drawdown'
+            else '月次 fallback'
+            if raw.get('target_mode') == 'monthly_fallback'
+            else raw.get('target_mode') or '—'
+        ),
+        'daily_price_coverage_display': (
+            f"{raw.get('daily_price_coverage_pct'):.1f}%"
+            if raw.get('daily_price_coverage_pct') is not None else '—'
+        ),
         'sample_count': raw.get('sample_count'),
         'event_count': raw.get('event_count'),
         'validation_samples': validation_samples,
@@ -1156,6 +1188,150 @@ def load_crash_probability_model() -> Optional[Dict]:
         'reliability_label': reliability_label,
         'reliability_tone': reliability_tone,
         'reliability_warnings': reliability_warnings,
+    }
+
+
+WORLD_STATE_SCORE_LABELS = (
+    ('growth_score', '成長'),
+    ('labor_score', '雇用'),
+    ('inflation_score', '物価リスク'),
+    ('policy_pressure_score', '政策圧力'),
+    ('credit_score', '信用'),
+    ('liquidity_score', '流動性'),
+    ('risk_appetite_score', 'リスク選好'),
+    ('market_trend_score', '市場トレンド'),
+    ('market_stress_score', '市場ストレス'),
+)
+
+
+def build_world_state_context() -> Dict:
+    snapshot = WorldStateSnapshot.objects.order_by('-as_of_date').first()
+    if snapshot is None:
+        return {
+            'has_snapshot': False,
+            'as_of_date': '—',
+            'data_quality_display': '—',
+            'summary': 'World State はまだ作成されていません。',
+            'positive_drivers': [],
+            'negative_drivers': ['compute_world_state 実行後に表示されます。'],
+            'score_rows': [],
+            'warnings': [],
+            'model_version': '—',
+        }
+
+    explanation = snapshot.explanation or {}
+    score_rows = []
+    for field, label in WORLD_STATE_SCORE_LABELS:
+        value = getattr(snapshot, field, None)
+        score_rows.append({
+            'field': field,
+            'label': label,
+            'value': value,
+            'display': f'{value:.0f}' if value is not None else '—',
+            'bar_pct': int(round(value or 0)),
+        })
+    return {
+        'has_snapshot': True,
+        'as_of_date': snapshot.as_of_date.isoformat(),
+        'data_quality_display': f'{snapshot.data_quality:.0f}%',
+        'summary': explanation.get('summary') or '状態ベクトルを作成済みです。',
+        'positive_drivers': explanation.get('positive_drivers') or [],
+        'negative_drivers': explanation.get('negative_drivers') or [],
+        'score_rows': score_rows,
+        'warnings': snapshot.warnings or [],
+        'model_version': snapshot.model_version,
+    }
+
+
+def _forecast_prediction_display(snapshot: ForecastSnapshot) -> str:
+    unit = (snapshot.metadata or {}).get('unit')
+    if unit == '%':
+        return format_pct(snapshot.prediction_value)
+    if unit:
+        return f'{snapshot.prediction_value:+.2f} {unit}'
+    if (snapshot.metadata or {}).get('prediction_kind') == 'return_pct':
+        return format_pct(snapshot.prediction_value)
+    return _number_display(snapshot.prediction_value)
+
+
+def _latest_validation_reports() -> Dict[tuple, ModelValidationReport]:
+    reports = {}
+    for report in ModelValidationReport.objects.order_by('-evaluated_at'):
+        key = (report.model_version, report.target, report.horizon)
+        if key not in reports:
+            reports[key] = report
+    return reports
+
+
+def build_forecast_model_context() -> Dict:
+    reports = _latest_validation_reports()
+    rows = []
+    seen = set()
+    snapshots = (
+        ForecastSnapshot.objects
+        .filter(
+            model_version__in=[
+                'return_lightgbm_v2',
+                'macro_forecast_lightgbm_v1',
+                'lightgbm_return_v1',
+            ],
+        )
+        .order_by('-as_of_date', '-created_at')
+    )
+    for snapshot in snapshots:
+        key = (snapshot.model_version, snapshot.target, snapshot.horizon)
+        if key in seen:
+            continue
+        seen.add(key)
+        metadata = snapshot.metadata or {}
+        report = reports.get(key)
+        metrics = report.metrics if report else {}
+        mae = (
+            metadata.get('validation_mae_pct')
+            or metadata.get('validation_mae')
+            or metrics.get('mae')
+        )
+        rows.append({
+            'target': snapshot.target,
+            'horizon': snapshot.horizon,
+            'prediction_display': _forecast_prediction_display(snapshot),
+            'unit': metadata.get('unit') or ('%' if metadata.get('prediction_kind') == 'return_pct' else '—'),
+            'mae_display': _number_display(mae),
+            'model_version': snapshot.model_version,
+            'trained_at': snapshot.as_of_date.isoformat(),
+            'data_quality_display': f"{metadata.get('data_quality', 0):.0f}%",
+            'kind_label': '参考値',
+            'kind_tone': 'provisional',
+        })
+    return {
+        'rows': rows,
+        'has_rows': bool(rows),
+    }
+
+
+def build_model_validation_context() -> Dict:
+    rows = []
+    for report in ModelValidationReport.objects.order_by('-evaluated_at')[:12]:
+        metrics = report.metrics or {}
+        rows.append({
+            'model_version': report.model_version,
+            'target': report.target,
+            'horizon': report.horizon,
+            'sample_count': report.sample_count,
+            'mae_display': _number_display(metrics.get('mae')),
+            'rmse_display': _number_display(metrics.get('rmse')),
+            'direction_accuracy_display': _ratio_pct_display(
+                metrics.get('direction_accuracy')
+            ),
+            'roc_auc_display': _number_display(metrics.get('roc_auc')),
+            'pr_auc_display': _number_display(metrics.get('pr_auc')),
+            'brier_score_display': _number_display(metrics.get('brier_score')),
+            'warnings': report.warnings or [],
+            'evaluated_at': _format_date_for_display(report.evaluated_at),
+        })
+    return {
+        'rows': rows,
+        'has_rows': bool(rows),
     }
 
 
@@ -1271,7 +1447,7 @@ def build_monthly_model_status() -> Dict:
             if h.get('months') and h.get('validation_mae_display')
         ]
         cards.append({
-            'label': 'LightGBM参考予測',
+            'label': 'リターン参考予測',
             'updated_at': lightgbm.get('predicted_at') or '—',
             'sample_label': (
                 f"学習 {lightgbm.get('training_samples') or '—'}件 / "

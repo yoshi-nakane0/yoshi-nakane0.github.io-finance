@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .nikkei_bias import HEADERS, REQUEST_TIMEOUT_SEC
 from .data_sources import normalize_chart_payload, snapshot_from_quote_row
+from .data_quality import evaluate_snapshot_quality
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
     if snapshot is None:
         fallback = _get_stooq_snapshot()
         if fallback:
-            return fallback
+            return _attach_snapshot_quality(fallback)
         return None
 
     timeframes = {"1d": dict(snapshot)}
@@ -70,7 +71,7 @@ def get_nikkei_futures_snapshot(symbol=NIKKEI_FUTURES_SYMBOL):
             if value and value.get("closes"):
                 timeframes[key] = value
     snapshot["timeframes"] = timeframes
-    return snapshot
+    return _attach_snapshot_quality(snapshot)
 
 
 def _get_yahoo_chart_snapshot(symbol, range_value, interval, timeframe):
@@ -107,6 +108,8 @@ def _get_yahoo_chart_snapshot(symbol, range_value, interval, timeframe):
     if snapshot is None:
         return None
     snapshot["fetched_at"] = timezone.now()
+    snapshot["instrument_type"] = "futures"
+    snapshot["fallback_used"] = False
     return snapshot
 
 
@@ -137,10 +140,34 @@ def _get_stooq_snapshot():
         if snapshot is None:
             continue
         snapshot["fetched_at"] = timezone.now()
+        snapshot["fallback_used"] = True
+        snapshot["instrument_type"] = "index_fallback" if symbol == "^nkx" else "futures"
+        snapshot["timeframes"] = {"1d": dict(snapshot)}
         if not snapshot.get("is_stale"):
             return snapshot
         stale_candidate = stale_candidate or snapshot
     return stale_candidate
+
+
+def _attach_snapshot_quality(snapshot):
+    if not isinstance(snapshot, dict):
+        return snapshot
+    fetched_at = snapshot.get("fetched_at") or timezone.now()
+    snapshot.setdefault("fetched_at", fetched_at)
+    snapshot.setdefault("instrument_type", "futures")
+    timeframes = snapshot.get("timeframes")
+    if isinstance(timeframes, dict):
+        for key, frame in timeframes.items():
+            if not isinstance(frame, dict):
+                continue
+            frame.setdefault("symbol", snapshot.get("symbol"))
+            frame.setdefault("source", snapshot.get("source"))
+            frame.setdefault("fetched_at", fetched_at)
+            frame.setdefault("fallback_used", snapshot.get("fallback_used", False))
+            frame.setdefault("instrument_type", snapshot.get("instrument_type"))
+            frame["quality"] = evaluate_snapshot_quality(frame)
+    snapshot["quality"] = evaluate_snapshot_quality(snapshot)
+    return snapshot
 
 
 def calculate_futures_sentiment(

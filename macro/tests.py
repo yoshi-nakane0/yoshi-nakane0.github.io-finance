@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -19,17 +20,23 @@ from django.urls import reverse
 
 from .models import (
     DashboardCache,
+    DailyPriceObservation,
+    FeatureSnapshot,
     ForecastSnapshot,
     Indicator,
+    ModelValidationReport,
     Observation,
     PriceObservation,
     RawArchiveManifest,
     RegimeSnapshot,
+    WorldStateSnapshot,
     WorldModelRun,
 )
 from .services import (
     crash_alert,
+    crash_probability,
     dashboard,
+    dashboard_cache,
     data_sync,
     detail_analysis,
     forecast_tracking,
@@ -44,6 +51,7 @@ from .services import (
     similarity,
     sparkline,
 )
+from .services import feature_store, world_state
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
@@ -106,6 +114,26 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('name = "yoshi-nakane-finance"', python_project)
         self.assertIn('"Django==5.2.14"', python_project)
 
+    def test_macro_world_model_workflows_include_new_jobs(self):
+        monthly_workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'monthly-macro-maintenance.yml'
+        ).read_text(encoding='utf-8')
+        weekly_workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'weekly-macro-validation.yml'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('monthly_macro_maintenance', monthly_workflow)
+        self.assertIn('return_forecast_model.json', monthly_workflow)
+        self.assertIn('macro_forecast_model.json', monthly_workflow)
+        self.assertIn('python manage.py weekly_macro_validation', weekly_workflow)
+        self.assertIn('DATABASE_URL is not set; skipped weekly validation.', weekly_workflow)
+
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (
             Path(settings.BASE_DIR)
@@ -134,17 +162,21 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
             [
                 'archive_macro_data',
                 'refresh_macro_data',
+                'sync_daily_prices',
                 'purge_old_data',
                 'settle_forecast_snapshots',
+                'backfill_world_state',
                 'backtest_crash_alert',
                 'train_crash_probability_model',
                 'train_regime_probability_model',
-                'train_crash_model',
+                'train_return_model',
+                'train_macro_forecast_model',
+                'run_model_validation',
                 'precompute_dashboard',
             ],
         )
         self.assertEqual(
-            call_command_mock.call_args_list[4],
+            call_command_mock.call_args_list[6],
             mock.call(
                 'backtest_crash_alert',
                 target='GSPC',
@@ -155,7 +187,7 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
             ),
         )
         self.assertEqual(
-            call_command_mock.call_args_list[5],
+            call_command_mock.call_args_list[7],
             mock.call(
                 'train_crash_probability_model',
                 target='GSPC',
@@ -185,11 +217,15 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
             [call.args[0] for call in call_command_mock.call_args_list],
             [
                 'archive_macro_data',
+                'sync_daily_prices',
                 'purge_old_data',
                 'settle_forecast_snapshots',
+                'backfill_world_state',
                 'backtest_crash_alert',
                 'train_crash_probability_model',
                 'train_regime_probability_model',
+                'train_macro_forecast_model',
+                'run_model_validation',
                 'precompute_dashboard',
             ],
         )
@@ -267,6 +303,166 @@ class CrashProbabilityModelCommandTest(TestCase):
             snapshot.prediction_interval['type'],
             'validation_event_rate_wilson_95',
         )
+
+
+class MacroWorldModelStorageTest(TestCase):
+    def test_new_snapshot_models_save_and_enforce_identity(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 5, 1),
+            growth_score=55,
+            data_quality=80,
+            feature_vector={'world_growth_score': 55},
+        )
+        FeatureSnapshot.objects.create(
+            as_of_date=date(2026, 5, 1),
+            namespace='return_forecast',
+            target='GSPC',
+            horizon='3m',
+            model_version='return_lightgbm_v2',
+            feature_hash='a' * 64,
+            feature_vector={'x': 1.0},
+        )
+        DailyPriceObservation.objects.create(
+            ticker='GSPC',
+            observation_date=date(2026, 5, 1),
+            close_price=5000,
+        )
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=12,
+            metrics={'mae': 1.2},
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                FeatureSnapshot.objects.create(
+                    as_of_date=date(2026, 5, 1),
+                    namespace='return_forecast',
+                    target='GSPC',
+                    horizon='3m',
+                    model_version='return_lightgbm_v2',
+                    feature_hash='b' * 64,
+                    feature_vector={'x': 2.0},
+                )
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                DailyPriceObservation.objects.create(
+                    ticker='GSPC',
+                    observation_date=date(2026, 5, 1),
+                    close_price=5001,
+                )
+
+    def test_world_state_assessment_and_compute_are_idempotent(self):
+        assessment = world_state.build_world_state_assessment(
+            as_of=date(2026, 5, 1),
+        )
+        self.assertIn('feature_vector', assessment)
+        for key in world_state.STATE_SCORE_FIELDS:
+            value = assessment.get(key)
+            if value is not None:
+                self.assertGreaterEqual(value, 0)
+                self.assertLessEqual(value, 100)
+
+        first = world_state.compute_current_world_state(
+            as_of=date(2026, 5, 1),
+        )
+        second = world_state.compute_current_world_state(
+            as_of=date(2026, 5, 1),
+        )
+        self.assertEqual(first.id, second.id)
+
+    def test_feature_hash_is_stable_and_snapshot_links_to_forecast(self):
+        vector = {'b': 2.0, 'a': 1.0}
+        self.assertEqual(
+            feature_store.hash_feature_vector(vector),
+            feature_store.hash_feature_vector({'a': 1.0, 'b': 2.0}),
+        )
+        snapshot = feature_store.save_feature_snapshot(
+            namespace='return_forecast',
+            target='GSPC',
+            horizon='3m',
+            model_version='return_lightgbm_v2',
+            as_of=date(2026, 5, 1),
+            feature_vector=vector,
+            source_dates={},
+            data_quality=75,
+            metadata={'missing_features': []},
+        )
+        forecast = ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 5, 1),
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            prediction_value=1.2,
+            features_hash=snapshot.feature_hash,
+            metadata={'feature_snapshot_id': snapshot.id},
+        )
+        self.assertEqual(
+            forecast.metadata['feature_snapshot_id'],
+            snapshot.id,
+        )
+
+    def test_crash_probability_prefers_daily_drawdown_when_available(self):
+        for idx in range(5):
+            PriceObservation.objects.create(
+                ticker=PriceObservation.Ticker.SP500,
+                observation_month=date(2026, idx + 1, 1),
+                close_price=100 + idx,
+            )
+        for day in range(1, 120):
+            DailyPriceObservation.objects.create(
+                ticker='GSPC',
+                observation_date=date(2026, 1, 1) + relativedelta(days=day),
+                close_price=100 - day * 0.05,
+            )
+
+        with mock.patch(
+            'macro.services.crash_probability.compute_crash_alert',
+            return_value={
+                'market_stress_score': 40,
+                'forward_risk_score': 35,
+                'data_quality_pct': 90,
+                'rule_agreement_pct': 80,
+                'category_summary': [],
+            },
+        ):
+            rows = crash_probability.build_dataset(
+                target='GSPC',
+                horizon_days=30,
+                drawdown_threshold=-3,
+            )
+
+        self.assertTrue(rows)
+        self.assertEqual(rows[0]['target_mode'], 'daily_max_drawdown')
+
+    def test_crash_probability_falls_back_to_monthly_without_daily_prices(self):
+        for idx in range(5):
+            PriceObservation.objects.create(
+                ticker=PriceObservation.Ticker.SP500,
+                observation_month=date(2026, idx + 1, 1),
+                close_price=100 - idx,
+            )
+
+        with mock.patch(
+            'macro.services.crash_probability.compute_crash_alert',
+            return_value={
+                'market_stress_score': 40,
+                'forward_risk_score': 35,
+                'data_quality_pct': 90,
+                'rule_agreement_pct': 80,
+                'category_summary': [],
+            },
+        ):
+            rows = crash_probability.build_dataset(
+                target='GSPC',
+                horizon_days=30,
+                drawdown_threshold=-3,
+            )
+
+        self.assertTrue(rows)
+        self.assertEqual(rows[0]['target_mode'], 'monthly_fallback')
 
 
 class UpdateLocalDataCommandTest(SimpleTestCase):
@@ -809,6 +1005,27 @@ class DashboardCacheTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '基本指標のみ表示しています')
 
+    def test_precompute_dashboard_payload_includes_world_model_sections(self):
+        with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None), \
+             mock.patch('macro.services.dashboard.build_similar_periods', return_value=[]), \
+             mock.patch('macro.services.dashboard.build_linkages', return_value=[]), \
+             mock.patch('macro.services.dashboard.build_indicator_cards', return_value=[]), \
+             mock.patch('macro.services.dashboard.build_crash_alert_context', return_value={}), \
+             mock.patch('macro.services.dashboard.build_monthly_model_status', return_value={}), \
+             mock.patch('macro.services.dashboard.build_forecast_monitor_context', return_value={}), \
+             mock.patch('macro.services.dashboard.build_world_state_context', return_value={'has_snapshot': False}), \
+             mock.patch('macro.services.dashboard.build_forecast_model_context', return_value={'rows': []}), \
+             mock.patch('macro.services.dashboard.build_model_validation_context', return_value={'rows': []}), \
+             mock.patch('macro.services.dashboard.build_world_model_operations_context', return_value={}), \
+             mock.patch('macro.services.dashboard.build_raw_archive_context', return_value={}), \
+             mock.patch('macro.services.scenario.build_scenario_analysis', return_value={}), \
+             mock.patch('macro.services.dashboard.build_historical_crash_similarity', return_value=[]):
+            payload = dashboard_cache.precompute_dashboard_payload()
+
+        self.assertIn('world_state', payload)
+        self.assertIn('forecast_models', payload)
+        self.assertIn('model_validation', payload)
+
 
 class BacktestRegimeCommandTest(TestCase):
     def test_backtest_regime_no_data_does_not_crash(self):
@@ -1004,7 +1221,7 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '急落確率モデル v1')
+        self.assertContains(r, '急落確率モデル（検証済み参考確率）')
         self.assertContains(r, '11.1%')
         self.assertContains(r, '信頼性 低')
         self.assertContains(r, '検証 84件 / イベント 5件')
@@ -1153,6 +1370,7 @@ class MacroUrlsTest(TestCase):
              mock.patch('macro.views.get_api_key', return_value='key'), \
              mock.patch('macro.views.sync_all_indicators') as sync_mock, \
              mock.patch('macro.views.compute_current_regime') as regime_mock, \
+             mock.patch('macro.views.compute_current_world_state') as world_state_mock, \
              mock.patch('macro.views.sync_all_price_histories') as price_mock, \
              mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
              mock.patch('macro.views.build_indicator_cards', return_value=[]), \
@@ -1178,6 +1396,7 @@ class MacroUrlsTest(TestCase):
             ),
         )
         regime_mock.assert_called_once()
+        world_state_mock.assert_called_once()
         save_cache_mock.assert_called_once()
         price_mock.assert_not_called()
         precompute_mock.assert_not_called()
@@ -1192,6 +1411,7 @@ class MacroUrlsTest(TestCase):
         with mock.patch('macro.views.get_api_key', return_value='key'), \
              mock.patch('macro.views.sync_all_indicators') as sync_mock, \
              mock.patch('macro.views.compute_current_regime') as regime_mock, \
+             mock.patch('macro.views.compute_current_world_state') as world_state_mock, \
              mock.patch('macro.views.sync_all_price_histories') as price_mock, \
              mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
              mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
@@ -1208,6 +1428,7 @@ class MacroUrlsTest(TestCase):
         self.assertEqual(r.status_code, 302)
         sync_mock.assert_called_once()
         regime_mock.assert_called_once()
+        world_state_mock.assert_called_once()
         price_mock.assert_called_once()
         precompute_mock.assert_called_once()
         save_cache_mock.assert_called_once_with({'last_updated': '2026-05-17'})

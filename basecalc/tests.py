@@ -13,9 +13,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .anchor_snapshot import load_anchor_snapshot
+from .confidence import calculate_confidence_score
+from .data_quality import evaluate_snapshot_quality
 from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock
+from .market_context import calculate_context_score
 from .market_bars import prune_market_bars
 from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import (
@@ -26,6 +29,8 @@ from .outcomes import (
     improvement_insights,
     save_prediction,
 )
+from .persistence import export_basecalc_history, import_basecalc_history
+from .state_machine import STATE_DEFINITIONS, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -287,8 +292,43 @@ class BasecalcUpdateSecurityTests(TestCase):
         ) as refresh:
             call_command('refresh_basecalc_data', stdout=out)
 
-        refresh.assert_called_once_with(save=True, use_lock=True)
+        refresh.assert_called_once_with(
+            save=True,
+            use_lock=True,
+            export_history=False,
+            export_path='basecalc/data/basecalc_history.json',
+        )
         self.assertIn('basecalc refresh complete', out.getvalue())
+
+    def test_refresh_management_command_passes_export_options(self):
+        out = StringIO()
+        with patch(
+            'basecalc.management.commands.refresh_basecalc_data.refresh_basecalc_data',
+            return_value={
+                'updated': True,
+                'price': 41100,
+                'state_key': 'dip_buy',
+                'direction': 'up',
+                'prediction_saved': True,
+                'outcomes_created': 2,
+                'exported': True,
+            },
+        ) as refresh:
+            call_command(
+                'refresh_basecalc_data',
+                '--export-history',
+                '--export-path',
+                'basecalc/data/test_history.json',
+                stdout=out,
+            )
+
+        refresh.assert_called_once_with(
+            save=True,
+            use_lock=True,
+            export_history=True,
+            export_path='basecalc/data/test_history.json',
+        )
+        self.assertIn('exported=True', out.getvalue())
 
 
 class BasecalcMarketShockTest(TestCase):
@@ -516,6 +556,80 @@ class BasecalcFuturesSentimentTests(TestCase):
         self.assertLess(result['lower_target'], 47000)
 
 
+class BasecalcWorldModelV2SupportTests(TestCase):
+    def test_data_quality_scores_good_yahoo_snapshot(self):
+        result = evaluate_snapshot_quality(
+            {
+                'symbol': 'NIY=F',
+                'source': 'yahoo',
+                'price': 41000,
+                'previous_close': 40900,
+                'change_pct': 0.24,
+                'fetched_at': timezone.now(),
+            }
+        )
+
+        self.assertGreaterEqual(result['score'], 80)
+        self.assertEqual(result['level'], 'good')
+        self.assertEqual(result['instrument_type'], 'futures')
+
+    def test_data_quality_marks_index_fallback_and_stale_data(self):
+        result = evaluate_snapshot_quality(
+            {
+                'symbol': '^nkx',
+                'source': 'stooq',
+                'price': 41000,
+                'previous_close': 40900,
+                'fallback_used': True,
+                'fetched_at': timezone.now() - timezone.timedelta(hours=1),
+            }
+        )
+
+        self.assertTrue(result['is_stale'])
+        self.assertEqual(result['instrument_type'], 'index_fallback')
+        self.assertLess(result['score'], 80)
+
+    def test_confidence_score_caps_bad_quality(self):
+        result = calculate_confidence_score(
+            features={},
+            sentiment_score=90,
+            continuation_score=90,
+            shock_score=10,
+            similar_summary={'case_count': 12, 'directional_accuracy': 0.9},
+            performance_adjustment=None,
+            data_quality={'score': 30, 'level': 'bad', 'is_stale': True},
+        )
+
+        self.assertEqual(result['label'], 'Low')
+        self.assertLess(result['score'], 45)
+
+    def test_state_machine_definitions_and_probabilities(self):
+        required = {'label', 'phase_label', 'base_bias', 'next_states'}
+        for definition in STATE_DEFINITIONS.values():
+            self.assertTrue(required.issubset(definition))
+
+        transitions = estimate_transition_probabilities(
+            'dip_buy',
+            {'sentiment_score': 45, 'continuation_score': 70, 'shock_score': 20},
+        )
+
+        self.assertAlmostEqual(sum(row['probability'] for row in transitions), 1.0, places=2)
+
+    def test_market_context_score_handles_risk_on_mock(self):
+        result = calculate_context_score(
+            {
+                'assets': {
+                    'nasdaq100_futures': {'change_pct': 1.2},
+                    'sp500_futures': {'change_pct': 0.8},
+                    'vix': {'change_pct': -2.0},
+                }
+            }
+        )
+
+        self.assertEqual(result['risk_label'], 'risk_on')
+        self.assertGreater(result['risk_score'], 0)
+
+
 class BasecalcTechnicalIndicatorTests(TestCase):
     def test_indicators_return_latest_values(self):
         closes = [100 + index for index in range(40)]
@@ -533,9 +647,11 @@ class BasecalcWorldModelTests(TestCase):
         closes = [40000 + index * 80 for index in range(80)]
         snapshot = {
             'symbol': 'NIY=F',
+            'source': 'yahoo',
             'price': closes[-1],
             'previous_close': closes[-2],
             'change_pct': 0.2,
+            'fetched_at': timezone.now(),
             'opens': [close - 30 for close in closes],
             'highs': [close + 120 for close in closes],
             'lows': [close - 140 for close in closes],
@@ -549,6 +665,17 @@ class BasecalcWorldModelTests(TestCase):
         self.assertTrue(result['is_ready'])
         self.assertGreaterEqual(result['sentiment_score'], -100)
         self.assertLessEqual(result['sentiment_score'], 100)
+        self.assertEqual(result['model_version'], 'wm_v2.0.0')
+        self.assertGreaterEqual(result['confidence_score'], 0)
+        self.assertLessEqual(result['confidence_score'], 100)
+        self.assertIn('data_quality', result)
+        self.assertIn('transition_probs', result)
+        self.assertIn('expected_returns', result)
+        self.assertAlmostEqual(
+            sum(row['probability'] for row in result['transition_probs']),
+            1.0,
+            places=2,
+        )
         self.assertGreaterEqual(len(result['upside_targets']), 2)
         self.assertGreaterEqual(len(result['downside_targets']), 2)
         self.assertGreaterEqual(len(result['evidence']), 3)
@@ -642,6 +769,9 @@ class BasecalcWorldModelTests(TestCase):
 
         self.assertTrue(all(target['price'] > 41000 for target in targets['upside']))
         self.assertTrue(all(target['price'] < 41000 for target in targets['downside']))
+        self.assertTrue(all(0 <= target['probability'] <= 1 for target in targets['upside']))
+        self.assertIn('source', targets['upside'][0])
+        self.assertIn('bullish_reason', targets['invalidation'])
 
     def test_snapshot_api_returns_world_model_json(self):
         response = self.client.get(reverse('basecalc:snapshot_api'), {'price': '41000'})
@@ -650,6 +780,11 @@ class BasecalcWorldModelTests(TestCase):
         payload = response.json()
         self.assertIn('sentiment_score', payload)
         self.assertIn('targets', payload)
+        self.assertIn('model_version', payload)
+        self.assertIn('confidence_score', payload)
+        self.assertIn('data_quality', payload)
+        self.assertIn('transition_probs', payload)
+        self.assertIn('expected_returns', payload)
 
     def test_staff_refresh_saves_prediction(self):
         user = User.objects.create_user(
@@ -705,6 +840,40 @@ class BasecalcWorldModelTests(TestCase):
         self.assertIsNotNone(first)
         self.assertIsNone(second)
         self.assertEqual(WorldModelPrediction.objects.count(), 1)
+
+    def test_save_prediction_persists_world_model_v2_fields(self):
+        world_model = {
+            'model_version': 'wm_v2.0.0',
+            'price': 41000,
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'direction': 'up',
+            'sentiment_score': 42,
+            'continuation_score': 62,
+            'shock_score': 25,
+            'confidence': 'Middle',
+            'confidence_score': 68,
+            'data_quality_score': 91,
+            'main_scenario': 'test',
+            'sub_scenario': '',
+            'invalidation_price': 40600,
+            'upside_targets': [{'price': 41400, 'probability': 0.62}],
+            'downside_targets': [{'price': 40600, 'probability': 0.45}],
+            'evidence': [],
+            'features': {'symbol': 'NIY=F', 'source': 'test', 'close': 41000},
+            'transition_probs': [{'state_key': 'range_neutral', 'label': 'レンジ中立', 'probability': 1.0}],
+            'expected_returns': {'1d': 0.4},
+            'market_context': {'risk_score': 20, 'risk_label': 'risk_on'},
+        }
+
+        prediction = save_prediction(world_model)
+        prediction.refresh_from_db()
+
+        self.assertEqual(prediction.model_version, 'wm_v2.0.0')
+        self.assertEqual(prediction.confidence_score, 68)
+        self.assertEqual(prediction.data_quality_score, 91)
+        self.assertEqual(prediction.transition_probs[0]['state_key'], 'range_neutral')
+        self.assertEqual(prediction.expected_returns['1d'], 0.4)
 
     def test_staff_refresh_does_not_replace_manual_price_with_last_good_snapshot(self):
         user = User.objects.create_user(
@@ -930,3 +1099,80 @@ class BasecalcWorldModelTests(TestCase):
         self.assertTrue({'1h', '4h', '1d', '3d', '5d'}.issubset(horizons))
         one_day = PredictionOutcome.objects.get(prediction=prediction, horizon='1d')
         self.assertEqual(one_day.price_at_evaluation, 41450)
+
+    def test_persistence_export_import_is_idempotent(self):
+        prediction = WorldModelPrediction.objects.create(
+            model_version='wm_v2.0.0',
+            price=41000,
+            state_key='dip_buy',
+            state_label='押し目買い',
+            direction='up',
+            sentiment_score=42,
+            continuation_score=62,
+            shock_score=25,
+            confidence='Middle',
+            confidence_score=68,
+            data_quality_score=90,
+            main_scenario='test',
+            invalidation_price=40600,
+            upside_targets=[{'price': 41400, 'probability': 0.62}],
+            downside_targets=[{'price': 40600, 'probability': 0.45}],
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            transition_probs=[{'state_key': 'range_neutral', 'label': 'レンジ中立', 'probability': 1.0}],
+            expected_returns={'1d': 0.4},
+            context={'risk_score': 20},
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41400,
+            realized_return_pct=0.97,
+            direction_hit=True,
+            upside_t1_hit=True,
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.now(),
+            close=41400,
+            source='test',
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'basecalc_history.json'
+            exported = export_basecalc_history(str(path))
+            PredictionOutcome.objects.all().delete()
+            WorldModelPrediction.objects.all().delete()
+            MarketBar.objects.all().delete()
+
+            first_import = import_basecalc_history(str(path))
+            second_import = import_basecalc_history(str(path))
+
+        self.assertEqual(exported['predictions'], 1)
+        self.assertEqual(first_import['predictions_created'], 1)
+        self.assertEqual(second_import['predictions_created'], 0)
+        self.assertEqual(WorldModelPrediction.objects.count(), 1)
+        self.assertEqual(PredictionOutcome.objects.count(), 1)
+        self.assertEqual(MarketBar.objects.count(), 1)
+
+    def test_backtest_command_dry_run_uses_saved_market_bars(self):
+        start = timezone.now() - timezone.timedelta(days=60)
+        for index in range(40):
+            close = 40000 + index * 25
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=start + timezone.timedelta(days=index),
+                open=close - 20,
+                high=close + 80,
+                low=close - 80,
+                close=close,
+                source='test',
+            )
+        out = StringIO()
+
+        call_command('backtest_basecalc_model', '--symbol', 'NIY=F', '--limit', '40', '--dry-run', stdout=out)
+
+        self.assertIn('basecalc backtest complete', out.getvalue())

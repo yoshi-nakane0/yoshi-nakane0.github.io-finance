@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>basecalc - 日経先物テクニカル分析</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=technical-20260518-6">
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=world-model-20260524">
     <script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
@@ -51,7 +51,7 @@
                         </div>
                     </div>
                     <div class="confidence-badge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
-                        {{ world_model.confidence }}
+                        {{ world_model.confidence }}<small>{{ world_model.confidence_score }}/100</small>
                     </div>
                 </div>
 
@@ -72,19 +72,19 @@
                         </div>
                     </div>
                     <div class="wm-score-row">
-                        <span>判定強度</span>
-                        <strong>{{ world_model.continuation_score }}%</strong>
+                        <span>信頼度</span>
+                        <strong>{{ world_model.confidence_score }}%</strong>
                         <small>{{ world_model.confidence }}</small>
                         <div class="wm-score-track is-cyan">
-                            <i data-value="{{ world_model.continuation_score }}"></i>
+                            <i data-value="{{ world_model.confidence_score }}"></i>
                         </div>
                     </div>
                     <div class="wm-score-row">
-                        <span>データ鮮度</span>
-                        <strong>{% if world_model.is_stale %}42{% else %}96{% endif %}%</strong>
-                        <small>{% if world_model.is_stale %}要確認{% else %}良好{% endif %}</small>
+                        <span>データ品質</span>
+                        <strong>{{ world_model.data_quality_score }}%</strong>
+                        <small>{{ world_model.data_quality_level|title }}</small>
                         <div class="wm-score-track is-green">
-                            <i data-value="{% if world_model.is_stale %}42{% else %}96{% endif %}"></i>
+                            <i data-value="{{ world_model.data_quality_score }}"></i>
                         </div>
                     </div>
                 </div>
@@ -164,6 +164,48 @@
                 </div>
             </div>
 
+            <section class="card quality-card quality-{{ world_model.data_quality.level }}" data-field="data_quality">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+                            <path d="m9 12 2 2 4-5"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">データ品質</div>
+                        <div class="quality-summary">
+                            {{ world_model.data_quality.level|title }} / {{ world_model.data_quality.score }}/100
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-grid quality-grid">
+                    <div class="metric-box">
+                        <label>Source</label>
+                        <div class="value">{{ world_model.data_quality.source|default:"N/A" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Symbol</label>
+                        <div class="value">{{ world_model.data_quality.symbol|default:"N/A" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Fallback</label>
+                        <div class="value">{% if world_model.data_quality.fallback_used %}Used{% else %}No{% endif %}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>Type</label>
+                        <div class="value">{{ world_model.data_quality.instrument_type }}</div>
+                    </div>
+                </div>
+                {% if world_model.data_quality.warnings %}
+                <div class="warning-list">
+                    {% for warning in world_model.data_quality.warnings %}
+                    <span>{{ warning }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </section>
+
             {% if market_shock and market_shock.has_data %}
             <section class="card us-shock us-shock--{{ market_shock.tone }}">
                 <div class="card-header compact-header">
@@ -199,6 +241,36 @@
                 </div>
             </section>
             {% endif %}
+
+            <section class="card market-context-card" data-field="market_context">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="m7 14 3-3 3 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="card-title">外部市場</div>
+                        <div class="quality-summary">{{ world_model.market_context.risk_label }} / {{ world_model.market_context.risk_score }}</div>
+                    </div>
+                </div>
+                <div class="context-grid">
+                    {% for key, score in world_model.market_context.components.items %}
+                    <div class="context-box">
+                        <span>{{ key }}</span>
+                        <strong>{{ score }}</strong>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">外部市場データ待ちです。</div>
+                    {% endfor %}
+                </div>
+                <div class="warning-list context-evidence">
+                    {% for item in world_model.market_context.evidence %}
+                    <span>{{ item }}</span>
+                    {% endfor %}
+                </div>
+            </section>
 
             <section class="card">
                 <div class="card-header compact-header">
@@ -284,7 +356,7 @@
                             <div class="target-row">
                                 <span>{{ target.label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / {{ target.confidence }}</small>
+                                <small>{{ target.reason }} / 到達 {{ target.probability|floatformat:2 }} / 距離 {{ target.distance_pct|floatformat:2 }}% / {{ target.confidence }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -298,13 +370,54 @@
                             <div class="target-row">
                                 <span>{{ target.label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / {{ target.confidence }}</small>
+                                <small>{{ target.reason }} / 到達 {{ target.probability|floatformat:2 }} / 距離 {{ target.distance_pct|floatformat:2 }}% / {{ target.confidence }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
                             {% endfor %}
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section class="card model-detail-card" data-field="model_detail">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-purple">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 6h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 18h16"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">World Model 詳細</div>
+                </div>
+                <div class="summary-grid model-grid">
+                    <div class="metric-box">
+                        <label>Version</label>
+                        <div class="value">{{ world_model.model_version }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>信頼度</label>
+                        <div class="value">{{ world_model.confidence_score }}/100</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>期待 1d</label>
+                        <div class="value">{{ world_model.expected_return_1d|floatformat:2 }}%</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>期待 5d</label>
+                        <div class="value">{{ world_model.expected_return_5d|floatformat:2 }}%</div>
+                    </div>
+                </div>
+                <div class="transition-list">
+                    {% for row in world_model.transition_probs %}
+                    <div class="transition-row">
+                        <span>{{ row.label }}</span>
+                        <strong>{{ row.probability|floatformat:2 }}</strong>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">状態遷移データ待ちです。</div>
+                    {% endfor %}
                 </div>
             </section>
 

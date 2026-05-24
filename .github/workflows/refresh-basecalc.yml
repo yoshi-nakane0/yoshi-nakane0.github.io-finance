@@ -1,0 +1,42 @@
+name: refresh-basecalc
+
+on:
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: myproject.settings
+      SECRET_KEY: github-actions-basecalc-refresh
+      DEBUG: "False"
+      SQLITE_DB_PATH: /tmp/basecalc-refresh.sqlite3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Migrate
+        run: python manage.py migrate --noinput
+      - name: Import existing basecalc history
+        run: python manage.py import_basecalc_history --input basecalc/data/basecalc_history.json || true
+      - name: Refresh basecalc
+        run: python manage.py refresh_basecalc_data --export-history --export-path basecalc/data/basecalc_history.json || true
+      - name: Commit updated history
+        run: |
+          if git diff --quiet -- basecalc/data/basecalc_history.json; then
+            echo "No basecalc history changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add basecalc/data/basecalc_history.json
+          git commit -m "Update basecalc history"
+          git push

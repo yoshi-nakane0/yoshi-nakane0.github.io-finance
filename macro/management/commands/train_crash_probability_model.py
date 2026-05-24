@@ -9,8 +9,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-from macro.models import ForecastSnapshot
 from macro.services import crash_probability
+from macro.services.forecast_models import save_forecast_snapshot
 
 
 OUTPUT_RELATIVE_PATH = Path('static') / 'macro' / 'crash_probability_model.json'
@@ -106,6 +106,24 @@ class Command(BaseCommand):
             validation_event_count,
             len(scored_validation),
         )
+        target_modes = {row.get('target_mode') for row in rows if row.get('target_mode')}
+        target_mode = (
+            'daily_max_drawdown'
+            if target_modes == {'daily_max_drawdown'}
+            else 'monthly_fallback'
+            if target_modes == {'monthly_fallback'}
+            else 'mixed_daily_monthly'
+        )
+        daily_coverage = crash_probability.daily_price_coverage_pct(options['target'])
+        limitations = [
+            '急落は発生回数が少ないため、確率は参考値です。',
+            '投資助言や売買推奨ではありません。',
+        ]
+        if target_mode != 'daily_max_drawdown':
+            limitations.insert(
+                0,
+                '日次価格が不足した期間は月次終値ベースの検証に戻しています。',
+            )
 
         payload = {
             'model_version': crash_probability.MODEL_VERSION,
@@ -113,6 +131,8 @@ class Command(BaseCommand):
             'target': options['target'],
             'horizon_days': options['horizon_days'],
             'drawdown_threshold_pct': options['drawdown_threshold'],
+            'target_mode': target_mode,
+            'daily_price_coverage_pct': daily_coverage,
             'prediction_label': (
                 f"今後{options['horizon_days']}日相当で"
                 f"{options['target']}が{options['drawdown_threshold']:.0f}%以上下落する推定確率"
@@ -141,11 +161,7 @@ class Command(BaseCommand):
             'coefficients': crash_probability.coefficient_rows(model),
             'model': model,
             'rows': scored_validation,
-            'limitations': [
-                '月次終値ベースの検証であり、月中の最大下落は反映していません。',
-                '急落は発生回数が少ないため、確率は参考値です。',
-                '投資助言や売買推奨ではありません。',
-            ],
+            'limitations': limitations,
         }
 
         out_path = Path(settings.BASE_DIR) / options['output']
@@ -156,29 +172,30 @@ class Command(BaseCommand):
         )
 
         as_of_date = timezone.localdate()
-        ForecastSnapshot.objects.update_or_create(
-            as_of_date=as_of_date,
+        save_forecast_snapshot(
+            namespace='crash_probability',
+            as_of=as_of_date,
             model_version=crash_probability.MODEL_VERSION,
             target=options['target'],
             horizon=f"{options['horizon_days']}d",
-            defaults={
-                'prediction_value': current_probability,
-                'prediction_interval': {
-                    'type': 'validation_event_rate_wilson_95',
-                    'lower': event_rate_interval[0] if event_rate_interval else None,
-                    'upper': event_rate_interval[1] if event_rate_interval else None,
-                    'horizon_days': options['horizon_days'],
-                    'drawdown_threshold_pct': options['drawdown_threshold'],
-                },
-                'features_hash': _features_hash(current_features),
-                'metadata': {
-                    'prediction_kind': 'drawdown_event_probability',
-                    'horizon_days': options['horizon_days'],
-                    'drawdown_threshold_pct': options['drawdown_threshold'],
-                    'raw_probability': current_raw_probability,
-                    'validation_event_count': validation_event_count,
-                    'validation_samples': len(scored_validation),
-                },
+            prediction_value=current_probability,
+            prediction_interval={
+                'type': 'validation_event_rate_wilson_95',
+                'lower': event_rate_interval[0] if event_rate_interval else None,
+                'upper': event_rate_interval[1] if event_rate_interval else None,
+                'horizon_days': options['horizon_days'],
+                'drawdown_threshold_pct': options['drawdown_threshold'],
+            },
+            feature_vector=current_features,
+            metadata={
+                'prediction_kind': 'drawdown_event_probability',
+                'horizon_days': options['horizon_days'],
+                'drawdown_threshold_pct': options['drawdown_threshold'],
+                'raw_probability': current_raw_probability,
+                'validation_event_count': validation_event_count,
+                'validation_samples': len(scored_validation),
+                'target_mode': target_mode,
+                'daily_price_coverage_pct': daily_coverage,
             },
         )
 

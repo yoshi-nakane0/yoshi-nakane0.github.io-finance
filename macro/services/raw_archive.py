@@ -172,26 +172,81 @@ def _write_regimes(writer, qs: Optional[QuerySet], archived_at: str, reason: str
     return count
 
 
+def _write_payload_rows(
+    writer,
+    qs: Optional[QuerySet],
+    archived_at: str,
+    reason: str,
+    table: str,
+    date_attr: str,
+    payload_builder,
+) -> int:
+    if qs is None:
+        return 0
+    count = 0
+    for obj in qs.iterator(chunk_size=500):
+        row = _blank_row(archived_at, reason, table)
+        value_date = getattr(obj, date_attr, None)
+        row.update({
+            'date': value_date.isoformat() if value_date else '',
+            'series_id': getattr(obj, 'target', ''),
+            'ticker': getattr(obj, 'ticker', ''),
+            'data_quality': getattr(obj, 'data_quality', ''),
+            'payload_json': _json(payload_builder(obj)),
+        })
+        writer.writerow(row)
+        count += 1
+    return count
+
+
 def archive_macro_rows(
     *,
     observation_querysets: Optional[Iterable[QuerySet]] = None,
     price_queryset: Optional[QuerySet] = None,
     regime_queryset: Optional[QuerySet] = None,
+    world_state_queryset: Optional[QuerySet] = None,
+    feature_queryset: Optional[QuerySet] = None,
+    forecast_queryset: Optional[QuerySet] = None,
+    validation_queryset: Optional[QuerySet] = None,
     reason: str = 'manual',
     output_dir: Optional[Path] = None,
 ) -> dict:
     """指定された行を gzip CSV に保存する。行がなければファイルは作らない。"""
-    from ..models import Observation, PriceObservation, RegimeSnapshot
+    from ..models import (
+        FeatureSnapshot,
+        ForecastSnapshot,
+        ModelValidationReport,
+        Observation,
+        PriceObservation,
+        RegimeSnapshot,
+        WorldStateSnapshot,
+    )
 
     observation_querysets = list(observation_querysets or [])
-    if not observation_querysets and price_queryset is None and regime_queryset is None:
+    if (
+        not observation_querysets
+        and price_queryset is None
+        and regime_queryset is None
+        and world_state_queryset is None
+        and feature_queryset is None
+        and forecast_queryset is None
+        and validation_queryset is None
+    ):
         observation_querysets = [Observation.objects.all()]
         price_queryset = PriceObservation.objects.all()
         regime_queryset = RegimeSnapshot.objects.all()
+        world_state_queryset = WorldStateSnapshot.objects.all()
+        feature_queryset = FeatureSnapshot.objects.all()
+        forecast_queryset = ForecastSnapshot.objects.all()
+        validation_queryset = ModelValidationReport.objects.all()
 
     total_candidates = sum(qs.count() for qs in observation_querysets)
     total_candidates += price_queryset.count() if price_queryset is not None else 0
     total_candidates += regime_queryset.count() if regime_queryset is not None else 0
+    total_candidates += world_state_queryset.count() if world_state_queryset is not None else 0
+    total_candidates += feature_queryset.count() if feature_queryset is not None else 0
+    total_candidates += forecast_queryset.count() if forecast_queryset is not None else 0
+    total_candidates += validation_queryset.count() if validation_queryset is not None else 0
     if total_candidates <= 0:
         return {'created': False, 'row_count': 0, 'path': None, 'size_bytes': 0}
 
@@ -210,8 +265,94 @@ def archive_macro_rows(
         )
         price_count = _write_prices(writer, price_queryset, archived_at, reason)
         regime_count = _write_regimes(writer, regime_queryset, archived_at, reason)
+        world_state_count = _write_payload_rows(
+            writer,
+            world_state_queryset.order_by('as_of_date') if world_state_queryset is not None else None,
+            archived_at,
+            reason,
+            'world_state_snapshot',
+            'as_of_date',
+            lambda obj: {
+                'cadence': obj.cadence,
+                'scores': {
+                    'growth_score': obj.growth_score,
+                    'labor_score': obj.labor_score,
+                    'inflation_score': obj.inflation_score,
+                    'market_stress_score': obj.market_stress_score,
+                },
+                'feature_vector': obj.feature_vector,
+                'explanation': obj.explanation,
+                'warnings': obj.warnings,
+                'model_version': obj.model_version,
+            },
+        )
+        feature_count = _write_payload_rows(
+            writer,
+            feature_queryset.order_by('as_of_date') if feature_queryset is not None else None,
+            archived_at,
+            reason,
+            'feature_snapshot',
+            'as_of_date',
+            lambda obj: {
+                'namespace': obj.namespace,
+                'target': obj.target,
+                'horizon': obj.horizon,
+                'model_version': obj.model_version,
+                'feature_hash': obj.feature_hash,
+                'feature_vector': obj.feature_vector,
+                'source_dates': obj.source_dates,
+                'metadata': obj.metadata,
+            },
+        )
+        forecast_count = _write_payload_rows(
+            writer,
+            forecast_queryset.order_by('as_of_date') if forecast_queryset is not None else None,
+            archived_at,
+            reason,
+            'forecast_snapshot',
+            'as_of_date',
+            lambda obj: {
+                'model_version': obj.model_version,
+                'target': obj.target,
+                'horizon': obj.horizon,
+                'prediction_value': obj.prediction_value,
+                'prediction_interval': obj.prediction_interval,
+                'features_hash': obj.features_hash,
+                'metadata': obj.metadata,
+                'realized_value': obj.realized_value,
+                'error': obj.error,
+                'realized_at': obj.realized_at.isoformat() if obj.realized_at else None,
+            },
+        )
+        validation_count = _write_payload_rows(
+            writer,
+            validation_queryset.order_by('evaluated_at') if validation_queryset is not None else None,
+            archived_at,
+            reason,
+            'model_validation_report',
+            'evaluated_at',
+            lambda obj: {
+                'model_version': obj.model_version,
+                'target': obj.target,
+                'horizon': obj.horizon,
+                'validation_method': obj.validation_method,
+                'sample_count': obj.sample_count,
+                'event_count': obj.event_count,
+                'metrics': obj.metrics,
+                'rows': obj.rows,
+                'warnings': obj.warnings,
+            },
+        )
 
-    row_count = observation_count + price_count + regime_count
+    row_count = (
+        observation_count
+        + price_count
+        + regime_count
+        + world_state_count
+        + feature_count
+        + forecast_count
+        + validation_count
+    )
     checksum = _sha256_file(path)
     summary = {
         'created': True,
@@ -222,6 +363,10 @@ def archive_macro_rows(
         'observation_count': observation_count,
         'price_count': price_count,
         'regime_count': regime_count,
+        'world_state_count': world_state_count,
+        'feature_count': feature_count,
+        'forecast_count': forecast_count,
+        'validation_count': validation_count,
         'checksum': checksum,
         'storage_backend': _storage_backend(path),
     }
@@ -239,6 +384,10 @@ def archive_macro_rows(
             checksum=checksum,
             metadata={
                 'fieldnames': FIELDNAMES,
+                'world_state_count': world_state_count,
+                'feature_count': feature_count,
+                'forecast_count': forecast_count,
+                'validation_count': validation_count,
                 'archive_dir_env': ARCHIVE_DIR_ENV if os.getenv(ARCHIVE_DIR_ENV) else '',
                 'local_path': str(path),
             },

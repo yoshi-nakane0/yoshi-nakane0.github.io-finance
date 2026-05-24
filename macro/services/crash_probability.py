@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from dateutil.relativedelta import relativedelta
 
-from macro.models import Observation, PriceObservation
+from macro.models import DailyPriceObservation, Observation, PriceObservation
 from macro.services.crash_alert import compute_crash_alert
 
 
@@ -50,6 +50,33 @@ def load_price_series(ticker: str) -> Dict[date, float]:
         .values_list('observation_month', 'close_price')
     )
     return {month.replace(day=1): close for month, close in rows}
+
+
+def load_daily_price_series(ticker: str) -> Dict[date, float]:
+    rows = (
+        DailyPriceObservation.objects
+        .filter(ticker=ticker)
+        .order_by('observation_date')
+        .values_list('observation_date', 'adjusted_close_price', 'close_price')
+    )
+    return {
+        observation_date: float(adjusted if adjusted is not None else close)
+        for observation_date, adjusted, close in rows
+    }
+
+
+def daily_price_coverage_pct(ticker: str) -> Optional[float]:
+    dates = list(
+        DailyPriceObservation.objects
+        .filter(ticker=ticker)
+        .order_by('observation_date')
+        .values_list('observation_date', flat=True)
+    )
+    if len(dates) < 2:
+        return None
+    calendar_days = max((dates[-1] - dates[0]).days + 1, 1)
+    expected_trading_days = max(calendar_days * 5 / 7, 1)
+    return min(round(len(dates) / expected_trading_days * 100.0, 2), 100.0)
 
 
 def make_lookup_for_date(target_date: date):
@@ -107,6 +134,35 @@ def future_drawdown(
     return max_drawdown, lead_month * 30 if lead_month is not None else None
 
 
+def _price_on_or_before(prices: Dict[date, float], target_date: date) -> tuple[Optional[date], Optional[float]]:
+    candidates = [value_date for value_date in prices if value_date <= target_date]
+    if not candidates:
+        return None, None
+    price_date = max(candidates)
+    return price_date, prices[price_date]
+
+
+def future_max_drawdown_daily(
+    prices: Dict[date, float],
+    start_date: date,
+    horizon_days: int,
+) -> Tuple[Optional[float], Optional[int]]:
+    base_date, base = _price_on_or_before(prices, start_date)
+    if base_date is None or base in (None, 0):
+        return None, None
+    end_date = start_date + timedelta(days=horizon_days)
+    max_drawdown = None
+    lead_time_days = None
+    for obs_date in sorted(prices):
+        if obs_date <= base_date or obs_date > end_date:
+            continue
+        ret = (prices[obs_date] - base) / base * 100.0
+        if max_drawdown is None or ret < max_drawdown:
+            max_drawdown = ret
+            lead_time_days = (obs_date - start_date).days
+    return max_drawdown, lead_time_days
+
+
 def _category_score(alert: Dict, category: str) -> Optional[float]:
     for row in alert.get('category_summary', []):
         if row.get('category') == category:
@@ -136,14 +192,28 @@ def build_dataset(
     ticker = TARGET_TICKERS[target]
     horizon_months = max(1, math.ceil(horizon_days / 30.4375))
     prices = load_price_series(ticker)
+    daily_prices = load_daily_price_series(ticker)
+    use_daily = len(daily_prices) >= 60
+    anchor_months = sorted(prices)
+    if not anchor_months and daily_prices:
+        anchor_months = sorted({item.replace(day=1) for item in daily_prices})
     rows: List[Dict] = []
-    for month_start in sorted(prices):
-        max_drawdown, lead_time_days = future_drawdown(
-            prices,
-            month_start,
-            horizon_months,
-            drawdown_threshold,
-        )
+    for month_start in anchor_months:
+        if use_daily:
+            max_drawdown, lead_time_days = future_max_drawdown_daily(
+                daily_prices,
+                month_end(month_start),
+                horizon_days,
+            )
+            target_mode = 'daily_max_drawdown'
+        else:
+            max_drawdown, lead_time_days = future_drawdown(
+                prices,
+                month_start,
+                horizon_months,
+                drawdown_threshold,
+            )
+            target_mode = 'monthly_fallback'
         if max_drawdown is None:
             continue
         as_of = month_end(month_start)
@@ -158,6 +228,7 @@ def build_dataset(
             'event': max_drawdown <= drawdown_threshold,
             'max_drawdown_pct': max_drawdown,
             'lead_time_days': lead_time_days,
+            'target_mode': target_mode,
             'features': _features_from_alert(alert),
         })
     return rows
