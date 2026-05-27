@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload raw archive
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macro-raw-archive
           path: /tmp/macro_raw_archive/*.csv.gz
