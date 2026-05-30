@@ -1,8 +1,8 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-05-30T19:44:03.996180+00:00",
+  "updated_at": "2026-05-30T21:15:03.028163+00:00",
   "price_data": {
-    "last_success_at": "2026-05-30T19:44:02.216842+00:00",
+    "last_success_at": "2026-05-30T21:15:02.202220+00:00",
     "last_failed_at": null,
     "source": "stooq:NK.F",
     "age_minutes": 0,
@@ -14,7 +14,7 @@
     "last_success_at": "2026-03-12T09:31:57+00:00",
     "last_failed_at": null,
     "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=per",
-    "age_minutes": 114372,
+    "age_minutes": 114463,
     "age_days": 80,
     "as_of_date": "2026.03.11",
     "fallback_used": false,
@@ -22,7 +22,7 @@
     "decision_label": "参考"
   },
   "jgb": {
-    "last_success_at": "2026-05-30T19:44:01.738552+00:00",
+    "last_success_at": "2026-05-30T21:15:02.506029+00:00",
     "last_failed_at": null,
     "source": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv",
     "age_minutes": 0,
@@ -32,7 +32,7 @@
   },
   "external_market": {
     "last_success_at": null,
-    "last_failed_at": "2026-05-30T19:44:03.996172+00:00",
+    "last_failed_at": "2026-05-30T21:15:03.028154+00:00",
     "source": "yahoo",
     "age_minutes": null,
     "fallback_used": false,
