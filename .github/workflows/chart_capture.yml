@@ -23,7 +23,7 @@ jobs:
         working-directory: scripts/capture_charts
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
