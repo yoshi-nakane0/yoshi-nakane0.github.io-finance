@@ -26,6 +26,7 @@ from .services.dashboard import (
     build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
+    build_macro_conclusion_context,
     build_monthly_model_status,
     build_raw_archive_context,
     build_reliability_context,
@@ -33,10 +34,12 @@ from .services.dashboard import (
     build_forecast_model_context,
     build_model_validation_context,
     build_similar_periods,
+    build_vintage_status_context,
     build_world_state_context,
     build_world_model_operations_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
+    load_regime_probability_model,
 )
 from .services.scenario import build_scenario_analysis, scenario_overrides_from_query
 from .services.dashboard_cache import (
@@ -240,6 +243,7 @@ def index(request):
         context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
         context['lightgbm_prediction'] = load_lightgbm_prediction()
         context['crash_probability_model'] = load_crash_probability_model()
+        context['regime_probability_model'] = load_regime_probability_model()
         context['monthly_model_status'] = build_monthly_model_status()
         context['forecast_monitor'] = (
             context.get('forecast_monitor') or build_forecast_monitor_context()
@@ -259,6 +263,13 @@ def index(request):
         )
         context['raw_archive_status'] = (
             context.get('raw_archive_status') or build_raw_archive_context()
+        )
+        context['macro_conclusion'] = (
+            context.get('macro_conclusion')
+            or build_macro_conclusion_context(latest_snapshot)
+        )
+        context['vintage_status'] = (
+            context.get('vintage_status') or build_vintage_status_context()
         )
         context['scenario_analysis'] = build_scenario_analysis(custom_scenario) if custom_scenario else (
             context.get('scenario_analysis') or build_scenario_analysis()
@@ -296,6 +307,7 @@ def index(request):
             'historical_crash_similarity': [],
             'lightgbm_prediction': load_lightgbm_prediction(),
             'crash_probability_model': load_crash_probability_model(),
+            'regime_probability_model': load_regime_probability_model(),
             'monthly_model_status': build_monthly_model_status(),
             'forecast_monitor': build_forecast_monitor_context(),
             'world_state': build_world_state_context(),
@@ -303,6 +315,8 @@ def index(request):
             'model_validation': build_model_validation_context(),
             'world_model_operations': build_world_model_operations_context(),
             'raw_archive_status': build_raw_archive_context(),
+            'macro_conclusion': build_macro_conclusion_context(latest_snapshot),
+            'vintage_status': build_vintage_status_context(),
             'scenario_analysis': build_scenario_analysis(custom_scenario),
             'similar_periods': [],
             'linkages': [],
@@ -332,6 +346,7 @@ def index(request):
         ),
         'lightgbm_prediction': load_lightgbm_prediction(),
         'crash_probability_model': load_crash_probability_model(),
+        'regime_probability_model': load_regime_probability_model(),
         'monthly_model_status': build_monthly_model_status(),
         'forecast_monitor': build_forecast_monitor_context(),
         'world_state': build_world_state_context(),
@@ -339,6 +354,8 @@ def index(request):
         'model_validation': build_model_validation_context(),
         'world_model_operations': build_world_model_operations_context(),
         'raw_archive_status': build_raw_archive_context(),
+        'macro_conclusion': build_macro_conclusion_context(latest_snapshot),
+        'vintage_status': build_vintage_status_context(),
         'scenario_analysis': build_scenario_analysis(custom_scenario),
         'similar_periods': similar_periods,
         'linkages': linkages,

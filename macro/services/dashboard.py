@@ -24,6 +24,7 @@ from ..models import (
     Observation,
     PriceObservation,
     RegimeSnapshot,
+    VintageObservation,
     WorldStateSnapshot,
 )
 from .crash_alert import FRESHNESS_LIMIT_DAYS, compute_crash_alert
@@ -428,6 +429,76 @@ def build_reliability_context(
 
 def build_raw_archive_context() -> Dict:
     return latest_archive_status()
+
+
+def build_vintage_status_context() -> Dict:
+    total = VintageObservation.objects.count()
+    series_count = (
+        VintageObservation.objects
+        .values('indicator_id')
+        .distinct()
+        .count()
+    )
+    latest = (
+        VintageObservation.objects
+        .order_by('-collected_at')
+        .values_list('collected_at', flat=True)
+        .first()
+    )
+    tone = 'good' if total else 'warning'
+    return {
+        'tone': tone,
+        'total_count': total,
+        'series_count': series_count,
+        'latest_collected_at': _format_date_for_display(latest),
+        'status_label': '保存中' if total else '未蓄積',
+        'note': (
+            'FREDの改定前データを保存しており、point-in-time検証に使えます。'
+            if total else
+            '次回のFRED更新から、取得時点ごとの値を保存します。'
+        ),
+    }
+
+
+def build_macro_conclusion_context(
+    snapshot: Optional[RegimeSnapshot] = None,
+) -> Optional[Dict]:
+    if snapshot is None:
+        snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
+    if snapshot is None:
+        return None
+    from .macro_conclusion import latest_or_create_macro_conclusion
+
+    conclusion = latest_or_create_macro_conclusion(snapshot)
+    if conclusion is None:
+        return None
+    return {
+        'as_of_date': conclusion.as_of_date.isoformat(),
+        'previous_snapshot_date': (
+            conclusion.previous_snapshot_date.isoformat()
+            if conclusion.previous_snapshot_date else '—'
+        ),
+        'current_view': conclusion.current_view,
+        'previous_change': conclusion.previous_change,
+        'base_scenario_3m': conclusion.base_scenario_3m,
+        'upside_risk': conclusion.upside_risk,
+        'downside_risk': conclusion.downside_risk,
+        'watch_events': conclusion.watch_events or [],
+        'model_reliability': conclusion.model_reliability,
+        'driver_changes': [
+            {
+                **row,
+                'delta_display': format_signed(row.get('delta'), 2),
+            }
+            for row in conclusion.driver_changes or []
+        ],
+        'topic_mapping': conclusion.topic_mapping or [],
+        'reliability_score': conclusion.reliability_score,
+        'reliability_score_display': f'{conclusion.reliability_score:.0f}%',
+        'rule_probability_note': (
+            conclusion.metadata or {}
+        ).get('rule_probability_note', ''),
+    }
 
 
 def build_similar_periods(top_n: int = 5) -> List[Dict]:
@@ -1318,6 +1389,7 @@ def build_model_validation_context() -> Dict:
             'target': report.target,
             'horizon': report.horizon,
             'sample_count': report.sample_count,
+            'event_count': report.event_count,
             'mae_display': _number_display(metrics.get('mae')),
             'rmse_display': _number_display(metrics.get('rmse')),
             'direction_accuracy_display': _ratio_pct_display(
@@ -1326,6 +1398,10 @@ def build_model_validation_context() -> Dict:
             'roc_auc_display': _number_display(metrics.get('roc_auc')),
             'pr_auc_display': _number_display(metrics.get('pr_auc')),
             'brier_score_display': _number_display(metrics.get('brier_score')),
+            'validation_method': (
+                metrics.get('validation_method')
+                or report.validation_method
+            ),
             'warnings': report.warnings or [],
             'evaluated_at': _format_date_for_display(report.evaluated_at),
         })

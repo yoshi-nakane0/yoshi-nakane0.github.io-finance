@@ -11,7 +11,14 @@ from dateutil.relativedelta import relativedelta
 from django.core.management.base import CommandError
 from django.utils import timezone
 
-from ..models import ForecastSnapshot, Indicator, Observation, PriceObservation, WorldStateSnapshot
+from ..models import (
+    ForecastSnapshot,
+    Indicator,
+    Observation,
+    PriceObservation,
+    VintageObservation,
+    WorldStateSnapshot,
+)
 from . import feature_store
 
 
@@ -128,6 +135,44 @@ def _world_feature_row(as_of: date) -> dict:
     return features
 
 
+def _vintage_feature_row(as_of: date) -> dict:
+    """保存済みビンテージから、その時点で利用可能だった特徴量を作る。"""
+    rows = (
+        VintageObservation.objects
+        .filter(
+            indicator__is_active=True,
+            indicator__importance__in=[Indicator.Importance.A, Indicator.Importance.B],
+            observation_date__lte=as_of,
+            realtime_start__lte=as_of,
+        )
+        .select_related('indicator')
+        .order_by(
+            'indicator__fred_series_id',
+            '-observation_date',
+            '-realtime_start',
+        )
+    )
+    latest_by_series = {}
+    for row in rows:
+        series_id = row.indicator.fred_series_id
+        if series_id in latest_by_series:
+            continue
+        latest_by_series[series_id] = row
+    if not latest_by_series:
+        return {}
+    return {
+        f'{series_id}_vintage_value': feature_store.normalize_feature_value(row.value) or 0.0
+        for series_id, row in latest_by_series.items()
+    }
+
+
+def _historical_feature_row(as_of: date) -> tuple[dict, str]:
+    vintage_features = _vintage_feature_row(as_of)
+    if vintage_features:
+        return vintage_features, 'vintage_point_in_time'
+    return _world_feature_row(as_of), 'revised_observation_fallback'
+
+
 def _matrix_from_feature_maps(feature_maps: Iterable[dict]) -> tuple[list[str], list[list[float]]]:
     maps = list(feature_maps)
     names = sorted({key for item in maps for key in item.keys()})
@@ -155,7 +200,7 @@ def build_monthly_feature_matrix(namespace: str, target: str, horizon: str):
     for month in sorted(series):
         base = series.get(month)
         future = series.get(month + relativedelta(months=horizon_months))
-        features = _world_feature_row(month)
+        features, source_mode = _historical_feature_row(month)
         if features:
             latest_feature_map = features
         if base in (None, 0) or future is None or not features:
@@ -166,6 +211,7 @@ def build_monthly_feature_matrix(namespace: str, target: str, horizon: str):
             'target_value': _target_value(base, future, target),
             'base_value': base,
             'future_value': future,
+            'feature_source_mode': source_mode,
         })
 
     if not rows:
@@ -198,6 +244,10 @@ def build_monthly_feature_matrix(namespace: str, target: str, horizon: str):
             'prediction_kind': _prediction_kind(target),
             'unit': _unit(target),
             'horizon_months': horizon_months,
+            'feature_source_modes': sorted({
+                row.get('feature_source_mode', 'unknown')
+                for row in rows
+            }),
         },
     }
 
@@ -262,17 +312,76 @@ def walk_forward_validate(rows, *, min_train: int = 36) -> dict:
             'rows': [],
             'warnings': ['walk-forward 検証に必要なサンプルが不足しています。'],
         }
+    rows = sorted(rows, key=lambda row: row['as_of_date'])
     validation_rows = []
-    for idx in range(min_train, len(rows)):
-        train_values = [row['target_value'] for row in rows[:idx]]
-        actual = rows[idx]['target_value']
-        prediction = mean(train_values[-min_train:])
-        validation_rows.append({
-            'as_of_date': rows[idx]['as_of_date'].isoformat(),
-            'prediction': prediction,
-            'actual': actual,
-            'error': actual - prediction,
-        })
+    warnings = []
+    try:
+        import lightgbm as lgb
+        import numpy as np
+    except ImportError as exc:
+        warnings.append(
+            f'LightGBM がないため、直近平均の参考検証に切り替えました: {exc}'
+        )
+        for idx in range(min_train, len(rows)):
+            train_values = [row['target_value'] for row in rows[:idx]]
+            actual = rows[idx]['target_value']
+            prediction = mean(train_values[-min_train:])
+            validation_rows.append({
+                'as_of_date': rows[idx]['as_of_date'].isoformat(),
+                'prediction': prediction,
+                'actual': actual,
+                'error': actual - prediction,
+                'training_end': rows[idx - 1]['as_of_date'].isoformat(),
+                'training_samples': idx,
+                'model_type': 'rolling_mean_fallback',
+            })
+        method = 'rolling_mean_fallback'
+    else:
+        params = {
+            'objective': 'regression',
+            'metric': 'mae',
+            'learning_rate': 0.05,
+            'num_leaves': 12,
+            'max_depth': 4,
+            'min_data_in_leaf': 6,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.9,
+            'bagging_freq': 3,
+            'lambda_l2': 1.0,
+            'verbose': -1,
+            'seed': 42,
+        }
+        for idx in range(min_train, len(rows)):
+            train_rows = rows[:idx]
+            x_train = np.array([row['x'] for row in train_rows], dtype='float64')
+            y_train = np.array(
+                [row['target_value'] for row in train_rows],
+                dtype='float64',
+            )
+            train_set = lgb.Dataset(x_train, label=y_train, free_raw_data=True)
+            booster = lgb.train(
+                params,
+                train_set,
+                num_boost_round=80,
+                callbacks=[lgb.log_evaluation(0)],
+            )
+            actual = rows[idx]['target_value']
+            prediction = float(
+                booster.predict(
+                    np.array([rows[idx]['x']], dtype='float64'),
+                    num_iteration=booster.best_iteration,
+                )[0]
+            )
+            validation_rows.append({
+                'as_of_date': rows[idx]['as_of_date'].isoformat(),
+                'prediction': prediction,
+                'actual': actual,
+                'error': actual - prediction,
+                'training_end': rows[idx - 1]['as_of_date'].isoformat(),
+                'training_samples': idx,
+                'model_type': 'lightgbm_refit',
+            })
+        method = 'lightgbm_refit_walk_forward'
     abs_errors = [abs(row['error']) for row in validation_rows]
     squared_errors = [row['error'] ** 2 for row in validation_rows]
     direction_hits = [
@@ -290,9 +399,11 @@ def walk_forward_validate(rows, *, min_train: int = 36) -> dict:
             'direction_accuracy': (
                 len(direction_hits) / sample_count if sample_count else None
             ),
+            'model_refit_count': sample_count if method == 'lightgbm_refit_walk_forward' else 0,
+            'validation_method': method,
         },
         'rows': validation_rows,
-        'warnings': [],
+        'warnings': warnings,
     }
 
 

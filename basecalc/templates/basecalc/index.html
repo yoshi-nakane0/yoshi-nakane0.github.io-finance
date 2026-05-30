@@ -59,6 +59,14 @@
                         <span>日足 <strong>{{ world_model.readiness_display.daily_bars }}本</strong></span>
                         <span>主要指標 <strong>{{ world_model.readiness_display.valid_major_indicators }}/6</strong></span>
                     </div>
+                    <div class="wm-status-strip" data-field="basecalc_status_rows">
+                        {% for row in basecalc_status_rows %}
+                        <span class="wm-status-pill status-{{ row.decision_level }}">
+                            {{ row.label }}は<strong>{{ row.age_display }}</strong>
+                            <small>{{ row.decision_label }} / fallback {{ row.fallback_display }}</small>
+                        </span>
+                        {% endfor %}
+                    </div>
                     {% if world_model.readiness.reason_codes %}
                     <div class="wm-readiness-panel__reasons">
                         {% for reason in world_model.readiness.warnings %}
@@ -214,13 +222,13 @@
             <div class="price-display compact-price-display">
                 <div class="price-display__head">
                     <div>
-                        <span class="price-label">日経先物 現在値</span>
+                        <span class="price-label">日経先物 最新取得値</span>
                         <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
                     </div>
                     <div class="last-updated" data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</div>
                 </div>
                 <form method="get" action="" class="manual-price-form">
-                    <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 現在値" data-field="price_param">
+                    <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
                     <input type="hidden" name="erp_method" value="{{ erp_method }}">
                     {% if erp_growth_input %}
                     <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
@@ -253,6 +261,17 @@
                     </svg>
                 </summary>
                 <div class="accordion-content">
+                <div class="data-list status-data-list">
+                    {% for row in basecalc_status_rows %}
+                    <div class="data-row status-row status-{{ row.decision_level }}">
+                        <div class="label-group">
+                            <span class="label-main">{{ row.label }}</span>
+                            <span class="label-sub">{{ row.source }}</span>
+                        </div>
+                        <span class="data-value">{{ row.age_display }} / {{ row.decision_label }} / fallback {{ row.fallback_display }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
                 <div class="summary-grid quality-grid">
                     <div class="metric-box">
                         <label>Source</label>
@@ -565,7 +584,7 @@
                             <rect x="4" y="11" width="16" height="10" rx="2"></rect>
                         </svg>
                     </div>
-                    <div class="card-title">補助材料</div>
+                    <div class="card-title">参考：バリュエーション</div>
                     <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"></path>
                     </svg>
@@ -628,7 +647,7 @@
                         </div>
                         <div class="data-row">
                             <div class="label-group">
-                                <span class="label-main">Forward PER</span>
+                                <span class="label-main">参考 PER</span>
                             </div>
                             <span class="data-value">{{ data.forward_per|default:"" }}x</span>
                         </div>

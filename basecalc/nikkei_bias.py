@@ -28,7 +28,7 @@ MOF_JGB10Y_CSV_URL = (
 DEFAULT_NIKKEI_PER_DATA_URL = (
     "https://raw.githubusercontent.com/"
     "yoshi-nakane0/yoshi-nakane0.github.io-finance/"
-    "codex/nikkei-per-data/basecalc/data/nikkei_per.json"
+    "main/basecalc/data/nikkei_per.json"
 )
 NIKKEI_PER_DATA_PATH = os.path.join(
     os.path.dirname(__file__),

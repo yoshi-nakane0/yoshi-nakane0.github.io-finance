@@ -7,6 +7,13 @@ from .outcomes import (
 )
 from .persistence import export_basecalc_history
 from .market_context import get_market_context_snapshot
+from .status import (
+    external_market_status_entry,
+    jgb_status_entry,
+    per_status_entry,
+    price_status_entry,
+    write_basecalc_status,
+)
 from .views import (
     CACHE_KEY_DIVIDEND_INDEX,
     CACHE_KEY_FWD,
@@ -58,6 +65,27 @@ def refresh_basecalc_data(
         )
         market_context = get_market_context_snapshot()
         world_model = build_world_model(price or 0, futures_snapshot, market_context)
+        write_basecalc_status(
+            {
+                "price_data": price_status_entry(
+                    futures_snapshot,
+                    world_model.get("readiness_level"),
+                ),
+                "per": per_status_entry(
+                    {
+                        "index_based": forward_per,
+                        "dividend_yield_index_based": dividend_yield_index_percent,
+                    },
+                    success=forward_per is not None
+                    or dividend_yield_index_percent is not None,
+                ),
+                "jgb": jgb_status_entry(
+                    jgb10y_yield_percent,
+                    success=jgb10y_yield_percent is not None,
+                ),
+                "external_market": external_market_status_entry(market_context),
+            }
+        )
         prediction = save_prediction(world_model) if save else None
         outcomes_created = evaluate_due_predictions()
         pruned_predictions = prune_prediction_history()

@@ -106,6 +106,47 @@ class Observation(models.Model):
         )
 
 
+class VintageObservation(models.Model):
+    """取得時点ごとの経済統計値。
+
+    FRED/ALFRED の realtime_start/realtime_end を保存し、後から
+    「当時見えていた値」で検証できるようにする。
+    """
+
+    indicator = models.ForeignKey(
+        Indicator,
+        on_delete=models.CASCADE,
+        related_name='vintage_observations',
+    )
+    observation_date = models.DateField()
+    realtime_start = models.DateField()
+    realtime_end = models.DateField()
+    value = models.FloatField()
+    collected_at = models.DateTimeField()
+    source = models.CharField(max_length=32, default='fred')
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['indicator', 'observation_date', '-realtime_start']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['indicator', 'observation_date', 'realtime_start', 'realtime_end'],
+                name='uq_vintage_indicator_date_realtime',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['indicator', 'observation_date', '-realtime_start']),
+            models.Index(fields=['indicator', 'realtime_start']),
+        ]
+
+    def __str__(self):
+        return (
+            f'{self.indicator.fred_series_id} {self.observation_date} '
+            f'vintage {self.realtime_start}: {self.value}'
+        )
+
+
 class RegimeSnapshot(models.Model):
     """マクロレジームの月次スナップショット"""
 
@@ -155,6 +196,42 @@ class RegimeSnapshot(models.Model):
             f'{self.snapshot_date}: '
             f'{self.regime_label} × {self.inflation_flag}'
         )
+
+
+class MacroConclusionSnapshot(models.Model):
+    """月次レポート用の結論・差分・論点マッピングを保存する。"""
+
+    as_of_date = models.DateField(unique=True)
+    regime_snapshot = models.ForeignKey(
+        RegimeSnapshot,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='macro_conclusions',
+    )
+    previous_snapshot_date = models.DateField(null=True, blank=True)
+    current_view = models.TextField(blank=True)
+    previous_change = models.TextField(blank=True)
+    base_scenario_3m = models.TextField(blank=True)
+    upside_risk = models.TextField(blank=True)
+    downside_risk = models.TextField(blank=True)
+    watch_events = models.JSONField(default=list, blank=True)
+    model_reliability = models.TextField(blank=True)
+    driver_changes = models.JSONField(default=list, blank=True)
+    topic_mapping = models.JSONField(default=list, blank=True)
+    reliability_score = models.FloatField(default=0.0)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-as_of_date']
+        indexes = [
+            models.Index(fields=['-as_of_date']),
+        ]
+
+    def __str__(self):
+        return f'{self.as_of_date}: macro conclusion'
 
 
 class PriceObservation(models.Model):

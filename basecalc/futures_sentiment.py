@@ -19,7 +19,7 @@ YAHOO_CHART_URLS = (
 NIKKEI_FUTURES_SYMBOL = "NIY=F"
 STOOQ_QUOTE_URL = "https://stooq.com/q/l/"
 STOOQ_FALLBACK_SYMBOLS = ("nk.f", "^nkx")
-YAHOO_DAILY_CONFIG = ("6mo", "1d", "1d")
+YAHOO_DAILY_CONFIG = ("5y", "1d", "1d")
 
 
 def _to_float(value):

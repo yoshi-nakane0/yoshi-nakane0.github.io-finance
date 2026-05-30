@@ -15,7 +15,7 @@ from django.utils import timezone
 from .anchor_snapshot import load_anchor_snapshot
 from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
-from .futures_sentiment import calculate_futures_sentiment
+from .futures_sentiment import YAHOO_DAILY_CONFIG, calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock
 from .backtesting import run_basecalc_backtest
@@ -34,6 +34,7 @@ from .outcomes import (
 from .persistence import export_basecalc_history, import_basecalc_history
 from .readiness import evaluate_world_model_readiness
 from .similarity import find_similar_cases
+from .status import status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
@@ -662,6 +663,36 @@ class BasecalcWorldModelV2SupportTests(TestCase):
 
 
 class BasecalcReliabilitySpecTests(TestCase):
+    def test_yahoo_daily_history_fetch_uses_five_year_range(self):
+        self.assertEqual(YAHOO_DAILY_CONFIG, ('5y', '1d', '1d'))
+
+    def test_status_rows_show_age_fallback_and_decision(self):
+        rows = status_display_rows(
+            {
+                'price_data': {
+                    'age_minutes': 12,
+                    'source': 'yahoo:NIY=F',
+                    'fallback_used': False,
+                    'decision_level': 'ready',
+                    'decision_label': '判定可能',
+                },
+                'per': {
+                    'age_minutes': 1440,
+                    'age_days': 3,
+                    'source': 'nikkei',
+                    'fallback_used': False,
+                    'decision_level': 'limited',
+                    'decision_label': '参考',
+                },
+            }
+        )
+
+        self.assertEqual(rows[0]['age_display'], '12分前')
+        self.assertEqual(rows[0]['fallback_display'], 'なし')
+        self.assertEqual(rows[0]['decision_label'], '判定可能')
+        self.assertEqual(rows[1]['age_display'], '3日前')
+        self.assertEqual(rows[1]['decision_label'], '参考')
+
     def test_good_yahoo_niy_snapshot_is_ready(self):
         snapshot = _ready_snapshot(80)
         data_quality = evaluate_snapshot_quality(snapshot)

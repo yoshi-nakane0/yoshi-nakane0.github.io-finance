@@ -33,6 +33,7 @@ from .outcomes import (
     state_performance_summary,
 )
 from .serializers import serialize_snapshot
+from .status import load_basecalc_status, status_display_rows
 from .world_model import build_world_model
 
 CACHE_KEY_FWD = "nikkei_forward_per"
@@ -283,6 +284,7 @@ def build_context(request, force_update=False):
 
     futures_snapshot = attach_saved_daily_bars(futures_snapshot)
     world_model = build_world_model(price, futures_snapshot, market_context)
+    basecalc_status = load_basecalc_status()
     data["world_model"] = world_model
     data.update(world_model)
     performance = performance_summary("1d")
@@ -298,6 +300,8 @@ def build_context(request, force_update=False):
         "world_model": world_model,
         "market_shock": build_market_shock_context(),
         "market_context": world_model.get("market_context") or {},
+        "basecalc_status": basecalc_status,
+        "basecalc_status_rows": status_display_rows(basecalc_status, world_model),
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
         "updated": force_update,

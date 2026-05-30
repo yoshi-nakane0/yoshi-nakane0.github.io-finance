@@ -24,7 +24,11 @@ from . import (
     naaim_client,
     price_action_client,
 )
-from .fred_client import FredApiError, fetch_observations as fetch_fred_observations
+from .fred_client import (
+    FredApiError,
+    fetch_observations as fetch_fred_observations,
+    fetch_observations_with_vintage as fetch_fred_observations_with_vintage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +195,65 @@ def _filter_valid_observations(
     return valid, skipped
 
 
+def _parse_realtime_date(value: Optional[str], fallback: date) -> date:
+    if not value:
+        return fallback
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return fallback
+
+
+def _save_vintage_observations(
+    indicator: Indicator,
+    vintage_rows: List[Dict],
+    valid_values: Dict[date, float],
+) -> int:
+    """FRED の realtime 情報を point-in-time 検証用に保存する。"""
+    if not vintage_rows:
+        return 0
+    from ..models import VintageObservation
+
+    now = timezone.now()
+    rows = []
+    for item in vintage_rows:
+        obs_date = item.get('date')
+        if obs_date not in valid_values:
+            continue
+        realtime_start = _parse_realtime_date(
+            item.get('realtime_start'),
+            now.date(),
+        )
+        realtime_end = _parse_realtime_date(
+            item.get('realtime_end'),
+            realtime_start,
+        )
+        rows.append(
+            VintageObservation(
+                indicator=indicator,
+                observation_date=obs_date,
+                realtime_start=realtime_start,
+                realtime_end=realtime_end,
+                value=valid_values[obs_date],
+                collected_at=now,
+                source='fred',
+                metadata={
+                    'sync_mode': 'initial_or_incremental',
+                    'source_series_id': indicator.fred_series_id,
+                },
+            )
+        )
+    if not rows:
+        return 0
+    with transaction.atomic():
+        VintageObservation.objects.bulk_create(
+            rows,
+            batch_size=500,
+            ignore_conflicts=True,
+        )
+    return len(rows)
+
+
 def _resolve_fetch_start(
     indicator: Indicator,
     today: date,
@@ -275,8 +338,18 @@ def sync_indicator(
         force_full_history=force_full_history,
     )
 
-    raw_new = _fetch_for_source(indicator, start_date, today)
+    vintage_rows = []
+    if getattr(indicator, 'source', 'fred') == 'fred':
+        vintage_rows = fetch_fred_observations_with_vintage(
+            indicator.fred_series_id,
+            observation_start=start_date,
+            observation_end=today,
+        )
+        raw_new = [(row['date'], row['value']) for row in vintage_rows]
+    else:
+        raw_new = _fetch_for_source(indicator, start_date, today)
     raw_new_valid, skipped_new = _filter_valid_observations(indicator, raw_new)
+    valid_value_map = {d: v for d, v in raw_new_valid}
 
     existing = _load_existing_observations(indicator)
     merged: Dict[date, float] = {d: o.value for d, o in existing.items()}
@@ -329,6 +402,11 @@ def sync_indicator(
             )
         if creates:
             Observation.objects.bulk_create(creates, batch_size=500)
+    vintage_created = _save_vintage_observations(
+        indicator,
+        vintage_rows,
+        valid_value_map,
+    )
 
     return {
         'series_id': indicator.fred_series_id,
@@ -337,6 +415,7 @@ def sync_indicator(
         'skipped_invalid': skipped_new,
         'updated': len(updates),
         'created': len(creates),
+        'vintage_created': vintage_created,
         'stored': len(new_rows),
         'latest_date': new_rows[-1].observation_date if new_rows else None,
         'mode': 'initial' if is_initial else 'incremental',

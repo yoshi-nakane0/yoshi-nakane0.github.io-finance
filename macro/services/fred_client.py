@@ -32,7 +32,28 @@ def get_api_key() -> Optional[str]:
     return key or None
 
 
-def fetch_observations(
+def _parse_observations_payload(data):
+    observations = []
+    for raw in data.get('observations', []):
+        value_text = (raw.get('value') or '').strip()
+        date_text = (raw.get('date') or '').strip()
+        if not value_text or value_text == '.' or not date_text:
+            continue
+        try:
+            obs_date = datetime.strptime(date_text, '%Y-%m-%d').date()
+            obs_value = float(value_text)
+        except ValueError:
+            continue
+        observations.append({
+            'date': obs_date,
+            'value': obs_value,
+            'realtime_start': raw.get('realtime_start'),
+            'realtime_end': raw.get('realtime_end'),
+        })
+    return observations
+
+
+def fetch_observations_with_vintage(
     series_id: str,
     observation_start: Optional[date] = None,
     observation_end: Optional[date] = None,
@@ -40,7 +61,7 @@ def fetch_observations(
     timeout: int = DEFAULT_TIMEOUT,
     retries: int = DEFAULT_RETRY,
 ):
-    """指定系列の観測値を取得し (date, value) のタプル列で返す。
+    """指定系列の観測値と realtime 情報を取得する。
 
     値が "." (FRED の欠損表記) の行はスキップする。
     取得失敗時は FredApiError を投げる。
@@ -70,19 +91,7 @@ def fetch_observations(
             )
             response.raise_for_status()
             data = response.json()
-            observations = []
-            for raw in data.get('observations', []):
-                value_text = (raw.get('value') or '').strip()
-                date_text = (raw.get('date') or '').strip()
-                if not value_text or value_text == '.' or not date_text:
-                    continue
-                try:
-                    obs_date = datetime.strptime(date_text, '%Y-%m-%d').date()
-                    obs_value = float(value_text)
-                except ValueError:
-                    continue
-                observations.append((obs_date, obs_value))
-            return observations
+            return _parse_observations_payload(data)
         except requests.RequestException as exc:
             last_error = exc
             logger.warning(
@@ -102,3 +111,23 @@ def fetch_observations(
     raise FredApiError(
         f"FRED fetch failed for {series_id}: {last_error}"
     )
+
+
+def fetch_observations(
+    series_id: str,
+    observation_start: Optional[date] = None,
+    observation_end: Optional[date] = None,
+    api_key: Optional[str] = None,
+    timeout: int = DEFAULT_TIMEOUT,
+    retries: int = DEFAULT_RETRY,
+):
+    """指定系列の観測値を取得し (date, value) のタプル列で返す。"""
+    observations = fetch_observations_with_vintage(
+        series_id,
+        observation_start=observation_start,
+        observation_end=observation_end,
+        api_key=api_key,
+        timeout=timeout,
+        retries=retries,
+    )
+    return [(row['date'], row['value']) for row in observations]

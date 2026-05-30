@@ -204,13 +204,16 @@ def precompute_dashboard_payload() -> dict:
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
+        build_macro_conclusion_context,
         build_forecast_model_context,
         build_model_validation_context,
         build_monthly_model_status,
         build_raw_archive_context,
+        build_vintage_status_context,
         build_world_state_context,
         build_world_model_operations_context,
         build_similar_periods,
+        load_regime_probability_model,
     )
     from .data_sync import get_latest_observation_date
     from .scenario import build_scenario_analysis
@@ -231,6 +234,9 @@ def precompute_dashboard_payload() -> dict:
         'model_validation': build_model_validation_context(),
         'world_model_operations': build_world_model_operations_context(),
         'raw_archive_status': build_raw_archive_context(),
+        'macro_conclusion': build_macro_conclusion_context(),
+        'vintage_status': build_vintage_status_context(),
+        'regime_probability_model': load_regime_probability_model(),
         'scenario_analysis': build_scenario_analysis(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }

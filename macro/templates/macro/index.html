@@ -29,72 +29,78 @@
                 </ul>
             {% endif %}
 
-            <section class="macro-section macro-world-conclusion">
+            <section class="macro-section macro-world-conclusion macro-monthly-conclusion">
                 <div class="macro-section-headline">
-                    <h2 class="macro-section-title macro-section-title--brain">World Model の結論</h2>
-                    <span class="macro-model-kind-badge macro-model-kind-badge--validated">3つの見方</span>
+                    <h2 class="macro-section-title macro-section-title--brain">今月のマクロ結論</h2>
+                    <span class="macro-model-kind-badge macro-model-kind-badge--validated">月次レポート</span>
                 </div>
-                <div class="macro-conclusion-grid">
-                    <article class="macro-conclusion-card macro-conclusion-card--current">
-                        <span class="macro-conclusion-label">現在の景気の状況</span>
-                        <strong>{{ regime_plain_judgment }}</strong>
-                        <p>{{ regime_plain_detail }}</p>
-                        <div class="macro-conclusion-meta">
-                            <span>景気評価 {{ regime_condition_pct_display }}</span>
-                            <span>データ鮮度 {{ data_quality_pct }}%</span>
+                {% if macro_conclusion %}
+                    <article class="macro-report-card">
+                        <div class="macro-report-head">
+                            <strong>{{ macro_conclusion.current_view }}</strong>
+                            <span>基準日 {{ macro_conclusion.as_of_date }} / 信頼度 {{ macro_conclusion.reliability_score_display }}</span>
                         </div>
-                        <a href="#macro-current-state" class="macro-conclusion-link">現在地を見る</a>
-                    </article>
-                    <article class="macro-conclusion-card macro-conclusion-card--stress">
-                        <span class="macro-conclusion-label">市場ストレス、急落予測</span>
-                        <strong>{% if crash_alert and crash_alert.level_label %}{{ crash_alert.level_label }}{% else %}判定待ち{% endif %}</strong>
-                        <p>
-                            {% if crash_alert and crash_alert.total_score is not None %}
-                                市場ストレス {{ crash_alert.total_score }}/100
-                            {% else %}
-                                市場ストレスは未判定です
-                            {% endif %}
-                            {% if crash_probability_model %}
-                                / 急落確率 {{ crash_probability_model.current_probability_display }}
-                            {% endif %}
-                        </p>
-                        <div class="macro-conclusion-meta">
-                            {% if crash_alert %}
-                                <span>品質 {{ crash_alert.data_quality_pct }}%</span>
-                                <span>{{ crash_alert.validation_status }}</span>
-                            {% else %}
-                                <span>データ待ち</span>
-                            {% endif %}
+                        <div class="macro-report-grid">
+                            <div>
+                                <span class="macro-report-label">前回からの変化</span>
+                                <p>{{ macro_conclusion.previous_change }}</p>
+                            </div>
+                            <div>
+                                <span class="macro-report-label">今後3カ月のベースシナリオ</span>
+                                <p>{{ macro_conclusion.base_scenario_3m }}</p>
+                            </div>
+                            <div>
+                                <span class="macro-report-label">上振れリスク</span>
+                                <p>{{ macro_conclusion.upside_risk }}</p>
+                            </div>
+                            <div>
+                                <span class="macro-report-label">下振れリスク</span>
+                                <p>{{ macro_conclusion.downside_risk }}</p>
+                            </div>
+                            <div>
+                                <span class="macro-report-label">注目イベント</span>
+                                <div class="macro-report-tags">
+                                    {% for event in macro_conclusion.watch_events %}
+                                        <span>{{ event }}</span>
+                                    {% empty %}
+                                        <span>主要統計</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="macro-report-label">モデルの信頼度</span>
+                                <p>{{ macro_conclusion.model_reliability }}</p>
+                            </div>
                         </div>
-                        <a href="#macro-market-stress" class="macro-conclusion-link">ストレスを見る</a>
-                    </article>
-                    <article class="macro-conclusion-card macro-conclusion-card--forecast">
-                        <span class="macro-conclusion-label">未来予測</span>
-                        {% if lightgbm_prediction and lightgbm_prediction.horizons %}
-                            {% with h=lightgbm_prediction.horizons.0 %}
-                                <strong>{{ h.months }}ヶ月後 {{ h.predicted_return_display }}</strong>
-                                <p>主要指数リターン予測。検証誤差 {{ h.validation_mae_display }}</p>
-                            {% endwith %}
-                        {% elif forecast_models and forecast_models.rows %}
-                            {% with row=forecast_models.rows.0 %}
-                                <strong>{{ row.prediction_display }}</strong>
-                                <p>{{ row.target }} {{ row.horizon }} / MAE {{ row.mae_display }}</p>
-                            {% endwith %}
-                        {% else %}
-                            <strong>予測データ待ち</strong>
-                            <p>月次モデル更新後に表示されます。</p>
+                        {% if macro_conclusion.driver_changes %}
+                            <details class="macro-report-details">
+                                <summary>前回との差分要因</summary>
+                                <div class="macro-report-delta-list">
+                                    {% for row in macro_conclusion.driver_changes %}
+                                        <span>{{ row.label }} {{ row.direction }} {{ row.delta_display }}</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
                         {% endif %}
-                        <div class="macro-conclusion-meta">
-                            {% if monthly_model_status %}
-                                <span>{{ monthly_model_status.status_label }}</span>
-                                <span>学習 {{ monthly_model_status.latest_training_date }}</span>
-                            {% else %}
-                                <span>月次状態待ち</span>
-                            {% endif %}
-                        </div>
-                        <a href="#macro-future-forecast" class="macro-conclusion-link">予測を見る</a>
+                        {% if macro_conclusion.topic_mapping %}
+                            <details class="macro-report-details">
+                                <summary>外部見通しの論点マッピング</summary>
+                                <div class="macro-topic-map">
+                                    {% for row in macro_conclusion.topic_mapping %}
+                                        <div>
+                                            <span>{{ row.label }}</span>
+                                            <strong>{{ row.alignment }}</strong>
+                                            <small>{{ row.site_signal }} / {{ row.source_indicator }}</small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        {% endif %}
+                        <p class="macro-model-note">{{ macro_conclusion.rule_probability_note }}</p>
                     </article>
-                </div>
+                {% else %}
+                    <p class="macro-placeholder">データ更新後に、現状認識・差分・3カ月見通しを保存して表示します。</p>
+                {% endif %}
             </section>
 
             <section class="macro-regime-bar" id="macro-current-state">
@@ -172,9 +178,9 @@
                 </div>
                 {% if regime_probability_rows or risk_probability_rows %}
                     <details class="macro-regime-probability">
-                        <summary>景気分布（ルールスコア由来）と主要リスク</summary>
+                        <summary>景気分布（ルール一致度）と主要リスク</summary>
                         {% if regime_probability_rows %}
-                            <p class="macro-model-note">これは統計モデルの的中確率ではなく、現在の指標が各局面にどれだけ近いかを示す参考分布です。</p>
+                            <p class="macro-model-note">これは「景気後退確率30%」のような統計的な予測確率ではなく、現在の指標が各局面にどれだけ近いかを示すルール一致度です。</p>
                             <span class="macro-model-kind-badge macro-model-kind-badge--rule">ルール由来</span>
                             <div class="macro-probability-bars">
                                 {% for row in regime_probability_rows %}
@@ -189,7 +195,7 @@
                             </div>
                         {% endif %}
                         {% if risk_probability_rows %}
-                            <p class="macro-model-note">主要リスクスコア（ルール由来）</p>
+                            <p class="macro-model-note">主要リスクスコア（ルール一致度）</p>
                             <div class="macro-risk-probabilities">
                                 {% for row in risk_probability_rows %}
                                     <div class="macro-risk-probability">
@@ -197,6 +203,27 @@
                                         <strong>{{ row.display }}</strong>
                                     </div>
                                 {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if regime_probability_model %}
+                            <div class="macro-verified-probability">
+                                <span class="macro-model-kind-badge macro-model-kind-badge--validated">検証済み確率</span>
+                                <p>検証済み確率として扱う場合は、下の検証指標も同時に確認してください。</p>
+                                <div class="macro-probability-validation">
+                                    <span>サンプル {{ regime_probability_model.sample_count }}件</span>
+                                    <span>イベント {{ regime_probability_model.event_count }}件</span>
+                                    <span>ROC-AUC {{ regime_probability_model.roc_auc_display }}</span>
+                                    <span>PR-AUC {{ regime_probability_model.pr_auc_display }}</span>
+                                    <span>Brier {{ regime_probability_model.brier_score_display }}</span>
+                                    <span>イベント率目安 {{ regime_probability_model.event_interval_display }}</span>
+                                </div>
+                                {% if regime_probability_model.warnings %}
+                                    <ul class="macro-probability-warning-list">
+                                        {% for warning in regime_probability_model.warnings %}
+                                            <li>{{ warning }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </details>
@@ -328,6 +355,12 @@
                             <span class="macro-reliability-label">前回更新</span>
                             <span class="macro-reliability-value">{{ macro_reliability.update_status_label }}</span>
                         </div>
+                        {% if vintage_status %}
+                            <div class="macro-reliability-item">
+                                <span class="macro-reliability-label">ビンテージ保存</span>
+                                <span class="macro-reliability-value">{{ vintage_status.status_label }} / {{ vintage_status.total_count }}件</span>
+                            </div>
+                        {% endif %}
                         <div class="macro-reliability-item">
                             <span class="macro-reliability-label">更新完了時刻</span>
                             <span class="macro-reliability-value">{{ macro_reliability.last_update_finished_at }}</span>
@@ -373,6 +406,16 @@
                                     <p class="macro-reliability-empty">未取得・古い指標はありません。</p>
                                 {% endif %}
                             </div>
+                            {% if vintage_status %}
+                                <div>
+                                    <span class="macro-reliability-detail-title">ビンテージ管理</span>
+                                    <p class="macro-reliability-empty">{{ vintage_status.note }}</p>
+                                    <ul class="macro-reliability-detail-list">
+                                        <li>系列 {{ vintage_status.series_count }}件</li>
+                                        <li>最終保存 {{ vintage_status.latest_collected_at }}</li>
+                                    </ul>
+                                </div>
+                            {% endif %}
                         </div>
                     </details>
                 </section>
@@ -528,10 +571,12 @@
                                 <span>{{ row.model_version }}</span>
                                 <span>{{ row.target }} {{ row.horizon }}</span>
                                 <span>件数 {{ row.sample_count }}</span>
+                                <span>イベント {{ row.event_count|default_if_none:"—" }}</span>
                                 <span>MAE {{ row.mae_display }}</span>
                                 <span>RMSE {{ row.rmse_display }}</span>
                                 <span>方向 {{ row.direction_accuracy_display }}</span>
                                 <span>ROC {{ row.roc_auc_display }} / PR {{ row.pr_auc_display }} / Brier {{ row.brier_score_display }}</span>
+                                <span>{{ row.validation_method }}</span>
                             </div>
                         {% endfor %}
                     </div>

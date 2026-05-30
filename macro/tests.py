@@ -1085,10 +1085,10 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'World Model の結論')
-        self.assertContains(r, '現在の景気の状況')
-        self.assertContains(r, '市場ストレス、急落予測')
-        self.assertContains(r, '未来予測')
+        self.assertContains(r, '今月のマクロ結論')
+        self.assertContains(r, '前回からの変化')
+        self.assertContains(r, '今後3カ月のベースシナリオ')
+        self.assertContains(r, 'モデルの信頼度')
         self.assertContains(r, '判定強度')
         self.assertContains(r, 'データ鮮度')
         self.assertContains(r, '一目で見る結論')
@@ -1327,7 +1327,8 @@ class MacroUrlsTest(TestCase):
             password='test-password',
         )
         self.client.force_login(user)
-        r = self.client.post(reverse('macro:refresh'))
+        with mock.patch('macro.views.get_api_key', return_value=None):
+            r = self.client.post(reverse('macro:refresh'))
         self.assertEqual(r.status_code, 302)
 
     def test_refresh_button_is_hidden_for_anonymous_users(self):

@@ -789,4 +789,6 @@ def compute_current_regime() -> Optional[RegimeSnapshot]:
                 'risk_probabilities': assessment['risk_probabilities'],
             },
         )
+    from .macro_conclusion import save_macro_conclusion
+    save_macro_conclusion(snapshot)
     return snapshot
