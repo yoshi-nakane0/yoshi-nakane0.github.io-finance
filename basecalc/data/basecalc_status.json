@@ -1,8 +1,8 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-02T01:37:02.449667+00:00",
+  "updated_at": "2026-06-02T06:57:56.437013+00:00",
   "price_data": {
-    "last_success_at": "2026-06-02T01:37:01.933602+00:00",
+    "last_success_at": "2026-06-02T06:57:55.918446+00:00",
     "last_failed_at": null,
     "source": "stooq:^NKX",
     "age_minutes": 0,
@@ -14,7 +14,7 @@
     "last_success_at": "2026-06-01T14:49:04+00:00",
     "last_failed_at": null,
     "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=per",
-    "age_minutes": 647,
+    "age_minutes": 968,
     "age_days": 1,
     "as_of_date": "2026.06.01",
     "fallback_used": false,
@@ -22,7 +22,7 @@
     "decision_label": "参考"
   },
   "jgb": {
-    "last_success_at": "2026-06-02T01:37:01.266718+00:00",
+    "last_success_at": "2026-06-02T06:57:56.046524+00:00",
     "last_failed_at": null,
     "source": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv",
     "age_minutes": 0,
@@ -32,9 +32,9 @@
   },
   "external_market": {
     "last_success_at": "2026-06-01T18:17:08.809317+00:00",
-    "last_failed_at": "2026-06-02T01:37:02.449659+00:00",
+    "last_failed_at": "2026-06-02T06:57:56.437005+00:00",
     "source": "yahoo",
-    "age_minutes": 439,
+    "age_minutes": 760,
     "fallback_used": false,
     "asset_count": 0,
     "decision_level": "blocked",
