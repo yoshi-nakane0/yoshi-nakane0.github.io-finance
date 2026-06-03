@@ -5,8 +5,8 @@
   "drawdown_threshold_pct": -10.0,
   "sample_count": 240,
   "event_count": 19,
-  "roc_auc": 0.6762,
-  "pr_auc": 0.1459,
+  "roc_auc": 0.6756,
+  "pr_auc": 0.1457,
   "thresholds": [
     {
       "threshold": 25,
@@ -63,17 +63,6 @@
   "calm_miss_count": 3,
   "note": "月次終値ベースの検証です。月中の最大下落は反映していません。",
   "rows": [
-    {
-      "month": "2006-05-01",
-      "score": 4,
-      "level": "provisional",
-      "level_label": "参考表示",
-      "data_quality_pct": 18,
-      "rule_agreement_pct": 100,
-      "event": false,
-      "max_drawdown_pct": 0.0087,
-      "lead_time_days": null
-    },
     {
       "month": "2006-06-01",
       "score": 4,
@@ -726,10 +715,10 @@
     {
       "month": "2011-05-01",
       "score": 12,
-      "level": "calm",
-      "level_label": "平常",
-      "data_quality_pct": 77,
-      "rule_agreement_pct": 98,
+      "level": "provisional",
+      "level_label": "参考表示",
+      "data_quality_pct": 22,
+      "rule_agreement_pct": 100,
       "event": false,
       "max_drawdown_pct": -9.3897,
       "lead_time_days": null
@@ -1627,7 +1616,7 @@
     },
     {
       "month": "2018-03-01",
-      "score": 25,
+      "score": 29,
       "level": "caution",
       "level_label": "注意",
       "data_quality_pct": 77,
@@ -2309,11 +2298,11 @@
     },
     {
       "month": "2023-05-01",
-      "score": 43,
+      "score": 39,
       "level": "caution",
       "level_label": "注意",
-      "data_quality_pct": 95,
-      "rule_agreement_pct": 55,
+      "data_quality_pct": 77,
+      "rule_agreement_pct": 68,
       "event": false,
       "max_drawdown_pct": 6.4727,
       "lead_time_days": null
@@ -2694,13 +2683,24 @@
     },
     {
       "month": "2026-04-01",
-      "score": 20,
+      "score": 19,
+      "level": "calm",
+      "level_label": "平常",
+      "data_quality_pct": 95,
+      "rule_agreement_pct": 89,
+      "event": false,
+      "max_drawdown_pct": 5.147,
+      "lead_time_days": null
+    },
+    {
+      "month": "2026-05-01",
+      "score": 19,
       "level": "calm",
       "level_label": "平常",
       "data_quality_pct": 100,
-      "rule_agreement_pct": 85,
+      "rule_agreement_pct": 83,
       "event": false,
-      "max_drawdown_pct": 3.6685,
+      "max_drawdown_pct": 0.3921,
       "lead_time_days": null
     }
   ]

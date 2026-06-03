@@ -1,5 +1,4 @@
 month,score,level,level_label,data_quality_pct,rule_agreement_pct,event,max_drawdown_pct,lead_time_days
-2006-05-01,4,provisional,参考表示,18,100,False,0.008659650459600616,
 2006-06-01,4,provisional,参考表示,18,100,False,0.5085878803453334,
 2006-07-01,4,provisional,参考表示,22,100,False,2.1274193115026496,
 2006-08-01,4,provisional,参考表示,22,100,False,2.4566297967782282,
@@ -59,7 +58,7 @@ month,score,level,level_label,data_quality_pct,rule_agreement_pct,event,max_draw
 2011-02-01,12,provisional,参考表示,22,100,False,-0.10473129391664504,
 2011-03-01,19,provisional,参考表示,22,78,False,-0.3914484947748402,
 2011-04-01,19,provisional,参考表示,22,78,False,-5.230964632185309,
-2011-05-01,12,calm,平常,77,98,False,-9.389677453779434,
+2011-05-01,12,provisional,参考表示,22,100,False,-9.389677453779434,
 2011-06-01,12,calm,平常,77,100,True,-14.32789924614669,90
 2011-07-01,29,caution,注意,77,87,True,-12.447765322124946,60
 2011-08-01,40,caution,注意,77,63,False,-7.176198808089655,
@@ -141,7 +140,7 @@ month,score,level,level_label,data_quality_pct,rule_agreement_pct,event,max_draw
 2017-12-01,17,calm,平常,77,87,False,-1.2245611334087048,
 2018-01-01,15,calm,平常,77,94,False,-6.478478991513814,
 2018-02-01,24,calm,平常,77,78,False,-2.6884498600556612,
-2018-03-01,25,caution,注意,77,70,False,0.2718774995368403,
+2018-03-01,29,caution,注意,77,70,False,0.2718774995368403,
 2018-04-01,22,calm,平常,77,84,False,2.160834185458363,
 2018-05-01,24,calm,平常,77,77,False,0.48424362676077315,
 2018-06-01,27,caution,注意,77,77,False,3.602155617289916,
@@ -203,7 +202,7 @@ month,score,level,level_label,data_quality_pct,rule_agreement_pct,event,max_draw
 2023-02-01,42,caution,注意,77,57,False,3.5051612577108933,
 2023-03-01,38,caution,注意,77,70,False,1.464234166248112,
 2023-04-01,35,caution,注意,77,68,False,0.24823473681929992,
-2023-05-01,43,caution,注意,95,55,False,6.472746490423457,
+2023-05-01,39,caution,注意,77,68,False,6.472746490423457,
 2023-06-01,37,caution,注意,95,59,False,-3.6475555435598572,
 2023-07-01,37,caution,注意,95,68,False,-8.611104904242199,
 2023-08-01,35,caution,注意,95,74,False,-6.962821967120206,
@@ -238,4 +237,5 @@ month,score,level,level_label,data_quality_pct,rule_agreement_pct,event,max_draw
 2026-01-01,17,calm,平常,95,89,False,-5.915953358539393,
 2026-02-01,24,calm,平常,95,82,False,-5.093269096857696,
 2026-03-01,34,caution,注意,95,81,False,10.423338582985755,
-2026-04-01,20,calm,平常,100,85,False,3.6684712299848306,
+2026-04-01,19,calm,平常,95,89,False,5.147035515724275,
+2026-05-01,19,calm,平常,100,83,False,0.3920777188144548,
