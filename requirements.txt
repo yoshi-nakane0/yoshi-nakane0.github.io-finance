@@ -1,5 +1,5 @@
 beautifulsoup4==4.14.3
-certifi==2026.4.22
+certifi==2026.5.20
 charset-normalizer==3.4.7
 Django==5.2.14
 gunicorn==26.0.0 # Vercelデプロイに必要
