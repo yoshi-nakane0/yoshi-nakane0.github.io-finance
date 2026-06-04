@@ -16,5 +16,5 @@ dependencies = [
   "requests==2.34.2",
   "urllib3==2.7.0",
   "whitenoise>=5.0",
-  "selenium>=4.0.0",
+  "selenium>=4.44.0",
 ]
