@@ -117,6 +117,7 @@ def refresh_basecalc_data(
             "exported": exported,
             "export_path": export_path if exported else None,
             "data_quality_score": world_model.get("data_quality_score"),
+            "readiness_level": world_model.get("readiness_level"),
             "source_status": world_model.get("source_status") or {},
         }
     finally:

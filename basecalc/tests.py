@@ -240,7 +240,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_futures_snapshot_last_good')['price'], 41100)
         self.assertEqual(MarketBar.objects.count(), 0)
 
-    def test_sync_nikkei_futures_daily_uses_225navi_and_creates_reference_snapshot(self):
+    def test_sync_nikkei_futures_daily_uses_225navi_and_creates_ready_snapshot(self):
         _create_market_bar_series(
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
@@ -283,7 +283,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
         self.assertEqual(latest_snapshot.price, 66670)
         self.assertEqual(latest_snapshot.source, '225navi')
-        self.assertEqual(latest_snapshot.readiness_level, 'limited')
+        self.assertEqual(latest_snapshot.readiness_level, 'ready')
         cache.clear()
 
     def test_sync_does_not_create_snapshot_from_old_csv_when_no_source_returns_rows(self):
@@ -379,7 +379,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
         self.assertEqual(latest_snapshot.source, '225navi')
         self.assertEqual(latest_snapshot.price, 67640)
-        self.assertEqual(latest_snapshot.readiness_level, 'limited')
+        self.assertEqual(latest_snapshot.readiness_level, 'ready')
         cache.clear()
 
     def test_sync_command_logs_source_attempts_and_snapshot_source(self):
@@ -679,7 +679,8 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertTrue(result['updated'])
         self.assertEqual(result['price'], 66670)
-        self.assertEqual(result['state_key'], 'limited_reference')
+        self.assertEqual(result['readiness_level'], 'ready')
+        self.assertNotEqual(result['state_key'], 'limited_reference')
         self.assertEqual(result['source_status']['source'], '225navi')
 
     def test_fresh_futures_cache_skips_external_refetch(self):
@@ -1103,14 +1104,14 @@ class BasecalcWorldModelV2SupportTests(TestCase):
 
 
 class BasecalcReliabilitySpecTests(TestCase):
-    def test_225navi_niy_snapshot_is_reference_quality(self):
+    def test_225navi_niy_snapshot_is_official_quality(self):
         snapshot = _ready_snapshot(80, source='225navi')
         snapshot['fallback_used'] = False
         data_quality = evaluate_snapshot_quality(snapshot)
 
         self.assertEqual(data_quality['source'], '225navi')
-        self.assertEqual(data_quality['score'], 74)
-        self.assertEqual(data_quality['level'], 'warning')
+        self.assertEqual(data_quality['score'], 96)
+        self.assertEqual(data_quality['level'], 'good')
 
     def test_status_rows_show_age_fallback_and_decision(self):
         rows = status_display_rows(

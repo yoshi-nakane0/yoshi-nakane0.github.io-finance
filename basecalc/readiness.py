@@ -19,6 +19,8 @@ MIN_INDICATOR_BARS = {
     "bollinger": 25,
 }
 
+CANONICAL_FUTURES_SOURCES = {"225navi", "cme_daily_bulletin", "yahoo"}
+
 
 def evaluate_world_model_readiness(
     *,
@@ -73,7 +75,7 @@ def evaluate_world_model_readiness(
     level = "blocked" if reason_codes else "ready"
     if level == "ready":
         ready_requirements = [
-            source_name in {"cme_daily_bulletin", "yahoo"},
+            source_name in CANONICAL_FUTURES_SOURCES,
             symbol_name == "NIY=F",
             quality_score >= 80,
             quality_level == "good",
@@ -174,7 +176,7 @@ def _limited_reason_codes(quality_score, fallback_used, source, symbol, bar_coun
         codes.append("quality_50_79")
     if fallback_used:
         codes.append("fallback_used")
-    if source not in {"cme_daily_bulletin", "yahoo"} and source != "unknown":
+    if source not in CANONICAL_FUTURES_SOURCES and source != "unknown":
         codes.append("non_canonical_source")
     if source == "stooq" or symbol == "NK.F":
         codes.append("futures_proxy")

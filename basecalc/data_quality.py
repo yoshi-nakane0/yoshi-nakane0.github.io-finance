@@ -83,14 +83,14 @@ def detect_snapshot_anomaly(snapshot: Optional[dict], previous_snapshot: Optiona
 def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     source = (source or "").lower()
     symbol = (symbol or "").lower()
+    if source == "225navi" and symbol == "niy=f":
+        return 96
     if source == "cme_daily_bulletin" and symbol == "niy=f":
         return 96
     if source == "yahoo" and symbol == "niy=f":
         return 96
     if source == "yahoo":
         return 88
-    if source == "225navi" and symbol == "niy=f":
-        return 74
     if source == "stooq" and symbol == "^nkx":
         return 58
     if source == "stooq":
