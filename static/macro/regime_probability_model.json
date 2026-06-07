@@ -1,6 +1,6 @@
 {
   "model_version": "regime_probability_v2_validated",
-  "evaluated_at": "2026-05-24",
+  "evaluated_at": "2026-06-03",
   "truth_source": "USREC",
   "target": "US recession probability",
   "horizon_months": 3,
@@ -13,14 +13,14 @@
   "metrics": {
     "roc_auc": 0.8952488687782806,
     "pr_auc": 0.5871836303074595,
-    "brier_score": 0.10132794109836059,
+    "brier_score": 0.10149178810024194,
     "calibration_bins": [
       {
         "lower": 0.0,
         "upper": 0.2,
         "count": 145,
         "event_count": 2,
-        "avg_probability": 0.07250583952485674,
+        "avg_probability": 0.07241179839709373,
         "event_rate": 0.013793103448275862,
         "smoothed_event_rate": 0.02040816326530612
       },
@@ -29,7 +29,7 @@
         "upper": 0.4,
         "count": 55,
         "event_count": 3,
-        "avg_probability": 0.3048864204241821,
+        "avg_probability": 0.3059394174041135,
         "event_rate": 0.05454545454545454,
         "smoothed_event_rate": 0.07017543859649122
       },
@@ -63,14 +63,6 @@
     ]
   },
   "rows": [
-    {
-      "month": "2006-05-01",
-      "probability": 0.06368126947609166,
-      "event": false,
-      "regime_label": "slowdown",
-      "rule_strength": 64,
-      "data_quality": 67
-    },
     {
       "month": "2006-06-01",
       "probability": 0.056418776887612994,
@@ -545,11 +537,11 @@
     },
     {
       "month": "2011-05-01",
-      "probability": 0.058889645190098705,
+      "probability": 0.061123802320592946,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
-      "data_quality": 89
+      "data_quality": 67
     },
     {
       "month": "2011-06-01",
@@ -1697,11 +1689,11 @@
     },
     {
       "month": "2023-05-01",
-      "probability": 0.3256237087194713,
+      "probability": 0.38353854261569875,
       "event": false,
       "regime_label": "slowdown",
-      "rule_strength": 73,
-      "data_quality": 100
+      "rule_strength": 72,
+      "data_quality": 89
     },
     {
       "month": "2023-06-01",
@@ -1977,19 +1969,27 @@
     },
     {
       "month": "2026-04-01",
-      "probability": 0.060009517417970636,
+      "probability": 0.0552801599709794,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 80,
-      "data_quality": 99
+      "data_quality": 100
     },
     {
       "month": "2026-05-01",
-      "probability": 0.060432140563962414,
+      "probability": 0.05339044826457166,
+      "event": false,
+      "regime_label": "recovery",
+      "rule_strength": 81,
+      "data_quality": 93
+    },
+    {
+      "month": "2026-06-01",
+      "probability": 0.059582198566342656,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 80,
-      "data_quality": 90
+      "data_quality": 67
     }
   ],
   "limitations": [

@@ -1,21 +1,21 @@
 {
   "model_version": "crash_probability_logistic_v1",
-  "trained_at": "2026-05-24",
+  "trained_at": "2026-06-03",
   "target": "GSPC",
   "horizon_days": 63,
   "drawdown_threshold_pct": -10.0,
   "target_mode": "daily_max_drawdown",
-  "daily_price_coverage_pct": 96.41,
+  "daily_price_coverage_pct": 96.38,
   "prediction_label": "今後63日相当でGSPCが-10%以上下落する推定確率",
-  "current_probability": 0.097222,
-  "current_raw_probability": 0.16043,
+  "current_probability": 0.104651,
+  "current_raw_probability": 0.166732,
   "current_features": {
-    "market_stress_score": 16,
-    "forward_risk_score": 19,
-    "volatility_sentiment_score": 25,
+    "market_stress_score": 19,
+    "forward_risk_score": 23,
+    "volatility_sentiment_score": 36,
     "credit_liquidity_score": 6,
     "macro_cycle_score": 38,
-    "price_action_score": 1,
+    "price_action_score": 0.0,
     "data_quality_pct": 100,
     "rule_agreement_pct": 83
   },
@@ -30,41 +30,41 @@
     0.16668319985163604
   ],
   "validation": {
-    "roc_auc": 0.547068,
-    "pr_auc": 0.111472,
-    "brier_score": 0.090936,
+    "roc_auc": 0.513889,
+    "pr_auc": 0.099646,
+    "brier_score": 0.091769,
     "thresholds": [
       {
         "threshold": 0.1,
-        "precision": 0.12,
-        "recall": 0.5,
-        "f1": 0.193548,
-        "false_positive_rate": 0.407407,
-        "tp": 6,
-        "fp": 44,
-        "tn": 64,
-        "fn": 6
+        "precision": 0.1,
+        "recall": 1.0,
+        "f1": 0.181818,
+        "false_positive_rate": 1.0,
+        "tp": 12,
+        "fp": 108,
+        "tn": 0,
+        "fn": 0
       },
       {
         "threshold": 0.2,
-        "precision": 0.125,
-        "recall": 0.083333,
-        "f1": 0.1,
-        "false_positive_rate": 0.064815,
-        "tp": 1,
-        "fp": 7,
-        "tn": 101,
-        "fn": 11
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": null,
+        "false_positive_rate": 0.027778,
+        "tp": 0,
+        "fp": 3,
+        "tn": 105,
+        "fn": 12
       },
       {
         "threshold": 0.3,
-        "precision": null,
+        "precision": 0.0,
         "recall": 0.0,
         "f1": null,
-        "false_positive_rate": 0.0,
+        "false_positive_rate": 0.009259,
         "tp": 0,
-        "fp": 0,
-        "tn": 108,
+        "fp": 1,
+        "tn": 107,
         "fn": 12
       },
       {
@@ -83,19 +83,19 @@
       {
         "lower": 0.0,
         "upper": 0.2,
-        "count": 112,
-        "event_count": 11,
-        "avg_probability": 0.1119,
-        "event_rate": 0.098214,
-        "smoothed_event_rate": 0.105263
+        "count": 117,
+        "event_count": 12,
+        "avg_probability": 0.115427,
+        "event_rate": 0.102564,
+        "smoothed_event_rate": 0.109244
       },
       {
         "lower": 0.2,
         "upper": 0.4,
-        "count": 8,
-        "event_count": 1,
-        "avg_probability": 0.25,
-        "event_rate": 0.125,
+        "count": 3,
+        "event_count": 0,
+        "avg_probability": 0.277778,
+        "event_rate": 0.0,
         "smoothed_event_rate": 0.2
       },
       {
@@ -126,43 +126,43 @@
         "smoothed_event_rate": null
       }
     ],
-    "raw_roc_auc": 0.492284,
-    "raw_pr_auc": 0.129158,
-    "raw_brier_score": 0.115496,
+    "raw_roc_auc": 0.507716,
+    "raw_pr_auc": 0.113224,
+    "raw_brier_score": 0.111816,
     "raw_calibration_bins": [
       {
         "lower": 0.0,
         "upper": 0.2,
-        "count": 70,
-        "event_count": 6,
-        "avg_probability": 0.12623,
-        "event_rate": 0.085714,
-        "smoothed_event_rate": 0.097222
+        "count": 84,
+        "event_count": 8,
+        "avg_probability": 0.117837,
+        "event_rate": 0.095238,
+        "smoothed_event_rate": 0.104651
       },
       {
         "lower": 0.2,
         "upper": 0.4,
-        "count": 42,
-        "event_count": 5,
-        "avg_probability": 0.262543,
-        "event_rate": 0.119048,
-        "smoothed_event_rate": 0.136364
+        "count": 33,
+        "event_count": 4,
+        "avg_probability": 0.290969,
+        "event_rate": 0.121212,
+        "smoothed_event_rate": 0.142857
       },
       {
         "lower": 0.4,
         "upper": 0.6,
-        "count": 6,
-        "event_count": 1,
-        "avg_probability": 0.421732,
-        "event_rate": 0.166667,
-        "smoothed_event_rate": 0.25
+        "count": 1,
+        "event_count": 0,
+        "avg_probability": 0.409792,
+        "event_rate": 0.0,
+        "smoothed_event_rate": 0.333333
       },
       {
         "lower": 0.6,
         "upper": 0.8,
         "count": 2,
         "event_count": 0,
-        "avg_probability": 0.739705,
+        "avg_probability": 0.71125,
         "event_rate": 0.0,
         "smoothed_event_rate": 0.25
       },
@@ -180,42 +180,42 @@
   "coefficients": [
     {
       "feature": "credit_liquidity_score",
-      "coefficient": 0.598296,
+      "coefficient": 0.59315,
       "direction": "raises_risk"
     },
     {
       "feature": "forward_risk_score",
-      "coefficient": 0.516074,
+      "coefficient": 0.512675,
       "direction": "raises_risk"
     },
     {
       "feature": "market_stress_score",
-      "coefficient": 0.461198,
+      "coefficient": 0.453515,
       "direction": "raises_risk"
     },
     {
       "feature": "data_quality_pct",
-      "coefficient": 0.443862,
+      "coefficient": 0.452051,
       "direction": "raises_risk"
     },
     {
       "feature": "rule_agreement_pct",
-      "coefficient": 0.436529,
+      "coefficient": 0.431913,
       "direction": "raises_risk"
     },
     {
       "feature": "price_action_score",
-      "coefficient": -0.299133,
-      "direction": "lowers_risk"
-    },
-    {
-      "feature": "volatility_sentiment_score",
-      "coefficient": -0.200785,
+      "coefficient": -0.294989,
       "direction": "lowers_risk"
     },
     {
       "feature": "macro_cycle_score",
-      "coefficient": -0.186596,
+      "coefficient": -0.223951,
+      "direction": "lowers_risk"
+    },
+    {
+      "feature": "volatility_sentiment_score",
+      "coefficient": -0.205764,
       "direction": "lowers_risk"
     }
   ],
@@ -231,34 +231,34 @@
       "rule_agreement_pct"
     ],
     "weights": [
-      -0.455036,
-      0.461198,
-      0.516074,
-      -0.200785,
-      0.598296,
-      -0.186596,
-      -0.299133,
-      0.443862,
-      0.436529
+      -0.453168,
+      0.453515,
+      0.512675,
+      -0.205764,
+      0.59315,
+      -0.223951,
+      -0.294989,
+      0.452051,
+      0.431913
     ],
     "means": [
-      0.215833,
-      0.281333,
-      0.228833,
-      0.353917,
-      0.02525,
-      0.096583,
-      0.494333,
+      0.217167,
+      0.2825,
+      0.2305,
+      0.355,
+      0.027333,
+      0.097167,
+      0.494667,
       0.69525
     ],
     "scales": [
-      0.096804,
-      0.145933,
-      0.189913,
-      0.290882,
-      0.056612,
-      0.151578,
-      0.275713,
+      0.095465,
+      0.144875,
+      0.188992,
+      0.29025,
+      0.060135,
+      0.152032,
+      0.275357,
       0.293734
     ],
     "positive_weight": 6.5,
@@ -266,25 +266,6 @@
     "training_event_count": 16
   },
   "rows": [
-    {
-      "month": "2016-05-01",
-      "event": false,
-      "max_drawdown_pct": -4.597626,
-      "lead_time_days": 27,
-      "target_mode": "daily_max_drawdown",
-      "features": {
-        "market_stress_score": 20,
-        "forward_risk_score": 19,
-        "volatility_sentiment_score": 10,
-        "credit_liquidity_score": 25,
-        "macro_cycle_score": 25,
-        "price_action_score": 25,
-        "data_quality_pct": 77,
-        "rule_agreement_pct": 98
-      },
-      "probability": 0.136364,
-      "raw_probability": 0.248324
-    },
     {
       "month": "2016-06-01",
       "event": false,
@@ -301,8 +282,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 69
       },
-      "probability": 0.136364,
-      "raw_probability": 0.345168
+      "probability": 0.142857,
+      "raw_probability": 0.326655
     },
     {
       "month": "2016-07-01",
@@ -320,8 +301,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 80
       },
-      "probability": 0.25,
-      "raw_probability": 0.431863
+      "probability": 0.333333,
+      "raw_probability": 0.409792
     },
     {
       "month": "2016-08-01",
@@ -339,8 +320,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 80
       },
-      "probability": 0.25,
-      "raw_probability": 0.416513
+      "probability": 0.142857,
+      "raw_probability": 0.395139
     },
     {
       "month": "2016-09-01",
@@ -358,8 +339,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 80
       },
-      "probability": 0.136364,
-      "raw_probability": 0.368012
+      "probability": 0.142857,
+      "raw_probability": 0.348549
     },
     {
       "month": "2016-10-01",
@@ -377,8 +358,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 80
       },
-      "probability": 0.25,
-      "raw_probability": 0.406675
+      "probability": 0.142857,
+      "raw_probability": 0.385512
     },
     {
       "month": "2016-11-01",
@@ -396,8 +377,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.25,
-      "raw_probability": 0.406836
+      "probability": 0.142857,
+      "raw_probability": 0.397791
     },
     {
       "month": "2016-12-01",
@@ -415,8 +396,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.38644
+      "probability": 0.142857,
+      "raw_probability": 0.378029
     },
     {
       "month": "2017-01-01",
@@ -434,8 +415,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.391355
+      "probability": 0.142857,
+      "raw_probability": 0.382536
     },
     {
       "month": "2017-02-01",
@@ -453,8 +434,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.394112
+      "probability": 0.142857,
+      "raw_probability": 0.385067
     },
     {
       "month": "2017-03-01",
@@ -472,8 +453,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.371648
+      "probability": 0.142857,
+      "raw_probability": 0.363812
     },
     {
       "month": "2017-04-01",
@@ -491,8 +472,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.206123
+      "probability": 0.104651,
+      "raw_probability": 0.191414
     },
     {
       "month": "2017-05-01",
@@ -510,8 +491,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.208098
+      "probability": 0.104651,
+      "raw_probability": 0.193489
     },
     {
       "month": "2017-06-01",
@@ -529,8 +510,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.097222,
-      "raw_probability": 0.197971
+      "probability": 0.104651,
+      "raw_probability": 0.184266
     },
     {
       "month": "2017-07-01",
@@ -548,8 +529,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.201276
+      "probability": 0.104651,
+      "raw_probability": 0.187158
     },
     {
       "month": "2017-08-01",
@@ -567,8 +548,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.097222,
-      "raw_probability": 0.168849
+      "probability": 0.104651,
+      "raw_probability": 0.157139
     },
     {
       "month": "2017-09-01",
@@ -586,8 +567,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.202913
+      "probability": 0.104651,
+      "raw_probability": 0.188429
     },
     {
       "month": "2017-10-01",
@@ -605,8 +586,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.204425
+      "probability": 0.104651,
+      "raw_probability": 0.190017
     },
     {
       "month": "2017-11-01",
@@ -624,8 +605,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.211369
+      "probability": 0.104651,
+      "raw_probability": 0.196535
     },
     {
       "month": "2017-12-01",
@@ -643,8 +624,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.203141
+      "probability": 0.104651,
+      "raw_probability": 0.188792
     },
     {
       "month": "2018-01-01",
@@ -662,8 +643,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.097222,
-      "raw_probability": 0.194816
+      "probability": 0.104651,
+      "raw_probability": 0.18126
     },
     {
       "month": "2018-02-01",
@@ -681,8 +662,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 78
       },
-      "probability": 0.097222,
-      "raw_probability": 0.161929
+      "probability": 0.104651,
+      "raw_probability": 0.150742
     },
     {
       "month": "2018-03-01",
@@ -691,17 +672,17 @@
       "lead_time_days": 2,
       "target_mode": "daily_max_drawdown",
       "features": {
-        "market_stress_score": 25,
-        "forward_risk_score": 24,
+        "market_stress_score": 29,
+        "forward_risk_score": 29,
         "volatility_sentiment_score": 15,
-        "credit_liquidity_score": 25,
+        "credit_liquidity_score": 38,
         "macro_cycle_score": 38,
         "price_action_score": 30,
         "data_quality_pct": 77,
         "rule_agreement_pct": 70
       },
-      "probability": 0.097222,
-      "raw_probability": 0.15595
+      "probability": 0.142857,
+      "raw_probability": 0.233288
     },
     {
       "month": "2018-04-01",
@@ -719,8 +700,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 84
       },
-      "probability": 0.097222,
-      "raw_probability": 0.133537
+      "probability": 0.104651,
+      "raw_probability": 0.118115
     },
     {
       "month": "2018-05-01",
@@ -738,8 +719,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 77
       },
-      "probability": 0.097222,
-      "raw_probability": 0.141415
+      "probability": 0.104651,
+      "raw_probability": 0.124898
     },
     {
       "month": "2018-06-01",
@@ -757,8 +738,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 77
       },
-      "probability": 0.097222,
-      "raw_probability": 0.149127
+      "probability": 0.104651,
+      "raw_probability": 0.131815
     },
     {
       "month": "2018-07-01",
@@ -776,8 +757,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 77
       },
-      "probability": 0.097222,
-      "raw_probability": 0.128815
+      "probability": 0.104651,
+      "raw_probability": 0.113737
     },
     {
       "month": "2018-08-01",
@@ -795,8 +776,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 77
       },
-      "probability": 0.097222,
-      "raw_probability": 0.146367
+      "probability": 0.104651,
+      "raw_probability": 0.1291
     },
     {
       "month": "2018-09-01",
@@ -814,8 +795,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 77
       },
-      "probability": 0.097222,
-      "raw_probability": 0.152387
+      "probability": 0.104651,
+      "raw_probability": 0.134452
     },
     {
       "month": "2018-10-01",
@@ -833,8 +814,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 69
       },
-      "probability": 0.097222,
-      "raw_probability": 0.091607
+      "probability": 0.104651,
+      "raw_probability": 0.081258
     },
     {
       "month": "2018-11-01",
@@ -852,8 +833,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 84
       },
-      "probability": 0.136364,
-      "raw_probability": 0.204244
+      "probability": 0.104651,
+      "raw_probability": 0.18245
     },
     {
       "month": "2018-12-01",
@@ -871,8 +852,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 31
       },
-      "probability": 0.136364,
-      "raw_probability": 0.201524
+      "probability": 0.104651,
+      "raw_probability": 0.174731
     },
     {
       "month": "2019-01-01",
@@ -890,8 +871,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.078773
+      "probability": 0.104651,
+      "raw_probability": 0.066285
     },
     {
       "month": "2019-02-01",
@@ -909,8 +890,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 72
       },
-      "probability": 0.097222,
-      "raw_probability": 0.083858
+      "probability": 0.104651,
+      "raw_probability": 0.070481
     },
     {
       "month": "2019-03-01",
@@ -928,8 +909,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 78
       },
-      "probability": 0.097222,
-      "raw_probability": 0.078356
+      "probability": 0.104651,
+      "raw_probability": 0.065971
     },
     {
       "month": "2019-04-01",
@@ -947,8 +928,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.095548
+      "probability": 0.104651,
+      "raw_probability": 0.080159
     },
     {
       "month": "2019-05-01",
@@ -966,8 +947,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 61
       },
-      "probability": 0.097222,
-      "raw_probability": 0.043683
+      "probability": 0.104651,
+      "raw_probability": 0.035096
     },
     {
       "month": "2019-06-01",
@@ -985,8 +966,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 72
       },
-      "probability": 0.097222,
-      "raw_probability": 0.074289
+      "probability": 0.104651,
+      "raw_probability": 0.059255
     },
     {
       "month": "2019-07-01",
@@ -1004,8 +985,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 66
       },
-      "probability": 0.097222,
-      "raw_probability": 0.086644
+      "probability": 0.104651,
+      "raw_probability": 0.069016
     },
     {
       "month": "2019-08-01",
@@ -1023,8 +1004,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 72
       },
-      "probability": 0.097222,
-      "raw_probability": 0.054531
+      "probability": 0.104651,
+      "raw_probability": 0.041152
     },
     {
       "month": "2019-09-01",
@@ -1042,8 +1023,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 67
       },
-      "probability": 0.097222,
-      "raw_probability": 0.112336
+      "probability": 0.104651,
+      "raw_probability": 0.090432
     },
     {
       "month": "2019-10-01",
@@ -1061,8 +1042,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.100433
+      "probability": 0.104651,
+      "raw_probability": 0.084173
     },
     {
       "month": "2019-11-01",
@@ -1080,8 +1061,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.093609
+      "probability": 0.104651,
+      "raw_probability": 0.078477
     },
     {
       "month": "2019-12-01",
@@ -1099,8 +1080,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.108936
+      "probability": 0.104651,
+      "raw_probability": 0.091296
     },
     {
       "month": "2020-01-01",
@@ -1118,8 +1099,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 61
       },
-      "probability": 0.097222,
-      "raw_probability": 0.085046
+      "probability": 0.104651,
+      "raw_probability": 0.067718
     },
     {
       "month": "2020-02-01",
@@ -1137,8 +1118,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 76
       },
-      "probability": 0.25,
-      "raw_probability": 0.444617
+      "probability": 0.142857,
+      "raw_probability": 0.383968
     },
     {
       "month": "2020-03-01",
@@ -1157,7 +1138,7 @@
         "rule_agreement_pct": 71
       },
       "probability": 0.25,
-      "raw_probability": 0.719354
+      "raw_probability": 0.690971
     },
     {
       "month": "2020-04-01",
@@ -1176,7 +1157,7 @@
         "rule_agreement_pct": 69
       },
       "probability": 0.25,
-      "raw_probability": 0.760056
+      "raw_probability": 0.731528
     },
     {
       "month": "2020-05-01",
@@ -1194,8 +1175,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 55
       },
-      "probability": 0.136364,
-      "raw_probability": 0.314508
+      "probability": 0.142857,
+      "raw_probability": 0.284176
     },
     {
       "month": "2020-06-01",
@@ -1213,8 +1194,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 48
       },
-      "probability": 0.25,
-      "raw_probability": 0.423888
+      "probability": 0.142857,
+      "raw_probability": 0.375798
     },
     {
       "month": "2020-07-01",
@@ -1232,8 +1213,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 59
       },
-      "probability": 0.097222,
-      "raw_probability": 0.178097
+      "probability": 0.104651,
+      "raw_probability": 0.151032
     },
     {
       "month": "2020-08-01",
@@ -1251,8 +1232,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 81
       },
-      "probability": 0.136364,
-      "raw_probability": 0.258765
+      "probability": 0.142857,
+      "raw_probability": 0.240382
     },
     {
       "month": "2020-09-01",
@@ -1270,8 +1251,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 80
       },
-      "probability": 0.136364,
-      "raw_probability": 0.399147
+      "probability": 0.142857,
+      "raw_probability": 0.378405
     },
     {
       "month": "2020-10-01",
@@ -1289,8 +1270,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 67
       },
-      "probability": 0.136364,
-      "raw_probability": 0.293297
+      "probability": 0.142857,
+      "raw_probability": 0.27508
     },
     {
       "month": "2020-11-01",
@@ -1308,8 +1289,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 81
       },
-      "probability": 0.136364,
-      "raw_probability": 0.221152
+      "probability": 0.142857,
+      "raw_probability": 0.205236
     },
     {
       "month": "2020-12-01",
@@ -1327,8 +1308,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 81
       },
-      "probability": 0.136364,
-      "raw_probability": 0.213369
+      "probability": 0.104651,
+      "raw_probability": 0.198082
     },
     {
       "month": "2021-01-01",
@@ -1346,8 +1327,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 74
       },
-      "probability": 0.136364,
-      "raw_probability": 0.216013
+      "probability": 0.142857,
+      "raw_probability": 0.20044
     },
     {
       "month": "2021-02-01",
@@ -1365,8 +1346,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 81
       },
-      "probability": 0.136364,
-      "raw_probability": 0.210559
+      "probability": 0.104651,
+      "raw_probability": 0.195589
     },
     {
       "month": "2021-03-01",
@@ -1384,8 +1365,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.295467
+      "probability": 0.142857,
+      "raw_probability": 0.299053
     },
     {
       "month": "2021-04-01",
@@ -1403,8 +1384,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.274368
+      "probability": 0.142857,
+      "raw_probability": 0.266896
     },
     {
       "month": "2021-05-01",
@@ -1422,8 +1403,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 94
       },
-      "probability": 0.136364,
-      "raw_probability": 0.252246
+      "probability": 0.142857,
+      "raw_probability": 0.245734
     },
     {
       "month": "2021-06-01",
@@ -1441,8 +1422,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.224338
+      "probability": 0.142857,
+      "raw_probability": 0.208404
     },
     {
       "month": "2021-07-01",
@@ -1460,8 +1441,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 83
       },
-      "probability": 0.097222,
-      "raw_probability": 0.189294
+      "probability": 0.104651,
+      "raw_probability": 0.176074
     },
     {
       "month": "2021-08-01",
@@ -1479,8 +1460,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.221874
+      "probability": 0.142857,
+      "raw_probability": 0.206168
     },
     {
       "month": "2021-09-01",
@@ -1498,8 +1479,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 78
       },
-      "probability": 0.097222,
-      "raw_probability": 0.160366
+      "probability": 0.104651,
+      "raw_probability": 0.149377
     },
     {
       "month": "2021-10-01",
@@ -1517,8 +1498,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.228763
+      "probability": 0.142857,
+      "raw_probability": 0.212591
     },
     {
       "month": "2021-11-01",
@@ -1536,8 +1517,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 74
       },
-      "probability": 0.136364,
-      "raw_probability": 0.246237
+      "probability": 0.142857,
+      "raw_probability": 0.228869
     },
     {
       "month": "2021-12-01",
@@ -1555,8 +1536,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 87
       },
-      "probability": 0.136364,
-      "raw_probability": 0.211821
+      "probability": 0.104651,
+      "raw_probability": 0.196804
     },
     {
       "month": "2022-01-01",
@@ -1574,8 +1555,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.161781
+      "probability": 0.104651,
+      "raw_probability": 0.158785
     },
     {
       "month": "2022-02-01",
@@ -1593,8 +1574,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 56
       },
-      "probability": 0.136364,
-      "raw_probability": 0.2021
+      "probability": 0.104651,
+      "raw_probability": 0.180291
     },
     {
       "month": "2022-03-01",
@@ -1612,8 +1593,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 62
       },
-      "probability": 0.136364,
-      "raw_probability": 0.255728
+      "probability": 0.142857,
+      "raw_probability": 0.239351
     },
     {
       "month": "2022-04-01",
@@ -1631,8 +1612,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 34
       },
-      "probability": 0.136364,
-      "raw_probability": 0.2653
+      "probability": 0.142857,
+      "raw_probability": 0.250559
     },
     {
       "month": "2022-05-01",
@@ -1650,8 +1631,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 53
       },
-      "probability": 0.136364,
-      "raw_probability": 0.270567
+      "probability": 0.142857,
+      "raw_probability": 0.255718
     },
     {
       "month": "2022-06-01",
@@ -1669,8 +1650,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 36
       },
-      "probability": 0.097222,
-      "raw_probability": 0.17032
+      "probability": 0.104651,
+      "raw_probability": 0.153291
     },
     {
       "month": "2022-07-01",
@@ -1688,8 +1669,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 59
       },
-      "probability": 0.097222,
-      "raw_probability": 0.101237
+      "probability": 0.104651,
+      "raw_probability": 0.081604
     },
     {
       "month": "2022-08-01",
@@ -1707,8 +1688,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 46
       },
-      "probability": 0.097222,
-      "raw_probability": 0.081514
+      "probability": 0.104651,
+      "raw_probability": 0.065733
     },
     {
       "month": "2022-09-01",
@@ -1726,8 +1707,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 76
       },
-      "probability": 0.136364,
-      "raw_probability": 0.332427
+      "probability": 0.142857,
+      "raw_probability": 0.281801
     },
     {
       "month": "2022-10-01",
@@ -1745,8 +1726,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 51
       },
-      "probability": 0.097222,
-      "raw_probability": 0.094608
+      "probability": 0.104651,
+      "raw_probability": 0.072034
     },
     {
       "month": "2022-11-01",
@@ -1764,8 +1745,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 63
       },
-      "probability": 0.097222,
-      "raw_probability": 0.058381
+      "probability": 0.104651,
+      "raw_probability": 0.039767
     },
     {
       "month": "2022-12-01",
@@ -1783,8 +1764,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 53
       },
-      "probability": 0.097222,
-      "raw_probability": 0.034212
+      "probability": 0.104651,
+      "raw_probability": 0.02341
     },
     {
       "month": "2023-01-01",
@@ -1802,8 +1783,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 70
       },
-      "probability": 0.097222,
-      "raw_probability": 0.071755
+      "probability": 0.104651,
+      "raw_probability": 0.048899
     },
     {
       "month": "2023-02-01",
@@ -1821,8 +1802,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 57
       },
-      "probability": 0.097222,
-      "raw_probability": 0.065565
+      "probability": 0.104651,
+      "raw_probability": 0.044641
     },
     {
       "month": "2023-03-01",
@@ -1840,8 +1821,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 70
       },
-      "probability": 0.097222,
-      "raw_probability": 0.072301
+      "probability": 0.104651,
+      "raw_probability": 0.049305
     },
     {
       "month": "2023-04-01",
@@ -1859,8 +1840,8 @@
         "data_quality_pct": 77,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.079568
+      "probability": 0.104651,
+      "raw_probability": 0.054195
     },
     {
       "month": "2023-05-01",
@@ -1869,17 +1850,17 @@
       "lead_time_days": 1,
       "target_mode": "daily_max_drawdown",
       "features": {
-        "market_stress_score": 43,
-        "forward_risk_score": 51,
+        "market_stress_score": 39,
+        "forward_risk_score": 46,
         "volatility_sentiment_score": 43,
-        "credit_liquidity_score": 38,
+        "credit_liquidity_score": 25,
         "macro_cycle_score": 100,
         "price_action_score": 10,
-        "data_quality_pct": 95,
-        "rule_agreement_pct": 55
+        "data_quality_pct": 77,
+        "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.184383
+      "probability": 0.104651,
+      "raw_probability": 0.066981
     },
     {
       "month": "2023-06-01",
@@ -1897,8 +1878,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 59
       },
-      "probability": 0.097222,
-      "raw_probability": 0.140467
+      "probability": 0.104651,
+      "raw_probability": 0.097939
     },
     {
       "month": "2023-07-01",
@@ -1916,8 +1897,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.131741
+      "probability": 0.104651,
+      "raw_probability": 0.091313
     },
     {
       "month": "2023-08-01",
@@ -1935,8 +1916,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.112118
+      "probability": 0.104651,
+      "raw_probability": 0.077578
     },
     {
       "month": "2023-09-01",
@@ -1954,8 +1935,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 63
       },
-      "probability": 0.097222,
-      "raw_probability": 0.124636
+      "probability": 0.104651,
+      "raw_probability": 0.091447
     },
     {
       "month": "2023-10-01",
@@ -1973,8 +1954,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 59
       },
-      "probability": 0.097222,
-      "raw_probability": 0.149692
+      "probability": 0.104651,
+      "raw_probability": 0.110737
     },
     {
       "month": "2023-11-01",
@@ -1992,8 +1973,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.142249
+      "probability": 0.104651,
+      "raw_probability": 0.103832
     },
     {
       "month": "2023-12-01",
@@ -2011,8 +1992,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.153153
+      "probability": 0.104651,
+      "raw_probability": 0.112073
     },
     {
       "month": "2024-01-01",
@@ -2030,8 +2011,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.158189
+      "probability": 0.104651,
+      "raw_probability": 0.115824
     },
     {
       "month": "2024-02-01",
@@ -2049,8 +2030,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.122066
+      "probability": 0.104651,
+      "raw_probability": 0.088474
     },
     {
       "month": "2024-03-01",
@@ -2068,8 +2049,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.128515
+      "probability": 0.104651,
+      "raw_probability": 0.093259
     },
     {
       "month": "2024-04-01",
@@ -2087,8 +2068,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.096878
+      "probability": 0.104651,
+      "raw_probability": 0.070196
     },
     {
       "month": "2024-05-01",
@@ -2106,8 +2087,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.11227
+      "probability": 0.104651,
+      "raw_probability": 0.081327
     },
     {
       "month": "2024-06-01",
@@ -2125,8 +2106,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.120382
+      "probability": 0.104651,
+      "raw_probability": 0.087318
     },
     {
       "month": "2024-07-01",
@@ -2144,8 +2125,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.106586
+      "probability": 0.104651,
+      "raw_probability": 0.077205
     },
     {
       "month": "2024-08-01",
@@ -2163,8 +2144,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.097222,
-      "raw_probability": 0.109344
+      "probability": 0.104651,
+      "raw_probability": 0.079165
     },
     {
       "month": "2024-09-01",
@@ -2182,8 +2163,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 72
       },
-      "probability": 0.097222,
-      "raw_probability": 0.149665
+      "probability": 0.104651,
+      "raw_probability": 0.115126
     },
     {
       "month": "2024-10-01",
@@ -2201,8 +2182,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 58
       },
-      "probability": 0.097222,
-      "raw_probability": 0.168377
+      "probability": 0.104651,
+      "raw_probability": 0.136082
     },
     {
       "month": "2024-11-01",
@@ -2220,8 +2201,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.143025
+      "probability": 0.104651,
+      "raw_probability": 0.115487
     },
     {
       "month": "2024-12-01",
@@ -2239,8 +2220,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.165093
+      "probability": 0.104651,
+      "raw_probability": 0.140388
     },
     {
       "month": "2025-01-01",
@@ -2258,8 +2239,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 79
       },
-      "probability": 0.097222,
-      "raw_probability": 0.120255
+      "probability": 0.104651,
+      "raw_probability": 0.10154
     },
     {
       "month": "2025-02-01",
@@ -2277,8 +2258,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 60
       },
-      "probability": 0.097222,
-      "raw_probability": 0.122393
+      "probability": 0.104651,
+      "raw_probability": 0.098727
     },
     {
       "month": "2025-03-01",
@@ -2296,8 +2277,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 54
       },
-      "probability": 0.097222,
-      "raw_probability": 0.124613
+      "probability": 0.104651,
+      "raw_probability": 0.101168
     },
     {
       "month": "2025-04-01",
@@ -2315,8 +2296,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 66
       },
-      "probability": 0.136364,
-      "raw_probability": 0.215969
+      "probability": 0.104651,
+      "raw_probability": 0.186075
     },
     {
       "month": "2025-05-01",
@@ -2334,8 +2315,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 80
       },
-      "probability": 0.136364,
-      "raw_probability": 0.233164
+      "probability": 0.142857,
+      "raw_probability": 0.209408
     },
     {
       "month": "2025-06-01",
@@ -2353,8 +2334,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.167819
+      "probability": 0.104651,
+      "raw_probability": 0.142626
     },
     {
       "month": "2025-07-01",
@@ -2372,8 +2353,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.097222,
-      "raw_probability": 0.097337
+      "probability": 0.104651,
+      "raw_probability": 0.078034
     },
     {
       "month": "2025-08-01",
@@ -2391,8 +2372,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.145581
+      "probability": 0.104651,
+      "raw_probability": 0.122975
     },
     {
       "month": "2025-09-01",
@@ -2410,8 +2391,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.17197
+      "probability": 0.104651,
+      "raw_probability": 0.152611
     },
     {
       "month": "2025-10-01",
@@ -2429,8 +2410,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.175325
+      "probability": 0.104651,
+      "raw_probability": 0.155494
     },
     {
       "month": "2025-11-01",
@@ -2448,8 +2429,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.156836
+      "probability": 0.104651,
+      "raw_probability": 0.139195
     },
     {
       "month": "2025-12-01",
@@ -2467,8 +2448,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 89
       },
-      "probability": 0.097222,
-      "raw_probability": 0.199545
+      "probability": 0.104651,
+      "raw_probability": 0.186449
     },
     {
       "month": "2026-01-01",
@@ -2486,8 +2467,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 89
       },
-      "probability": 0.136364,
-      "raw_probability": 0.220212
+      "probability": 0.142857,
+      "raw_probability": 0.205675
     },
     {
       "month": "2026-02-01",
@@ -2505,8 +2486,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.097222,
-      "raw_probability": 0.197811
+      "probability": 0.104651,
+      "raw_probability": 0.176679
     },
     {
       "month": "2026-03-01",
@@ -2524,8 +2505,8 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 81
       },
-      "probability": 0.136364,
-      "raw_probability": 0.304595
+      "probability": 0.142857,
+      "raw_probability": 0.287627
     },
     {
       "month": "2026-04-01",
@@ -2534,17 +2515,36 @@
       "lead_time_days": 4,
       "target_mode": "daily_max_drawdown",
       "features": {
-        "market_stress_score": 20,
-        "forward_risk_score": 24,
-        "volatility_sentiment_score": 38,
+        "market_stress_score": 19,
+        "forward_risk_score": 23,
+        "volatility_sentiment_score": 35,
         "credit_liquidity_score": 12,
         "macro_cycle_score": 25,
         "price_action_score": 2,
-        "data_quality_pct": 100,
-        "rule_agreement_pct": 85
+        "data_quality_pct": 95,
+        "rule_agreement_pct": 89
       },
-      "probability": 0.136364,
-      "raw_probability": 0.29667
+      "probability": 0.142857,
+      "raw_probability": 0.264251
+    },
+    {
+      "month": "2026-05-01",
+      "event": false,
+      "max_drawdown_pct": 0.26253,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 23,
+        "volatility_sentiment_score": 36,
+        "credit_liquidity_score": 6,
+        "macro_cycle_score": 38,
+        "price_action_score": 0.0,
+        "data_quality_pct": 100,
+        "rule_agreement_pct": 83
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.166732
     }
   ],
   "limitations": [
