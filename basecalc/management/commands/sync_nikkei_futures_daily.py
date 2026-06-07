@@ -7,7 +7,7 @@ from basecalc.persistence import export_basecalc_history
 
 
 class Command(BaseCommand):
-    help = "Sync Nikkei futures daily bars from CME first, then free fallback sources."
+    help = "Sync Nikkei futures daily bars from the free 225navi reference source."
 
     def add_arguments(self, parser):
         parser.add_argument("--start", help="Start date in YYYY-MM-DD format.")

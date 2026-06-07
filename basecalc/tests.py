@@ -242,69 +242,50 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_futures_snapshot_last_good')['price'], 41100)
         self.assertEqual(MarketBar.objects.count(), 3)
 
-    def test_sync_nikkei_futures_daily_prefers_cme_and_creates_latest_snapshot(self):
+    def test_sync_nikkei_futures_daily_uses_225navi_and_creates_reference_snapshot(self):
         _create_market_bar_series(
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
         )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+            open=67650,
+            high=67910,
+            low=66950,
+            close=67640,
+            volume=None,
+            source='csv',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
         rows = [
             {
                 'date': date(2026, 6, 5),
-                'open': 67795,
-                'high': 67865,
-                'low': 63775,
-                'close': 64245,
-                'volume': 510000,
-                'source': 'cme_daily_bulletin',
+                'open': 67350,
+                'high': 67410,
+                'low': 65890,
+                'close': 66670,
+                'volume': None,
+                'source': '225navi',
             },
         ]
 
         with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows) as cme_fetch,
-            patch('basecalc.daily_sync.fetch_investing_daily_bars') as investing_fetch,
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars') as stooq_fetch,
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows) as navi_fetch,
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily')
 
-        cme_fetch.assert_called_once()
-        investing_fetch.assert_not_called()
-        stooq_fetch.assert_not_called()
+        navi_fetch.assert_called_once()
         latest_bar = MarketBar.objects.order_by('-timestamp').first()
-        self.assertEqual(latest_bar.close, 64245)
-        self.assertEqual(latest_bar.source, 'cme_daily_bulletin')
+        self.assertEqual(latest_bar.close, 66670)
+        self.assertEqual(latest_bar.source, '225navi')
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
-        self.assertEqual(latest_snapshot.price, 64245)
-        self.assertEqual(latest_snapshot.source, 'cme_daily_bulletin')
-        self.assertEqual(latest_snapshot.readiness_level, 'ready')
-        cache.clear()
-
-    def test_sync_nikkei_futures_daily_uses_investing_when_cme_has_no_rows(self):
-        rows = [
-            {
-                'date': date(2026, 6, 5),
-                'open': 67795,
-                'high': 67865,
-                'low': 63775,
-                'close': 64245,
-                'volume': 510000,
-                'source': 'investing.com',
-            },
-        ]
-
-        with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=[]) as cme_fetch,
-            patch('basecalc.daily_sync.fetch_investing_daily_bars', return_value=rows) as investing_fetch,
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars') as stooq_fetch,
-            patch('basecalc.daily_sync.write_basecalc_status'),
-        ):
-            call_command('sync_nikkei_futures_daily')
-
-        cme_fetch.assert_called_once()
-        investing_fetch.assert_called_once()
-        stooq_fetch.assert_not_called()
-        latest_bar = MarketBar.objects.get(symbol='NIY=F', timeframe='1d')
-        self.assertEqual(latest_bar.source, 'investing.com')
+        self.assertEqual(latest_snapshot.price, 66670)
+        self.assertEqual(latest_snapshot.source, '225navi')
+        self.assertEqual(latest_snapshot.readiness_level, 'limited')
         cache.clear()
 
     def test_sync_does_not_create_snapshot_from_old_csv_when_no_source_returns_rows(self):
@@ -323,9 +304,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         )
 
         with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=[]),
-            patch('basecalc.daily_sync.fetch_investing_daily_bars', return_value=[]),
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars', return_value=[]),
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status') as status_write,
         ):
             from basecalc.daily_sync import sync_nikkei_futures_daily
@@ -343,10 +322,23 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(status_entry['decision_level'], 'blocked')
         cache.clear()
 
-    def test_sync_upgrades_existing_csv_bar_when_cme_fetches_same_date(self):
+    def test_sync_upgrades_existing_csv_bar_when_225navi_fetches_same_date(self):
         _create_market_bar_series(
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 3)),
+            open=66800,
+            high=67200,
+            low=66400,
+            close=67100,
+            volume=None,
+            source='csv',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
         )
         MarketBar.objects.create(
             symbol='NIY=F',
@@ -364,19 +356,17 @@ class BasecalcUpdateSecurityTests(TestCase):
         rows = [
             {
                 'date': date(2026, 6, 4),
-                'open': 68025,
-                'high': 68050,
-                'low': 66935,
-                'close': 67775,
-                'volume': 26187,
-                'source': 'cme_daily_bulletin',
+                'open': 67650,
+                'high': 67910,
+                'low': 66950,
+                'close': 67640,
+                'volume': None,
+                'source': '225navi',
             },
         ]
 
         with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows),
-            patch('basecalc.daily_sync.fetch_investing_daily_bars'),
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars'),
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily')
@@ -386,75 +376,94 @@ class BasecalcUpdateSecurityTests(TestCase):
             timeframe='1d',
             timestamp=timezone.make_aware(datetime(2026, 6, 4)),
         )
-        self.assertEqual(upgraded_bar.source, 'cme_daily_bulletin')
-        self.assertEqual(upgraded_bar.close, 67775)
+        self.assertEqual(upgraded_bar.source, '225navi')
+        self.assertEqual(upgraded_bar.close, 67640)
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
-        self.assertEqual(latest_snapshot.source, 'cme_daily_bulletin')
-        self.assertEqual(latest_snapshot.price, 67775)
-        self.assertEqual(latest_snapshot.readiness_level, 'ready')
+        self.assertEqual(latest_snapshot.source, '225navi')
+        self.assertEqual(latest_snapshot.price, 67640)
+        self.assertEqual(latest_snapshot.readiness_level, 'limited')
         cache.clear()
 
     def test_sync_command_logs_source_attempts_and_snapshot_source(self):
         rows = [
             {
                 'date': date(2026, 6, 4),
-                'open': 68025,
-                'high': 68050,
-                'low': 66935,
-                'close': 67775,
-                'volume': 26187,
-                'source': 'cme_daily_bulletin',
+                'open': 67650,
+                'high': 67910,
+                'low': 66950,
+                'close': 67640,
+                'volume': None,
+                'source': '225navi',
             },
         ]
         output = StringIO()
 
         with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows),
-            patch('basecalc.daily_sync.fetch_investing_daily_bars'),
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars'),
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily', stdout=output)
 
         text = output.getvalue()
-        self.assertIn('status=success', text)
-        self.assertIn('attempts=cme_daily_bulletin:fetched=1', text)
-        self.assertIn('snapshot_source=cme_daily_bulletin', text)
+        self.assertIn('status=fallback', text)
+        self.assertIn('attempts=225navi:fetched=1', text)
+        self.assertIn('snapshot_source=225navi', text)
         cache.clear()
 
-    def test_cme_daily_bulletin_parser_reads_nikkei_yen_futures_row(self):
-        from basecalc.daily_sync import parse_cme_daily_bulletin_text
-
+    def test_225navi_parser_reads_day_session_ohlc_rows(self):
+        from basecalc.daily_sync import parse_225navi_daily_text
         text = """
-        PG44 Thu, Jun 04, 2026 PG44
-        NIKKEI ($) FUT
-        JUN26 68025.00 68055.00 66930.00 67770.00 - 475 ---- 5093
-        Nikkei (Yen) FUT
-        NIKKEI (YEN) F
-        JUN26 68025.00 68050.00 66935.00 67775.00 - 465 236 25951
-        SEP26 67520.00 68035.00 67080.00A 67925.00 - 455 ---- 2432
+        大証 日経225先物期近 日足 4本値
+        日付
+        日中
+        夜間
+        始値
+        高値
+        安値
+        終値
+        始値
+        高値
+        安値
+        終値
+        2026/6/5
+        67350
+        67410
+        65890
+        66670
+        66680
+        67170
+        63500
+        63820
+        2026/6/4
+        67650
+        67910
+        66950
+        67640
+        67740
+        67890
+        66930
+        67610
         """
 
-        rows = parse_cme_daily_bulletin_text(text)
+        rows = parse_225navi_daily_text(text)
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['date'], date(2026, 6, 4))
-        self.assertEqual(rows[0]['open'], 68025)
-        self.assertEqual(rows[0]['high'], 68050)
-        self.assertEqual(rows[0]['low'], 66935)
-        self.assertEqual(rows[0]['close'], 67775)
-        self.assertEqual(rows[0]['source'], 'cme_daily_bulletin')
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]['date'], date(2026, 6, 5))
+        self.assertEqual(rows[0]['open'], 67350)
+        self.assertEqual(rows[0]['high'], 67410)
+        self.assertEqual(rows[0]['low'], 65890)
+        self.assertEqual(rows[0]['close'], 66670)
+        self.assertEqual(rows[0]['source'], '225navi')
 
-    def test_cme_fetch_records_http_failure_diagnostics(self):
+    def test_225navi_fetch_records_http_failure_diagnostics(self):
         from requests import RequestException
 
-        from basecalc.daily_sync import fetch_cme_daily_bulletin_bars
+        from basecalc.daily_sync import fetch_225navi_daily_bars
 
         class BlockedResponse:
             status_code = 403
-            headers = {'content-type': 'application/json'}
-            content = b'{"message":"blocked"}'
-            text = '{"message":"blocked"}'
+            headers = {'content-type': 'text/html'}
+            text = 'blocked'
 
             def raise_for_status(self):
                 raise RequestException('403 Client Error')
@@ -462,19 +471,31 @@ class BasecalcUpdateSecurityTests(TestCase):
         diagnostics = {}
 
         with patch('basecalc.daily_sync.requests.get', return_value=BlockedResponse()):
-            rows = fetch_cme_daily_bulletin_bars(
+            rows = fetch_225navi_daily_bars(
                 end=date(2026, 6, 7),
                 diagnostics=diagnostics,
             )
 
         self.assertEqual(rows, [])
-        self.assertIn('pdf:http=403', diagnostics['details'])
-        self.assertIn('settlement_csv:http=403', diagnostics['details'])
+        self.assertIn('history:http=403', diagnostics['details'])
 
-    def test_sync_uses_cme_snapshot_even_when_newer_fallback_bar_exists(self):
+    def test_sync_uses_225navi_snapshot_even_when_newer_old_source_bar_exists(self):
         _create_market_bar_series(
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 3)),
+            open=66800,
+            high=67200,
+            low=66400,
+            close=67100,
+            volume=None,
+            source='csv',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
         )
         MarketBar.objects.create(
             symbol='NIY=F',
@@ -492,27 +513,25 @@ class BasecalcUpdateSecurityTests(TestCase):
         rows = [
             {
                 'date': date(2026, 6, 4),
-                'open': 68025,
-                'high': 68050,
-                'low': 66935,
-                'close': 67775,
-                'volume': 26187,
-                'source': 'cme_daily_bulletin',
+                'open': 67650,
+                'high': 67910,
+                'low': 66950,
+                'close': 67640,
+                'volume': None,
+                'source': '225navi',
             },
         ]
 
         with (
-            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows),
-            patch('basecalc.daily_sync.fetch_investing_daily_bars'),
-            patch('basecalc.daily_sync.fetch_stooq_daily_bars'),
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily', update_existing=True)
 
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
-        self.assertEqual(latest_snapshot.source, 'cme_daily_bulletin')
+        self.assertEqual(latest_snapshot.source, '225navi')
         self.assertEqual(latest_snapshot.fetched_at.date(), date(2026, 6, 4))
-        self.assertEqual(latest_snapshot.price, 67775)
+        self.assertEqual(latest_snapshot.price, 67640)
         cache.clear()
 
     def test_fresh_futures_cache_skips_external_refetch(self):

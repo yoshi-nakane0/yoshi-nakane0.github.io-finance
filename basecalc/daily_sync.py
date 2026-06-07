@@ -1,8 +1,4 @@
-import csv
-import io
 import re
-import subprocess
-import tempfile
 from datetime import date, datetime, time, timezone as dt_timezone
 
 import requests
@@ -17,34 +13,13 @@ from .nikkei_bias import HEADERS, REQUEST_TIMEOUT_SEC
 from .status import price_status_entry, write_basecalc_status
 from .world_model import build_world_model
 
-CME_DAILY_BULLETIN_URL = (
-    "https://www.cmegroup.com/daily_bulletin/current/Section44_Nikkei_225_Options.pdf"
-)
-CME_SETTLEMENT_CSV_URL = "https://www.cmegroup.com/ftp/settle/cme.settle.{date}.csv"
-INVESTING_HISTORICAL_URL = (
-    "https://www.investing.com/indices/japan-225-futures-historical-data"
-)
-STOOQ_DAILY_URL = "https://stooq.com/q/d/l/"
+NAVI_DAILY_URL = "https://225navi.com/data/"
 DEFAULT_SYMBOL = "NIY=F"
 DEFAULT_TIMEFRAME = "1d"
 DEFAULT_INSTRUMENT_KEY = "cme_nikkei_futures"
 DEFAULT_INSTRUMENT_TYPE = "futures"
-SOURCE_CME = "cme_daily_bulletin"
-SOURCE_INVESTING = "investing.com"
-SOURCE_STOOQ = "stooq"
-_CME_BULLETIN_DATE_RE = re.compile(
-    r"PG44\s+(?P<date>[A-Z][a-z]{2},\s+[A-Z][a-z]{2}\s+\d{2},\s+\d{4})\s+PG44"
-)
-_CME_CONTRACT_ROW_RE = re.compile(
-    r"^(?P<contract>[A-Z]{3}\d{2})\s+"
-    r"(?P<open>[\d,]+(?:\.\d+)?)\s+"
-    r"(?P<high>[\d,]+(?:\.\d+)?[A-Z#*]?)\s+"
-    r"(?P<low>[\d,]+(?:\.\d+)?[A-Z#*]?)\s+"
-    r"(?P<close>[\d,]+(?:\.\d+)?)\s+"
-    r"(?P<change>[+-]?\s*[\d,]+(?:\.\d+)?|UNCH)\s+"
-    r"(?P<rth_volume>----|[\d,]+)\s+"
-    r"(?P<globex_volume>----|[\d,]+)"
-)
+SOURCE_225NAVI = "225navi"
+_NAVI_DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 
 
 def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
@@ -87,9 +62,7 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
 
 def fetch_nikkei_futures_daily_rows(start=None, end=None):
     fetchers = (
-        (SOURCE_CME, fetch_cme_daily_bulletin_bars),
-        (SOURCE_INVESTING, fetch_investing_daily_bars),
-        (SOURCE_STOOQ, fetch_stooq_daily_bars),
+        (SOURCE_225NAVI, fetch_225navi_daily_bars),
     )
     attempts = []
     for source_name, fetcher in fetchers:
@@ -181,7 +154,7 @@ def build_snapshot_from_market_bar(latest):
     previous_close = previous.close if previous else latest.open or latest.close
     snapshot = {
         "symbol": DEFAULT_SYMBOL,
-        "name": "CME Nikkei 225 Yen Futures",
+        "name": "Nikkei 225 Futures (225navi reference)",
         "source": latest.source,
         "instrument_key": DEFAULT_INSTRUMENT_KEY,
         "instrument_type": DEFAULT_INSTRUMENT_TYPE,
@@ -199,7 +172,7 @@ def build_snapshot_from_market_bar(latest):
         "volumes": [latest.volume or 0],
         "timestamps": [int(latest.timestamp.timestamp())],
         "fetched_at": timezone.now(),
-        "fallback_used": latest.source != SOURCE_CME,
+        "fallback_used": latest.source == SOURCE_225NAVI,
     }
     snapshot = attach_saved_daily_bars(snapshot)
     snapshot["quality"] = evaluate_snapshot_quality(snapshot)
@@ -252,179 +225,50 @@ def write_latest_market_snapshot(snapshot, world_model, latest_bar=None):
     )
 
 
-def fetch_cme_daily_bulletin_bars(start=None, end=None, diagnostics=None):
-    rows = fetch_cme_daily_bulletin_pdf_bars(
-        start=start,
-        end=end,
-        diagnostics=diagnostics,
-    )
-    if rows:
-        return rows
-    return fetch_cme_settlement_csv_bars(
-        start=start,
-        end=end,
-        diagnostics=diagnostics,
-    )
-
-
-def fetch_cme_settlement_csv_bars(start=None, end=None, diagnostics=None):
-    trade_date = end or timezone.localdate()
+def fetch_225navi_daily_bars(start=None, end=None, diagnostics=None):
     text = _get_text(
-        CME_SETTLEMENT_CSV_URL.format(date=trade_date.strftime("%Y%m%d")),
+        NAVI_DAILY_URL,
         diagnostics=diagnostics,
-        label="settlement_csv",
-    )
-    if not text:
-        return []
-    reader = csv.DictReader(io.StringIO(text))
-    rows = []
-    for item in reader:
-        product_code = str(item.get("Product Code") or item.get("Clearing Code") or "")
-        if product_code.upper() != "NIY":
-            continue
-        settle = _parse_number(
-            item.get("Settlement Price")
-            or item.get("Settle")
-            or item.get("Settlement")
-        )
-        if settle is None:
-            continue
-        rows.append(
-            {
-                "date": trade_date,
-                "open": settle,
-                "high": settle,
-                "low": settle,
-                "close": settle,
-                "volume": _parse_number(item.get("Volume")),
-                "source": SOURCE_CME,
-            }
-        )
-    return filter_rows_by_date(rows, start, end)
-
-
-def fetch_cme_daily_bulletin_pdf_bars(start=None, end=None, diagnostics=None):
-    content = _get_bytes(
-        CME_DAILY_BULLETIN_URL,
-        diagnostics=diagnostics,
-        label="pdf",
-    )
-    if not content:
-        return []
-    text = _pdf_text(content)
-    if not text:
-        return []
-    return filter_rows_by_date(parse_cme_daily_bulletin_text(text), start, end)
-
-
-def parse_cme_daily_bulletin_text(text):
-    if not text:
-        return []
-    bulletin_date = _parse_cme_bulletin_date(text)
-    if bulletin_date is None:
-        return []
-    in_nikkei_yen_section = False
-    rows = []
-    for raw_line in text.splitlines():
-        line = " ".join(raw_line.split())
-        if line.upper().startswith("NIKKEI (YEN) F"):
-            in_nikkei_yen_section = True
-            continue
-        if in_nikkei_yen_section and (
-            line.startswith("TOTAL ")
-            or line.upper().startswith("THE INFORMATION")
-            or line.upper().startswith("ADDITIONAL ")
-        ):
-            break
-        if not in_nikkei_yen_section:
-            continue
-        match = _CME_CONTRACT_ROW_RE.match(line)
-        if not match:
-            continue
-        rows.append(
-            {
-                "date": bulletin_date,
-                "open": _parse_number(match.group("open")),
-                "high": _parse_number(match.group("high")),
-                "low": _parse_number(match.group("low")),
-                "close": _parse_number(match.group("close")),
-                "volume": _parse_cme_volume(
-                    match.group("rth_volume"),
-                    match.group("globex_volume"),
-                ),
-                "source": SOURCE_CME,
-            }
-        )
-        break
-    return rows
-
-
-def fetch_investing_daily_bars(start=None, end=None, diagnostics=None):
-    text = _get_text(
-        INVESTING_HISTORICAL_URL,
-        diagnostics=diagnostics,
-        label="historical",
+        label="history",
     )
     if not text:
         return []
     soup = BeautifulSoup(text, "html.parser")
-    rows = []
-    for tr in soup.find_all("tr"):
-        cells = [cell.get_text(" ", strip=True) for cell in tr.find_all(["td", "th"])]
-        if len(cells) < 6:
-            continue
-        parsed_date = _parse_date(cells[0])
-        if parsed_date is None:
-            continue
-        rows.append(
-            {
-                "date": parsed_date,
-                "open": _parse_number(cells[2]),
-                "high": _parse_number(cells[3]),
-                "low": _parse_number(cells[4]),
-                "close": _parse_number(cells[1]),
-                "volume": _parse_volume(cells[5]),
-                "source": SOURCE_INVESTING,
-            }
-        )
+    rows = parse_225navi_daily_text(soup.get_text("\n", strip=True))
     return filter_rows_by_date(rows, start, end)
 
 
-def fetch_stooq_daily_bars(start=None, end=None, diagnostics=None):
-    params = {"s": "nk.f", "i": "d"}
-    if start:
-        params["d1"] = start.strftime("%Y%m%d")
-    if end:
-        params["d2"] = end.strftime("%Y%m%d")
-    text = _get_text(
-        STOOQ_DAILY_URL,
-        params=params,
-        diagnostics=diagnostics,
-        label="daily_csv",
-    )
-    if not text or "<html" in text.lower():
-        if text and "<html" in text.lower():
-            _record_fetch_detail(diagnostics, "daily_csv", "html_response")
+def parse_225navi_daily_text(text):
+    if not text:
         return []
-    reader = csv.DictReader(io.StringIO(text))
+    tokens = [line.strip() for line in text.splitlines() if line.strip()]
     rows = []
-    for item in reader:
-        parsed_date = _parse_date(item.get("Date"))
-        close = _parse_number(item.get("Close"))
-        if parsed_date is None or close is None:
+    for index, token in enumerate(tokens):
+        if not _NAVI_DATE_RE.match(token):
+            continue
+        prices = []
+        for value in tokens[index + 1 :]:
+            if _NAVI_DATE_RE.match(value):
+                break
+            parsed = _parse_number(value)
+            if parsed is not None:
+                prices.append(parsed)
+            if len(prices) >= 8:
+                break
+        if len(prices) < 4:
             continue
         rows.append(
             {
-                "date": parsed_date,
-                "open": _parse_number(item.get("Open")),
-                "high": _parse_number(item.get("High")),
-                "low": _parse_number(item.get("Low")),
-                "close": close,
-                "volume": _parse_volume(item.get("Volume")),
-                "source": SOURCE_STOOQ,
+                "date": _parse_date(token),
+                "open": prices[0],
+                "high": prices[1],
+                "low": prices[2],
+                "close": prices[3],
+                "volume": None,
+                "source": SOURCE_225NAVI,
             }
         )
-    return filter_rows_by_date(rows, start, end)
+    return rows
 
 
 def normalize_bar_row(row):
@@ -440,7 +284,7 @@ def normalize_bar_row(row):
         "low": _parse_number(row.get("low")) or close,
         "close": close,
         "volume": _parse_volume(row.get("volume")),
-        "source": row.get("source") or SOURCE_CME,
+        "source": row.get("source") or SOURCE_225NAVI,
     }
 
 
@@ -474,57 +318,25 @@ def _get_text(url, params=None, diagnostics=None, label="http"):
         return None
 
 
-def _get_bytes(url, diagnostics=None, label="http"):
-    try:
-        response = requests.get(
-            url,
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SEC,
-        )
-        _record_http_response(diagnostics, label, response)
-        response.raise_for_status()
-        return response.content
-    except requests.RequestException as exc:
-        _record_fetch_error(diagnostics, label, exc)
-        return None
-
-
-def _pdf_text(content):
-    with tempfile.NamedTemporaryFile(suffix=".pdf") as handle:
-        handle.write(content)
-        handle.flush()
-        try:
-            result = subprocess.run(
-                ["pdftotext", handle.name, "-"],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            return ""
-    return result.stdout
-
-
 def _parse_date(value):
     if isinstance(value, date):
         return value
     if not value:
         return None
     text = str(value).strip()
-    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%b %d, %Y", "%a, %b %d, %Y", "%d.%m.%Y"):
+    for fmt in (
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%m/%d/%Y",
+        "%b %d, %Y",
+        "%a, %b %d, %Y",
+        "%d.%m.%Y",
+    ):
         try:
             return datetime.strptime(text, fmt).date()
         except ValueError:
             continue
     return None
-
-
-def _parse_cme_bulletin_date(text):
-    match = _CME_BULLETIN_DATE_RE.search(text)
-    if not match:
-        return None
-    return _parse_date(match.group("date"))
 
 
 def _parse_number(value):
@@ -564,18 +376,6 @@ def _parse_volume(value):
         return None
 
 
-def _parse_cme_volume(*values):
-    total = 0.0
-    found = False
-    for value in values:
-        parsed = _parse_volume(value)
-        if parsed is None:
-            continue
-        total += parsed
-        found = True
-    return total if found else None
-
-
 def _pct_change(current, previous):
     current = _parse_number(current)
     previous = _parse_number(previous)
@@ -609,14 +409,12 @@ def _record_fetch_detail(diagnostics, label, detail):
 def _sync_status(source, snapshot):
     if not snapshot:
         return "failed"
-    if source == SOURCE_CME and snapshot.get("source") == SOURCE_CME:
-        return "success"
     return "fallback"
 
 
 def _should_update_existing_bar(existing, parsed):
-    if parsed.get("source") != SOURCE_CME:
+    if parsed.get("source") != SOURCE_225NAVI:
         return False
-    if existing.source == SOURCE_CME:
+    if existing.source == SOURCE_225NAVI:
         return False
     return True

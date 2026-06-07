@@ -89,6 +89,8 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
         return 96
     if source == "yahoo":
         return 88
+    if source == "225navi" and symbol == "niy=f":
+        return 74
     if source == "stooq" and symbol == "^nkx":
         return 58
     if source == "stooq":
