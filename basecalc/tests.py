@@ -307,6 +307,121 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(latest_bar.source, 'investing.com')
         cache.clear()
 
+    def test_sync_does_not_create_snapshot_from_old_csv_when_no_source_returns_rows(self):
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 5, 22)),
+            open=62427.5,
+            high=63802.5,
+            low=62347.5,
+            close=63295,
+            volume=None,
+            source='csv',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+
+        with (
+            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=[]),
+            patch('basecalc.daily_sync.fetch_investing_daily_bars', return_value=[]),
+            patch('basecalc.daily_sync.fetch_stooq_daily_bars', return_value=[]),
+            patch('basecalc.daily_sync.write_basecalc_status') as status_write,
+        ):
+            from basecalc.daily_sync import sync_nikkei_futures_daily
+
+            result = sync_nikkei_futures_daily()
+
+        self.assertEqual(result['sync_status'], 'failed')
+        self.assertEqual(result['source'], '')
+        self.assertEqual(result['rows_fetched'], 0)
+        self.assertFalse(result['snapshot_created'])
+        self.assertEqual(MarketSnapshot.objects.count(), 0)
+        status_entry = status_write.call_args.args[0]['price_data']
+        self.assertIsNone(status_entry['last_success_at'])
+        self.assertIsNotNone(status_entry['last_failed_at'])
+        self.assertEqual(status_entry['decision_level'], 'blocked')
+        cache.clear()
+
+    def test_sync_upgrades_existing_csv_bar_when_cme_fetches_same_date(self):
+        _create_market_bar_series(
+            count=80,
+            start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+            open=62427.5,
+            high=63802.5,
+            low=62347.5,
+            close=63295,
+            volume=None,
+            source='csv',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+        rows = [
+            {
+                'date': date(2026, 6, 4),
+                'open': 68025,
+                'high': 68050,
+                'low': 66935,
+                'close': 67775,
+                'volume': 26187,
+                'source': 'cme_daily_bulletin',
+            },
+        ]
+
+        with (
+            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_investing_daily_bars'),
+            patch('basecalc.daily_sync.fetch_stooq_daily_bars'),
+            patch('basecalc.daily_sync.write_basecalc_status'),
+        ):
+            call_command('sync_nikkei_futures_daily')
+
+        upgraded_bar = MarketBar.objects.get(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+        )
+        self.assertEqual(upgraded_bar.source, 'cme_daily_bulletin')
+        self.assertEqual(upgraded_bar.close, 67775)
+        latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
+        self.assertEqual(latest_snapshot.source, 'cme_daily_bulletin')
+        self.assertEqual(latest_snapshot.price, 67775)
+        self.assertEqual(latest_snapshot.readiness_level, 'ready')
+        cache.clear()
+
+    def test_sync_command_logs_source_attempts_and_snapshot_source(self):
+        rows = [
+            {
+                'date': date(2026, 6, 4),
+                'open': 68025,
+                'high': 68050,
+                'low': 66935,
+                'close': 67775,
+                'volume': 26187,
+                'source': 'cme_daily_bulletin',
+            },
+        ]
+        output = StringIO()
+
+        with (
+            patch('basecalc.daily_sync.fetch_cme_daily_bulletin_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_investing_daily_bars'),
+            patch('basecalc.daily_sync.fetch_stooq_daily_bars'),
+            patch('basecalc.daily_sync.write_basecalc_status'),
+        ):
+            call_command('sync_nikkei_futures_daily', stdout=output)
+
+        text = output.getvalue()
+        self.assertIn('status=success', text)
+        self.assertIn('attempts=cme_daily_bulletin:fetched=1', text)
+        self.assertIn('snapshot_source=cme_daily_bulletin', text)
+        cache.clear()
+
     def test_cme_daily_bulletin_parser_reads_nikkei_yen_futures_row(self):
         from basecalc.daily_sync import parse_cme_daily_bulletin_text
 

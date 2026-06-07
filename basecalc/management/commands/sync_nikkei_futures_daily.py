@@ -43,10 +43,14 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 "nikkei futures daily sync complete: "
+                f"status={result.get('sync_status')}, "
                 f"source={result.get('source') or 'none'}, "
+                f"attempts={_format_attempts(result.get('attempts'))}, "
                 f"fetched={result.get('rows_fetched')}, "
                 f"created={result.get('rows_created')}, "
                 f"updated={result.get('rows_updated')}, "
+                f"snapshot_source={result.get('snapshot_source') or 'none'}, "
+                f"snapshot_fetched_at={result.get('snapshot_fetched_at') or 'none'}, "
                 f"price={result.get('price')}, "
                 f"readiness={result.get('readiness_level')}, "
                 f"exported={exported}"
@@ -61,3 +65,12 @@ def _parse_date_option(value, label):
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError as exc:
         raise CommandError(f"Invalid {label} date: {value}") from exc
+
+
+def _format_attempts(attempts):
+    parts = []
+    for attempt in attempts or []:
+        parts.append(
+            f"{attempt.get('source') or 'unknown'}:fetched={attempt.get('rows', 0)}"
+        )
+    return ",".join(parts) or "none"

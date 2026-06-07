@@ -48,10 +48,10 @@ _CME_CONTRACT_ROW_RE = re.compile(
 
 
 def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
-    rows, source = fetch_nikkei_futures_daily_rows(start=start, end=end)
+    rows, source, attempts = fetch_nikkei_futures_daily_rows(start=start, end=end)
     saved = save_daily_bars(rows, update_existing=update_existing)
-    snapshot_bar = latest_synced_bar(rows) if source == SOURCE_CME else None
-    snapshot = build_snapshot_from_market_bar(snapshot_bar) if snapshot_bar else build_latest_snapshot_from_market_bars()
+    snapshot_bar = latest_synced_bar(rows) if rows else None
+    snapshot = build_snapshot_from_market_bar(snapshot_bar) if snapshot_bar else None
     world_model = build_world_model(
         snapshot.get("price") if snapshot else 0,
         snapshot,
@@ -69,12 +69,17 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
             )
         }
     )
+    sync_status = _sync_status(source, snapshot)
     return {
+        "sync_status": sync_status,
         "source": source,
+        "attempts": attempts,
         "rows_fetched": len(rows),
         "rows_created": saved["created"],
         "rows_updated": saved["updated"],
         "snapshot_created": bool(snapshot),
+        "snapshot_source": snapshot.get("source") if snapshot else "",
+        "snapshot_fetched_at": snapshot_bar.timestamp.isoformat() if snapshot_bar else "",
         "price": world_model.get("price"),
         "readiness_level": world_model.get("readiness_level"),
     }
@@ -82,15 +87,17 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
 
 def fetch_nikkei_futures_daily_rows(start=None, end=None):
     fetchers = (
-        fetch_cme_daily_bulletin_bars,
-        fetch_investing_daily_bars,
-        fetch_stooq_daily_bars,
+        (SOURCE_CME, fetch_cme_daily_bulletin_bars),
+        (SOURCE_INVESTING, fetch_investing_daily_bars),
+        (SOURCE_STOOQ, fetch_stooq_daily_bars),
     )
-    for fetcher in fetchers:
+    attempts = []
+    for source_name, fetcher in fetchers:
         rows = fetcher(start=start, end=end)
+        attempts.append({"source": source_name, "rows": len(rows)})
         if rows:
-            return rows, rows[0].get("source") or fetcher.__name__
-    return [], ""
+            return rows, rows[0].get("source") or source_name, attempts
+    return [], "", attempts
 
 
 def save_daily_bars(rows, update_existing=False):
@@ -123,27 +130,17 @@ def save_daily_bars(rows, update_existing=False):
             created += 1 if was_created else 0
             updated += 0 if was_created else 1
             continue
-        _, was_created = MarketBar.objects.get_or_create(
+        existing, was_created = MarketBar.objects.get_or_create(
             **lookup,
             defaults=defaults,
         )
         created += 1 if was_created else 0
+        if not was_created and _should_update_existing_bar(existing, parsed):
+            for key, value in defaults.items():
+                setattr(existing, key, value)
+            existing.save(update_fields=list(defaults.keys()))
+            updated += 1
     return {"created": created, "updated": updated}
-
-
-def build_latest_snapshot_from_market_bars():
-    latest = (
-        MarketBar.objects.filter(
-            symbol=DEFAULT_SYMBOL,
-            timeframe=DEFAULT_TIMEFRAME,
-            instrument_key=DEFAULT_INSTRUMENT_KEY,
-        )
-        .order_by("-timestamp")
-        .first()
-    )
-    if latest is None:
-        return None
-    return build_snapshot_from_market_bar(latest)
 
 
 def latest_synced_bar(rows):
@@ -552,3 +549,19 @@ def _pct_change(current, previous):
     if current is None or previous in (None, 0):
         return None
     return ((current - previous) / previous) * 100.0
+
+
+def _sync_status(source, snapshot):
+    if not snapshot:
+        return "failed"
+    if source == SOURCE_CME and snapshot.get("source") == SOURCE_CME:
+        return "success"
+    return "fallback"
+
+
+def _should_update_existing_bar(existing, parsed):
+    if parsed.get("source") != SOURCE_CME:
+        return False
+    if existing.source == SOURCE_CME:
+        return False
+    return True
