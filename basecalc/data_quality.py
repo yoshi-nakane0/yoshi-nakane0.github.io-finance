@@ -44,6 +44,9 @@ def evaluate_snapshot_quality(snapshot: Optional[dict], now=None) -> dict:
 def is_snapshot_stale(snapshot: Optional[dict], max_age_minutes: int = 15, now=None) -> bool:
     if not snapshot:
         return True
+    source = (snapshot or {}).get("source")
+    if source == "cme_daily_bulletin":
+        max_age_minutes = max(max_age_minutes, 96 * 60)
     fetched_at = _parse_timestamp(snapshot.get("fetched_at"))
     if fetched_at is None:
         return True
@@ -80,6 +83,8 @@ def detect_snapshot_anomaly(snapshot: Optional[dict], previous_snapshot: Optiona
 def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     source = (source or "").lower()
     symbol = (symbol or "").lower()
+    if source == "cme_daily_bulletin" and symbol == "niy=f":
+        return 96
     if source == "yahoo" and symbol == "niy=f":
         return 96
     if source == "yahoo":

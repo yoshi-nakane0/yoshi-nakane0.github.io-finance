@@ -55,20 +55,19 @@ from .services import feature_store, world_state
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
-    def test_refresh_workflow_only_triggers_vercel_daily_build(self):
+    def test_macro_operations_daily_job_only_triggers_vercel_daily_build(self):
+        workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
         workflow = (
-            Path(settings.BASE_DIR)
-            / '.github'
-            / 'workflows'
-            / 'refresh-macro-data.yml'
+            workflows_dir / 'macro-operations.yml'
         ).read_text(encoding='utf-8')
 
         self.assertIn('cron: "30 5 * * *"', workflow)
+        self.assertIn('daily-refresh:', workflow)
         self.assertIn('VERCEL_DEPLOY_HOOK_URL', workflow)
         self.assertIn('curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"', workflow)
         self.assertIn('timeout-minutes: 5', workflow)
         self.assertIn('concurrency:', workflow)
-        self.assertNotIn('actions/setup-python', workflow)
+        self.assertNotIn('requirements-prod.txt', workflow)
         self.assertNotIn('pip install -r requirements-prod.txt', workflow)
         self.assertNotIn('python manage.py refresh_macro_data', workflow)
         self.assertNotIn('python manage.py purge_old_data', workflow)
@@ -76,6 +75,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertNotIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
         self.assertNotIn('git add db.sqlite3', workflow)
         self.assertNotIn('DATA_BRANCH', workflow)
+        self.assertFalse((workflows_dir / 'refresh-macro-data.yml').exists())
 
     def test_vercel_build_precomputes_macro_dashboard(self):
         build_script = (
@@ -115,24 +115,27 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('"Django==5.2.14"', python_project)
 
     def test_macro_world_model_workflows_include_new_jobs(self):
-        monthly_workflow = (
-            Path(settings.BASE_DIR)
-            / '.github'
-            / 'workflows'
-            / 'monthly-macro-maintenance.yml'
-        ).read_text(encoding='utf-8')
-        weekly_workflow = (
-            Path(settings.BASE_DIR)
-            / '.github'
-            / 'workflows'
-            / 'weekly-macro-validation.yml'
-        ).read_text(encoding='utf-8')
+        workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
+        workflow = (workflows_dir / 'macro-operations.yml').read_text(
+            encoding='utf-8',
+        )
 
-        self.assertIn('monthly_macro_maintenance', monthly_workflow)
-        self.assertIn('return_forecast_model.json', monthly_workflow)
-        self.assertIn('macro_forecast_model.json', monthly_workflow)
-        self.assertIn('python manage.py weekly_macro_validation', weekly_workflow)
-        self.assertIn('DATABASE_URL is not set; skipped weekly validation.', weekly_workflow)
+        self.assertIn('monthly-maintenance:', workflow)
+        self.assertIn('monthly_macro_maintenance', workflow)
+        self.assertIn('return_forecast_model.json', workflow)
+        self.assertIn('macro_forecast_model.json', workflow)
+        self.assertIn('weekly-validation:', workflow)
+        self.assertIn('python manage.py weekly_macro_validation', workflow)
+        self.assertIn(
+            'DATABASE_URL is not set; skipped weekly validation.',
+            workflow,
+        )
+        self.assertFalse(
+            (workflows_dir / 'monthly-macro-maintenance.yml').exists(),
+        )
+        self.assertFalse(
+            (workflows_dir / 'weekly-macro-validation.yml').exists(),
+        )
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (

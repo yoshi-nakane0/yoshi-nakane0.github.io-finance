@@ -2,7 +2,7 @@
 
 ## 日次更新
 
-1. GitHub Actions `refresh-macro-data.yml` が Vercel deploy hook を叩きます。
+1. GitHub Actions `macro-operations.yml` の日次ジョブが Vercel deploy hook を叩きます。
 2. Vercel build で `build_files.sh` が動きます。
 3. `refresh_macro_data` が指標、景気判定、World State、価格データを更新します。
 4. `purge_old_data`、`settle_forecast_snapshots`、`precompute_dashboard` を実行します。

@@ -73,7 +73,7 @@ def evaluate_world_model_readiness(
     level = "blocked" if reason_codes else "ready"
     if level == "ready":
         ready_requirements = [
-            source_name == "yahoo",
+            source_name in {"cme_daily_bulletin", "yahoo"},
             symbol_name == "NIY=F",
             quality_score >= 80,
             quality_level == "good",
@@ -174,6 +174,8 @@ def _limited_reason_codes(quality_score, fallback_used, source, symbol, bar_coun
         codes.append("quality_50_79")
     if fallback_used:
         codes.append("fallback_used")
+    if source not in {"cme_daily_bulletin", "yahoo"} and source != "unknown":
+        codes.append("non_canonical_source")
     if source == "stooq" or symbol == "NK.F":
         codes.append("futures_proxy")
     if 35 <= bar_counts["1d"] < 60:
@@ -196,6 +198,7 @@ def _reason_texts(reason_codes):
         "snapshot_anomaly": "価格データに異常があります",
         "fallback_used": "フォールバックデータを使用しています",
         "futures_proxy": "代替先物データのため参考表示です",
+        "non_canonical_source": "公式CMEまたは標準先物データではないため参考表示です",
         "major_indicator_missing": "主要指標の一部が不足しています",
         "quality_50_79": "データ品質が限定的です",
         "not_all_ready_conditions_met": "判定条件をすべて満たしていません",

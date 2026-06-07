@@ -35,6 +35,7 @@ from .outcomes import (
 from .serializers import serialize_snapshot
 from .status import load_basecalc_status, status_display_rows
 from .world_model import build_world_model
+from .data_quality import is_snapshot_stale
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -490,6 +491,12 @@ def get_stale_futures_snapshot():
     latest_snapshot = MarketSnapshot.objects.order_by("-created_at").first()
     if latest_snapshot is None:
         return None
+    fetched_at = latest_snapshot.fetched_at or latest_snapshot.created_at
+    snapshot = {
+        "source": latest_snapshot.source or "saved_snapshot",
+        "fetched_at": fetched_at,
+    }
+    is_stale = is_snapshot_stale(snapshot)
     return {
         "symbol": latest_snapshot.symbol,
         "name": latest_snapshot.symbol,
@@ -505,8 +512,8 @@ def get_stale_futures_snapshot():
         "closes": [latest_snapshot.close or latest_snapshot.price],
         "volumes": [latest_snapshot.volume or 0],
         "timestamps": [int(latest_snapshot.created_at.timestamp())],
-        "fetched_at": latest_snapshot.created_at,
-        "is_stale": True,
+        "fetched_at": fetched_at,
+        "is_stale": is_stale,
         "fallback_reason": "saved_snapshot",
     }
 
