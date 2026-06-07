@@ -93,8 +93,10 @@ def fetch_nikkei_futures_daily_rows(start=None, end=None):
     )
     attempts = []
     for source_name, fetcher in fetchers:
-        rows = fetcher(start=start, end=end)
-        attempts.append({"source": source_name, "rows": len(rows)})
+        attempt = {"source": source_name, "rows": 0, "details": []}
+        rows = fetcher(start=start, end=end, diagnostics=attempt)
+        attempt["rows"] = len(rows)
+        attempts.append(attempt)
         if rows:
             return rows, rows[0].get("source") or source_name, attempts
     return [], "", attempts
@@ -250,16 +252,28 @@ def write_latest_market_snapshot(snapshot, world_model, latest_bar=None):
     )
 
 
-def fetch_cme_daily_bulletin_bars(start=None, end=None):
-    rows = fetch_cme_daily_bulletin_pdf_bars(start=start, end=end)
+def fetch_cme_daily_bulletin_bars(start=None, end=None, diagnostics=None):
+    rows = fetch_cme_daily_bulletin_pdf_bars(
+        start=start,
+        end=end,
+        diagnostics=diagnostics,
+    )
     if rows:
         return rows
-    return fetch_cme_settlement_csv_bars(start=start, end=end)
+    return fetch_cme_settlement_csv_bars(
+        start=start,
+        end=end,
+        diagnostics=diagnostics,
+    )
 
 
-def fetch_cme_settlement_csv_bars(start=None, end=None):
+def fetch_cme_settlement_csv_bars(start=None, end=None, diagnostics=None):
     trade_date = end or timezone.localdate()
-    text = _get_text(CME_SETTLEMENT_CSV_URL.format(date=trade_date.strftime("%Y%m%d")))
+    text = _get_text(
+        CME_SETTLEMENT_CSV_URL.format(date=trade_date.strftime("%Y%m%d")),
+        diagnostics=diagnostics,
+        label="settlement_csv",
+    )
     if not text:
         return []
     reader = csv.DictReader(io.StringIO(text))
@@ -289,8 +303,12 @@ def fetch_cme_settlement_csv_bars(start=None, end=None):
     return filter_rows_by_date(rows, start, end)
 
 
-def fetch_cme_daily_bulletin_pdf_bars(start=None, end=None):
-    content = _get_bytes(CME_DAILY_BULLETIN_URL)
+def fetch_cme_daily_bulletin_pdf_bars(start=None, end=None, diagnostics=None):
+    content = _get_bytes(
+        CME_DAILY_BULLETIN_URL,
+        diagnostics=diagnostics,
+        label="pdf",
+    )
     if not content:
         return []
     text = _pdf_text(content)
@@ -341,8 +359,12 @@ def parse_cme_daily_bulletin_text(text):
     return rows
 
 
-def fetch_investing_daily_bars(start=None, end=None):
-    text = _get_text(INVESTING_HISTORICAL_URL)
+def fetch_investing_daily_bars(start=None, end=None, diagnostics=None):
+    text = _get_text(
+        INVESTING_HISTORICAL_URL,
+        diagnostics=diagnostics,
+        label="historical",
+    )
     if not text:
         return []
     soup = BeautifulSoup(text, "html.parser")
@@ -368,14 +390,21 @@ def fetch_investing_daily_bars(start=None, end=None):
     return filter_rows_by_date(rows, start, end)
 
 
-def fetch_stooq_daily_bars(start=None, end=None):
+def fetch_stooq_daily_bars(start=None, end=None, diagnostics=None):
     params = {"s": "nk.f", "i": "d"}
     if start:
         params["d1"] = start.strftime("%Y%m%d")
     if end:
         params["d2"] = end.strftime("%Y%m%d")
-    text = _get_text(STOOQ_DAILY_URL, params=params)
+    text = _get_text(
+        STOOQ_DAILY_URL,
+        params=params,
+        diagnostics=diagnostics,
+        label="daily_csv",
+    )
     if not text or "<html" in text.lower():
+        if text and "<html" in text.lower():
+            _record_fetch_detail(diagnostics, "daily_csv", "html_response")
         return []
     reader = csv.DictReader(io.StringIO(text))
     rows = []
@@ -429,7 +458,7 @@ def filter_rows_by_date(rows, start=None, end=None):
     return result
 
 
-def _get_text(url, params=None):
+def _get_text(url, params=None, diagnostics=None, label="http"):
     try:
         response = requests.get(
             url,
@@ -437,22 +466,26 @@ def _get_text(url, params=None):
             headers=HEADERS,
             timeout=REQUEST_TIMEOUT_SEC,
         )
+        _record_http_response(diagnostics, label, response)
         response.raise_for_status()
         return response.text
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        _record_fetch_error(diagnostics, label, exc)
         return None
 
 
-def _get_bytes(url):
+def _get_bytes(url, diagnostics=None, label="http"):
     try:
         response = requests.get(
             url,
             headers=HEADERS,
             timeout=REQUEST_TIMEOUT_SEC,
         )
+        _record_http_response(diagnostics, label, response)
         response.raise_for_status()
         return response.content
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        _record_fetch_error(diagnostics, label, exc)
         return None
 
 
@@ -549,6 +582,28 @@ def _pct_change(current, previous):
     if current is None or previous in (None, 0):
         return None
     return ((current - previous) / previous) * 100.0
+
+
+def _record_http_response(diagnostics, label, response):
+    status_code = getattr(response, "status_code", "unknown")
+    _record_fetch_detail(diagnostics, label, f"http={status_code}")
+
+
+def _record_fetch_error(diagnostics, label, exc):
+    details = diagnostics.get("details") if isinstance(diagnostics, dict) else []
+    prefix = f"{label}:http="
+    if any(str(detail).startswith(prefix) for detail in details):
+        return
+    _record_fetch_detail(diagnostics, label, f"error={exc.__class__.__name__}")
+
+
+def _record_fetch_detail(diagnostics, label, detail):
+    if not isinstance(diagnostics, dict):
+        return
+    details = diagnostics.setdefault("details", [])
+    value = f"{label}:{detail}"
+    if value not in details:
+        details.append(value)
 
 
 def _sync_status(source, snapshot):

@@ -445,6 +445,32 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rows[0]['close'], 67775)
         self.assertEqual(rows[0]['source'], 'cme_daily_bulletin')
 
+    def test_cme_fetch_records_http_failure_diagnostics(self):
+        from requests import RequestException
+
+        from basecalc.daily_sync import fetch_cme_daily_bulletin_bars
+
+        class BlockedResponse:
+            status_code = 403
+            headers = {'content-type': 'application/json'}
+            content = b'{"message":"blocked"}'
+            text = '{"message":"blocked"}'
+
+            def raise_for_status(self):
+                raise RequestException('403 Client Error')
+
+        diagnostics = {}
+
+        with patch('basecalc.daily_sync.requests.get', return_value=BlockedResponse()):
+            rows = fetch_cme_daily_bulletin_bars(
+                end=date(2026, 6, 7),
+                diagnostics=diagnostics,
+            )
+
+        self.assertEqual(rows, [])
+        self.assertIn('pdf:http=403', diagnostics['details'])
+        self.assertIn('settlement_csv:http=403', diagnostics['details'])
+
     def test_sync_uses_cme_snapshot_even_when_newer_fallback_bar_exists(self):
         _create_market_bar_series(
             count=80,

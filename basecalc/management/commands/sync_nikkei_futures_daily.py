@@ -70,7 +70,9 @@ def _parse_date_option(value, label):
 def _format_attempts(attempts):
     parts = []
     for attempt in attempts or []:
-        parts.append(
-            f"{attempt.get('source') or 'unknown'}:fetched={attempt.get('rows', 0)}"
-        )
+        source = attempt.get("source") or "unknown"
+        fetched = attempt.get("rows", 0)
+        details = ";".join(attempt.get("details") or [])
+        suffix = f"[{details}]" if details else ""
+        parts.append(f"{source}:fetched={fetched}{suffix}")
     return ",".join(parts) or "none"
