@@ -252,7 +252,7 @@ html, body {
 }
 
 /* ---------- レスポンシブ ---------- */
-@media (max-width: 480px) {
+
   .summary-metrics {
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
@@ -275,4 +275,4 @@ html, body {
   .sector-change-cell {
     width: 55px;
   }
-}
+

@@ -477,13 +477,13 @@ body {
 
 
 /* Responsive Design */
-@media (max-width: 900px) {
+
   .grid-cols-4 {
     grid-template-columns: repeat(2, 1fr);
   }
-}
 
-@media (max-width: 600px) {
+
+
   .app-container {
     padding: 0.5rem 1rem;
   }
@@ -549,4 +549,4 @@ body {
   .card-subtitle {
     font-size: 0.8rem;
   }
-}
+

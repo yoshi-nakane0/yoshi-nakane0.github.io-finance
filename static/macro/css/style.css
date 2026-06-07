@@ -1648,11 +1648,11 @@ body {
     text-overflow: ellipsis;
 }
 
-@media (max-width: 600px) {
+
     .macro-regime-main {
         font-size: 1.3rem;
     }
-}
+
 
 .macro-regime-sub {
     display: inline-flex;
@@ -3501,7 +3501,7 @@ body {
     font-size: 0.9rem;
 }
 
-@media (max-width: 520px) {
+
     .macro-reliability-grid,
     .macro-reliability-detail-grid,
     .macro-monthly-status-grid,
@@ -3542,4 +3542,4 @@ body {
         height: 10rem;
         transform: none;
     }
-}
+

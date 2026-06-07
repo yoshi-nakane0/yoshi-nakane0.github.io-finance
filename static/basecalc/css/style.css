@@ -2326,7 +2326,7 @@ summary.accordion-summary::-webkit-details-marker {
 }
 
 /* --- Mobile Optimization (Max Width 480px) --- */
-@media (max-width: 480px) {
+
     .content {
         padding: 16px 12px;
         gap: 12px;
@@ -2610,4 +2610,4 @@ summary.accordion-summary::-webkit-details-marker {
     .history-item__grid {
         grid-template-columns: 1fr;
     }
-}
+

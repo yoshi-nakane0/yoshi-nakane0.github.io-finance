@@ -214,7 +214,7 @@ table.events-table td.impact-cell.important-impact {
     text-align: center;
 }
 
-@media (max-width: 480px) {
+
     .events-table-container {
         overflow-x: hidden;
     }
@@ -247,7 +247,7 @@ table.events-table td.impact-cell.important-impact {
         padding-left: 1px;
         padding-right: 1px;
     }
-}
+
 
 /* Back to top button styles */
 #back-to-top {

@@ -295,7 +295,7 @@ body {
   color: #cbd5e1;
 }
 
-@media (max-width: 480px) {
+
   .theme-panel-body {
     max-height: 320px;
   }
@@ -308,7 +308,7 @@ body {
     padding: 3px 7px;
     font-size: 10px;
   }
-}
+
 
 .filter-buttons {
   display: flex;
@@ -811,7 +811,7 @@ body {
   }
 }
 
-@media (max-width: 768px) {
+
   .history-toggle-wrap {
     justify-content: stretch;
   }
@@ -856,9 +856,9 @@ body {
     font-size: 12px;
     min-width: 46px;
   }
-}
 
-@media (max-width: 480px) {
+
+
   .filter-panel {
     padding: 20px 16px 12px;
   }
@@ -914,7 +914,7 @@ body {
   .company-summary {
     font-size: 16px;
   }
-}
+
 
 /* ===== テーマ別集計 ===== */
 .theme-aggregation {
@@ -1419,7 +1419,7 @@ body {
 }
 
 /* ===== レスポンシブ ===== */
-@media (max-width: 768px) {
+
   .fundamentals-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1431,9 +1431,9 @@ body {
   .theme-aggregation {
     padding: 8px 10px;
   }
-}
 
-@media (max-width: 480px) {
+
+
   .reaction-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1451,7 +1451,7 @@ body {
     font-size: 11px;
     padding: 5px 2px;
   }
-}
+
 
 /* ===== 事前予測 vs 実測（Step 6） ===== */
 .prediction-row {
@@ -1620,7 +1620,7 @@ body {
   background: rgba(148, 163, 184, 0.08);
 }
 
-@media (max-width: 480px) {
+
   .prediction-grid {
     grid-template-columns: 1fr;
   }
@@ -1645,7 +1645,7 @@ body {
   .whatif-result {
     flex-wrap: wrap;
   }
-}
+
 
 /* ===== Earnings card refresh ===== */
 .company-card {
@@ -1978,7 +1978,7 @@ body {
   }
 }
 
-@media (max-width: 768px) {
+
   .insight-grid {
     grid-template-columns: 1fr;
   }
@@ -1990,9 +1990,9 @@ body {
   .metric-score span {
     font-size: 34px;
   }
-}
 
-@media (max-width: 480px) {
+
+
   .company-card {
     padding: 12px;
   }
@@ -2023,7 +2023,7 @@ body {
   .reaction-cell:last-child {
     grid-column: auto;
   }
-}
+
 
 /* ===== Earnings card refresh v2: reference-inspired analytic panel ===== */
 .company-card {
@@ -2412,7 +2412,7 @@ body {
   border-color: rgba(34, 211, 238, 0.46);
 }
 
-@media (max-width: 768px) {
+
   .ai-summary-panel {
     padding: 14px;
   }
@@ -2444,9 +2444,9 @@ body {
   .fundamentals-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-@media (max-width: 420px) {
+
+
   .ai-summary-bg {
     width: 120px;
     opacity: 0.28;
@@ -2491,4 +2491,4 @@ body {
   .reaction-cell:last-child {
     grid-column: auto;
   }
-}
+
