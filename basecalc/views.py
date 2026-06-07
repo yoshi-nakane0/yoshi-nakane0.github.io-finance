@@ -20,8 +20,7 @@ from .anchor_snapshot import (
     normalize_ratio,
 )
 from .market_shock import build_market_shock_context
-from .futures_sentiment import get_nikkei_futures_snapshot
-from .market_bars import attach_saved_daily_bars, save_market_bars_from_snapshot
+from .market_bars import attach_saved_daily_bars
 from .market_context import calculate_context_score, get_market_context_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
@@ -326,7 +325,6 @@ def update_market_caches(
         futures = {
             "per_values": executor.submit(get_nikkei_per_values_for_update),
             "jgb": executor.submit(get_jgb10y_yield_for_update),
-            "futures_snapshot": executor.submit(get_futures_snapshot_for_update),
         }
 
         per_vals = futures["per_values"].result()
@@ -349,23 +347,14 @@ def update_market_caches(
             jgb10y_yield_percent = val
             cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
 
-        futures_snapshot = futures["futures_snapshot"].result()
+        futures_snapshot = get_cached_futures_snapshot()
+        snapshot_price = price_from_futures_snapshot(futures_snapshot)
         if isinstance(futures_snapshot, dict):
-            futures_snapshot["_market_bars_saved"] = save_market_bars_from_snapshot(
-                futures_snapshot
-            )
-            futures_snapshot = attach_saved_daily_bars(futures_snapshot)
             cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
             cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
-            snapshot_price = price_from_futures_snapshot(futures_snapshot)
-            if update_price_from_futures and snapshot_price is not None:
-                price = snapshot_price
-                cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
-        else:
-            futures_snapshot = get_cached_futures_snapshot()
-            snapshot_price = price_from_futures_snapshot(futures_snapshot)
-            if update_price_from_futures and price is None and snapshot_price is not None:
-                price = snapshot_price
+        if update_price_from_futures and snapshot_price is not None:
+            price = snapshot_price
+            cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
 
     return (
         forward_per,
@@ -393,7 +382,11 @@ def get_futures_snapshot_for_update():
     snapshot = cache.get(CACHE_KEY_FUTURES)
     if isinstance(snapshot, dict) and not futures_snapshot_needs_refresh(snapshot):
         return snapshot
-    return get_nikkei_futures_snapshot()
+    snapshot = get_stale_futures_snapshot()
+    if isinstance(snapshot, dict):
+        cache.set(CACHE_KEY_FUTURES, snapshot, timeout=CACHE_TTL_PRICE)
+        cache.set(CACHE_KEY_FUTURES_LAST_GOOD, snapshot, timeout=None)
+    return snapshot
 
 
 def get_cached_market_context():
@@ -488,7 +481,13 @@ def get_stale_futures_snapshot():
         snapshot["is_stale"] = True
         snapshot["fallback_reason"] = "last_good_cache"
         return snapshot
-    latest_snapshot = MarketSnapshot.objects.order_by("-created_at").first()
+    latest_snapshot = (
+        MarketSnapshot.objects.filter(source="225navi")
+        .order_by("-fetched_at", "-created_at")
+        .first()
+    )
+    if latest_snapshot is None:
+        latest_snapshot = MarketSnapshot.objects.order_by("-fetched_at", "-created_at").first()
     if latest_snapshot is None:
         return None
     fetched_at = latest_snapshot.fetched_at or latest_snapshot.created_at
@@ -497,7 +496,7 @@ def get_stale_futures_snapshot():
         "fetched_at": fetched_at,
     }
     is_stale = is_snapshot_stale(snapshot)
-    return {
+    return attach_saved_daily_bars({
         "symbol": latest_snapshot.symbol,
         "name": latest_snapshot.symbol,
         "source": latest_snapshot.source or "saved_snapshot",
@@ -515,7 +514,7 @@ def get_stale_futures_snapshot():
         "fetched_at": fetched_at,
         "is_stale": is_stale,
         "fallback_reason": "saved_snapshot",
-    }
+    })
 
 
 def normalize_growth_input(params, erp_method, anchor_snapshot, anchor_enabled):

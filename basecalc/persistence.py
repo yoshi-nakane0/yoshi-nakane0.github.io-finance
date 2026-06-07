@@ -55,6 +55,7 @@ def import_basecalc_history(input_path: str) -> dict:
         "outcomes_created": 0,
         "outcomes_skipped": 0,
         "market_bars_created": 0,
+        "market_bars_updated": 0,
         "market_bars_skipped": 0,
         "market_snapshots_created": 0,
         "market_snapshots_skipped": 0,
@@ -72,8 +73,13 @@ def import_basecalc_history(input_path: str) -> dict:
             _, created = _import_outcome(prediction, item)
             stats["outcomes_created" if created else "outcomes_skipped"] += 1
         for item in payload.get("market_bars") or []:
-            _, created = _import_market_bar(item)
-            stats["market_bars_created" if created else "market_bars_skipped"] += 1
+            _, created, updated = _import_market_bar(item)
+            if created:
+                stats["market_bars_created"] += 1
+            elif updated:
+                stats["market_bars_updated"] += 1
+            else:
+                stats["market_bars_skipped"] += 1
         for item in payload.get("market_snapshots") or []:
             _, created = _import_market_snapshot(item)
             stats["market_snapshots_created" if created else "market_snapshots_skipped"] += 1
@@ -271,24 +277,36 @@ def _import_outcome(prediction, item):
 def _import_market_bar(item):
     timestamp = _dt(item.get("timestamp"))
     if timestamp is None:
-        return None, False
+        return None, False, False
     instrument = normalize_instrument(item.get("symbol"), item.get("source"))
-    return MarketBar.objects.get_or_create(
-        symbol=instrument["symbol"] or item.get("symbol") or "NIY=F",
-        timeframe=item.get("timeframe") or "1d",
-        timestamp=timestamp,
-        defaults={
-            "open": item.get("open"),
-            "high": item.get("high"),
-            "low": item.get("low"),
-            "close": item.get("close") or 0,
-            "volume": item.get("volume"),
-            "source": item.get("source") or "history_import",
-            "instrument_key": item.get("instrument_key") or instrument["instrument_key"],
-            "instrument_type": item.get("instrument_type") or instrument["instrument_type"],
-            "data_quality_score": item.get("data_quality_score"),
-        },
+    lookup = {
+        "symbol": instrument["symbol"] or item.get("symbol") or "NIY=F",
+        "timeframe": item.get("timeframe") or "1d",
+        "timestamp": timestamp,
+    }
+    defaults = {
+        "open": item.get("open"),
+        "high": item.get("high"),
+        "low": item.get("low"),
+        "close": item.get("close") or 0,
+        "volume": item.get("volume"),
+        "source": item.get("source") or "history_import",
+        "instrument_key": item.get("instrument_key") or instrument["instrument_key"],
+        "instrument_type": item.get("instrument_type") or instrument["instrument_type"],
+        "data_quality_score": item.get("data_quality_score"),
+    }
+    market_bar, created = MarketBar.objects.get_or_create(
+        **lookup,
+        defaults=defaults,
     )
+    if created:
+        return market_bar, True, False
+    if defaults["source"] == "225navi" and market_bar.source != "225navi":
+        for key, value in defaults.items():
+            setattr(market_bar, key, value)
+        market_bar.save(update_fields=list(defaults.keys()))
+        return market_bar, False, True
+    return market_bar, False, False
 
 
 def _import_market_snapshot(item):

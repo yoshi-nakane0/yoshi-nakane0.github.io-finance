@@ -172,7 +172,7 @@ def build_snapshot_from_market_bar(latest):
         "volumes": [latest.volume or 0],
         "timestamps": [int(latest.timestamp.timestamp())],
         "fetched_at": timezone.now(),
-        "fallback_used": latest.source == SOURCE_225NAVI,
+        "fallback_used": False,
     }
     snapshot = attach_saved_daily_bars(snapshot)
     snapshot["quality"] = evaluate_snapshot_quality(snapshot)

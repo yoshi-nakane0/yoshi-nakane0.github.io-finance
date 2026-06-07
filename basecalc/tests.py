@@ -15,7 +15,7 @@ from django.utils import timezone
 from .anchor_snapshot import load_anchor_snapshot
 from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
-from .futures_sentiment import YAHOO_DAILY_CONFIG, calculate_futures_sentiment
+from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock
 from .backtesting import run_basecalc_backtest
@@ -39,6 +39,7 @@ from .state_machine import STATE_DEFINITIONS, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
+    get_stale_futures_snapshot,
     get_jgb10y_yield_for_update,
     get_nikkei_per_values_for_update,
 )
@@ -96,7 +97,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         with (
             patch('basecalc.views.get_nikkei_per_values') as per_values,
             patch('basecalc.views.get_jgb10y_yield_percent') as jgb_yield,
-            patch('basecalc.views.get_nikkei_futures_snapshot') as futures_snapshot,
+            patch('basecalc.views.get_futures_snapshot_for_update') as futures_snapshot,
         ):
             response = self.client.get(
                 reverse('basecalc:index'),
@@ -127,7 +128,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         with (
             patch('basecalc.views.get_nikkei_per_values') as per_values,
             patch('basecalc.views.get_jgb10y_yield_percent') as jgb_yield,
-            patch('basecalc.views.get_nikkei_futures_snapshot') as futures_snapshot,
+            patch('basecalc.views.get_futures_snapshot_for_update') as futures_snapshot,
         ):
             response = self.client.get(reverse('basecalc:index'))
 
@@ -171,10 +172,7 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'basecalc.views.get_jgb10y_yield_percent',
                 return_value=1.2,
             ) as jgb_yield,
-            patch(
-                'basecalc.views.get_nikkei_futures_snapshot',
-                return_value=None,
-            ) as futures_snapshot,
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=None) as futures_snapshot,
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -184,12 +182,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         per_values.assert_called_once()
         jgb_yield.assert_called_once()
-        futures_snapshot.assert_called_once()
+        self.assertGreaterEqual(futures_snapshot.call_count, 1)
         self.assertEqual(cache.get('nikkei_forward_per'), 18.5)
         self.assertEqual(cache.get('nikkei_jgb10y_yield_percent'), 1.2)
         self.assertEqual(cache.get('nikkei_price'), 40000)
 
-    def test_staff_post_update_caches_futures_snapshot_and_market_bars(self):
+    def test_staff_post_update_caches_saved_futures_snapshot(self):
         user = User.objects.create_user(
             username='basecalc-futures-staff',
             password='test-password',
@@ -204,14 +202,14 @@ class BasecalcUpdateSecurityTests(TestCase):
         ]
         snapshot = {
             'symbol': 'NIY=F',
-            'source': 'yahoo',
+            'source': '225navi',
             'price': 41100,
             'previous_close': 40900,
             'change_pct': 0.49,
             'timeframes': {
                 '1d': {
                     'symbol': 'NIY=F',
-                    'source': 'yahoo',
+                    'source': '225navi',
                     'opens': [40500, 40700, 40900],
                     'highs': [40800, 41000, 41200],
                     'lows': [40400, 40600, 40800],
@@ -228,7 +226,7 @@ class BasecalcUpdateSecurityTests(TestCase):
                 return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
             ),
             patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
-            patch('basecalc.views.get_nikkei_futures_snapshot', return_value=snapshot),
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=snapshot),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -240,7 +238,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_price'), 41100)
         self.assertEqual(cache.get('nikkei_futures_snapshot')['price'], 41100)
         self.assertEqual(cache.get('nikkei_futures_snapshot_last_good')['price'], 41100)
-        self.assertEqual(MarketBar.objects.count(), 3)
+        self.assertEqual(MarketBar.objects.count(), 0)
 
     def test_sync_nikkei_futures_daily_uses_225navi_and_creates_reference_snapshot(self):
         _create_market_bar_series(
@@ -534,6 +532,156 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(latest_snapshot.price, 67640)
         cache.clear()
 
+    def test_import_history_upgrades_existing_market_bar_to_225navi(self):
+        timestamp = timezone.make_aware(datetime(2026, 6, 5))
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timestamp,
+            open=67795,
+            high=67865,
+            low=63775,
+            close=64245,
+            volume=510000,
+            source='investing.com',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+        payload = {
+            'schema': 'basecalc_history_v2',
+            'market_bars': [{
+                'symbol': 'NIY=F',
+                'timeframe': '1d',
+                'timestamp': timestamp.isoformat(),
+                'open': 67350,
+                'high': 67410,
+                'low': 65890,
+                'close': 66670,
+                'volume': None,
+                'source': '225navi',
+                'instrument_key': 'cme_nikkei_futures',
+                'instrument_type': 'futures',
+            }],
+        }
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'basecalc_history.json'
+            path.write_text(json.dumps(payload), encoding='utf-8')
+            result = import_basecalc_history(str(path))
+
+        bar = MarketBar.objects.get(symbol='NIY=F', timeframe='1d', timestamp=timestamp)
+        self.assertEqual(result['market_bars_created'], 0)
+        self.assertEqual(result['market_bars_updated'], 1)
+        self.assertEqual(bar.source, '225navi')
+        self.assertEqual(bar.close, 66670)
+
+    def test_stale_futures_snapshot_prefers_latest_225navi_snapshot(self):
+        older = timezone.make_aware(datetime(2026, 6, 5))
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=older,
+            created_at=older,
+            price=64245,
+            close=64245,
+            source='investing.com',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='blocked',
+        )
+        navi_created = timezone.make_aware(datetime(2026, 6, 7, 13, 28))
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=older,
+            created_at=navi_created,
+            price=66670,
+            open=67350,
+            high=67410,
+            low=65890,
+            close=66670,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='limited',
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=older,
+            open=67350,
+            high=67410,
+            low=65890,
+            close=66670,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+
+        snapshot = get_stale_futures_snapshot()
+
+        self.assertEqual(snapshot['source'], '225navi')
+        self.assertEqual(snapshot['price'], 66670)
+        self.assertEqual(snapshot['closes'][-1], 66670)
+
+    def test_refresh_basecalc_data_uses_saved_225navi_without_live_futures_fetch(self):
+        from .operations import refresh_basecalc_data
+
+        _create_market_bar_series(
+            count=80,
+            start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        MarketBar.objects.filter(
+            symbol='NIY=F',
+            timestamp__date__gte=date(2026, 6, 1),
+        ).delete()
+        rows = [
+            (date(2026, 6, 1), 66250, 67240, 66240, 67080),
+            (date(2026, 6, 2), 67070, 67220, 65580, 66750),
+            (date(2026, 6, 3), 67220, 68800, 67190, 68560),
+            (date(2026, 6, 4), 67650, 67910, 66950, 67640),
+            (date(2026, 6, 5), 67350, 67410, 65890, 66670),
+        ]
+        for row_date, open_price, high, low, close in rows:
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=timezone.make_aware(datetime.combine(row_date, datetime.min.time())),
+                open=open_price,
+                high=high,
+                low=low,
+                close=close,
+                volume=None,
+                source='225navi',
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+            )
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=timezone.make_aware(datetime(2026, 6, 5)),
+            price=66670,
+            open=67350,
+            high=67410,
+            low=65890,
+            close=66670,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='limited',
+        )
+
+        with (
+            patch('basecalc.operations.get_nikkei_per_values_for_update', return_value={}),
+            patch('basecalc.operations.get_jgb10y_yield_for_update', return_value=None),
+            patch('basecalc.operations.write_basecalc_status'),
+        ):
+            result = refresh_basecalc_data(save=False, use_lock=False)
+
+        self.assertTrue(result['updated'])
+        self.assertEqual(result['price'], 66670)
+        self.assertEqual(result['state_key'], 'limited_reference')
+        self.assertEqual(result['source_status']['source'], '225navi')
+
     def test_fresh_futures_cache_skips_external_refetch(self):
         cached = {
             'symbol': 'NIY=F',
@@ -549,7 +697,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         }
         cache.set('nikkei_futures_snapshot', cached, timeout=300)
 
-        with patch('basecalc.views.get_nikkei_futures_snapshot') as futures_snapshot:
+        with patch('basecalc.views.get_stale_futures_snapshot') as futures_snapshot:
             result = get_futures_snapshot_for_update()
 
         futures_snapshot.assert_not_called()
@@ -955,8 +1103,14 @@ class BasecalcWorldModelV2SupportTests(TestCase):
 
 
 class BasecalcReliabilitySpecTests(TestCase):
-    def test_yahoo_daily_history_fetch_uses_five_year_range(self):
-        self.assertEqual(YAHOO_DAILY_CONFIG, ('5y', '1d', '1d'))
+    def test_225navi_niy_snapshot_is_reference_quality(self):
+        snapshot = _ready_snapshot(80, source='225navi')
+        snapshot['fallback_used'] = False
+        data_quality = evaluate_snapshot_quality(snapshot)
+
+        self.assertEqual(data_quality['source'], '225navi')
+        self.assertEqual(data_quality['score'], 74)
+        self.assertEqual(data_quality['level'], 'warning')
 
     def test_status_rows_show_age_fallback_and_decision(self):
         rows = status_display_rows(
@@ -1410,7 +1564,7 @@ class BasecalcWorldModelTests(TestCase):
                 return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
             ),
             patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
-            patch('basecalc.views.get_nikkei_futures_snapshot', return_value=snapshot),
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=snapshot),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -1512,7 +1666,7 @@ class BasecalcWorldModelTests(TestCase):
                 return_value={'index_based': 18.5, 'dividend_yield_index_based': 1.8},
             ),
             patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
-            patch('basecalc.views.get_nikkei_futures_snapshot', return_value=None),
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=None),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),

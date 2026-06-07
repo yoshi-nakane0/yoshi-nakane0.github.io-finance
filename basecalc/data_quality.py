@@ -45,7 +45,7 @@ def is_snapshot_stale(snapshot: Optional[dict], max_age_minutes: int = 15, now=N
     if not snapshot:
         return True
     source = (snapshot or {}).get("source")
-    if source == "cme_daily_bulletin":
+    if source in {"cme_daily_bulletin", "225navi"}:
         max_age_minutes = max(max_age_minutes, 96 * 60)
     fetched_at = _parse_timestamp(snapshot.get("fetched_at"))
     if fetched_at is None:

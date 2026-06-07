@@ -33,6 +33,7 @@ class Command(BaseCommand):
                 f"predictions_created={result['predictions_created']}, "
                 f"outcomes_created={result['outcomes_created']}, "
                 f"market_bars_created={result['market_bars_created']}, "
+                f"market_bars_updated={result.get('market_bars_updated', 0)}, "
                 f"evaluated={evaluated}"
             )
         )
