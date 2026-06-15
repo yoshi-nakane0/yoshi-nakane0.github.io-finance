@@ -888,14 +888,229 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['regime_condition_pct_display'], '40%')
         self.assertEqual(context['regime_condition_label'], 'やや悪い')
         self.assertEqual(context['regime_condition_tone'], 'negative')
+        self.assertEqual(context.get('regime_condition_bar_left_label'), '悪')
+        self.assertEqual(context.get('regime_condition_bar_right_label'), '良')
         self.assertEqual(context['rule_strength_score'], 4)
         self.assertEqual(context['rule_strength_fraction_display'], '4/5')
+        self.assertEqual(context.get('rule_strength_bar_left_label'), '弱')
+        self.assertEqual(context.get('rule_strength_bar_right_label'), '強')
         self.assertEqual(context['data_quality_score'], 4)
         self.assertEqual(context['data_quality_fraction_display'], '4/5')
+        self.assertEqual(context.get('data_quality_bar_left_label'), '古')
+        self.assertEqual(context.get('data_quality_bar_right_label'), '新')
         self.assertTrue(context['regime_good_points'])
         self.assertTrue(context['regime_bad_points'])
+        self.assertIn('在庫や企業利益の重し', context['regime_bad_points'][0])
         self.assertTrue(context['regime_outlook'])
         self.assertEqual(len(context['regime_update_guidance']), 4)
+
+    def test_regime_summary_is_compact_without_ellipsis(self):
+        snapshot = RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 18),
+            regime_label=RegimeSnapshot.Label.RECOVERY,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            rule_strength=66,
+            data_quality=92,
+            evidence=[
+                {
+                    'series_id': 'GDPC1',
+                    'name': '実質GDP',
+                    'metric': '前年比',
+                    'value': 2.4,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '拡大寄り',
+                    'contribution': 0.8,
+                },
+                {
+                    'series_id': 'CPIAUCSL',
+                    'name': 'CPI',
+                    'metric': '前年比',
+                    'value': 3.4,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '物価高止まり',
+                    'contribution': -0.6,
+                },
+            ],
+        )
+
+        context = dashboard.build_regime_context(snapshot)
+
+        self.assertEqual(context['regime_summary_label'], '回復寄り・物価高止まり')
+        self.assertNotIn('...', context['regime_summary_label'])
+        self.assertNotIn('主な', context['regime_summary_label'])
+        self.assertIn('需要が強く', context['regime_good_points'][0])
+        self.assertIn('金利が下がりにくく', context['regime_bad_points'][0])
+
+    def test_regime_summary_css_uses_smaller_text_without_ellipsis(self):
+        css = (
+            Path(settings.BASE_DIR)
+            / 'static'
+            / 'macro'
+            / 'css'
+            / 'style.css'
+        ).read_text(encoding='utf-8')
+        summary_block_start = css.index('.macro-regime-main span {')
+        summary_block_end = css.index('}', summary_block_start)
+        summary_span_css = css[summary_block_start:summary_block_end]
+
+        self.assertIn('.macro-regime-main {', css)
+        self.assertIn('font-size: 1.03rem;', css)
+        self.assertNotIn('text-overflow: ellipsis;', summary_span_css)
+
+    def test_regime_context_groups_current_state_for_unified_ui(self):
+        snapshot = RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 19),
+            regime_label=RegimeSnapshot.Label.RECOVERY,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            rule_strength=72,
+            data_quality=88,
+            regime_probabilities={
+                RegimeSnapshot.Label.EXPANSION: 0.22,
+                RegimeSnapshot.Label.SLOWDOWN: 0.18,
+                RegimeSnapshot.Label.CONTRACTION: 0.08,
+                RegimeSnapshot.Label.RECOVERY: 0.52,
+            },
+            risk_probabilities={
+                'recession': 0.18,
+                'acceleration': 0.27,
+                'inflation_reacceleration': 0.61,
+                'financial_stress': 0.34,
+            },
+            evidence=[
+                {
+                    'series_id': 'GDPC1',
+                    'name': '実質GDP',
+                    'category': 'growth',
+                    'metric': '前年比',
+                    'value': 2.4,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '拡大寄り',
+                    'contribution': 0.8,
+                },
+                {
+                    'series_id': 'UNRATE',
+                    'name': '失業率',
+                    'category': 'labor',
+                    'metric': '水準',
+                    'value': 4.2,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '雇用は底堅い',
+                    'contribution': 0.25,
+                },
+                {
+                    'series_id': 'INDPRO',
+                    'name': '鉱工業生産指数',
+                    'category': 'growth',
+                    'metric': '前年比',
+                    'value': -0.4,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '減速寄り',
+                    'contribution': -0.35,
+                },
+                {
+                    'series_id': 'INDPRO',
+                    'name': '鉱工業生産指数',
+                    'category': 'growth',
+                    'metric': '3カ月変化',
+                    'value': -0.2,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '減速寄り',
+                    'contribution': -0.25,
+                },
+                {
+                    'series_id': 'PCEPILFE',
+                    'name': 'Core PCE',
+                    'category': 'inflation',
+                    'metric': '前年比',
+                    'value': 3.3,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '物価高止まり',
+                    'contribution': -0.6,
+                },
+                {
+                    'series_id': 'RSAFS',
+                    'name': '小売売上高',
+                    'category': 'growth',
+                    'metric': '前年比',
+                    'value': 2.1,
+                    'unit': '%',
+                    'observation_date': '2026-04-01',
+                    'signal': '消費は底堅い',
+                    'contribution': 0.18,
+                },
+            ],
+        )
+
+        context = dashboard.build_regime_context(snapshot)
+
+        self.assertEqual(context['regime_state_sections'][0]['label'], '景気の向き')
+        self.assertEqual(context['regime_state_sections'][1]['label'], '注意リスク')
+        self.assertEqual(context['regime_state_sections'][2]['label'], '判断材料')
+        material_labels = [
+            row['label']
+            for row in context['regime_state_sections'][2]['rows']
+        ]
+        self.assertEqual(material_labels, ['成長', '雇用', '生産', '物価', '消費'])
+        production = context['regime_state_sections'][2]['rows'][2]
+        self.assertEqual(production['primary_name'], '鉱工業生産指数')
+        self.assertEqual(production['indicator_count'], 1)
+        self.assertEqual(production['tone'], 'negative')
+        expansion = context['regime_state_sections'][0]['rows'][0]
+        recession = context['regime_state_sections'][1]['rows'][0]
+        inflation_risk = context['regime_state_sections'][1]['rows'][2]
+        growth = context['regime_state_sections'][2]['rows'][0]
+        core_pce = context['regime_state_sections'][2]['rows'][3]
+        self.assertEqual(expansion['badge_label'], '良い')
+        self.assertEqual(recession['badge_label'], '良い')
+        self.assertEqual(inflation_risk['badge_label'], '悪い')
+        self.assertEqual(growth['badge_label'], '良い')
+        self.assertEqual(core_pce['badge_label'], '悪い')
+        self.assertEqual(core_pce['metric_label'], '前年比')
+
+    def test_current_state_template_and_css_use_dashboard_card_ui(self):
+        template = (
+            Path(settings.BASE_DIR)
+            / 'macro'
+            / 'templates'
+            / 'macro'
+            / 'index.html'
+        ).read_text(encoding='utf-8')
+        css = (
+            Path(settings.BASE_DIR)
+            / 'static'
+            / 'macro'
+            / 'css'
+            / 'style.css'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('macro-state-card', template)
+        self.assertIn('macro-state-card__icon', template)
+        self.assertIn('macro-state-card__badge', template)
+        self.assertIn('macro-risk-gauge', template)
+        self.assertIn('macro-material-icon', template)
+        self.assertIn('.macro-state-card {', css)
+        self.assertIn('.macro-state-card-grid {', css)
+        self.assertIn('.macro-risk-gauge-fill {', css)
+        self.assertIn('.macro-material-card {', css)
+        self.assertIn('font-size: 2.075rem;', css)
+        self.assertIn('font-size: 1.375rem;', css)
+
+    def test_dashboard_precompute_payload_excludes_monthly_macro_conclusion(self):
+        with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None):
+            with mock.patch('macro.services.dashboard.build_similar_periods', return_value=[]):
+                with mock.patch('macro.services.dashboard.build_linkages', return_value=[]):
+                    with mock.patch('macro.services.dashboard.build_indicator_cards', return_value=[]):
+                        with mock.patch('macro.services.dashboard.build_crash_alert_context', return_value=None):
+                            payload = dashboard_cache.precompute_dashboard_payload()
+
+        self.assertNotIn('macro_conclusion', payload)
 
     def test_regime_condition_scale_adjusts_for_inflation(self):
         strong = dashboard._regime_condition_summary(
@@ -1088,15 +1303,25 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '今月のマクロ結論')
-        self.assertContains(r, '前回からの変化')
-        self.assertContains(r, '今後3カ月のベースシナリオ')
-        self.assertContains(r, 'モデルの信頼度')
+        self.assertNotContains(r, '今月のマクロ結論')
+        self.assertNotContains(r, '前回からの変化')
+        self.assertNotContains(r, '今後3カ月のベースシナリオ')
+        self.assertNotContains(r, 'モデルの信頼度')
         self.assertContains(r, '判定強度')
         self.assertContains(r, 'データ鮮度')
+        self.assertContains(r, 'macro-regime-score-axis')
+        self.assertNotContains(r, 'macro-regime-sub')
+        self.assertNotContains(r, '減速 × 高止まり')
+        self.assertContains(r, 'macro-current-state-map')
+        self.assertContains(r, '景気の向き')
+        self.assertContains(r, '注意リスク')
+        self.assertContains(r, '判断材料')
+        self.assertNotContains(r, '景気分布（ルール一致度）と主要リスク')
+        self.assertNotContains(r, '<summary>判定根拠</summary>')
         self.assertContains(r, '一目で見る結論')
         self.assertContains(r, '良い点')
         self.assertContains(r, '悪い点')
+        self.assertContains(r, '在庫や企業利益の重し')
         self.assertContains(r, 'これから先')
         self.assertContains(r, '<details class="macro-regime-details">')
         self.assertContains(r, '結論・良い点・悪い点・先行き')
@@ -1106,8 +1331,7 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, '2/5')
         self.assertContains(r, '4/5')
         self.assertContains(r, '更新頻度の目安')
-        self.assertContains(r, '判定根拠')
-        self.assertContains(r, 'macro-regime-details--evidence')
+        self.assertNotContains(r, 'macro-regime-details--evidence')
         self.assertContains(r, '鉱工業生産指数')
         self.assertNotContains(r, '判定モデル')
         self.assertNotContains(r, '履歴アーカイブ')

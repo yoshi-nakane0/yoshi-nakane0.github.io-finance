@@ -148,17 +148,33 @@ def estimate_expected_returns(
     performance_stats=None,
 ) -> dict:
     similar_summary = similar_summary or {}
+    case_count = int(similar_summary.get("case_count") or 0)
     base = similar_summary.get("median_return_3d_pct")
     if base is None:
         base = similar_summary.get("average_return_pct")
+    source = "empirical" if similar_summary.get("is_statistically_valid") and case_count >= 30 else "similarity_low_sample"
+    reliability = "middle" if source == "empirical" else "low"
+    display_label = "検証ベース" if source == "empirical" else "参考値"
     if not base:
         score = int(features.get("sentiment_score") or 0)
         base = max(-1.2, min(1.2, score / 100))
+        source = "sentiment_fallback"
+        reliability = "low"
+        display_label = "未検証の参考値"
     performance_stats = performance_stats or {}
     if performance_stats.get("avg_return_pct") is not None:
         base = (float(base) + float(performance_stats.get("avg_return_pct") or 0)) / 2
     multipliers = {"1d": 0.6, "3d": 1.0, "5d": 1.25}
-    return {horizon: round(float(base) * multiplier, 2) for horizon, multiplier in multipliers.items()}
+    return {
+        horizon: {
+            "value": round(float(base) * multiplier, 2),
+            "source": source,
+            "reliability": reliability,
+            "sample_count": case_count,
+            "display_label": display_label,
+        }
+        for horizon, multiplier in multipliers.items()
+    }
 
 
 def _normalize_probabilities(rows):

@@ -27,6 +27,8 @@ def _direction_sign(direction):
 def calculate_sentiment_score(features, similar_summary=None):
     trend_score = _trend_score(features)
     momentum_score = _momentum_score(features)
+    reversal_risk_score = calculate_reversal_risk_score(features)
+    rebound_improvement_score = calculate_rebound_improvement_score(features)
     volatility_score = _volatility_score(features)
     structure_score = _structure_score(features)
     similar_score = _similar_case_score(similar_summary)
@@ -48,9 +50,16 @@ def calculate_sentiment_score(features, similar_summary=None):
         "sentiment_score": score,
         "sentiment_key": key,
         "sentiment_label": label,
+        "trend_score": round(trend_score, 1),
+        "momentum_score": round(momentum_score, 1),
+        "reversal_risk_score": reversal_risk_score,
+        "rebound_improvement_score": rebound_improvement_score,
+        "external_context_score": round(context_score, 1),
         "components": {
             "trend": round(trend_score, 1),
             "momentum": round(momentum_score, 1),
+            "reversal_risk": reversal_risk_score,
+            "rebound_improvement": rebound_improvement_score,
             "volatility": round(volatility_score, 1),
             "structure": round(structure_score, 1),
             "similar": round(similar_score, 1),
@@ -112,6 +121,69 @@ def calculate_shock_score(features):
         score += 15
     if _trend_mismatch(features):
         score += 10
+    return round(clamp(score, 0, 100))
+
+
+def calculate_reversal_risk_score(features):
+    score = 0
+    price = features.get("price")
+    rsi = features.get("rsi14")
+    bb_upper = features.get("bb_upper")
+    macd_histogram = features.get("macd_histogram") or 0
+    change_5d = features.get("change_5d_pct") or 0
+    distance_high = features.get("distance_recent_high_pct")
+
+    if rsi is not None:
+        if rsi >= 75:
+            score += 35
+        elif rsi >= 68:
+            score += 22
+    if bb_upper and price:
+        if price >= bb_upper * 0.995:
+            score += 25
+        elif price >= bb_upper * 0.985:
+            score += 12
+    if change_5d >= 2.0:
+        score += 18
+    elif change_5d >= 1.0:
+        score += 10
+    if distance_high is not None and distance_high >= -0.2:
+        score += 10
+    if macd_histogram < 0 and _ema_alignment(features) > 0:
+        score += 12
+    return round(clamp(score, 0, 100))
+
+
+def calculate_rebound_improvement_score(features):
+    score = 0
+    price = features.get("price")
+    rsi = features.get("rsi14")
+    bb_lower = features.get("bb_lower")
+    macd_histogram = features.get("macd_histogram") or 0
+    change_5d = features.get("change_5d_pct") or 0
+    distance_low = features.get("distance_recent_low_pct")
+    vwap_gap = features.get("vwap_gap_pct")
+
+    if rsi is not None:
+        if rsi <= 25:
+            score += 35
+        elif rsi <= 32:
+            score += 22
+    if bb_lower and price:
+        if price <= bb_lower * 1.005:
+            score += 25
+        elif price <= bb_lower * 1.015:
+            score += 12
+    if change_5d <= -2.0:
+        score += 14
+    elif change_5d <= -1.0:
+        score += 8
+    if distance_low is not None and distance_low <= 0.2:
+        score += 10
+    if macd_histogram > 0 and _ema_alignment(features) < 0:
+        score += 12
+    if vwap_gap is not None and vwap_gap >= -0.15:
+        score += 7
     return round(clamp(score, 0, 100))
 
 

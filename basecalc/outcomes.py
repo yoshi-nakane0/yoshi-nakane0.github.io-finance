@@ -311,11 +311,11 @@ def performance_summary(
         if total == 0:
             return _empty_performance_summary()
         direction_hits = outcomes.filter(direction_hit=True).count()
-        target_t1_hits = outcomes.filter(upside_t1_hit=True).count() + outcomes.filter(
-            downside_t1_hit=True
+        target_t1_hits = outcomes.filter(
+            Q(upside_t1_hit=True) | Q(downside_t1_hit=True)
         ).count()
-        target_t2_hits = outcomes.filter(upside_t2_hit=True).count() + outcomes.filter(
-            downside_t2_hit=True
+        target_t2_hits = outcomes.filter(
+            Q(upside_t2_hit=True) | Q(downside_t2_hit=True)
         ).count()
         invalidations = outcomes.filter(invalidation_hit=True).count()
         return_values = list(outcomes.values_list("realized_return_pct", flat=True))
@@ -362,21 +362,17 @@ def state_performance_summary(horizon="1d", limit=12):
                 prediction__state_key=row["prediction__state_key"],
             )
             expected_returns = [
-                (prediction.expected_returns or {}).get(horizon)
+                _expected_return_value((prediction.expected_returns or {}).get(horizon))
                 for prediction in WorldModelPrediction.objects.filter(
                     state_key=row["prediction__state_key"],
                 )
             ]
-            expected_returns = [
-                float(value)
-                for value in expected_returns
-                if isinstance(value, (int, float))
-            ]
+            expected_returns = [float(value) for value in expected_returns if isinstance(value, (int, float))]
             total = row["total_predictions"] or 0
             if total == 0:
                 continue
-            target_t1_hits = outcomes.filter(upside_t1_hit=True).count() + outcomes.filter(
-                downside_t1_hit=True
+            target_t1_hits = outcomes.filter(
+                Q(upside_t1_hit=True) | Q(downside_t1_hit=True)
             ).count()
             result.append(
                 {
@@ -407,6 +403,91 @@ def state_performance_summary(horizon="1d", limit=12):
     except DatabaseError:
         logger.exception("Failed to read basecalc state performance")
         return []
+
+
+def calibration_summary(
+    horizon="1d",
+    *,
+    instrument_key="cme_nikkei_futures",
+    readiness_level="ready",
+    is_backtest=False,
+):
+    try:
+        outcomes = PredictionOutcome.objects.filter(horizon=horizon)
+        if instrument_key:
+            outcomes = outcomes.filter(prediction__instrument_key=instrument_key)
+        if readiness_level:
+            outcomes = outcomes.filter(prediction__readiness_level=readiness_level)
+        if is_backtest is not None:
+            outcomes = outcomes.filter(prediction__is_backtest=is_backtest)
+        buckets = {}
+        for outcome in outcomes.select_related("prediction")[:2000]:
+            expected = _expected_return_value(
+                (outcome.prediction.expected_returns or {}).get(horizon)
+            )
+            if expected is None:
+                continue
+            bucket = _calibration_bucket(float(expected))
+            row = buckets.setdefault(
+                bucket,
+                {
+                    "bucket": bucket,
+                    "sample_count": 0,
+                    "expected_total": 0.0,
+                    "realized_total": 0.0,
+                    "error_total": 0.0,
+                },
+            )
+            realized = float(outcome.realized_return_pct or 0)
+            row["sample_count"] += 1
+            row["expected_total"] += float(expected)
+            row["realized_total"] += realized
+            row["error_total"] += realized - float(expected)
+        rows = []
+        for row in buckets.values():
+            count = row["sample_count"]
+            if not count:
+                continue
+            rows.append(
+                {
+                    "bucket": row["bucket"],
+                    "sample_count": count,
+                    "avg_expected_pct": round(row["expected_total"] / count, 2),
+                    "avg_realized_pct": round(row["realized_total"] / count, 2),
+                    "avg_error_pct": round(row["error_total"] / count, 2),
+                    "sample_quality": _sample_quality(count),
+                }
+            )
+        return sorted(rows, key=lambda item: _calibration_sort_key(item["bucket"]))
+    except DatabaseError:
+        logger.exception("Failed to build basecalc calibration summary")
+        return []
+
+
+def _calibration_bucket(value):
+    if value < -1.0:
+        return "-1.0%未満"
+    if value < -0.5:
+        return "-1.0%〜-0.5%"
+    if value < 0:
+        return "-0.5%〜0.0%"
+    if value < 0.5:
+        return "0.0%〜0.5%"
+    if value < 1.0:
+        return "0.5%〜1.0%"
+    return "1.0%以上"
+
+
+def _calibration_sort_key(bucket):
+    order = {
+        "-1.0%未満": 0,
+        "-1.0%〜-0.5%": 1,
+        "-0.5%〜0.0%": 2,
+        "0.0%〜0.5%": 3,
+        "0.5%〜1.0%": 4,
+        "1.0%以上": 5,
+    }
+    return order.get(bucket, 99)
 
 
 def _empty_performance_summary():
@@ -444,6 +525,12 @@ def _median(values):
     if len(values) % 2:
         return round(values[midpoint], 2)
     return round((values[midpoint - 1] + values[midpoint]) / 2, 2)
+
+
+def _expected_return_value(value):
+    if isinstance(value, dict):
+        return value.get("value")
+    return value
 
 
 def improvement_insights(horizon="1d", min_samples=5, limit=6):

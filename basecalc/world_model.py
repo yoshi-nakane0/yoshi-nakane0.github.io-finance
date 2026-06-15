@@ -128,6 +128,11 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
     sentiment = calculate_sentiment_score(features, similar_summary)
     direction = _direction_from_score(sentiment["sentiment_score"])
     features["sentiment_score"] = sentiment["sentiment_score"]
+    features["trend_score"] = sentiment["trend_score"]
+    features["momentum_score"] = sentiment["momentum_score"]
+    features["reversal_risk_score"] = sentiment["reversal_risk_score"]
+    features["rebound_improvement_score"] = sentiment["rebound_improvement_score"]
+    features["external_context_score"] = sentiment["external_context_score"]
 
     continuation_score = calculate_continuation_score(features, direction)
     shock_score = calculate_shock_score(features)
@@ -168,6 +173,13 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         features,
         similar_summary=similar_summary,
     )
+    dual_scenario = build_dual_scenario(
+        direction,
+        continuation_score,
+        sentiment["reversal_risk_score"],
+        sentiment["rebound_improvement_score"],
+        shock_score,
+    )
     confidence_result = calculate_confidence_score(
         features,
         sentiment["sentiment_score"],
@@ -188,6 +200,8 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         )
     if confidence_result["warnings"]:
         evidence.extend(confidence_result["warnings"])
+    if dual_scenario.get("counter_scenario"):
+        evidence.append(dual_scenario["counter_scenario"])
     if performance_adjustment:
         evidence.append(_performance_adjustment_text(performance_adjustment))
     main_scenario = build_main_scenario(direction, targets)
@@ -209,6 +223,14 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "state_key": state_key,
         "state_label": state_label,
         "phase_label": phase_label,
+        "primary_scenario": dual_scenario["primary_scenario"],
+        "counter_scenario": dual_scenario["counter_scenario"],
+        "scenario_label": dual_scenario["scenario_label"],
+        "trend_score": sentiment["trend_score"],
+        "momentum_score": sentiment["momentum_score"],
+        "reversal_risk_score": sentiment["reversal_risk_score"],
+        "rebound_improvement_score": sentiment["rebound_improvement_score"],
+        "external_context_score": sentiment["external_context_score"],
         "sentiment_key": sentiment["sentiment_key"],
         "sentiment_label": sentiment["sentiment_label"],
         "sentiment_score": sentiment["sentiment_score"],
@@ -233,8 +255,11 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         },
         "transition_probs": transition_probs,
         "expected_returns": expected_returns,
-        "expected_return_1d": expected_returns.get("1d"),
-        "expected_return_5d": expected_returns.get("5d"),
+        "expected_return_1d": _expected_return_value(expected_returns, "1d"),
+        "expected_return_3d": _expected_return_value(expected_returns, "3d"),
+        "expected_return_5d": _expected_return_value(expected_returns, "5d"),
+        "expected_return_source": _expected_return_source(expected_returns, "3d"),
+        "expected_return_label": _expected_return_label(expected_returns, "3d"),
         "market_context": _json_safe_context(
             {
                 **(market_context or {}),
@@ -253,6 +278,8 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "invalidation_text": _invalidation_text(direction, invalidation_price),
         "upside_targets": targets["upside"],
         "downside_targets": targets["downside"],
+        "near_levels": targets.get("near_levels") or {},
+        "target_ranges": targets.get("target_ranges") or [],
         "target_1_display": _target_display(direction, targets, 0),
         "target_2_display": _target_display(direction, targets, 1),
         "similar_summary": similar_summary,
@@ -490,6 +517,50 @@ def build_sub_scenario(direction, invalidation_price):
     return "レンジ上限または下限を終値で抜けるか確認"
 
 
+def build_dual_scenario(
+    direction,
+    continuation_score,
+    reversal_risk_score,
+    rebound_improvement_score,
+    shock_score,
+):
+    if direction == "up":
+        if reversal_risk_score >= 60:
+            return {
+                "primary_scenario": "上昇優勢",
+                "counter_scenario": f"反落警戒 {reversal_risk_score}/100",
+                "scenario_label": "上昇優勢だが反落警戒点灯",
+            }
+        return {
+            "primary_scenario": "上昇継続",
+            "counter_scenario": "反落警戒は限定的",
+            "scenario_label": "上昇継続優勢",
+        }
+    if direction == "down":
+        if rebound_improvement_score >= 60:
+            return {
+                "primary_scenario": "下落優勢",
+                "counter_scenario": f"買い戻し警戒 {rebound_improvement_score}/100",
+                "scenario_label": "下落優勢だが買い戻し警戒点灯",
+            }
+        return {
+            "primary_scenario": "下落継続",
+            "counter_scenario": "改善シグナルは限定的",
+            "scenario_label": "下落継続優勢",
+        }
+    if max(reversal_risk_score, rebound_improvement_score, shock_score) >= 55:
+        label = "反転候補"
+    elif continuation_score < 45:
+        label = "レンジ・判定保留"
+    else:
+        label = "レンジ中立"
+    return {
+        "primary_scenario": label,
+        "counter_scenario": "上下どちらも決め手不足",
+        "scenario_label": label,
+    }
+
+
 def blocked_world_model(
     price=None,
     snapshot=None,
@@ -524,6 +595,14 @@ def blocked_world_model(
         "state_key": "data_unavailable",
         "state_label": "データ不足",
         "phase_label": "判定停止",
+        "primary_scenario": "判定停止",
+        "counter_scenario": "価格データ、取得元、足数を確認してください",
+        "scenario_label": "判定停止",
+        "trend_score": 0,
+        "momentum_score": 0,
+        "reversal_risk_score": 0,
+        "rebound_improvement_score": 0,
+        "external_context_score": 0,
         "sentiment_key": "neutral",
         "sentiment_label": "判定不可",
         "sentiment_score": 0,
@@ -542,7 +621,10 @@ def blocked_world_model(
         "transition_probs": [],
         "expected_returns": {},
         "expected_return_1d": 0,
+        "expected_return_3d": 0,
         "expected_return_5d": 0,
+        "expected_return_source": "",
+        "expected_return_label": "判定停止",
         "market_context": _json_safe_context(
             {
                 **(market_context or {}),
@@ -561,6 +643,8 @@ def blocked_world_model(
         "invalidation_text": "方向判定停止中",
         "upside_targets": [],
         "downside_targets": [],
+        "near_levels": {},
+        "target_ranges": [],
         "target_1_display": "",
         "target_2_display": "",
         "similar_summary": _empty_similar_summary(),
@@ -611,6 +695,14 @@ def limited_world_model(
         "state_key": "limited_reference",
         "state_label": "参考表示",
         "phase_label": "方向判定停止",
+        "primary_scenario": "方向判定停止",
+        "counter_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+        "scenario_label": "参考表示",
+        "trend_score": 0,
+        "momentum_score": 0,
+        "reversal_risk_score": 0,
+        "rebound_improvement_score": 0,
+        "external_context_score": 0,
         "sentiment_key": "neutral",
         "sentiment_label": "参考表示",
         "sentiment_score": 0,
@@ -629,7 +721,10 @@ def limited_world_model(
         "transition_probs": estimate_transition_probabilities("limited_reference", features),
         "expected_returns": {},
         "expected_return_1d": 0,
+        "expected_return_3d": 0,
         "expected_return_5d": 0,
+        "expected_return_source": "",
+        "expected_return_label": "方向判定停止",
         "market_context": _json_safe_context(
             {
                 **(market_context or {}),
@@ -648,6 +743,8 @@ def limited_world_model(
         "invalidation_text": "方向判定停止中",
         "upside_targets": [],
         "downside_targets": [],
+        "near_levels": {},
+        "target_ranges": [],
         "target_1_display": "",
         "target_2_display": "",
         "similar_summary": _empty_similar_summary(),
@@ -816,6 +913,27 @@ def _target_price(targets, index):
     return targets[index].get("price")
 
 
+def _expected_return_value(expected_returns, horizon):
+    row = (expected_returns or {}).get(horizon)
+    if isinstance(row, dict):
+        return row.get("value")
+    return row
+
+
+def _expected_return_source(expected_returns, horizon):
+    row = (expected_returns or {}).get(horizon)
+    if isinstance(row, dict):
+        return row.get("source") or ""
+    return ""
+
+
+def _expected_return_label(expected_returns, horizon):
+    row = (expected_returns or {}).get(horizon)
+    if isinstance(row, dict):
+        return row.get("display_label") or ""
+    return ""
+
+
 def _price_display(value):
     value = _to_float(value)
     if value is None:
@@ -946,6 +1064,8 @@ def _empty_similar_summary():
         "down_rate": 0,
         "range_rate": 0,
         "average_return_pct": 0,
+        "upside_t1_hit_rate": 0,
+        "downside_t1_hit_rate": 0,
         "target_t1_hit_rate": 0,
         "invalidation_rate": 0,
         "directional_accuracy": 0,

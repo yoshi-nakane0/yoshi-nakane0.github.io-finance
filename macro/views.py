@@ -26,7 +26,6 @@ from .services.dashboard import (
     build_historical_crash_similarity,
     build_indicator_cards,
     build_linkages,
-    build_macro_conclusion_context,
     build_monthly_model_status,
     build_raw_archive_context,
     build_reliability_context,
@@ -264,10 +263,6 @@ def index(request):
         context['raw_archive_status'] = (
             context.get('raw_archive_status') or build_raw_archive_context()
         )
-        context['macro_conclusion'] = (
-            context.get('macro_conclusion')
-            or build_macro_conclusion_context(latest_snapshot)
-        )
         context['vintage_status'] = (
             context.get('vintage_status') or build_vintage_status_context()
         )
@@ -315,7 +310,6 @@ def index(request):
             'model_validation': build_model_validation_context(),
             'world_model_operations': build_world_model_operations_context(),
             'raw_archive_status': build_raw_archive_context(),
-            'macro_conclusion': build_macro_conclusion_context(latest_snapshot),
             'vintage_status': build_vintage_status_context(),
             'scenario_analysis': build_scenario_analysis(custom_scenario),
             'similar_periods': [],
@@ -354,7 +348,6 @@ def index(request):
         'model_validation': build_model_validation_context(),
         'world_model_operations': build_world_model_operations_context(),
         'raw_archive_status': build_raw_archive_context(),
-        'macro_conclusion': build_macro_conclusion_context(latest_snapshot),
         'vintage_status': build_vintage_status_context(),
         'scenario_analysis': build_scenario_analysis(custom_scenario),
         'similar_periods': similar_periods,

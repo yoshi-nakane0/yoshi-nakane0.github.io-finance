@@ -19,23 +19,25 @@ from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock
 from .backtesting import run_basecalc_backtest
-from .market_context import calculate_context_score
+from .market_context import calculate_context_score, get_market_context_snapshot
 from .market_bars import prune_market_bars
 from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import (
     apply_confidence_adjustment,
     apply_sentiment_score_adjustment,
+    calibration_summary,
     confidence_adjustment_for_state,
     evaluate_due_predictions,
     improvement_insights,
     performance_summary,
     save_prediction,
+    state_performance_summary,
 )
 from .persistence import export_basecalc_history, import_basecalc_history
 from .readiness import evaluate_world_model_readiness
 from .similarity import find_similar_cases
-from .status import status_display_rows
-from .state_machine import STATE_DEFINITIONS, estimate_transition_probabilities
+from .status import per_status_entry, status_display_rows
+from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -628,18 +630,19 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         _create_market_bar_series(
             count=80,
-            start=timezone.make_aware(datetime(2026, 3, 1)),
+            start=timezone.now() - timezone.timedelta(days=90),
         )
+        latest_date = timezone.localdate()
         MarketBar.objects.filter(
             symbol='NIY=F',
-            timestamp__date__gte=date(2026, 6, 1),
+            timestamp__date__gte=latest_date - timezone.timedelta(days=4),
         ).delete()
         rows = [
-            (date(2026, 6, 1), 66250, 67240, 66240, 67080),
-            (date(2026, 6, 2), 67070, 67220, 65580, 66750),
-            (date(2026, 6, 3), 67220, 68800, 67190, 68560),
-            (date(2026, 6, 4), 67650, 67910, 66950, 67640),
-            (date(2026, 6, 5), 67350, 67410, 65890, 66670),
+            (latest_date - timezone.timedelta(days=4), 66250, 67240, 66240, 67080),
+            (latest_date - timezone.timedelta(days=3), 67070, 67220, 65580, 66750),
+            (latest_date - timezone.timedelta(days=2), 67220, 68800, 67190, 68560),
+            (latest_date - timezone.timedelta(days=1), 67650, 67910, 66950, 67640),
+            (latest_date, 67350, 67410, 65890, 66670),
         ]
         for row_date, open_price, high, low, close in rows:
             MarketBar.objects.create(
@@ -658,7 +661,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         MarketSnapshot.objects.create(
             symbol='NIY=F',
             timeframe='1d',
-            fetched_at=timezone.make_aware(datetime(2026, 6, 5)),
+            fetched_at=timezone.now(),
             price=66670,
             open=67350,
             high=67410,
@@ -715,6 +718,22 @@ class BasecalcUpdateSecurityTests(TestCase):
         per_values.assert_not_called()
         self.assertEqual(result['index_based'], 18.5)
         self.assertEqual(result['dividend_yield_index_based'], 1.8)
+
+    def test_per_status_prefers_fetched_value_metadata_over_local_file(self):
+        status = per_status_entry(
+            {
+                'index_based': 23.93,
+                'dividend_yield_index_based': 1.36,
+                'date': timezone.localdate().strftime('%Y.%m.%d'),
+                'source': 'remote-test',
+                'fetched_at': timezone.now(),
+            },
+            success=True,
+        )
+
+        self.assertEqual(status['source'], 'remote-test')
+        self.assertEqual(status['age_days'], 0)
+        self.assertEqual(status['decision_level'], 'limited')
 
     def test_fresh_jgb_cache_skips_external_refetch(self):
         cache.set('nikkei_jgb10y_yield_percent', 1.2, timeout=3600)
@@ -1100,6 +1119,31 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         )
 
         self.assertEqual(result['risk_label'], 'risk_on')
+        self.assertGreater(result['risk_score'], 0)
+
+    def test_market_context_falls_back_to_saved_price_action_when_yahoo_fails(self):
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id='PA_GSPC_MOM20',
+            defaults={
+                'name_ja': 'PA_GSPC_MOM20',
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.B,
+                'frequency': Indicator.Frequency.DAILY,
+                'source': Indicator.Source.YFINANCE_DAILY,
+                'is_active': True,
+            },
+        )
+        Observation.objects.create(
+            indicator=indicator,
+            observation_date=timezone.localdate(),
+            value=5.0,
+        )
+
+        with patch('basecalc.market_context._fetch_context_symbol', return_value=None):
+            result = get_market_context_snapshot()
+
+        self.assertIn('sp500_futures', result['assets'])
+        self.assertEqual(result['assets']['sp500_futures']['source'], 'macro_price_action')
         self.assertGreater(result['risk_score'], 0)
 
 
@@ -1519,9 +1563,56 @@ class BasecalcWorldModelTests(TestCase):
 
         self.assertTrue(all(target['price'] > 41000 for target in targets['upside']))
         self.assertTrue(all(target['price'] < 41000 for target in targets['downside']))
-        self.assertTrue(all(0 <= target['probability'] <= 1 for target in targets['upside']))
+        self.assertTrue(
+            all(
+                target['probability'] is None or 0 <= target['probability'] <= 1
+                for target in targets['upside']
+            )
+        )
         self.assertIn('source', targets['upside'][0])
         self.assertIn('bullish_reason', targets['invalidation'])
+        self.assertIn('target_ranges', targets)
+        self.assertIn('near_levels', targets)
+
+    def test_near_round_numbers_are_not_promoted_to_targets(self):
+        targets = build_targets(
+            {
+                'price': 41050,
+                'atr14': 300,
+                'previous_high': 41100,
+                'previous_low': 41000,
+                'recent_high': 41100,
+                'recent_low': 41000,
+                'vwap': 41020,
+                'ema20': 41010,
+                'pivots': {'r1': 41100, 'r2': 41500, 's1': 41000, 's2': 40600},
+            },
+            {'case_count': 0, 'is_statistically_valid': False},
+        )
+
+        min_distance = 300 * 0.5
+        self.assertTrue(
+            all(target['distance_abs'] >= min_distance for target in targets['upside'])
+        )
+        self.assertTrue(
+            all(target['distance_abs'] >= min_distance for target in targets['downside'])
+        )
+        self.assertIn(41100, [level['price'] for level in targets['near_levels']['upside']])
+        self.assertNotIn(41100, [target['price'] for target in targets['upside']])
+        self.assertIsNone(targets['upside'][0]['probability'])
+        self.assertEqual(targets['upside'][0]['probability_source'], 'hidden_low_sample')
+        self.assertEqual(targets['upside'][0]['reliability'], 'low')
+
+    def test_expected_returns_mark_sentiment_fallback_as_low_reliability(self):
+        result = estimate_expected_returns(
+            'range_neutral',
+            {'sentiment_score': 40},
+            similar_summary={'case_count': 0, 'is_statistically_valid': False},
+        )
+
+        self.assertEqual(result['1d']['source'], 'sentiment_fallback')
+        self.assertEqual(result['1d']['reliability'], 'low')
+        self.assertEqual(result['1d']['display_label'], '未検証の参考値')
 
     def test_snapshot_api_returns_world_model_json(self):
         response = self.client.get(reverse('basecalc:snapshot_api'), {'price': '41000'})
@@ -1941,6 +2032,80 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(WorldModelPrediction.objects.count(), 1)
         self.assertEqual(PredictionOutcome.objects.count(), 1)
         self.assertEqual(MarketBar.objects.count(), 1)
+
+    def test_performance_t1_rates_do_not_exceed_one_when_both_sides_hit(self):
+        prediction = WorldModelPrediction.objects.create(
+            model_version='wm_v2.0.0',
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=20,
+            shock_score=20,
+            confidence='Low',
+            confidence_score=20,
+            data_quality_score=90,
+            main_scenario='test',
+            upside_targets=[{'price': 41400, 'probability': None}],
+            downside_targets=[{'price': 40600, 'probability': None}],
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41000,
+            realized_return_pct=0,
+            direction_hit=True,
+            upside_t1_hit=True,
+            downside_t1_hit=True,
+        )
+
+        summary = performance_summary()
+        state_rows = state_performance_summary()
+
+        self.assertEqual(summary['target_t1_hit_rate'], 1.0)
+        self.assertEqual(state_rows[0]['target_t1_hit_rate'], 1.0)
+
+    def test_calibration_summary_compares_expected_and_realized_returns(self):
+        prediction = WorldModelPrediction.objects.create(
+            model_version='wm_v2.0.0',
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=20,
+            shock_score=20,
+            confidence='Low',
+            confidence_score=20,
+            data_quality_score=90,
+            main_scenario='test',
+            evidence=[],
+            features={'symbol': 'NIY=F'},
+            expected_returns={'1d': {'value': 0.4, 'source': 'sentiment_fallback'}},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41100,
+            realized_return_pct=0.2,
+            direction_hit=True,
+        )
+
+        rows = calibration_summary('1d')
+
+        self.assertEqual(rows[0]['bucket'], '0.0%〜0.5%')
+        self.assertEqual(rows[0]['sample_count'], 1)
+        self.assertEqual(rows[0]['avg_expected_pct'], 0.4)
+        self.assertEqual(rows[0]['avg_realized_pct'], 0.2)
 
     def test_backtest_command_dry_run_uses_saved_market_bars(self):
         start = timezone.now() - timezone.timedelta(days=60)

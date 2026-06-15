@@ -296,6 +296,10 @@ def _extract_nikkei_per_values_from_payload(payload):
         result["index_based"] = index_val
     if dividend_index_val is not None:
         result["dividend_yield_index_based"] = dividend_index_val
+    if isinstance(payload, dict):
+        for key in ("date", "source", "fetched_at"):
+            if payload.get(key):
+                result[key] = payload[key]
     return result
 
 def _load_nikkei_per_payload_file(path):

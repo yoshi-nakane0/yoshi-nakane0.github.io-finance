@@ -82,15 +82,16 @@ def price_status_entry(snapshot, readiness_level="blocked", now=None):
 
 def per_status_entry(values=None, success=True, now=None):
     now = now or timezone.now()
+    values = values if isinstance(values, dict) else {}
     payload = _load_json(NIKKEI_PER_DATA_PATH)
-    fetched_at = _parse_datetime((payload or {}).get("fetched_at"))
-    date_value = (payload or {}).get("date")
+    fetched_at = _parse_datetime(values.get("fetched_at")) or _parse_datetime((payload or {}).get("fetched_at"))
+    date_value = values.get("date") or (payload or {}).get("date")
     age_days = _age_days_from_date(date_value, now)
     has_values = bool(values) or bool(payload)
     return {
         "last_success_at": _iso(fetched_at or now) if success and has_values else None,
         "last_failed_at": None if success else _iso(now),
-        "source": (payload or {}).get("source") or "basecalc/data/nikkei_per.json",
+        "source": values.get("source") or (payload or {}).get("source") or "basecalc/data/nikkei_per.json",
         "age_minutes": _age_minutes(fetched_at, now),
         "age_days": age_days,
         "as_of_date": date_value,

@@ -152,6 +152,32 @@
 
             <section class="card">
                 <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 14l3-3 3 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">予測と実績</div>
+                </div>
+                <div class="state-table">
+                    {% for row in calibration_rows %}
+                    <div class="state-row">
+                        <strong>{{ row.bucket }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>予測 {{ row.avg_expected_pct|floatformat:2 }}%</span>
+                        <span>実績 {{ row.avg_realized_pct|floatformat:2 }}%</span>
+                        <span>ズレ {{ row.avg_error_pct|floatformat:2 }}%</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">予測と実績を比較できる検証済みデータはまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
                     <div class="card-icon text-blue">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 3v18h18"></path>
@@ -212,7 +238,7 @@
                                 <strong>
                                     {% if row.prediction.invalidation_price %}{{ row.prediction.invalidation_price|floatformat:0|intcomma }}{% else %}N/A{% endif %}
                                     /
-                                    {% if row.target_1_probability is not None %}{{ row.target_1_probability|floatformat:2 }}{% else %}N/A{% endif %}
+                                    {{ row.target_1_probability_display }}
                                 </strong>
                             </div>
                             <div>

@@ -19,6 +19,12 @@ CONTEXT_SYMBOLS = {
     "crude_oil": "CL=F",
 }
 
+PRICE_ACTION_FALLBACKS = {
+    "sp500_futures": ("PA_GSPC_MOM20", "S&P500"),
+    "dow_futures": ("PA_DJI_MOM20", "NYダウ"),
+    "nasdaq100_futures": ("PA_IXIC_MOM20", "NASDAQ"),
+}
+
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 
 
@@ -29,6 +35,8 @@ def get_market_context_snapshot() -> dict:
         snapshot = _fetch_context_symbol(symbol)
         if snapshot:
             assets[key] = snapshot
+    if not assets:
+        assets = _price_action_fallback_assets()
     if not assets:
         return {}
     score = calculate_context_score({"assets": assets})
@@ -120,6 +128,49 @@ def _fetch_context_symbol(symbol):
         "source": "yahoo",
         "fetched_at": timezone.now(),
     }
+
+
+def _price_action_fallback_assets():
+    try:
+        from macro.models import Observation
+    except Exception:
+        return {}
+    assets = {}
+    latest_date = None
+    for key, (series_id, label) in PRICE_ACTION_FALLBACKS.items():
+        try:
+            observation = (
+                Observation.objects.filter(indicator__fred_series_id=series_id)
+                .order_by("-observation_date")
+                .first()
+            )
+        except Exception:
+            return {}
+        if observation is None:
+            continue
+        latest_date = max(latest_date, observation.observation_date) if latest_date else observation.observation_date
+        assets[key] = {
+            "symbol": label,
+            "price": None,
+            "previous_close": None,
+            "change_pct": round(float(observation.value or 0) / 5, 2),
+            "source": "macro_price_action",
+            "fetched_at": timezone.make_aware(
+                timezone.datetime.combine(
+                    observation.observation_date,
+                    timezone.datetime.min.time(),
+                ),
+                timezone=timezone.get_current_timezone(),
+            ),
+        }
+    if assets and latest_date:
+        fetched_at = timezone.make_aware(
+            timezone.datetime.combine(latest_date, timezone.datetime.min.time()),
+            timezone=timezone.get_current_timezone(),
+        )
+        for asset in assets.values():
+            asset["fetched_at"] = fetched_at
+    return assets
 
 
 def _label(key):

@@ -460,47 +460,6 @@ def build_vintage_status_context() -> Dict:
     }
 
 
-def build_macro_conclusion_context(
-    snapshot: Optional[RegimeSnapshot] = None,
-) -> Optional[Dict]:
-    if snapshot is None:
-        snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
-    if snapshot is None:
-        return None
-    from .macro_conclusion import latest_or_create_macro_conclusion
-
-    conclusion = latest_or_create_macro_conclusion(snapshot)
-    if conclusion is None:
-        return None
-    return {
-        'as_of_date': conclusion.as_of_date.isoformat(),
-        'previous_snapshot_date': (
-            conclusion.previous_snapshot_date.isoformat()
-            if conclusion.previous_snapshot_date else '—'
-        ),
-        'current_view': conclusion.current_view,
-        'previous_change': conclusion.previous_change,
-        'base_scenario_3m': conclusion.base_scenario_3m,
-        'upside_risk': conclusion.upside_risk,
-        'downside_risk': conclusion.downside_risk,
-        'watch_events': conclusion.watch_events or [],
-        'model_reliability': conclusion.model_reliability,
-        'driver_changes': [
-            {
-                **row,
-                'delta_display': format_signed(row.get('delta'), 2),
-            }
-            for row in conclusion.driver_changes or []
-        ],
-        'topic_mapping': conclusion.topic_mapping or [],
-        'reliability_score': conclusion.reliability_score,
-        'reliability_score_display': f'{conclusion.reliability_score:.0f}%',
-        'rule_probability_note': (
-            conclusion.metadata or {}
-        ).get('rule_probability_note', ''),
-    }
-
-
 def build_similar_periods(top_n: int = 5) -> List[Dict]:
     try:
         raw = find_similar_months(top_n=top_n)
@@ -610,6 +569,8 @@ def build_linkages(top_n: int = 10) -> List[Dict]:
 def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
     if snapshot is None:
         summary_label = '判定データ不足'
+        regime_rows = []
+        risk_rows = []
         return {
             'regime_label': '—',
             'inflation_flag': '—',
@@ -629,29 +590,40 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
             'regime_condition_label': '判定保留',
             'regime_condition_note': '主要指標の取得後に、1〜5で景気の良し悪しを表示します。',
             'regime_condition_tone': 'unknown',
+            'regime_condition_bar_left_label': '悪',
+            'regime_condition_bar_right_label': '良',
             'regime_update_guidance': _regime_update_guidance(),
             'rule_strength_pct': 0,
             'rule_strength_score': 0,
             'rule_strength_fraction_display': '—/5',
+            'rule_strength_bar_left_label': '弱',
+            'rule_strength_bar_right_label': '強',
             'data_quality_pct': 0,
             'data_quality_score': 0,
             'data_quality_fraction_display': '—/5',
+            'data_quality_bar_left_label': '古',
+            'data_quality_bar_right_label': '新',
             'regime_evidence': [],
             'regime_warnings': ['判定に必要なデータがまだ揃っていません。'],
             'regime_model_version': '—',
             'snapshot_date': None,
-            'regime_probability_rows': [],
-            'risk_probability_rows': [],
+            'regime_probability_rows': regime_rows,
+            'risk_probability_rows': risk_rows,
+            'regime_state_sections': _regime_state_sections(
+                regime_rows,
+                risk_rows,
+                [],
+            ),
         }
-    summary = _regime_summary(
-        snapshot.regime_label,
-        snapshot.inflation_flag,
-    )
     rule_strength = getattr(snapshot, 'rule_strength', None)
     if rule_strength is None:
         rule_strength = getattr(snapshot, 'confidence', 0)
     formatted_evidence = _format_regime_evidence(
         getattr(snapshot, 'evidence', []) or []
+    )
+    summary = _regime_summary(
+        snapshot.regime_label,
+        snapshot.inflation_flag,
     )
     data_quality = int(round(getattr(snapshot, 'data_quality', 0) or 0))
     rule_strength_pct = int(round(rule_strength or 0))
@@ -662,6 +634,13 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
         rule_strength or 0,
         data_quality,
     )
+    regime_rows = _regime_probability_rows(
+        getattr(snapshot, 'regime_probabilities', {}) or {}
+    )
+    risk_rows = _risk_probability_rows(
+        getattr(snapshot, 'risk_probabilities', {}) or {}
+    )
+    material_rows = _regime_evidence_groups(formatted_evidence)
     return {
         'regime_label': snapshot.get_regime_label_display(),
         'inflation_flag': snapshot.get_inflation_flag_display(),
@@ -695,18 +674,23 @@ def build_regime_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
         'rule_strength_fraction_display': (
             f'{_five_point_from_pct(rule_strength_pct)}/5'
         ),
+        'rule_strength_bar_left_label': '弱',
+        'rule_strength_bar_right_label': '強',
         'data_quality_pct': data_quality,
         'data_quality_score': _five_point_from_pct(data_quality),
         'data_quality_fraction_display': f'{_five_point_from_pct(data_quality)}/5',
+        'data_quality_bar_left_label': '古',
+        'data_quality_bar_right_label': '新',
         'regime_evidence': formatted_evidence,
         'regime_warnings': getattr(snapshot, 'warnings', []) or [],
         'regime_model_version': getattr(snapshot, 'model_version', 'regime_v1'),
         'snapshot_date': snapshot.snapshot_date,
-        'regime_probability_rows': _regime_probability_rows(
-            getattr(snapshot, 'regime_probabilities', {}) or {}
-        ),
-        'risk_probability_rows': _risk_probability_rows(
-            getattr(snapshot, 'risk_probabilities', {}) or {}
+        'regime_probability_rows': regime_rows,
+        'risk_probability_rows': risk_rows,
+        'regime_state_sections': _regime_state_sections(
+            regime_rows,
+            risk_rows,
+            material_rows,
         ),
     }
 
@@ -727,12 +711,31 @@ def _regime_probability_rows(probabilities: Dict[str, float]) -> List[Dict]:
         value = probabilities.get(key)
         pct = _probability_pct(value)
         rows.append({
+            'kind': 'meter',
             'key': key,
             'label': RegimeSnapshot.Label(key).label,
             'pct': pct,
             'display': f'{pct}%',
+            'tone': 'positive' if key in (
+                RegimeSnapshot.Label.EXPANSION,
+                RegimeSnapshot.Label.RECOVERY,
+            ) else 'negative',
+            'badge_label': '良い' if key in (
+                RegimeSnapshot.Label.EXPANSION,
+                RegimeSnapshot.Label.RECOVERY,
+            ) else '悪い',
+            'badge_tone': 'positive' if key in (
+                RegimeSnapshot.Label.EXPANSION,
+                RegimeSnapshot.Label.RECOVERY,
+            ) else 'negative',
         })
     return rows
+
+
+def _risk_badge_from_pct(pct: int) -> Dict[str, str]:
+    if pct >= 35:
+        return {'badge_label': '悪い', 'badge_tone': 'negative'}
+    return {'badge_label': '良い', 'badge_tone': 'positive'}
 
 
 def _risk_probability_rows(probabilities: Dict[str, float]) -> List[Dict]:
@@ -746,11 +749,15 @@ def _risk_probability_rows(probabilities: Dict[str, float]) -> List[Dict]:
     for key, label in labels.items():
         value = probabilities.get(key)
         pct = _probability_pct(value)
+        badge = _risk_badge_from_pct(pct)
         rows.append({
+            'kind': 'meter',
             'key': key,
             'label': label,
             'pct': pct,
             'display': f'{pct}%',
+            'tone': badge['badge_tone'],
+            **badge,
         })
     return rows
 
@@ -764,13 +771,109 @@ def _format_regime_evidence(evidence: List[Dict]) -> List[Dict]:
         rows.append({
             'series_id': item.get('series_id', ''),
             'name': item.get('name') or item.get('series_id', ''),
+            'category': item.get('category') or '',
             'metric': item.get('metric', ''),
             'value_display': format_value(value, unit),
             'unit': unit,
             'observation_date': item.get('observation_date') or '—',
             'signal': item.get('signal', '—'),
+            'contribution': contribution,
             'contribution_display': format_signed(contribution, 2),
             'is_negative': (contribution or 0) < 0,
+        })
+    return rows
+
+
+def _regime_state_sections(
+    regime_rows: List[Dict],
+    risk_rows: List[Dict],
+    material_rows: List[Dict],
+) -> List[Dict]:
+    return [
+        {
+            'key': 'direction',
+            'label': '景気の向き',
+            'note': '現在の指標が各局面にどれだけ近いか',
+            'rows': regime_rows,
+        },
+        {
+            'key': 'risk',
+            'label': '注意リスク',
+            'note': '悪化・過熱・市場ストレスの強さ',
+            'rows': risk_rows,
+        },
+        {
+            'key': 'materials',
+            'label': '判断材料',
+            'note': '判定に使った指標を同じ分類で整理',
+            'rows': material_rows,
+        },
+    ]
+
+
+_MATERIAL_GROUPS = (
+    ('growth', '成長', {'GDPC1'}),
+    ('labor', '雇用', {'UNRATE', 'PAYEMS', 'JTSJOL'}),
+    ('production', '生産', {'INDPRO', 'TCU'}),
+    ('inflation', '物価', {'PCEPILFE', 'PCEPI', 'CPIAUCSL', 'CPILFESL', 'T5YIE'}),
+    ('consumption', '消費', {'RSAFS', 'UMCSENT'}),
+)
+
+
+def _material_group_key(row: Dict) -> Optional[str]:
+    series_id = row.get('series_id')
+    for key, _label, series_ids in _MATERIAL_GROUPS:
+        if series_id in series_ids:
+            return key
+    category = row.get('category')
+    if category == 'labor':
+        return 'labor'
+    if category == 'inflation':
+        return 'inflation'
+    if category == 'growth':
+        return 'growth'
+    return None
+
+
+def _regime_evidence_groups(evidence: List[Dict]) -> List[Dict]:
+    by_group: Dict[str, Dict[str, Dict]] = defaultdict(dict)
+    for row in evidence:
+        group_key = _material_group_key(row)
+        if not group_key:
+            continue
+        series_id = row.get('series_id') or row.get('name')
+        current = by_group[group_key].get(series_id)
+        current_abs = abs(float(current.get('contribution') or 0.0)) if current else -1
+        row_abs = abs(float(row.get('contribution') or 0.0))
+        if current is None or row_abs > current_abs:
+            by_group[group_key][series_id] = row
+
+    rows = []
+    label_by_key = {key: label for key, label, _series_ids in _MATERIAL_GROUPS}
+    for key, label, _series_ids in _MATERIAL_GROUPS:
+        group_rows = list(by_group.get(key, {}).values())
+        if not group_rows:
+            continue
+        group_rows.sort(
+            key=lambda item: abs(float(item.get('contribution') or 0.0)),
+            reverse=True,
+        )
+        primary = group_rows[0]
+        is_negative = bool(primary.get('is_negative'))
+        unit = f" {primary['unit']}" if primary.get('unit') else ''
+        rows.append({
+            'kind': 'material',
+            'key': key,
+            'label': label_by_key[key],
+            'tone': 'negative' if is_negative else 'positive',
+            'badge_label': '悪い' if is_negative else '良い',
+            'badge_tone': 'negative' if is_negative else 'positive',
+            'primary_name': primary.get('name') or '—',
+            'signal': primary.get('signal') or '—',
+            'metric_label': primary.get('metric') or '最新値',
+            'value_display': f"{primary.get('value_display') or '—'}{unit}",
+            'indicator_count': len(group_rows),
+            'summary': _regime_evidence_consequence(primary),
         })
     return rows
 
@@ -801,6 +904,8 @@ def _regime_condition_summary(
             'regime_condition_label': '判定保留',
             'regime_condition_note': '主要指標の不足が大きく、良い/悪いをまだ点数化しません。',
             'regime_condition_tone': 'unknown',
+            'regime_condition_bar_left_label': '悪',
+            'regime_condition_bar_right_label': '良',
         }
 
     if inflation_flag == flags.HIGH and regime_label in (
@@ -854,6 +959,8 @@ def _regime_condition_summary(
         'regime_condition_label': label_map[score],
         'regime_condition_note': note,
         'regime_condition_tone': tone,
+        'regime_condition_bar_left_label': '悪',
+        'regime_condition_bar_right_label': '良',
     }
 
 
@@ -916,12 +1023,66 @@ def _regime_material_points(evidence: List[Dict], *, positive: bool) -> List[str
     points = []
     for row in rows[:3]:
         unit = f" {row['unit']}" if row.get('unit') else ''
+        consequence = _regime_evidence_consequence(row)
         points.append(
-            f"{row['name']}が{row['signal']}（{row['metric']} {row['value_display']}{unit}）"
+            f"{row['name']}が{row['signal']}（{row['metric']} {row['value_display']}{unit}）。{consequence}"
         )
     if points:
         return points
     return ['目立った支援材料はまだ少ないです。'] if positive else ['大きな悪材料は限定的です。']
+
+
+def _regime_evidence_consequence(row: Dict) -> str:
+    series_id = row.get('series_id')
+    name = row.get('name') or ''
+    is_negative = row.get('is_negative')
+    if series_id == 'GDPC1' or 'GDP' in name:
+        return (
+            '需要が強く、企業売上や雇用を支えやすいです。'
+            if not is_negative else
+            '需要が弱く、企業売上や雇用の重しになりやすいです。'
+        )
+    if (
+        series_id in ('CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE')
+        or 'CPI' in name
+        or '物価' in name
+    ):
+        return (
+            '物価が落ち着けば、金利や消費への圧力が弱まりやすいです。'
+            if not is_negative else
+            '金利が下がりにくく、消費や株価の重しになりやすいです。'
+        )
+    if series_id == 'INDPRO' or '生産' in name:
+        return (
+            '企業活動が強く、売上や雇用を支えやすいです。'
+            if not is_negative else
+            '在庫や企業利益の重しになり、景気の勢いが落ちやすいです。'
+        )
+    if (
+        series_id in ('UNRATE', 'PAYEMS', 'JTSJOL')
+        or '雇用' in name
+        or '失業' in name
+    ):
+        return (
+            '家計収入が支えられ、消費が崩れにくくなります。'
+            if not is_negative else
+            '家計収入が弱まり、消費が鈍りやすくなります。'
+        )
+    if (
+        series_id in ('T10Y2Y', 'T10Y3M', 'BAMLH0A0HYM2', 'VIXCLS')
+        or '金利' in name
+        or 'VIX' in name
+    ):
+        return (
+            '資金調達や市場心理が落ち着き、投資家心理を支えやすいです。'
+            if not is_negative else
+            '資金調達や市場心理が悪化し、株価の重しになりやすいです。'
+        )
+    return (
+        '景気判断を支える材料です。'
+        if not is_negative else
+        '景気判断の注意材料です。'
+    )
 
 
 def _regime_outlook(regime_label: str, inflation_flag: str) -> str:
@@ -963,22 +1124,25 @@ def _split_regime_summary(label: str) -> List[str]:
     return lines or [label]
 
 
-def _regime_summary(regime_label: str, inflation_flag: str) -> Dict[str, str]:
+def _regime_summary(
+    regime_label: str,
+    inflation_flag: str,
+) -> Dict[str, str]:
     labels = RegimeSnapshot.Label
     flags = RegimeSnapshot.InflationFlag
     summary_map = {
-        (labels.EXPANSION, flags.HIGH): ('景気は拡大寄り、物価は高止まり', '過熱気味'),
-        (labels.EXPANSION, flags.EASING): ('景気は拡大寄り、物価は鈍化方向', '良好'),
-        (labels.EXPANSION, flags.NORMAL): ('景気は拡大寄り、物価は安定圏', '良好'),
-        (labels.SLOWDOWN, flags.HIGH): ('景気は減速寄り、物価は高止まり', '警戒'),
-        (labels.SLOWDOWN, flags.EASING): ('景気は減速寄り、物価は鈍化方向', '様子見'),
-        (labels.SLOWDOWN, flags.NORMAL): ('景気は減速寄り、物価は安定圏', '様子見'),
-        (labels.CONTRACTION, flags.HIGH): ('景気は縮小寄り、物価は高止まり', '要警戒'),
-        (labels.CONTRACTION, flags.EASING): ('景気は縮小寄り、物価は鈍化方向', '底探り'),
-        (labels.CONTRACTION, flags.NORMAL): ('景気は縮小寄り、物価は安定圏', '底探り'),
-        (labels.RECOVERY, flags.HIGH): ('景気は回復寄り、物価は高止まり', '回復途上'),
-        (labels.RECOVERY, flags.EASING): ('景気は回復寄り、物価は鈍化方向', '改善'),
-        (labels.RECOVERY, flags.NORMAL): ('景気は回復寄り、物価は安定圏', '改善'),
+        (labels.EXPANSION, flags.HIGH): ('拡大寄り・物価高止まり', '過熱気味'),
+        (labels.EXPANSION, flags.EASING): ('拡大寄り・物価鈍化', '良好'),
+        (labels.EXPANSION, flags.NORMAL): ('拡大寄り・物価安定', '良好'),
+        (labels.SLOWDOWN, flags.HIGH): ('減速寄り・物価高止まり', '警戒'),
+        (labels.SLOWDOWN, flags.EASING): ('減速寄り・物価鈍化', '様子見'),
+        (labels.SLOWDOWN, flags.NORMAL): ('減速寄り・物価安定', '様子見'),
+        (labels.CONTRACTION, flags.HIGH): ('縮小寄り・物価高止まり', '要警戒'),
+        (labels.CONTRACTION, flags.EASING): ('縮小寄り・物価鈍化', '底探り'),
+        (labels.CONTRACTION, flags.NORMAL): ('縮小寄り・物価安定', '底探り'),
+        (labels.RECOVERY, flags.HIGH): ('回復寄り・物価高止まり', '回復途上'),
+        (labels.RECOVERY, flags.EASING): ('回復寄り・物価鈍化', '改善'),
+        (labels.RECOVERY, flags.NORMAL): ('回復寄り・物価安定', '改善'),
     }
     label, tone = summary_map.get(
         (regime_label, inflation_flag),

@@ -42,7 +42,7 @@
                 <div class="wm-purpose-nav" aria-label="このページの確認項目">
                     <span>01 テクニカル</span>
                     <span>02 市場ストレス</span>
-                    <span>03 未来予測</span>
+                    <span>03 {% if world_model.similar_summary.is_statistically_valid %}未来予測{% else %}条件付きシナリオ{% endif %}</span>
                 </div>
 
                 <div class="wm-readiness-panel readiness-{{ world_model.readiness_level }}">
@@ -89,7 +89,7 @@
                             <span class="wm-purpose-card__label">現在の日経先物のテクニカル状況</span>
                         </div>
                         <div class="wm-purpose-card__main">
-                            <h2 data-field="direction_label">{{ world_model.direction_label }}</h2>
+                            <h2 data-field="direction_label">{{ world_model.scenario_label|default:world_model.direction_label }}</h2>
                             <div class="wm-purpose-card__badge">{{ world_model.state_label }} / {{ world_model.phase_label }}</div>
                         </div>
                         <div class="wm-score-panel wm-score-panel--compact">
@@ -113,6 +113,8 @@
                         <div class="wm-purpose-card__facts">
                             <span>強度 <strong>{{ world_model.strength_label }}</strong></span>
                             <span>価格 <strong>{{ data.price_display|default:"N/A" }}</strong></span>
+                            <span>反落 <strong>{{ world_model.reversal_risk_score }}/100</strong></span>
+                            <span>改善 <strong>{{ world_model.rebound_improvement_score }}/100</strong></span>
                         </div>
                     </article>
 
@@ -149,14 +151,14 @@
                         <div class="wm-forecast-head">
                             <div class="wm-purpose-card__head">
                                 <span class="wm-purpose-card__number">03</span>
-                                <span class="wm-purpose-card__label">未来予測</span>
+                                <span class="wm-purpose-card__label">{% if world_model.similar_summary.is_statistically_valid %}未来予測{% else %}条件付きシナリオ{% endif %}</span>
                             </div>
                         </div>
                         <div class="wm-forecast-hero">
                             <div class="wm-forecast-gauge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
                                 <div class="wm-forecast-gauge__ring" style="--forecast-score: {{ world_model.confidence_score|default:0 }}%;">
                                     <strong>{{ world_model.confidence }}</strong>
-                                    <span>センチメント</span>
+                                    <span>信頼度</span>
                                 </div>
                             </div>
                             <div class="wm-forecast-score" data-field="confidence_score_panel">
@@ -176,13 +178,16 @@
                             </div>
                         </div>
                         <div class="wm-purpose-targets">
-                            <span class="wm-purpose-targets__item">T1 <strong data-field="target_1_display">{{ world_model.target_1_display }}</strong><small>ターゲット1</small></span>
-                            <span class="wm-purpose-targets__item">T2 <strong data-field="target_2_display">{{ world_model.target_2_display }}</strong><small>ターゲット2</small></span>
+                            {% for range in world_model.target_ranges %}
+                            <span class="wm-purpose-targets__item">{{ range.label }} <strong>{{ range.low|floatformat:0|intcomma }}〜{{ range.high|floatformat:0|intcomma }}</strong><small>{{ range.basis }}</small></span>
+                            {% empty %}
+                            <span class="wm-purpose-targets__item">レンジ <strong>N/A</strong><small>データ不足</small></span>
+                            {% endfor %}
                             <span class="wm-purpose-targets__item is-warning">無効化 <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong><small>無効化ライン</small></span>
                         </div>
                         <div class="wm-forecast-returns">
-                            <span><em>期待1日</em><strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
-                            <span><em>期待5日</em><strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
+                            <span><em>1日 {{ world_model.expected_return_label }}</em><strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
+                            <span><em>5日 {{ world_model.expected_return_label }}</em><strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
                         </div>
                     </article>
                 </div>
@@ -392,6 +397,18 @@
                         <div class="value" data-field="sentiment_label">{{ world_model.sentiment_label }}</div>
                     </div>
                     <div class="metric-box">
+                        <label>順張り</label>
+                        <div class="value" data-field="trend_score">{{ world_model.trend_score }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>反落警戒</label>
+                        <div class="value text-amber" data-field="reversal_risk_score">{{ world_model.reversal_risk_score }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>改善警戒</label>
+                        <div class="value text-green" data-field="rebound_improvement_score">{{ world_model.rebound_improvement_score }}</div>
+                    </div>
+                    <div class="metric-box">
                         <label>継続性</label>
                         <div class="value text-green" data-field="continuation_score">{{ world_model.continuation_score }}</div>
                     </div>
@@ -419,13 +436,48 @@
                 </div>
                 <div class="target-grid">
                     <div>
+                        <h2 class="section-title">近接節目</h2>
+                        <div class="target-list" data-field="near_levels">
+                            {% for level in world_model.near_levels.upside %}
+                            <div class="target-row">
+                                <span>上値</span>
+                                <strong>{{ level.price|floatformat:0|intcomma }}</strong>
+                                <small>{{ level.reason }} / 距離 {{ level.distance_pct|floatformat:2 }}% / targetではなく節目</small>
+                            </div>
+                            {% endfor %}
+                            {% for level in world_model.near_levels.downside %}
+                            <div class="target-row">
+                                <span>下値</span>
+                                <strong>{{ level.price|floatformat:0|intcomma }}</strong>
+                                <small>{{ level.reason }} / 距離 {{ level.distance_pct|floatformat:2 }}% / targetではなく節目</small>
+                            </div>
+                            {% empty %}
+                            <div class="target-row muted-row">N/A</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="section-title">時間別レンジ</h2>
+                        <div class="target-list" data-field="target_ranges">
+                            {% for range in world_model.target_ranges %}
+                            <div class="target-row">
+                                <span>{{ range.label }}</span>
+                                <strong>{{ range.low|floatformat:0|intcomma }}〜{{ range.high|floatformat:0|intcomma }}</strong>
+                                <small>{{ range.basis }}</small>
+                            </div>
+                            {% empty %}
+                            <div class="target-row muted-row">N/A</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
                         <h2 class="section-title">上値目標</h2>
                         <div class="target-list" data-field="upside_targets">
                             {% for target in world_model.upside_targets %}
                             <div class="target-row">
                                 <span>{{ target.label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / 到達 {{ target.probability|floatformat:2 }} / 距離 {{ target.distance_pct|floatformat:2 }}% / {{ target.confidence }}</small>
+                                <small>{{ target.reason }} / 到達 {{ target.probability_display }} / 距離 {{ target.distance_pct|floatformat:2 }}% / 標本 {{ target.sample_count }} / {{ target.reliability }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -439,7 +491,7 @@
                             <div class="target-row">
                                 <span>{{ target.label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / 到達 {{ target.probability|floatformat:2 }} / 距離 {{ target.distance_pct|floatformat:2 }}% / {{ target.confidence }}</small>
+                                <small>{{ target.reason }} / 到達 {{ target.probability_display }} / 距離 {{ target.distance_pct|floatformat:2 }}% / 標本 {{ target.sample_count }} / {{ target.reliability }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -458,7 +510,7 @@
                             <path d="M4 18h16"></path>
                         </svg>
                     </div>
-                    <div class="card-title">未来予測詳細</div>
+                    <div class="card-title">{% if world_model.similar_summary.is_statistically_valid %}未来予測詳細{% else %}条件付きシナリオ詳細{% endif %}</div>
                 </div>
                 <div class="summary-grid model-grid">
                     <div class="metric-box">
@@ -472,6 +524,10 @@
                     <div class="metric-box">
                         <label>期待 1d</label>
                         <div class="value">{{ world_model.expected_return_1d|floatformat:2 }}%</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>根拠</label>
+                        <div class="value">{{ world_model.expected_return_label }}</div>
                     </div>
                     <div class="metric-box">
                         <label>期待 5d</label>
@@ -503,8 +559,8 @@
                 </div>
                 <div class="phase-panel">
                     <span>局面</span>
-                    <strong data-field="phase_label">{{ world_model.phase_label }}</strong>
-                    <small data-field="sub_scenario">{{ world_model.sub_scenario }}</small>
+                    <strong data-field="phase_label">{{ world_model.primary_scenario|default:world_model.phase_label }}</strong>
+                    <small data-field="sub_scenario">{{ world_model.counter_scenario|default:world_model.sub_scenario }}</small>
                 </div>
                 <ol class="evidence-list" data-field="evidence">
                     {% for item in world_model.evidence %}
@@ -538,8 +594,12 @@
                         <div class="value">{{ world_model.similar_summary.average_return_pct|floatformat:2 }}%</div>
                     </div>
                     <div class="metric-box">
-                        <label>T1到達率</label>
-                        <div class="value">{{ world_model.similar_summary.target_t1_hit_rate|floatformat:2 }}</div>
+                        <label>上値T1</label>
+                        <div class="value">{{ world_model.similar_summary.upside_t1_hit_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>下値T1</label>
+                        <div class="value">{{ world_model.similar_summary.downside_t1_hit_rate|floatformat:2 }}</div>
                     </div>
                 </div>
                 <div class="case-list">

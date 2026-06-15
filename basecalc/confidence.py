@@ -35,11 +35,14 @@ def calculate_confidence_score(
     elif data_quality.get("level") == "warning":
         caps.append(74)
         warnings.append("データ鮮度または取得元に注意が必要です")
+    if data_quality.get("is_stale"):
+        caps.append(34)
+        warnings.append("価格データが古いため信頼度をLowに固定しています")
     if case_count == 0:
-        caps.append(60)
+        caps.append(34)
         warnings.append("類似局面が不足しているため信頼度を抑えています")
     if not similar_summary.get("is_statistically_valid"):
-        caps.append(60)
+        caps.append(44)
         warnings.append("類似局面の件数が不足しています")
     if readiness_level == "blocked":
         caps.append(20)

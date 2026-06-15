@@ -25,6 +25,7 @@ from .market_context import calculate_context_score, get_market_context_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
+    calibration_summary,
     evaluate_due_predictions,
     improvement_insights,
     performance_summary,
@@ -33,6 +34,12 @@ from .outcomes import (
 )
 from .serializers import serialize_snapshot
 from .status import load_basecalc_status, status_display_rows
+from .status import (
+    external_market_status_entry,
+    jgb_status_entry,
+    per_status_entry,
+    price_status_entry,
+)
 from .world_model import build_world_model
 from .data_quality import is_snapshot_stale
 
@@ -45,6 +52,7 @@ CACHE_KEY_MARKET_CONTEXT_FETCHED_AT = "basecalc_market_context_fetched_at"
 CACHE_KEY_JGB = "nikkei_jgb10y_yield_percent"
 CACHE_KEY_DIVIDEND_INDEX = "nikkei_dividend_yield_index"
 CACHE_KEY_PER_FETCHED_AT = "nikkei_per_fetched_at"
+CACHE_KEY_PER_LATEST_VALUES = "nikkei_per_latest_values"
 CACHE_KEY_JGB_FETCHED_AT = "nikkei_jgb10y_fetched_at"
 CACHE_TTL_PRICE = 300
 CACHE_TTL_JGB = 3600
@@ -171,6 +179,12 @@ def history(request):
             is_backtest=is_backtest,
         ),
         "state_summaries": state_performance_summary(horizon),
+        "calibration_rows": calibration_summary(
+            horizon,
+            instrument_key=instrument_key,
+            readiness_level=readiness_level,
+            is_backtest=is_backtest,
+        ),
         "improvement_insights": improvement_insights(horizon),
         "horizons": ("1d", "3d", "5d"),
     }
@@ -284,7 +298,15 @@ def build_context(request, force_update=False):
 
     futures_snapshot = attach_saved_daily_bars(futures_snapshot)
     world_model = build_world_model(price, futures_snapshot, market_context)
-    basecalc_status = load_basecalc_status()
+    basecalc_status = _status_with_current_values(
+        load_basecalc_status(),
+        futures_snapshot=futures_snapshot,
+        world_model=world_model,
+        forward_per=forward_per,
+        dividend_yield_index_percent=dividend_yield_index_percent,
+        jgb10y_yield_percent=jgb10y_yield_percent,
+        market_context=market_context,
+    )
     data["world_model"] = world_model
     data.update(world_model)
     performance = performance_summary("1d")
@@ -312,6 +334,42 @@ def build_context(request, force_update=False):
         "growth_wide_ratio_input": f"{growth_wide_ratio:.1f}",
         "can_update_basecalc_data": can_update_basecalc_data,
     }
+
+
+def _status_with_current_values(
+    base_status,
+    *,
+    futures_snapshot,
+    world_model,
+    forward_per,
+    dividend_yield_index_percent,
+    jgb10y_yield_percent,
+    market_context,
+):
+    status = dict(base_status or {})
+    status.update(
+        {
+            "price_data": price_status_entry(
+                futures_snapshot,
+                world_model.get("readiness_level"),
+            ),
+            "per": per_status_entry(
+                cache.get(CACHE_KEY_PER_LATEST_VALUES)
+                or {
+                    "index_based": forward_per,
+                    "dividend_yield_index_based": dividend_yield_index_percent,
+                },
+                success=forward_per is not None
+                or dividend_yield_index_percent is not None,
+            ),
+            "jgb": jgb_status_entry(
+                jgb10y_yield_percent,
+                success=jgb10y_yield_percent is not None,
+            ),
+            "external_market": external_market_status_entry(market_context),
+        }
+    )
+    return status
 
 
 def update_market_caches(
@@ -428,6 +486,7 @@ def get_nikkei_per_values_for_update():
     values = get_nikkei_per_values()
     if values:
         cache.set(CACHE_KEY_PER_FETCHED_AT, timezone.now(), timeout=None)
+        cache.set(CACHE_KEY_PER_LATEST_VALUES, values, timeout=None)
     return values
 
 
@@ -661,6 +720,12 @@ def _prediction_history_row(prediction, horizon):
             else prediction.downside_targets,
             0,
         ),
+        "target_1_probability_display": _target_probability_display(
+            prediction.upside_targets
+            if prediction.direction == "up"
+            else prediction.downside_targets,
+            0,
+        ),
         "transition_top": (prediction.transition_probs or [{}])[0]
         if prediction.transition_probs
         else {},
@@ -668,7 +733,7 @@ def _prediction_history_row(prediction, horizon):
         "transition_matched": bool(
             next_prediction and next_prediction.state_key in transition_keys
         ),
-        "expected_return": (prediction.expected_returns or {}).get(horizon),
+        "expected_return": _expected_return_value((prediction.expected_returns or {}).get(horizon)),
         "bar_count_1d": (prediction.bar_counts or {}).get("1d", 0),
     }
 
@@ -689,6 +754,26 @@ def _target_probability(targets, index):
     if isinstance(target, dict):
         return target.get("probability")
     return None
+
+
+def _target_probability_display(targets, index):
+    if not targets or len(targets) <= index:
+        return "N/A"
+    target = targets[index]
+    if not isinstance(target, dict):
+        return "N/A"
+    if target.get("probability_display"):
+        return target["probability_display"]
+    probability = target.get("probability")
+    if probability is None:
+        return "表示停止"
+    return f"旧形式 {float(probability):.2f}"
+
+
+def _expected_return_value(value):
+    if isinstance(value, dict):
+        return value.get("value")
+    return value
 
 
 def parse_float_param(value):

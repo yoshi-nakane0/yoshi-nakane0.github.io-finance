@@ -8,7 +8,7 @@
     <title>Macro</title>
 
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260524-world-summary">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260615-state-dashboard">
 </head>
 
 <body>
@@ -29,80 +29,6 @@
                 </ul>
             {% endif %}
 
-            <section class="macro-section macro-world-conclusion macro-monthly-conclusion">
-                <div class="macro-section-headline">
-                    <h2 class="macro-section-title macro-section-title--brain">今月のマクロ結論</h2>
-                    <span class="macro-model-kind-badge macro-model-kind-badge--validated">月次レポート</span>
-                </div>
-                {% if macro_conclusion %}
-                    <article class="macro-report-card">
-                        <div class="macro-report-head">
-                            <strong>{{ macro_conclusion.current_view }}</strong>
-                            <span>基準日 {{ macro_conclusion.as_of_date }} / 信頼度 {{ macro_conclusion.reliability_score_display }}</span>
-                        </div>
-                        <div class="macro-report-grid">
-                            <div>
-                                <span class="macro-report-label">前回からの変化</span>
-                                <p>{{ macro_conclusion.previous_change }}</p>
-                            </div>
-                            <div>
-                                <span class="macro-report-label">今後3カ月のベースシナリオ</span>
-                                <p>{{ macro_conclusion.base_scenario_3m }}</p>
-                            </div>
-                            <div>
-                                <span class="macro-report-label">上振れリスク</span>
-                                <p>{{ macro_conclusion.upside_risk }}</p>
-                            </div>
-                            <div>
-                                <span class="macro-report-label">下振れリスク</span>
-                                <p>{{ macro_conclusion.downside_risk }}</p>
-                            </div>
-                            <div>
-                                <span class="macro-report-label">注目イベント</span>
-                                <div class="macro-report-tags">
-                                    {% for event in macro_conclusion.watch_events %}
-                                        <span>{{ event }}</span>
-                                    {% empty %}
-                                        <span>主要統計</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div>
-                                <span class="macro-report-label">モデルの信頼度</span>
-                                <p>{{ macro_conclusion.model_reliability }}</p>
-                            </div>
-                        </div>
-                        {% if macro_conclusion.driver_changes %}
-                            <details class="macro-report-details">
-                                <summary>前回との差分要因</summary>
-                                <div class="macro-report-delta-list">
-                                    {% for row in macro_conclusion.driver_changes %}
-                                        <span>{{ row.label }} {{ row.direction }} {{ row.delta_display }}</span>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        {% endif %}
-                        {% if macro_conclusion.topic_mapping %}
-                            <details class="macro-report-details">
-                                <summary>外部見通しの論点マッピング</summary>
-                                <div class="macro-topic-map">
-                                    {% for row in macro_conclusion.topic_mapping %}
-                                        <div>
-                                            <span>{{ row.label }}</span>
-                                            <strong>{{ row.alignment }}</strong>
-                                            <small>{{ row.site_signal }} / {{ row.source_indicator }}</small>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </details>
-                        {% endif %}
-                        <p class="macro-model-note">{{ macro_conclusion.rule_probability_note }}</p>
-                    </article>
-                {% else %}
-                    <p class="macro-placeholder">データ更新後に、現状認識・差分・3カ月見通しを保存して表示します。</p>
-                {% endif %}
-            </section>
-
             <section class="macro-regime-bar" id="macro-current-state">
                 <div class="macro-regime-orbit" aria-hidden="true"></div>
                 <div class="macro-regime-head">
@@ -118,7 +44,6 @@
                         {% endfor %}
                     </span>
                 </div>
-                <div class="macro-regime-sub">{{ regime_label }} × {{ inflation_flag }}</div>
                 <details class="macro-regime-details">
                     <summary>結論・良い点・悪い点・先行き</summary>
                     <div class="macro-regime-answer">
@@ -157,6 +82,10 @@
                         <div class="macro-regime-score-bar macro-regime-score-bar--condition" aria-hidden="true">
                             <div class="macro-regime-score-fill macro-regime-score-fill--condition" style="width: {{ regime_condition_bar_pct }}%;"></div>
                         </div>
+                        <div class="macro-regime-score-axis" aria-hidden="true">
+                            <span>{{ regime_condition_bar_left_label }}</span>
+                            <span>{{ regime_condition_bar_right_label }}</span>
+                        </div>
                     </div>
                     <div class="macro-regime-score">
                         <span class="macro-regime-score-name">判定強度</span>
@@ -164,6 +93,10 @@
                         <span class="macro-regime-score-count">{{ rule_strength_fraction_display }}</span>
                         <div class="macro-regime-score-bar" aria-hidden="true">
                             <div class="macro-regime-score-fill" style="width: {{ rule_strength_pct }}%;"></div>
+                        </div>
+                        <div class="macro-regime-score-axis" aria-hidden="true">
+                            <span>{{ rule_strength_bar_left_label }}</span>
+                            <span>{{ rule_strength_bar_right_label }}</span>
                         </div>
                     </div>
                     <div class="macro-regime-score">
@@ -173,76 +106,69 @@
                         <div class="macro-regime-score-bar macro-regime-score-bar--quality" aria-hidden="true">
                             <div class="macro-regime-score-fill macro-regime-score-fill--quality" style="width: {{ data_quality_pct }}%;"></div>
                         </div>
+                        <div class="macro-regime-score-axis" aria-hidden="true">
+                            <span>{{ data_quality_bar_left_label }}</span>
+                            <span>{{ data_quality_bar_right_label }}</span>
+                        </div>
                     </div>
                     <p class="macro-regime-condition-note">{{ regime_condition_note }}</p>
                 </div>
-                {% if regime_probability_rows or risk_probability_rows %}
-                    <details class="macro-regime-probability">
-                        <summary>景気分布（ルール一致度）と主要リスク</summary>
-                        {% if regime_probability_rows %}
-                            <p class="macro-model-note">これは「景気後退確率30%」のような統計的な予測確率ではなく、現在の指標が各局面にどれだけ近いかを示すルール一致度です。</p>
-                            <span class="macro-model-kind-badge macro-model-kind-badge--rule">ルール由来</span>
-                            <div class="macro-probability-bars">
-                                {% for row in regime_probability_rows %}
-                                    <div class="macro-probability-row">
-                                        <span class="macro-probability-row-label">{{ row.label }}</span>
-                                        <div class="macro-probability-row-bar" aria-hidden="true">
-                                            <div class="macro-probability-row-fill" style="width: {{ row.pct }}%;"></div>
+                <div class="macro-current-state-map">
+                    {% for section in regime_state_sections %}
+                        <div class="macro-state-section macro-state-section--{{ section.key }}">
+                            <div class="macro-state-section-head">
+                                <span class="macro-state-section-title">{{ section.label }}</span>
+                                <span class="macro-state-section-note">{{ section.note }}</span>
+                            </div>
+                            <div class="macro-state-card-grid macro-state-card-grid--{{ section.key }}">
+                                {% for row in section.rows %}
+                                    {% if row.kind == 'meter' %}
+                                        {% if section.key == 'risk' %}
+                                            <div class="macro-state-card macro-risk-card macro-state-card--{{ row.tone }} macro-state-card--{{ row.key }}">
+                                                <span class="macro-state-card__icon" aria-hidden="true"></span>
+                                                <div class="macro-state-card__body">
+                                                    <span class="macro-state-card__title">{{ row.label }}</span>
+                                                    <div class="macro-risk-card__value">
+                                                        <strong>{{ row.display }}</strong>
+                                                        <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
+                                                    </div>
+                                                    <div class="macro-risk-gauge" aria-hidden="true">
+                                                        <div class="macro-risk-gauge-fill" style="width: {{ row.pct }}%;"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="macro-state-card macro-direction-card macro-state-card--{{ row.tone }} macro-state-card--{{ row.key }}">
+                                                <div class="macro-state-card__top">
+                                                    <span class="macro-state-card__icon" aria-hidden="true"></span>
+                                                    <span class="macro-state-card__title">{{ row.label }}</span>
+                                                    <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
+                                                </div>
+                                                <strong class="macro-direction-card__value">{{ row.display }}</strong>
+                                                <div class="macro-state-meter" aria-hidden="true">
+                                                    <div class="macro-state-meter-fill" style="width: {{ row.pct }}%;"></div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="macro-material-card macro-material-card--{{ row.tone }} macro-material-card--{{ row.key }}">
+                                            <span class="macro-material-icon" aria-hidden="true"></span>
+                                            <span class="macro-material-card__label">{{ row.label }}</span>
+                                            <div class="macro-material-card__main">
+                                                <strong class="macro-material-card__name">{{ row.primary_name }}</strong>
+                                                <span class="macro-material-card__metric">{{ row.metric_label }}</span>
+                                                <span class="macro-material-card__value">{{ row.value_display }}</span>
+                                            </div>
+                                            <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
                                         </div>
-                                        <span class="macro-probability-row-value">{{ row.display }}</span>
-                                    </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <p class="macro-state-empty">表示できる材料がまだありません。</p>
                                 {% endfor %}
                             </div>
-                        {% endif %}
-                        {% if risk_probability_rows %}
-                            <p class="macro-model-note">主要リスクスコア（ルール一致度）</p>
-                            <div class="macro-risk-probabilities">
-                                {% for row in risk_probability_rows %}
-                                    <div class="macro-risk-probability">
-                                        <span>{{ row.label }}</span>
-                                        <strong>{{ row.display }}</strong>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if regime_probability_model %}
-                            <div class="macro-verified-probability">
-                                <span class="macro-model-kind-badge macro-model-kind-badge--validated">検証済み確率</span>
-                                <p>検証済み確率として扱う場合は、下の検証指標も同時に確認してください。</p>
-                                <div class="macro-probability-validation">
-                                    <span>サンプル {{ regime_probability_model.sample_count }}件</span>
-                                    <span>イベント {{ regime_probability_model.event_count }}件</span>
-                                    <span>ROC-AUC {{ regime_probability_model.roc_auc_display }}</span>
-                                    <span>PR-AUC {{ regime_probability_model.pr_auc_display }}</span>
-                                    <span>Brier {{ regime_probability_model.brier_score_display }}</span>
-                                    <span>イベント率目安 {{ regime_probability_model.event_interval_display }}</span>
-                                </div>
-                                {% if regime_probability_model.warnings %}
-                                    <ul class="macro-probability-warning-list">
-                                        {% for warning in regime_probability_model.warnings %}
-                                            <li>{{ warning }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    </details>
-                {% endif %}
-                {% if regime_evidence %}
-                    <details class="macro-regime-details macro-regime-details--evidence">
-                        <summary>判定根拠</summary>
-                        <ul class="macro-regime-evidence-list">
-                            {% for ev in regime_evidence|slice:":6" %}
-                                <li class="macro-regime-evidence-item">
-                                    <span class="macro-regime-evidence-name">{{ ev.name }}</span>
-                                    <span class="macro-regime-evidence-value">{{ ev.metric }} {{ ev.value_display }}{% if ev.unit %} {{ ev.unit }}{% endif %}</span>
-                                    <span class="macro-regime-evidence-date">{{ ev.observation_date }}</span>
-                                    <span class="macro-regime-evidence-signal {% if ev.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ ev.signal }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </details>
-                {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
                 <details class="macro-regime-update-guide">
                     <summary>更新頻度の目安</summary>
                     <ul>

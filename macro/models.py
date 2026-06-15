@@ -198,42 +198,6 @@ class RegimeSnapshot(models.Model):
         )
 
 
-class MacroConclusionSnapshot(models.Model):
-    """月次レポート用の結論・差分・論点マッピングを保存する。"""
-
-    as_of_date = models.DateField(unique=True)
-    regime_snapshot = models.ForeignKey(
-        RegimeSnapshot,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='macro_conclusions',
-    )
-    previous_snapshot_date = models.DateField(null=True, blank=True)
-    current_view = models.TextField(blank=True)
-    previous_change = models.TextField(blank=True)
-    base_scenario_3m = models.TextField(blank=True)
-    upside_risk = models.TextField(blank=True)
-    downside_risk = models.TextField(blank=True)
-    watch_events = models.JSONField(default=list, blank=True)
-    model_reliability = models.TextField(blank=True)
-    driver_changes = models.JSONField(default=list, blank=True)
-    topic_mapping = models.JSONField(default=list, blank=True)
-    reliability_score = models.FloatField(default=0.0)
-    metadata = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-as_of_date']
-        indexes = [
-            models.Index(fields=['-as_of_date']),
-        ]
-
-    def __str__(self):
-        return f'{self.as_of_date}: macro conclusion'
-
-
 class PriceObservation(models.Model):
     """主要指数の月次終値（Yahoo Finance 由来）"""
 

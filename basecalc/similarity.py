@@ -169,6 +169,14 @@ def _find_similar_cases_from_ohlcv(features, ohlcv, limit=30, min_similarity=0.3
         },
         "median_mfe_pct": _median(mfe_values),
         "median_mae_pct": _median(mae_values),
+        "upside_t1_hit_rate": round(
+            len([case for case in cases if case["hit_upside_t1"]]) / len(cases),
+            2,
+        ),
+        "downside_t1_hit_rate": round(
+            len([case for case in cases if case["hit_downside_t1"]]) / len(cases),
+            2,
+        ),
         "target_t1_hit_rate": round(
             len(
                 [
@@ -339,6 +347,8 @@ def _empty_summary():
         "return_distribution": {"p10": 0.0, "p25": 0.0, "p50": 0.0, "p75": 0.0, "p90": 0.0},
         "median_mfe_pct": 0.0,
         "median_mae_pct": 0.0,
+        "upside_t1_hit_rate": 0.0,
+        "downside_t1_hit_rate": 0.0,
         "target_t1_hit_rate": 0.0,
         "invalidation_rate": 0.0,
         "directional_accuracy": 0.0,
