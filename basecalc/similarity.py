@@ -53,7 +53,7 @@ def _find_similar_cases_from_ohlcv(features, ohlcv, limit=30, min_similarity=0.3
     ema60 = calculate_ema(closes, 60)
     vwap = calculate_vwap({"highs": highs, "lows": lows, "closes": closes})
 
-    current_vector = _vector_from_features(features)
+    current_vector = _vector_from_features(_normalize_current_features(features))
     direction = _direction_from_score(features.get("sentiment_score"))
     cases = []
     searched_case_count = 0
@@ -247,11 +247,27 @@ def _vector_from_features(features):
     ]
 
 
+def _normalize_current_features(features):
+    normalized = dict(features or {})
+    macd_histogram = _float_or_none(normalized.get("macd_histogram"))
+    atr = _float_or_none(normalized.get("atr14"))
+    if macd_histogram is not None and atr:
+        normalized["macd_histogram"] = macd_histogram / max(abs(atr), 1)
+    return normalized
+
+
 def _scaled(value, scale):
     try:
         return float(value or 0) / scale
     except (TypeError, ValueError):
         return 0.0
+
+
+def _float_or_none(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _clean(values):

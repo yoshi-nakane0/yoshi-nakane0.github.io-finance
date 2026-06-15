@@ -1099,8 +1099,31 @@ class DashboardFormatTest(TestCase):
         self.assertIn('.macro-state-card-grid {', css)
         self.assertIn('.macro-risk-gauge-fill {', css)
         self.assertIn('.macro-material-card {', css)
-        self.assertIn('font-size: 2.075rem;', css)
+        self.assertIn('font-size: 1.5rem;', css)
         self.assertIn('font-size: 1.375rem;', css)
+        self.assertIn(
+            '.macro-direction-card__value {\n'
+            '    align-self: center;\n'
+            '    justify-self: center;\n'
+            '    color: var(--state-color);\n'
+            '    font-size: 1.5rem;\n'
+            '    font-weight: 500;',
+            css,
+        )
+        self.assertIn(
+            '.macro-risk-card__value strong {\n'
+            '    color: var(--state-color);\n'
+            '    font-size: 1.375rem;\n'
+            '    font-weight: 500;',
+            css,
+        )
+        self.assertIn(
+            '.macro-material-card__value {\n'
+            '    color: #cbd5e1;\n'
+            '    font-size: 1rem;\n'
+            '    font-weight: 500;',
+            css,
+        )
 
     def test_dashboard_precompute_payload_excludes_monthly_macro_conclusion(self):
         with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None):

@@ -340,26 +340,31 @@ def _merge_nikkei_per_values(primary, fallback):
         return fallback
     if not fallback:
         return primary
-    merged = dict(primary)
-    if "index_based" not in merged and "index_based" in fallback:
-        merged["index_based"] = fallback["index_based"]
+    base, supplement = _newer_nikkei_per_payload_pair(primary, fallback)
+    merged = dict(base)
+    if "index_based" not in merged and "index_based" in supplement:
+        merged["index_based"] = supplement["index_based"]
     if (
         "dividend_yield_index_based" not in merged
-        and "dividend_yield_index_based" in fallback
+        and "dividend_yield_index_based" in supplement
     ):
         merged["dividend_yield_index_based"] = (
-            fallback["dividend_yield_index_based"]
+            supplement["dividend_yield_index_based"]
         )
     return merged
+
+
+def _newer_nikkei_per_payload_pair(primary, fallback):
+    primary_date = _parse_date_parts_any(primary.get("date"))
+    fallback_date = _parse_date_parts_any(fallback.get("date"))
+    if primary_date and fallback_date and fallback_date > primary_date:
+        return fallback, primary
+    return primary, fallback
+
 
 def get_nikkei_per_values():
     if NIKKEI_PER_DATA_URL:
         primary = _load_nikkei_per_data_url(NIKKEI_PER_DATA_URL)
-        if primary and {
-            "index_based",
-            "dividend_yield_index_based",
-        }.issubset(primary.keys()):
-            return primary
         fallback = _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)
         return _merge_nikkei_per_values(primary, fallback)
     return _load_nikkei_per_data_file(NIKKEI_PER_DATA_PATH)

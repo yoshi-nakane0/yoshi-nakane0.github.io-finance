@@ -1,14 +1,14 @@
 {
   "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=per",
-  "fetched_at": "2026-03-12T09:31:57Z",
-  "date": "2026.03.11",
-  "index_based": 23.87,
-  "weighted_average": 19.61,
+  "fetched_at": "2026-06-15T05:43:24Z",
+  "date": "2026.06.12",
+  "index_based": 23.93,
+  "weighted_average": 17.69,
   "dividend_yield": {
     "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=dividend",
-    "date": "2026.03.11",
-    "index_based": 1.48,
-    "simple_average": 1.64
+    "date": "2026.06.12",
+    "index_based": 1.36,
+    "simple_average": 1.56
   },
   "basecalc_anchor": {
     "anchor_date": "2025.12",

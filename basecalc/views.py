@@ -313,6 +313,10 @@ def build_context(request, force_update=False):
     performance_by_horizon = {
         horizon: performance_summary(horizon) for horizon in ("1d", "3d", "5d")
     }
+    backtest_performance_by_horizon = {
+        horizon: performance_summary(horizon, is_backtest=True)
+        for horizon in ("1d", "3d", "5d")
+    }
     if force_update:
         evaluate_due_predictions(price)
         save_prediction(world_model)
@@ -326,6 +330,7 @@ def build_context(request, force_update=False):
         "basecalc_status_rows": status_display_rows(basecalc_status, world_model),
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
+        "backtest_performance_by_horizon": backtest_performance_by_horizon,
         "updated": force_update,
         "erp_method": erp_method,
         "erp_growth_input": erp_growth_input,

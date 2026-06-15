@@ -3375,7 +3375,7 @@ body {
     justify-self: center;
     color: var(--state-color);
     font-size: 1.5rem;
-    font-weight: 900;
+    font-weight: 500;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 0 18px color-mix(in srgb, var(--state-color) 38%, transparent);
@@ -3432,7 +3432,7 @@ body {
 .macro-risk-card__value strong {
     color: var(--state-color);
     font-size: 1.375rem;
-    font-weight: 900;
+    font-weight: 500;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 0 18px color-mix(in srgb, var(--state-color) 38%, transparent);
@@ -3558,7 +3558,7 @@ body {
 .macro-material-card__value {
     color: #cbd5e1;
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 500;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
 }

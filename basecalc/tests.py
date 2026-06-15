@@ -17,7 +17,7 @@ from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
 from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
-from . import market_shock
+from . import market_shock, nikkei_bias
 from .backtesting import run_basecalc_backtest
 from .market_context import calculate_context_score, get_market_context_snapshot
 from .market_bars import prune_market_bars
@@ -153,6 +153,35 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['world_model']['price'], 42000)
         self.assertContains(response, 'name="price" class="erp-input price-input" value="42000"')
+
+    def test_index_shows_backtest_performance_separately_from_live_performance(self):
+        def fake_performance_summary(horizon='1d', *args, **kwargs):
+            is_backtest = kwargs.get('is_backtest', False)
+            return {
+                'total_predictions': 600 if is_backtest else 1,
+                'directional_accuracy': 0.53 if is_backtest else 0.0,
+                'target_t1_hit_rate': 0.87 if is_backtest else 1.0,
+                'target_t2_hit_rate': 0.72 if is_backtest else 1.0,
+                'invalidation_rate': 0.07 if is_backtest else 1.0,
+                'avg_return_pct': 0.36 if is_backtest else -3.52,
+                'median_return_pct': 0.31 if is_backtest else -3.52,
+                'avg_mfe_pct': 1.86 if is_backtest else 0,
+                'avg_mae_pct': -2.26 if is_backtest else -6.48,
+                'avg_confidence_score': 54.7,
+                'median_mae_pct': -1.36 if is_backtest else -6.48,
+                'median_mfe_pct': 1.42 if is_backtest else 0,
+                'sample_quality': 'reliable' if is_backtest else 'insufficient',
+                'statistical_warning': '' if is_backtest else 'サンプル数が不足しています',
+            }
+
+        with patch('basecalc.views.performance_summary', side_effect=fake_performance_summary):
+            response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['performance_by_horizon']['1d']['total_predictions'], 1)
+        self.assertEqual(response.context['backtest_performance_by_horizon']['1d']['total_predictions'], 600)
+        self.assertContains(response, '過去検証')
+        self.assertContains(response, '検証 600')
 
     def test_staff_post_update_fetches_external_data(self):
         user = User.objects.create_user(
@@ -735,6 +764,30 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(status['age_days'], 0)
         self.assertEqual(status['decision_level'], 'limited')
 
+    def test_nikkei_per_values_prefers_newer_local_payload_over_old_remote(self):
+        remote = {
+            'index_based': 23.87,
+            'dividend_yield_index_based': 1.48,
+            'date': '2026.03.11',
+            'source': 'remote-old',
+        }
+        local = {
+            'index_based': 23.93,
+            'dividend_yield_index_based': 1.36,
+            'date': '2026.06.12',
+            'source': 'local-new',
+        }
+
+        with (
+            patch.object(nikkei_bias, '_load_nikkei_per_data_url', return_value=remote),
+            patch.object(nikkei_bias, '_load_nikkei_per_data_file', return_value=local),
+        ):
+            result = nikkei_bias.get_nikkei_per_values()
+
+        self.assertEqual(result['date'], '2026.06.12')
+        self.assertEqual(result['index_based'], 23.93)
+        self.assertEqual(result['source'], 'local-new')
+
     def test_fresh_jgb_cache_skips_external_refetch(self):
         cache.set('nikkei_jgb10y_yield_percent', 1.2, timeout=3600)
         cache.set('nikkei_jgb10y_fetched_at', timezone.now(), timeout=None)
@@ -1282,6 +1335,40 @@ class BasecalcReliabilitySpecTests(TestCase):
 
         self.assertFalse(result['similar_summary']['is_statistically_valid'])
         self.assertEqual(result['components']['similar'], 0)
+
+    def test_similar_cases_normalize_current_macd_histogram_by_atr(self):
+        closes = [40000 for _ in range(120)]
+        ohlcv = {
+            'opens': closes,
+            'highs': [40100 for _ in closes],
+            'lows': [39900 for _ in closes],
+            'closes': closes,
+            'volumes': [1000 for _ in closes],
+        }
+        result = find_similar_cases(
+            {
+                'ema5_gap_pct': 0,
+                'ema20_gap_pct': 0,
+                'ema60_gap_pct': 0,
+                'vwap_gap_pct': 0,
+                'rsi14': 50,
+                'macd_histogram': 1000,
+                'atr14': 200,
+                'atr_ratio': 1,
+                'bb_width_pct': 0,
+                'change_3d_pct': 0,
+                'change_5d_pct': 0,
+                'distance_recent_high_pct': 0,
+                'distance_recent_low_pct': 0,
+                'structure_bias': 0,
+                'sentiment_score': 0,
+            },
+            ohlcv,
+            instrument_key='missing_futures',
+        )
+
+        self.assertGreaterEqual(result['case_count'], 10)
+        self.assertGreaterEqual(result['searched_case_count'], 50)
 
     def test_backtest_prediction_timestamp_uses_bar_timestamp(self):
         bars = _create_market_bar_series(80)

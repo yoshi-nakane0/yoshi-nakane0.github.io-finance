@@ -626,11 +626,11 @@
                     <div class="card-title">予測精度</div>
                 </div>
                 <div class="performance-grid" data-field="performance">
-                    {% for horizon, item in performance_by_horizon.items %}
+                    {% for horizon, item in backtest_performance_by_horizon.items %}
                     <div class="performance-box">
                         <span>{{ horizon }}</span>
                         <strong>{{ item.directional_accuracy|floatformat:2 }}</strong>
-                        <small>検証 {{ item.total_predictions }} / T1 {{ item.target_t1_hit_rate|floatformat:2 }}</small>
+                        <small>過去検証 {{ item.total_predictions }} / T1 {{ item.target_t1_hit_rate|floatformat:2 }}</small>
                     </div>
                     {% endfor %}
                 </div>

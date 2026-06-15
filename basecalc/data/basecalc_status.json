@@ -1,11 +1,11 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-07T14:18:27.314120+00:00",
+  "updated_at": "2026-06-15T05:55:44.991346+00:00",
   "price_data": {
-    "last_success_at": "2026-06-07T14:11:21.119938+00:00",
+    "last_success_at": "2026-06-15T05:55:44.833007+00:00",
     "last_failed_at": "2026-06-07T12:43:43.098446+00:00",
     "source": "225navi:NIY=F",
-    "age_minutes": 7,
+    "age_minutes": 0,
     "fallback_used": false,
     "decision_level": "ready",
     "decision_label": "判定可能"
