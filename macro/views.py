@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 
+import requests
 from django.contrib import messages
 from django.core.management import call_command
 from django.http import Http404, HttpResponseForbidden
@@ -21,21 +22,9 @@ from .services.commentary import (
     build_similar_explanation,
 )
 from .services.dashboard import (
-    build_crash_alert_context,
-    build_forecast_monitor_context,
-    build_historical_crash_similarity,
-    build_indicator_cards,
-    build_linkages,
-    build_monthly_model_status,
-    build_raw_archive_context,
+    build_macro_decision_context,
     build_reliability_context,
     build_regime_context,
-    build_forecast_model_context,
-    build_model_validation_context,
-    build_similar_periods,
-    build_vintage_status_context,
-    build_world_state_context,
-    build_world_model_operations_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
     load_regime_probability_model,
@@ -45,19 +34,15 @@ from .services.dashboard_cache import (
     invalidate_dashboard_cache,
     invalidate_indicator_detail_caches,
     invalidate_similar_detail_caches,
-    load_dashboard_cache_meta,
-    load_dashboard_payload,
     load_macro_update_status,
     load_indicator_detail_payload,
     load_similar_detail_payload,
+    load_static_macro_payload,
     precompute_dashboard_payload,
     save_dashboard_payload,
     save_macro_update_status,
 )
-from .services.data_sync import (
-    get_latest_observation_date,
-    sync_all_indicators,
-)
+from .services.data_sync import sync_all_indicators
 from .services.detail import (
     DEFAULT_RANGE_PARAM,
     RANGE_OPTIONS,
@@ -71,15 +56,6 @@ from .services.world_state import compute_current_world_state
 from .services.yfinance_client import sync_all_price_histories
 
 logger = logging.getLogger(__name__)
-
-SERVERLESS_REFRESH_SERIES_IDS = (
-    'VIXCLS',
-    'BAMLH0A0HYM2',
-    'CBOE_SKEW',
-    'MOVE_INDEX',
-    'VIX_VIX3M_RATIO',
-)
-
 
 def _is_serverless_runtime():
     return any(
@@ -138,6 +114,8 @@ def _attach_reliability_context(
     dashboard_cache_meta=None,
 ):
     context.update(build_regime_context(latest_snapshot))
+    if 'macro_decision' not in context:
+        context['macro_decision'] = build_macro_decision_context(latest_snapshot)
     context['macro_reliability'] = build_reliability_context(
         last_updated=context.get('last_updated'),
         dashboard_cache_meta=dashboard_cache_meta,
@@ -148,219 +126,174 @@ def _attach_reliability_context(
 
 
 def _refresh_serverless_macro_data(request):
-    """本番向けの軽量更新。即時性の高い市場ストレス指標だけ取得する。"""
-    try:
-        result = sync_all_indicators(series_ids=SERVERLESS_REFRESH_SERIES_IDS)
-    except Exception as exc:
-        logger.exception("Serverless lightweight macro sync failed")
+    """本番では直接計算せず、外部の更新ジョブだけを起動する。"""
+    webhook_url = os.getenv('MACRO_UPDATE_WEBHOOK_URL')
+    if not webhook_url:
         _record_macro_update_status(
-            source='manual_lightweight',
-            status='failed',
-            message='即時指標の取得に失敗しました。',
-            extra_failed=[{'phase': 'sync_all_indicators', 'error': str(exc)}],
+            source='manual_job_request',
+            status='skipped',
+            message='MACRO_UPDATE_WEBHOOK_URL が未設定です。',
         )
-        messages.error(request, f"更新中にエラー: {exc}")
+        messages.warning(
+            request,
+            "本番では画面から直接計算しません。GitHub Actionsの更新ジョブを実行してください。",
+        )
         return redirect(reverse('macro:index'))
 
-    ok_count = len(result['success'])
-    ng_count = len(result['failed'])
-
-    if ok_count == 0:
+    try:
+        response = requests.post(webhook_url, timeout=10)
+        response.raise_for_status()
+    except Exception as exc:
+        logger.exception("Serverless macro job trigger failed")
         _record_macro_update_status(
-            source='manual_lightweight',
-            result=result,
+            source='manual_job_request',
             status='failed',
-            message='即時指標の取得に失敗しました。',
+            message='更新ジョブの起動に失敗しました。',
+            extra_failed=[{'phase': 'trigger_update_job', 'error': str(exc)}],
         )
-        messages.error(request, f"即時指標 {ng_count} 件の取得に失敗しました")
+        messages.error(request, f"更新ジョブの起動に失敗しました: {exc}")
         return redirect(reverse('macro:index'))
-
-    extra_failed = []
-    try:
-        compute_current_regime()
-    except Exception as exc:
-        logger.exception("Serverless regime recomputation failed")
-        extra_failed.append({'phase': 'regime', 'error': str(exc)})
-        messages.warning(request, "即時指標は更新しましたが、判定更新でエラーが発生しました")
-    try:
-        compute_current_world_state()
-    except Exception as exc:
-        logger.exception("Serverless world state recomputation failed")
-        extra_failed.append({'phase': 'world_state', 'error': str(exc)})
-
-    try:
-        payload = load_dashboard_payload() or {}
-        latest_obs_date = get_latest_observation_date()
-        payload.update({
-            'has_observations': latest_obs_date is not None,
-            'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
-            'indicator_cards': build_indicator_cards(),
-            'crash_alert': build_crash_alert_context(),
-            'world_state': build_world_state_context(),
-        })
-        save_dashboard_payload(payload)
-        invalidate_indicator_detail_caches()
-    except Exception as exc:
-        logger.exception("Serverless dashboard cache patch failed")
-        extra_failed.append({'phase': 'dashboard_cache', 'error': str(exc)})
-        messages.warning(request, "即時指標は更新しましたが、画面キャッシュ更新でエラーが発生しました")
 
     _record_macro_update_status(
-        source='manual_lightweight',
-        result=result,
-        message='即時指標を更新しました。',
-        extra_failed=extra_failed,
+        source='manual_job_request',
+        status='success',
+        message='更新ジョブを起動しました。',
     )
-    if ng_count == 0:
-        messages.success(request, f"即時指標 {ok_count} 件を更新しました")
-    else:
-        messages.warning(request, f"即時指標 {ok_count} 件成功、{ng_count} 件失敗")
+    messages.success(request, "更新ジョブを起動しました。完了後に画面へ反映されます。")
     return redirect(reverse('macro:index'))
 
 
 def index(request):
-    """macro モジュールのトップ画面。重い計算は事前計算キャッシュから取得。"""
+    """macro モジュールのトップ画面。生成済みJSONだけを表示に使う。"""
     custom_scenario = scenario_overrides_from_query(request.GET)
-    cache_payload = load_dashboard_payload()
+    cache_payload = load_static_macro_payload()
 
-    if cache_payload is not None:
-        dashboard_cache_meta = load_dashboard_cache_meta()
+    if cache_payload is None:
         latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
-        context = dict(cache_payload)
-        context['has_observations'] = context.get('has_observations', True)
-        context['dashboard_cache_missing'] = not context['has_observations']
-        if (
-            context['has_observations']
-            and (
-                not context.get('crash_alert')
-                or 'data_quality_pct' not in context['crash_alert']
-            )
-        ):
-            context['crash_alert'] = build_crash_alert_context()
-        context['fred_key_present'] = bool(get_api_key())
-        context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
-        context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
-        context['lightgbm_prediction'] = load_lightgbm_prediction()
-        context['crash_probability_model'] = load_crash_probability_model()
-        context['regime_probability_model'] = load_regime_probability_model()
-        context['monthly_model_status'] = build_monthly_model_status()
-        context['forecast_monitor'] = (
-            context.get('forecast_monitor') or build_forecast_monitor_context()
-        )
-        context['world_state'] = (
-            context.get('world_state') or build_world_state_context()
-        )
-        context['forecast_models'] = (
-            context.get('forecast_models') or build_forecast_model_context()
-        )
-        context['model_validation'] = (
-            context.get('model_validation') or build_model_validation_context()
-        )
-        context['world_model_operations'] = (
-            context.get('world_model_operations')
-            or build_world_model_operations_context()
-        )
-        context['raw_archive_status'] = (
-            context.get('raw_archive_status') or build_raw_archive_context()
-        )
-        context['vintage_status'] = (
-            context.get('vintage_status') or build_vintage_status_context()
-        )
-        context['scenario_analysis'] = build_scenario_analysis(custom_scenario) if custom_scenario else (
-            context.get('scenario_analysis') or build_scenario_analysis()
-        )
-        similar_periods = context.get('similar_periods', [])
-        linkages = context.get('linkages', [])
-        context['overview_commentary'] = build_overview_commentary(
-            latest_snapshot, similar_periods
-        )
-        context['similar_commentary'] = build_similar_explanation(similar_periods)
-        context['linkage_commentary'] = build_linkage_explanation(linkages)
-        _attach_reliability_context(
-            context,
-            latest_snapshot,
-            dashboard_cache_meta=dashboard_cache_meta,
-        )
-        return render(request, 'macro/index.html', context)
-
-    latest_obs_date = get_latest_observation_date()
-    latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
-    fred_key_present = bool(get_api_key())
-    has_observations = latest_obs_date is not None
-
-    if _is_serverless_runtime():
         context = {
-            'has_observations': has_observations,
-            'last_updated': (
-                latest_obs_date.isoformat() if latest_obs_date else '—'
-            ),
-            'fred_key_present': fred_key_present,
+            'dashboard_cache_missing': True,
+            'error_message': '事前計算データがありません。更新ジョブを確認してください。',
+            'has_observations': False,
+            'last_updated': '—',
+            'fred_key_present': bool(get_api_key()),
             'can_refresh_macro_data': _can_refresh_macro_data(request.user),
             'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
-            'indicator_cards': build_indicator_cards() if has_observations else [],
+            'indicator_cards': [],
             'crash_alert': None,
             'historical_crash_similarity': [],
             'lightgbm_prediction': load_lightgbm_prediction(),
             'crash_probability_model': load_crash_probability_model(),
             'regime_probability_model': load_regime_probability_model(),
-            'monthly_model_status': build_monthly_model_status(),
-            'forecast_monitor': build_forecast_monitor_context(),
-            'world_state': build_world_state_context(),
-            'forecast_models': build_forecast_model_context(),
-            'model_validation': build_model_validation_context(),
-            'world_model_operations': build_world_model_operations_context(),
-            'raw_archive_status': build_raw_archive_context(),
-            'vintage_status': build_vintage_status_context(),
-            'scenario_analysis': build_scenario_analysis(custom_scenario),
+            'monthly_model_status': {},
+            'forecast_monitor': {},
+            'world_state': {},
+            'forecast_models': {},
+            'model_validation': {},
+            'world_model_operations': {},
+            'raw_archive_status': {},
+            'vintage_status': {},
+            'scenario_analysis': {},
             'similar_periods': [],
             'linkages': [],
             'overview_commentary': None,
             'similar_commentary': build_similar_explanation([]),
             'linkage_commentary': build_linkage_explanation([]),
-            'dashboard_cache_missing': True,
+            'audit_indicator_cards': [],
         }
         _attach_reliability_context(context, latest_snapshot)
         return render(request, 'macro/index.html', context)
 
-    similar_periods = build_similar_periods() if has_observations else []
-    linkages = build_linkages() if has_observations else []
-
-    context = {
-        'has_observations': has_observations,
-        'last_updated': (
-            latest_obs_date.isoformat() if latest_obs_date else '—'
-        ),
-        'fred_key_present': fred_key_present,
-        'can_refresh_macro_data': _can_refresh_macro_data(request.user),
-        'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
-        'indicator_cards': build_indicator_cards() if has_observations else [],
-        'crash_alert': build_crash_alert_context() if has_observations else None,
-        'historical_crash_similarity': (
-            build_historical_crash_similarity() if has_observations else []
-        ),
-        'lightgbm_prediction': load_lightgbm_prediction(),
-        'crash_probability_model': load_crash_probability_model(),
-        'regime_probability_model': load_regime_probability_model(),
-        'monthly_model_status': build_monthly_model_status(),
-        'forecast_monitor': build_forecast_monitor_context(),
-        'world_state': build_world_state_context(),
-        'forecast_models': build_forecast_model_context(),
-        'model_validation': build_model_validation_context(),
-        'world_model_operations': build_world_model_operations_context(),
-        'raw_archive_status': build_raw_archive_context(),
-        'vintage_status': build_vintage_status_context(),
-        'scenario_analysis': build_scenario_analysis(custom_scenario),
-        'similar_periods': similar_periods,
-        'linkages': linkages,
-        'overview_commentary': (
-            build_overview_commentary(latest_snapshot, similar_periods)
-            if has_observations else None
-        ),
-        'similar_commentary': build_similar_explanation(similar_periods),
-        'linkage_commentary': build_linkage_explanation(linkages),
+    latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
+    context = dict(cache_payload)
+    context['has_observations'] = context.get('has_observations', True)
+    context['dashboard_cache_missing'] = False
+    context['generated_payload_meta'] = {
+        'generated_at': context.get('generated_at'),
+        'source': context.get('source'),
+        'data_quality': context.get('data_quality'),
+        'stale': context.get('stale'),
+        'model_version': context.get('model_version'),
+        'job_duration_sec': context.get('job_duration_sec'),
+        'warnings': context.get('warnings') or [],
     }
+    context.setdefault('indicator_cards', [])
+    context.setdefault('crash_alert', None)
+    context.setdefault('historical_crash_similarity', [])
+    context.setdefault('monthly_model_status', {})
+    context.setdefault('forecast_monitor', {})
+    context.setdefault('world_state', {})
+    context.setdefault('forecast_models', {})
+    context.setdefault('model_validation', {})
+    context.setdefault('world_model_operations', {})
+    context.setdefault('raw_archive_status', {})
+    context.setdefault('vintage_status', {})
+    context.setdefault('policy_expectation', {})
+    context.setdefault('audit_indicator_cards', context.get('indicator_cards', []))
+    if 'macro_decision' not in context:
+        context['macro_decision'] = build_macro_decision_context(latest_snapshot)
+    context.setdefault('scenario_analysis', {})
+    context.setdefault('similar_periods', [])
+    context.setdefault('linkages', [])
+    if custom_scenario and not _is_serverless_runtime():
+        context['scenario_analysis'] = build_scenario_analysis(custom_scenario)
+    context['fred_key_present'] = bool(get_api_key())
+    context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
+    context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
+    context['lightgbm_prediction'] = load_lightgbm_prediction()
+    context['crash_probability_model'] = load_crash_probability_model()
+    context['regime_probability_model'] = load_regime_probability_model()
+    similar_periods = context.get('similar_periods', [])
+    linkages = context.get('linkages', [])
+    context['overview_commentary'] = build_overview_commentary(
+        latest_snapshot, similar_periods
+    )
+    context['similar_commentary'] = build_similar_explanation(similar_periods)
+    context['linkage_commentary'] = build_linkage_explanation(linkages)
     _attach_reliability_context(context, latest_snapshot)
     return render(request, 'macro/index.html', context)
+
+
+def audit(request):
+    """macro の運用・検証・詳細データを確認する監査用ページ。"""
+    cache_payload = load_static_macro_payload() or {}
+    latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
+    context = dict(cache_payload)
+    context['dashboard_cache_missing'] = not bool(cache_payload)
+    context.setdefault('has_observations', context.get('has_observations', False))
+    context.setdefault('last_updated', context.get('last_updated', '—'))
+    context.setdefault('indicator_cards', [])
+    context.setdefault(
+        'audit_indicator_cards',
+        context.get('audit_indicator_cards') or context.get('indicator_cards') or [],
+    )
+    context.setdefault('crash_alert', None)
+    context.setdefault('historical_crash_similarity', [])
+    context.setdefault('monthly_model_status', {})
+    context.setdefault('forecast_monitor', {})
+    context.setdefault('world_state', {})
+    context.setdefault('forecast_models', {})
+    context.setdefault('model_validation', {})
+    context.setdefault('world_model_operations', {})
+    context.setdefault('raw_archive_status', {})
+    context.setdefault('vintage_status', {})
+    context.setdefault('policy_expectation', {})
+    context.setdefault('scenario_analysis', {})
+    context.setdefault('similar_periods', [])
+    context.setdefault('linkages', [])
+    context['fred_key_present'] = bool(get_api_key())
+    context['can_refresh_macro_data'] = _can_refresh_macro_data(request.user)
+    context['can_run_macro_model_jobs'] = _can_run_macro_model_jobs(request.user)
+    context['lightgbm_prediction'] = load_lightgbm_prediction()
+    context['crash_probability_model'] = load_crash_probability_model()
+    context['regime_probability_model'] = load_regime_probability_model()
+    context['similar_commentary'] = build_similar_explanation(
+        context.get('similar_periods', [])
+    )
+    context['linkage_commentary'] = build_linkage_explanation(
+        context.get('linkages', [])
+    )
+    _attach_reliability_context(context, latest_snapshot)
+    return render(request, 'macro/audit.html', context)
 
 
 @require_POST

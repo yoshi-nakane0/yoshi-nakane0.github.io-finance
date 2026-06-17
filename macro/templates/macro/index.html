@@ -25,10 +25,106 @@
             {% endif %}
             {% if dashboard_cache_missing %}
                 <ul class="macro-messages">
-                    <li class="macro-message macro-message--warning">一部の重い分析は準備中です。基本指標のみ表示しています。</li>
+                    <li class="macro-message macro-message--warning">{{ error_message|default:"事前計算データがありません。更新ジョブを確認してください。" }}</li>
+                </ul>
+            {% endif %}
+            {% if generated_payload_meta %}
+                <ul class="macro-messages">
+                    <li class="macro-message {% if generated_payload_meta.stale %}macro-message--warning{% else %}macro-message--info{% endif %}">
+                        生成: {{ generated_payload_meta.generated_at|default:"—" }} / 品質: {{ generated_payload_meta.data_quality|default:"—" }} / {{ generated_payload_meta.source|default:"generated" }}
+                    </li>
+                    {% for warning in generated_payload_meta.warnings %}
+                        <li class="macro-message macro-message--warning">{{ warning }}</li>
+                    {% endfor %}
                 </ul>
             {% endif %}
 
+            {% if macro_decision %}
+                <section class="macro-section macro-decision" id="macro-current-state">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title macro-section-title--pulse">Macro 現在判断</h2>
+                        <span class="macro-regime-status-pill">信頼度 {{ macro_decision.confidence.grade }}</span>
+                    </div>
+                    <div class="macro-regime-answer">
+                        <div class="macro-regime-answer-label">総合判断</div>
+                        <div class="macro-regime-answer-main">{{ macro_decision.headline }}</div>
+                        <p class="macro-regime-answer-detail">{{ macro_decision.detail }}</p>
+                    </div>
+                    <div class="macro-regime-materials">
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-pos">良い材料</span>
+                            <ul>
+                                {% for point in macro_decision.good_points %}
+                                    <li>{{ point }}</li>
+                                {% empty %}
+                                    <li>良い材料はまだ十分に確認できていません。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-neg">悪い材料</span>
+                            <ul>
+                                {% for point in macro_decision.bad_points %}
+                                    <li>{{ point }}</li>
+                                {% empty %}
+                                    <li>大きな悪材料は限定的です。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="macro-decision-grid">
+                        <div class="macro-decision-card macro-decision-card--policy">
+                            <span class="macro-decision-label">政策・金利</span>
+                            <strong>{{ macro_decision.policy_pressure.label }}</strong>
+                            <p>{{ macro_decision.policy_pressure.summary }}</p>
+                            <span>政策圧力 {{ macro_decision.policy_pressure.score_display }} / 品質 {{ macro_decision.policy_pressure.data_quality_display }}</span>
+                            {% if macro_decision.policy_pressure.alerts %}
+                                <ul>
+                                    {% for alert in macro_decision.policy_pressure.alerts %}
+                                        <li>{{ alert }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        <div class="macro-decision-card macro-decision-card--stress">
+                            <span class="macro-decision-label">市場ストレス</span>
+                            <strong>{{ macro_decision.market_stress.level_label }} {{ macro_decision.market_stress.score_display }}</strong>
+                            <p>{{ macro_decision.market_stress.summary }}</p>
+                            <span>データ品質 {{ macro_decision.market_stress.data_quality_display }}</span>
+                            {% if macro_decision.market_stress.abnormal_items %}
+                                <ul>
+                                    {% for item in macro_decision.market_stress.abnormal_items %}
+                                        <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        <div class="macro-decision-card macro-decision-card--confidence">
+                            <span class="macro-decision-label">信頼度</span>
+                            <strong>{{ macro_decision.confidence.grade }}：{{ macro_decision.confidence.label }}</strong>
+                            <p>{{ macro_decision.confidence.sample_note }}</p>
+                            <span>{{ macro_decision.confidence.score_display }} / データ鮮度 {{ macro_decision.confidence.data_freshness_pct }}%</span>
+                            <ul>
+                                {% for note in macro_decision.confidence.notes %}
+                                    <li>{{ note }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="macro-regime-meta">
+                        <span class="macro-regime-updated">更新: {{ last_updated }} / {{ regime_model_version }}</span>
+                        <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査</a>
+                        {% if can_refresh_macro_data %}
+                            <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
+                                {% csrf_token %}
+                                <button class="macro-refresh-button" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>取得・判定</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </section>
+            {% endif %}
+
+            {% if not macro_decision %}
             <section class="macro-regime-bar" id="macro-current-state">
                 <div class="macro-regime-orbit" aria-hidden="true"></div>
                 <div class="macro-regime-head">
@@ -207,11 +303,13 @@
                     </div>
                 {% endif %}
             </section>
+            {% endif %}
 
+            {% if macro_audit_mode %}
             {% if world_state %}
                 <section class="macro-section macro-world-state">
                     <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--brain">World State（現在地）</h2>
+                        <h2 class="macro-section-title macro-section-title--brain">現在地の内訳</h2>
                         <span class="macro-model-kind-badge macro-model-kind-badge--provisional">状態ベクトル</span>
                     </div>
                     <p class="macro-model-note">マクロ・金融・市場データを統合した現在の状態ベクトルです。予測そのものではなく、各モデルの入力状態を示します。</p>
@@ -283,7 +381,7 @@
                         </div>
                         {% if vintage_status %}
                             <div class="macro-reliability-item">
-                                <span class="macro-reliability-label">ビンテージ保存</span>
+                                <span class="macro-reliability-label">ビンテージ履歴</span>
                                 <span class="macro-reliability-value">{{ vintage_status.status_label }} / {{ vintage_status.total_count }}件</span>
                             </div>
                         {% endif %}
@@ -350,30 +448,33 @@
             {% if scenario_analysis and scenario_analysis.scenarios %}
                 <section class="macro-section macro-scenarios">
                     <h2 class="macro-section-title macro-section-title--brain">シナリオ分析</h2>
-                    <p class="macro-model-note">入力した仮定で、景気の見方がどちらへ寄るかを再計算します。%は株価やGDPの予測ではなく、表示された景気局面に近い度合いです。</p>
+                    <p class="macro-model-note">現在の状態から自動で作った基本・悪化・改善・ショック・政策金利系シナリオです。%は株価やGDPの予測ではなく、表示された景気局面に近い度合いです。</p>
                     <div class="macro-scenario-base">
                         <span>現在基準</span>
                         <strong>{{ scenario_analysis.base_regime_view_display }}</strong>
                         <span>{{ scenario_analysis.base_regime_fit_display }}</span>
                         <span>市場ストレス {{ scenario_analysis.base_market_stress_score|default_if_none:"—" }}</span>
                     </div>
-                    <form method="get" class="macro-scenario-form">
-                        <div class="macro-scenario-form-grid">
-                            {% for field in scenario_analysis.custom_fields %}
-                                <label class="macro-scenario-control">
-                                    <span>{{ field.label }}</span>
-                                    <input type="number" step="0.1" name="{{ field.name }}" value="{{ field.value }}" placeholder="0">
-                                    {% if field.suffix %}<em>{{ field.suffix }}</em>{% endif %}
-                                </label>
-                            {% endfor %}
-                        </div>
-                        <div class="macro-scenario-actions">
-                            <button type="submit" class="macro-scenario-button">反映</button>
-                            {% if scenario_analysis.has_custom %}
-                                <a href="{% url 'macro:index' %}" class="macro-scenario-reset">リセット</a>
-                            {% endif %}
-                        </div>
-                    </form>
+                    <details>
+                        <summary>手動ストレステスト</summary>
+                        <form method="get" class="macro-scenario-form">
+                            <div class="macro-scenario-form-grid">
+                                {% for field in scenario_analysis.custom_fields %}
+                                    <label class="macro-scenario-control">
+                                        <span>{{ field.label }}</span>
+                                        <input type="number" step="0.1" name="{{ field.name }}" value="{{ field.value }}" placeholder="0">
+                                        {% if field.suffix %}<em>{{ field.suffix }}</em>{% endif %}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                            <div class="macro-scenario-actions">
+                                <button type="submit" class="macro-scenario-button">反映</button>
+                                {% if scenario_analysis.has_custom %}
+                                    <a href="{% url 'macro:index' %}" class="macro-scenario-reset">リセット</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </details>
                     <div class="macro-scenario-grid">
                         {% for item in scenario_analysis.scenarios %}
                             <article class="macro-scenario-card{% if item.is_custom %} macro-scenario-card--custom{% endif %}">
@@ -418,6 +519,34 @@
                             </div>
                         {% endfor %}
                     </div>
+                </section>
+            {% endif %}
+
+            {% if policy_expectation %}
+                <section class="macro-section macro-policy-expectation macro-policy-expectation--{{ policy_expectation.tone }}">
+                    <h2 class="macro-section-title macro-section-title--shield">政策金利見通し</h2>
+                    <div class="macro-operations-head">
+                        <span>{{ policy_expectation.bias_label }}</span>
+                        <span>品質 {{ policy_expectation.data_quality_display|default:"—" }}</span>
+                    </div>
+                    <p class="macro-model-note">{{ policy_expectation.summary }}</p>
+                    {% if policy_expectation.alerts %}
+                        <ul class="macro-monthly-warning-list">
+                            {% for alert in policy_expectation.alerts %}
+                                <li>{{ alert }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if policy_expectation.rows %}
+                        <div class="macro-operations-grid">
+                            {% for row in policy_expectation.rows %}
+                                <div class="macro-operation-status">
+                                    <span>{{ row.label }}</span>
+                                    <strong>{{ row.value }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </section>
             {% endif %}
 
@@ -573,8 +702,10 @@
                     </ul>
                 </section>
             {% endif %}
+            {% endif %}
 
             {# クラッシュ警戒度 #}
+            {% if macro_audit_mode %}
             {% if crash_alert and crash_alert.total_score is not None %}
                 <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}" id="macro-market-stress">
                     <h2 class="macro-section-title macro-section-title--shield">市場ストレス・急落予測</h2>
@@ -643,25 +774,17 @@
                     </details>
                 </section>
             {% endif %}
+            {% endif %}
 
             {# 指標サマリ #}
             <section class="macro-section macro-indicator-summary">
                 <h2 class="macro-section-title">主要マクロ指標</h2>
                 {% if has_observations %}
-                    <div class="macro-card-list">
-                        {% for card in indicator_cards %}
-                            {% if card.importance == 'A' %}
-                                {% include "macro/_partials/indicator_card.html" with card=card %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
                     <details class="macro-more">
-                        <summary>その他の指標を表示</summary>
-                        <div class="macro-card-list macro-card-list--secondary">
+                        <summary>代表指標を確認</summary>
+                        <div class="macro-card-list">
                             {% for card in indicator_cards %}
-                                {% if card.importance != 'A' %}
-                                    {% include "macro/_partials/indicator_card.html" with card=card %}
-                                {% endif %}
+                                {% include "macro/_partials/indicator_card.html" with card=card %}
                             {% endfor %}
                         </div>
                     </details>
@@ -670,6 +793,7 @@
                 {% endif %}
             </section>
 
+            {% if macro_audit_mode %}
             {# 急落確率モデル #}
             {% if crash_probability_model %}
                 <section class="macro-section macro-crash-probability macro-crash-probability--{{ crash_probability_model.reliability_tone }}">
@@ -887,6 +1011,7 @@
                     {% endif %}
                 </details>
             </section>
+            {% endif %}
 
         </div>
     </div>

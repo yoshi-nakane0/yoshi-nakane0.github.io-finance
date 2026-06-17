@@ -324,6 +324,7 @@ def performance_summary(
         return {
             "total_predictions": total,
             "directional_accuracy": round(direction_hits / total, 2),
+            "model_directional_accuracy": round(direction_hits / total, 2),
             "target_t1_hit_rate": round(target_t1_hits / total, 2),
             "target_t2_hit_rate": round(target_t2_hits / total, 2),
             "invalidation_rate": round(invalidations / total, 2),
@@ -336,6 +337,7 @@ def performance_summary(
             "median_mfe_pct": _median(mfe_values),
             "sample_quality": _sample_quality(total),
             "statistical_warning": "" if total >= 30 else "サンプル数が不足しています",
+            **_baseline_performance_metrics(outcomes, horizon),
         }
     except DatabaseError:
         logger.exception("Failed to read basecalc performance")
@@ -494,6 +496,11 @@ def _empty_performance_summary():
     return {
         "total_predictions": 0,
         "directional_accuracy": 0,
+        "model_directional_accuracy": 0,
+        "continuation_directional_accuracy": 0,
+        "zero_prediction_mae": 0,
+        "model_mae": 0,
+        "mae_improvement_rate": 0,
         "target_t1_hit_rate": 0,
         "target_t2_hit_rate": 0,
         "invalidation_rate": 0,
@@ -531,6 +538,89 @@ def _expected_return_value(value):
     if isinstance(value, dict):
         return value.get("value")
     return value
+
+
+def _baseline_performance_metrics(outcomes, horizon):
+    continuation_hits = 0
+    continuation_total = 0
+    zero_mae_values = []
+    model_mae_values = []
+
+    for outcome in outcomes.select_related("prediction"):
+        realized_return = outcome.realized_return_pct
+        if realized_return is None:
+            continue
+        zero_mae_values.append(abs(realized_return))
+        expected_return = _expected_return_value(
+            (outcome.prediction.expected_returns or {}).get(horizon)
+        )
+        if expected_return is not None:
+            try:
+                model_mae_values.append(abs(realized_return - float(expected_return)))
+            except (TypeError, ValueError):
+                pass
+        continuation_direction = _continuation_direction(outcome.prediction)
+        if continuation_direction:
+            continuation_total += 1
+            if _direction_matches_return(continuation_direction, realized_return):
+                continuation_hits += 1
+
+    zero_mae = _average(zero_mae_values)
+    model_mae = _average(model_mae_values)
+    improvement = 0
+    if zero_mae and model_mae_values:
+        improvement = round((zero_mae - model_mae) / zero_mae, 2)
+    return {
+        "continuation_directional_accuracy": round(
+            continuation_hits / continuation_total,
+            2,
+        )
+        if continuation_total
+        else 0,
+        "zero_prediction_mae": zero_mae,
+        "model_mae": model_mae,
+        "mae_improvement_rate": improvement,
+    }
+
+
+def _continuation_direction(prediction):
+    features = prediction.features or {}
+    previous_close = _to_float(features.get("previous_close"))
+    current_close = _to_float(features.get("close")) or _to_float(prediction.price)
+    closes = features.get("closes") if isinstance(features.get("closes"), list) else []
+    if previous_close is None and len(closes) >= 2:
+        previous_close = _to_float(closes[-2])
+    if current_close is None and closes:
+        current_close = _to_float(closes[-1])
+    if previous_close is None or current_close is None:
+        return None
+    if current_close > previous_close:
+        return "up"
+    if current_close < previous_close:
+        return "down"
+    return "neutral"
+
+
+def _direction_matches_return(direction, realized_return):
+    if direction == "up":
+        return realized_return > 0
+    if direction == "down":
+        return realized_return < 0
+    return abs(realized_return) < 0.3
+
+
+def _average(values):
+    values = [value for value in values if value is not None]
+    if not values:
+        return 0
+    return round(sum(values) / len(values), 2)
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def improvement_insights(horizon="1d", min_samples=5, limit=6):

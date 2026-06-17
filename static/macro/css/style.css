@@ -1542,6 +1542,71 @@ body {
     opacity: 0.75;
 }
 
+.macro-decision {
+    display: grid;
+    gap: 0.72rem;
+}
+
+.macro-decision-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.62rem;
+}
+
+.macro-decision-card {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 0.72rem;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.macro-decision-label {
+    color: var(--macro-text-secondary);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.macro-decision-card strong {
+    color: var(--macro-text-primary);
+    font-size: 1.04rem;
+    line-height: 1.25;
+}
+
+.macro-decision-card p,
+.macro-decision-card span,
+.macro-decision-card li {
+    color: var(--macro-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.macro-decision-card p {
+    margin: 0;
+}
+
+.macro-decision-card ul {
+    display: grid;
+    gap: 0.24rem;
+    margin: 0.1rem 0 0;
+    padding-left: 1rem;
+}
+
+.macro-decision-card--policy {
+    border-color: rgba(251, 191, 36, 0.32);
+}
+
+.macro-decision-card--stress {
+    border-color: rgba(248, 113, 113, 0.28);
+}
+
+.macro-decision-card--confidence {
+    border-color: rgba(52, 211, 153, 0.28);
+}
+
 .macro-regime-outlook {
     display: grid;
     gap: 0.28rem;

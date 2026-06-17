@@ -20,6 +20,26 @@ class DashboardPageTests(TestCase):
         self.assertContains(response, "tapCount >= 5")
         self.assertNotContains(response, '".dashboard-card"')
 
+    def test_live_stock_trends_pairs_dashboard_cards(self):
+        response = self.client.get(reverse("dashboard:index"))
+        content = response.content.decode()
+        live_stock_start = content.index("Live Stock Trends")
+        market_forecast_start = content.index("Market Forecast")
+        live_stock_section = content[live_stock_start:market_forecast_start]
+
+        for card_type in ("type-macro", "type-basecalc", "type-sector", "type-prediction"):
+            self.assertIn(card_type, live_stock_section)
+
+        macro_position = live_stock_section.index("type-macro")
+        basecalc_position = live_stock_section.index("type-basecalc")
+        sector_position = live_stock_section.index("type-sector")
+        prediction_position = live_stock_section.index("type-prediction")
+
+        self.assertLess(macro_position, basecalc_position)
+        self.assertLess(basecalc_position, sector_position)
+        self.assertLess(sector_position, prediction_position)
+        self.assertNotIn("type-macro grid-span-2", live_stock_section)
+
     def test_admin_panel_shows_login_for_anonymous_user(self):
         response = self.client.get(reverse("dashboard:admin_panel"))
 

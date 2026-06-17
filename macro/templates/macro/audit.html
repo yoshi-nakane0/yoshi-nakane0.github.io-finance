@@ -1,0 +1,329 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Audit</title>
+
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260617-audit">
+</head>
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="Macro Audit" page_slug="macro" %}
+
+        <div class="macro-container">
+            {% if dashboard_cache_missing %}
+                <ul class="macro-messages">
+                    <li class="macro-message macro-message--warning">事前計算データがありません。更新ジョブを確認してください。</li>
+                </ul>
+            {% endif %}
+
+            <section class="macro-section">
+                <div class="macro-section-headline">
+                    <h2 class="macro-section-title macro-section-title--shield">更新信頼性の詳細</h2>
+                    <a href="{% url 'macro:index' %}" class="macro-scenario-reset">トップへ戻る</a>
+                </div>
+                {% if macro_reliability %}
+                    <div class="macro-reliability-grid">
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">最終データ日</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.last_data_date }}</span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">データ鮮度</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.data_freshness_pct }}% / {{ macro_reliability.freshness_label }}</span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">欠損 / 古い</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.missing_count }}件 / {{ macro_reliability.stale_count }}件</span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">前回更新</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.update_status_label }}</span>
+                        </div>
+                    </div>
+                    {% if macro_reliability.failed_items or macro_reliability.missing_items or macro_reliability.stale_items %}
+                        <div class="macro-reliability-detail-grid">
+                            <div>
+                                <span class="macro-reliability-detail-title">前回更新の失敗</span>
+                                <ul class="macro-reliability-detail-list">
+                                    {% for item in macro_reliability.failed_items %}
+                                        <li>{{ item.label }}</li>
+                                    {% empty %}
+                                        <li>記録された失敗はありません。</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div>
+                                <span class="macro-reliability-detail-title">未取得・古い指標</span>
+                                <ul class="macro-reliability-detail-list">
+                                    {% for item in macro_reliability.missing_items %}
+                                        <li>未取得: {{ item.label }}</li>
+                                    {% endfor %}
+                                    {% for item in macro_reliability.stale_items %}
+                                        <li>古い: {{ item.label }}</li>
+                                    {% empty %}
+                                        <li>古い指標の表示対象はありません。</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title macro-section-title--brain">モデル内部の状態ベクトル</h2>
+                {% if world_state %}
+                    <p class="macro-model-note">{{ world_state.summary }}</p>
+                    <div class="macro-world-state-grid">
+                        {% for row in world_state.score_rows %}
+                            <div class="macro-world-state-score">
+                                <span>{{ row.label }}</span>
+                                <strong>{{ row.display }}</strong>
+                            </div>
+                        {% empty %}
+                            <p class="macro-placeholder">状態ベクトルはまだありません。</p>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="macro-placeholder">状態ベクトルはまだありません。</p>
+                {% endif %}
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title macro-section-title--shield">運用状態・ビンテージ・Raw archive</h2>
+                <div class="macro-operations-grid">
+                    {% if world_model_operations %}
+                        {% for row in world_model_operations.rows %}
+                            <div class="macro-operation-status">
+                                <span>{{ row.label }}</span>
+                                <strong>{{ row.status_label }}</strong>
+                                <small>{{ row.last_finished_at }}</small>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    {% if vintage_status %}
+                        <div class="macro-operation-status">
+                            <span>ビンテージ管理</span>
+                            <strong>{{ vintage_status.status_label }}</strong>
+                            <small>{{ vintage_status.total_count }}件</small>
+                        </div>
+                    {% endif %}
+                    {% if raw_archive_status %}
+                        <div class="macro-operation-status">
+                            <span>Raw archive</span>
+                            <strong>{{ raw_archive_status.status_label|default:"—" }}</strong>
+                            <small>{{ raw_archive_status.latest_path|default:"—" }}</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {% if monthly_model_status %}
+                <section class="macro-section macro-monthly-status macro-monthly-status--{{ monthly_model_status.tone }}">
+                    <h2 class="macro-section-title macro-section-title--brain">月次モデル状態</h2>
+                    <div class="macro-monthly-status-grid">
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">状態</span>
+                            <span class="macro-monthly-status-value">{{ monthly_model_status.status_label }}</span>
+                        </div>
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">最終学習日</span>
+                            <span class="macro-monthly-status-value">{{ monthly_model_status.latest_training_date }}</span>
+                        </div>
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">最終バックテスト</span>
+                            <span class="macro-monthly-status-value">{{ monthly_model_status.latest_backtest_date }}</span>
+                        </div>
+                    </div>
+                    {% if monthly_model_status.cards %}
+                        <details class="macro-monthly-details">
+                            <summary>月次モデルの検証情報を確認</summary>
+                            <div class="macro-monthly-card-list">
+                                {% for item in monthly_model_status.cards %}
+                                    <div class="macro-monthly-card">
+                                        <span class="macro-monthly-card-title">{{ item.label }}</span>
+                                        <span>{{ item.updated_at }}</span>
+                                        <span>{{ item.sample_label }}</span>
+                                        <span>{{ item.metric_label }}</span>
+                                        <span>{{ item.model_label }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
+                </section>
+            {% endif %}
+
+            {% if crash_probability_model %}
+                <section class="macro-section macro-crash-probability macro-crash-probability--{{ crash_probability_model.reliability_tone }}">
+                    <h2 class="macro-section-title macro-section-title--shield">急落確率モデル（検証済み参考確率）</h2>
+                    <p class="macro-model-note">過去データで検証したモデルによる参考確率です。イベント数が少ない場合は信頼性が下がります。</p>
+                    <div class="macro-probability-top">
+                        <div>
+                            <div class="macro-probability-label">{{ crash_probability_model.prediction_label }}</div>
+                            <div class="macro-probability-value">{{ crash_probability_model.current_probability_display }}</div>
+                        </div>
+                        <div class="macro-probability-badge">信頼性 {{ crash_probability_model.reliability_label }}</div>
+                    </div>
+                    {% if crash_probability_model.reliability_warnings %}
+                        <ul class="macro-probability-warning-list">
+                            {% for warning in crash_probability_model.reliability_warnings %}
+                                <li>{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="macro-probability-validation">
+                        <span>学習日 {{ crash_probability_model.trained_at }}</span>
+                        <span>検証 {{ crash_probability_model.validation_samples }}件 / イベント {{ crash_probability_model.validation_event_count }}件</span>
+                        <span>ROC-AUC {{ crash_probability_model.roc_auc_display }} / PR-AUC {{ crash_probability_model.pr_auc_display }} / Brier {{ crash_probability_model.brier_score_display }}</span>
+                        <span>モデル {{ crash_probability_model.model_version }}</span>
+                    </div>
+                    <div class="macro-probability-diagnostics">
+                        <span>raw {{ crash_probability_model.raw_probability_display }}</span>
+                        <span>乖離 {{ crash_probability_model.raw_calibration_gap_display }}</span>
+                        <span>目安範囲 {{ crash_probability_model.validation_event_interval_display }}</span>
+                        <span>閾値10% 精度 {{ crash_probability_model.threshold_10_precision_display }} / 捕捉 {{ crash_probability_model.threshold_10_recall_display }}</span>
+                    </div>
+                </section>
+            {% endif %}
+
+            <section class="macro-section">
+                <h2 class="macro-section-title macro-section-title--brain">最新モデル検証</h2>
+                {% if model_validation.rows %}
+                    <div class="macro-model-validation-list">
+                        {% for row in model_validation.rows %}
+                            <div class="macro-model-validation-row">
+                                <span>{{ row.model_version }}</span>
+                                <span>{{ row.target }} {{ row.horizon }}</span>
+                                <span>件数 {{ row.sample_count }}</span>
+                                <span>イベント {{ row.event_count|default_if_none:"—" }}</span>
+                                <span>MAE {{ row.mae_display }} / ゼロ予測 {{ row.baseline_mae_display }}</span>
+                                <span>改善率 {{ row.skill_score_display }}</span>
+                                <span>{{ row.display_reason }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="macro-placeholder">検証結果はまだありません。</p>
+                {% endif %}
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title macro-section-title--brain">モデル予測・後追い検証</h2>
+                {% if forecast_models.rows or forecast_models.hidden_rows %}
+                    <div class="macro-forecast-model-list">
+                        {% for row in forecast_models.rows %}
+                            <div class="macro-forecast-model-row">
+                                <span>{{ row.target }} {{ row.horizon }}</span>
+                                <strong>{{ row.prediction_display }}</strong>
+                                <span>MAE {{ row.mae_display }} / ゼロ予測 {{ row.baseline_mae_display }}</span>
+                                <span>{{ row.display_reason }}</span>
+                            </div>
+                        {% endfor %}
+                        {% for row in forecast_models.hidden_rows %}
+                            <div class="macro-forecast-model-row">
+                                <span>{{ row.target }} {{ row.horizon }}</span>
+                                <strong>{{ row.prediction_display }}</strong>
+                                <span>非表示: {{ row.display_reason }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="macro-placeholder">表示できる予測はまだありません。</p>
+                {% endif %}
+                {% if forecast_monitor.summary_rows %}
+                    <div class="macro-forecast-summary-list">
+                        {% for row in forecast_monitor.summary_rows %}
+                            <div class="macro-forecast-summary-row">
+                                <span>{{ row.model_version }}</span>
+                                <span>{{ row.target }} {{ row.horizon }}</span>
+                                <span>確定 {{ row.settled_count }} / 未確定 {{ row.pending_count }}</span>
+                                <span>平均 {{ row.avg_abs_error_display }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </section>
+
+            {% if scenario_analysis and scenario_analysis.scenarios %}
+                <section class="macro-section macro-scenarios">
+                    <h2 class="macro-section-title macro-section-title--brain">シナリオ分析</h2>
+                    <div class="macro-scenario-base">
+                        <span>現在基準</span>
+                        <strong>{{ scenario_analysis.base_regime_view_display }}</strong>
+                        <span>{{ scenario_analysis.base_regime_fit_display }}</span>
+                    </div>
+                    <div class="macro-scenario-grid">
+                        {% for item in scenario_analysis.scenarios %}
+                            <article class="macro-scenario-card{% if item.is_custom %} macro-scenario-card--custom{% endif %}">
+                                <div class="macro-scenario-head">
+                                    <span class="macro-scenario-title">{{ item.title }}</span>
+                                    <span class="macro-scenario-regime">{{ item.regime_view_display }}</span>
+                                </div>
+                                <p class="macro-scenario-assumption">{{ item.assumption }}</p>
+                                <div class="macro-scenario-metrics">
+                                    <span>{{ item.regime_fit_display }}</span>
+                                    <span>景気後退 {{ item.recession_probability_display }}</span>
+                                    <span>物価再加速 {{ item.inflation_probability_display }}</span>
+                                    <span>金融ストレス {{ item.financial_stress_probability_display }}</span>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">全指標カード</h2>
+                <div class="macro-card-list">
+                    {% for card in audit_indicator_cards %}
+                        {% include "macro/_partials/indicator_card.html" with card=card %}
+                    {% empty %}
+                        <p class="macro-placeholder">指標カードはまだありません。</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title macro-section-title--search">過去類似局面・連動マップ</h2>
+                {% if similar_periods %}
+                    <ol class="macro-similar-list">
+                        {% for period in similar_periods %}
+                            <li class="macro-similar-item">
+                                <span>{{ period.month_label }}</span>
+                                <span>距離 {{ period.distance_display }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+                {% if historical_crash_similarity %}
+                    <ol class="macro-crash-history-list">
+                        {% for item in historical_crash_similarity %}
+                            <li class="macro-crash-history-item">
+                                <span>{{ item.month_label }}</span>
+                                <span>{{ item.label }}</span>
+                                <span>距離 {{ item.distance_display }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+                {% if linkages %}
+                    <ol class="macro-linkage-list">
+                        {% for link in linkages %}
+                            <li class="macro-linkage-item">
+                                <span class="macro-linkage-relation">{{ link.relation_text }}</span>
+                                <span class="macro-linkage-corr">{{ link.correlation_display }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</body>
+</html>

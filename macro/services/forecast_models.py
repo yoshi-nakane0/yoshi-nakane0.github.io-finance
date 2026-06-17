@@ -384,6 +384,7 @@ def walk_forward_validate(rows, *, min_train: int = 36) -> dict:
         method = 'lightgbm_refit_walk_forward'
     abs_errors = [abs(row['error']) for row in validation_rows]
     squared_errors = [row['error'] ** 2 for row in validation_rows]
+    baseline_abs_errors = [abs(row['actual']) for row in validation_rows]
     direction_hits = [
         1
         for row in validation_rows
@@ -391,11 +392,20 @@ def walk_forward_validate(rows, *, min_train: int = 36) -> dict:
         or (row['prediction'] < 0 and row['actual'] < 0)
     ]
     sample_count = len(validation_rows)
+    model_mae = mean(abs_errors) if abs_errors else None
+    baseline_mae = mean(baseline_abs_errors) if baseline_abs_errors else None
+    skill_score = (
+        1 - model_mae / baseline_mae
+        if model_mae is not None and baseline_mae not in (None, 0)
+        else None
+    )
     return {
         'sample_count': sample_count,
         'metrics': {
-            'mae': mean(abs_errors) if abs_errors else None,
+            'mae': model_mae,
             'rmse': math.sqrt(mean(squared_errors)) if squared_errors else None,
+            'baseline_mae': baseline_mae,
+            'skill_score': skill_score,
             'direction_accuracy': (
                 len(direction_hits) / sample_count if sample_count else None
             ),

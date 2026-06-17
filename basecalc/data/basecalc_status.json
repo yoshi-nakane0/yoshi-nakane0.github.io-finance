@@ -1,8 +1,8 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-15T05:55:44.991346+00:00",
+  "updated_at": "2026-06-17T01:45:46.958712+00:00",
   "price_data": {
-    "last_success_at": "2026-06-15T05:55:44.833007+00:00",
+    "last_success_at": "2026-06-17T01:45:46.672134+00:00",
     "last_failed_at": "2026-06-07T12:43:43.098446+00:00",
     "source": "225navi:NIY=F",
     "age_minutes": 0,
@@ -11,18 +11,18 @@
     "decision_label": "判定可能"
   },
   "per": {
-    "last_success_at": "2026-03-12T09:31:57+00:00",
+    "last_success_at": "2026-06-16T13:21:51+00:00",
     "last_failed_at": null,
     "source": "https://indexes.nikkei.co.jp/nkave/archives/data?list=per",
-    "age_minutes": 125566,
-    "age_days": 88,
-    "as_of_date": "2026.03.11",
+    "age_minutes": 626,
+    "age_days": 0,
+    "as_of_date": "2026.06.16",
     "fallback_used": false,
     "decision_level": "limited",
     "decision_label": "参考"
   },
   "jgb": {
-    "last_success_at": "2026-06-07T14:18:25.826865+00:00",
+    "last_success_at": "2026-06-16T23:48:04.360301+00:00",
     "last_failed_at": null,
     "source": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv",
     "age_minutes": 0,
@@ -31,13 +31,13 @@
     "decision_label": "参考"
   },
   "external_market": {
-    "last_success_at": null,
-    "last_failed_at": "2026-06-07T14:18:27.314115+00:00",
+    "last_success_at": "2026-06-16T23:48:04.801207+00:00",
+    "last_failed_at": "2026-06-16T21:20:17.090460+00:00",
     "source": "yahoo",
-    "age_minutes": null,
+    "age_minutes": 0,
     "fallback_used": false,
-    "asset_count": 0,
-    "decision_level": "blocked",
-    "decision_label": "停止"
+    "asset_count": 1,
+    "decision_level": "limited",
+    "decision_label": "参考"
   }
 }

@@ -10,7 +10,12 @@ from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.utils import timezone
 
-from ..models import Observation, PriceObservation, WorldStateSnapshot
+from ..models import (
+    Observation,
+    PolicyExpectationSnapshot,
+    PriceObservation,
+    WorldStateSnapshot,
+)
 from . import regime
 from .crash_alert import compute_crash_alert
 
@@ -245,15 +250,20 @@ def build_world_state_assessment_from_metrics(
         low=-12.0,
         high=12.0,
     )
+    policy_expectation_score = _policy_expectation_score()
+    policy_score_inputs = [
+        _metric_score(metrics.get('core_pce_yoy'), low=1.5, high=4.5),
+        _metric_score(metrics.get('breakeven_5y'), low=1.5, high=3.5),
+        _metric_score(metrics.get('yield_curve_2y10y'), low=-1.5, high=1.5),
+    ]
+    if policy_expectation_score is not None:
+        policy_score_inputs.append(policy_expectation_score)
+
     world_scores = {
         'growth_score': _from_signed_score(scores.get('growth')),
         'labor_score': _from_signed_score(scores.get('labor')),
         'inflation_score': _metric_score(metrics.get('core_pce_yoy'), low=1.5, high=4.5),
-        'policy_pressure_score': _average([
-            _metric_score(metrics.get('core_pce_yoy'), low=1.5, high=4.5),
-            _metric_score(metrics.get('breakeven_5y'), low=1.5, high=3.5),
-            _metric_score(metrics.get('yield_curve_2y10y'), low=-1.5, high=1.5),
-        ]),
+        'policy_pressure_score': _average(policy_score_inputs),
         'liquidity_score': _clamp(100.0 - (category_summary.get('credit_liquidity') or 50.0)),
         'credit_score': _metric_score(metrics.get('hy_spread'), low=8.0, high=2.5),
         'risk_appetite_score': _clamp(100.0 - (category_summary.get('volatility_sentiment') or 50.0)),
@@ -290,6 +300,7 @@ def build_world_state_assessment_from_metrics(
             'source_dates': source_dates,
             'regime_label': assessment.get('regime_label'),
             'inflation_flag': assessment.get('inflation_flag'),
+            'policy_expectation': _latest_policy_expectation_payload(),
         },
         'warnings': warnings,
         'model_version': MODEL_VERSION,
@@ -299,6 +310,30 @@ def build_world_state_assessment_from_metrics(
 def build_world_state_assessment(as_of: Optional[date] = None) -> dict:
     metrics = regime.collect_key_metrics(as_of=as_of)
     return build_world_state_assessment_from_metrics(metrics, as_of=as_of)
+
+
+def _policy_expectation_score() -> Optional[float]:
+    snapshot = PolicyExpectationSnapshot.objects.order_by('-as_of').first()
+    if snapshot is None:
+        return None
+    if snapshot.policy_bias in ('hawkish_headwind', 'rate_up_headwind'):
+        return 85.0
+    if snapshot.policy_bias in ('inflation_headwind', 'rates_volatility_headwind'):
+        return 75.0
+    if snapshot.policy_bias == 'dovish_tailwind':
+        return 25.0
+    return 50.0
+
+
+def _latest_policy_expectation_payload() -> dict:
+    snapshot = PolicyExpectationSnapshot.objects.order_by('-as_of').first()
+    if snapshot is None:
+        return {}
+    return {
+        'policy_bias': snapshot.policy_bias,
+        'data_quality': snapshot.data_quality,
+        'summary': (snapshot.payload or {}).get('summary', ''),
+    }
 
 
 def compute_current_world_state(

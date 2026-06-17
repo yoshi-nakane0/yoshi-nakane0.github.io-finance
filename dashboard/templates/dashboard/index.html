@@ -57,7 +57,7 @@
       <div class="grid-container grid-cols-2">
 
         <!-- Macro -->
-        <a href="{% url 'macro:index' %}" class="dashboard-card category-analysis type-macro grid-span-2">
+        <a href="{% url 'macro:index' %}" class="dashboard-card category-analysis type-macro">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
               <path d="M3 3v18h18"></path>
@@ -67,20 +67,6 @@
           <div class="text-wrapper">
             <h2 class="card-title">Macro</h2>
             <span class="card-subtitle">Economic Regime</span>
-          </div>
-        </a>
-
-        <!-- Sector -->
-        <a href="/sector/" class="dashboard-card category-analysis type-sector">
-          <div class="icon-wrapper">
-            <svg viewBox="0 0 24 24">
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-              <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-            </svg>
-          </div>
-          <div class="text-wrapper">
-            <h2 class="card-title">Sector</h2>
-            <span class="card-subtitle">Market Segments</span>
           </div>
         </a>
 
@@ -100,15 +86,21 @@
           </div>
         </a>
 
-      </div>
-    </section>
+        <!-- Sector -->
+        <a href="/sector/" class="dashboard-card category-analysis type-sector">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+              <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Sector</h2>
+            <span class="card-subtitle">Market Segments</span>
+          </div>
+        </a>
 
-    <!-- Group: Market Forecast Reports -->
-    <section class="dashboard-section dashboard-section--deferred">
-      <h3 class="section-title">Market Forecast</h3>
-      <div class="grid-container grid-cols-3 grid-compact">
-        
-        <!-- 4. Prediction -->
+        <!-- Prediction -->
         <a href="{% url 'prediction:index' %}" class="dashboard-card category-ai type-prediction">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
@@ -121,6 +113,14 @@
             <span class="card-subtitle">AI Forecasts</span>
           </div>
         </a>
+
+      </div>
+    </section>
+
+    <!-- Group: Market Forecast Reports -->
+    <section class="dashboard-section dashboard-section--deferred">
+      <h3 class="section-title">Market Forecast</h3>
+      <div class="grid-container grid-cols-2 grid-compact">
 
         <!-- 5. Person -->
         <a href="{% url 'person:index' %}" class="dashboard-card category-market type-person">

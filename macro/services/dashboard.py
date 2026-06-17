@@ -51,6 +51,19 @@ REGIME_PROBABILITY_MODEL_PATH = Path('static') / 'macro' / 'regime_probability_m
 MIN_CRASH_PROBABILITY_VALIDATION_EVENTS = 10
 CRASH_PROBABILITY_STALE_DAYS = 90
 RAW_CALIBRATION_GAP_WARNING = 0.20
+TOP_MACRO_SERIES = {
+    'PCEPILFE',
+    'UNRATE',
+    'PAYEMS',
+    'INDPRO',
+    'T10Y2Y',
+    'T10Y3M',
+    'DGS10',
+    'DGS2',
+    'DEXJPUS',
+    'VIXCLS',
+    'BAMLH0A0HYM2',
+}
 
 
 def format_value(value: Optional[float], unit: str) -> str:
@@ -188,6 +201,14 @@ def build_indicator_cards() -> List[Dict]:
             ),
         })
     return cards
+
+
+def build_top_indicator_cards() -> List[Dict]:
+    """トップ画面では判断に使う代表指標だけを返す。"""
+    return [
+        card for card in build_indicator_cards()
+        if card.get('series_id') in TOP_MACRO_SERIES
+    ]
 
 
 def _name_lookup() -> Dict[str, str]:
@@ -445,15 +466,23 @@ def build_vintage_status_context() -> Dict:
         .values_list('collected_at', flat=True)
         .first()
     )
-    tone = 'good' if total else 'warning'
+    is_large = total >= 300_000
+    archive_recommended = total >= 500_000
+    is_stale = latest is None or latest < timezone.now() - timedelta(days=7)
+    tone = 'warning' if is_large or is_stale else 'good'
+    if total == 0:
+        tone = 'warning'
     return {
         'tone': tone,
         'total_count': total,
         'series_count': series_count,
         'latest_collected_at': _format_date_for_display(latest),
-        'status_label': '保存中' if total else '未蓄積',
+        'status_label': '蓄積済み' if total else '未蓄積',
+        'is_large': is_large,
+        'is_stale': is_stale,
+        'archive_recommended': archive_recommended,
         'note': (
-            'FREDの改定前データを保存しており、point-in-time検証に使えます。'
+            'FREDの改定前データを蓄積しており、point-in-time検証に使えます。'
             if total else
             '次回のFRED更新から、取得時点ごとの値を保存します。'
         ),
@@ -1208,6 +1237,142 @@ def build_crash_alert_context() -> Dict:
     }
 
 
+def _extract_policy_pressure(world: Optional[Dict], policy: Optional[Dict] = None) -> Dict:
+    policy = policy or {}
+    world = world or {}
+    score_row = next(
+        (
+            row for row in world.get('score_rows', [])
+            if row.get('field') == 'policy_pressure_score'
+        ),
+        {},
+    )
+    rows = policy.get('rows') or []
+    return {
+        'label': policy.get('bias_label') or '政策圧力',
+        'summary': (
+            policy.get('summary')
+            or '政策金利見通し・米金利・期待インフレをまとめて確認します。'
+        ),
+        'score_display': score_row.get('display') or '—',
+        'data_quality_display': policy.get('data_quality_display') or world.get('data_quality_display') or '—',
+        'tone': policy.get('tone') or 'warning',
+        'rows': rows[:5],
+        'alerts': (policy.get('alerts') or [])[:2],
+    }
+
+
+def _summarize_market_stress(crash: Optional[Dict]) -> Dict:
+    if not crash:
+        return {
+            'score': None,
+            'score_display': '—',
+            'level_label': '未計算',
+            'data_quality_display': '—',
+            'abnormal_items': [],
+            'summary': '市場ストレスはまだ計算されていません。',
+        }
+
+    abnormal_items = []
+    for component in crash.get('components', []):
+        score = component.get('score')
+        if (
+            component.get('is_missing')
+            or component.get('is_stale')
+            or (isinstance(score, (int, float)) and score >= 70)
+        ):
+            abnormal_items.append(component.get('label') or component.get('series_id'))
+
+    score = crash.get('total_score')
+    return {
+        'score': score,
+        'score_display': f'{score}/100' if score is not None else '—',
+        'level': crash.get('level'),
+        'level_label': crash.get('level_label') or '—',
+        'data_quality_display': f"{crash.get('data_quality_pct', 0)}%",
+        'abnormal_items': [item for item in abnormal_items if item][:5],
+        'summary': (
+            '急落確率ではなく、現在の市場の緊張度です。'
+        ),
+    }
+
+
+def _build_decision_confidence(
+    regime: Dict,
+    reliability: Dict,
+    crash: Optional[Dict],
+) -> Dict:
+    data_quality = regime.get('data_quality_pct') or 0
+    rule_strength = regime.get('rule_strength_pct') or 0
+    crash_quality = (crash or {}).get('data_quality_pct') or 0
+    failed_count = reliability.get('failed_count') or 0
+    missing_count = reliability.get('missing_count') or 0
+    base_score = round((data_quality + rule_strength + crash_quality) / 3)
+    if failed_count:
+        base_score -= 10
+    if missing_count:
+        base_score -= min(20, missing_count * 2)
+    base_score = max(min(base_score, 100), 0)
+
+    if base_score >= 85:
+        grade = 'A'
+        label = '高い'
+    elif base_score >= 70:
+        grade = 'B'
+        label = '通常'
+    elif base_score >= 50:
+        grade = 'C'
+        label = '注意'
+    else:
+        grade = 'D'
+        label = '低い'
+
+    notes = []
+    if failed_count:
+        notes.append(f'前回更新で{failed_count}件の失敗があります。')
+    if missing_count:
+        notes.append(f'未取得の指標が{missing_count}件あります。')
+    if not notes:
+        notes.append('主要データの取得状況と判定材料は確認済みです。')
+
+    return {
+        'grade': grade,
+        'label': label,
+        'score': base_score,
+        'score_display': f'{base_score}%',
+        'notes': notes,
+        'data_freshness_pct': reliability.get('data_freshness_pct', 0),
+        'sample_note': 'モデル予測は検証条件を満たすものだけ参考表示します。',
+    }
+
+
+def build_macro_decision_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
+    """トップ画面用に、判断に必要な要素だけを集約する。"""
+    regime = build_regime_context(snapshot)
+    reliability = build_reliability_context(
+        last_updated=regime.get('snapshot_date'),
+        regime_model_version=regime.get('regime_model_version'),
+    )
+    crash = build_crash_alert_context()
+    world = build_world_state_context()
+    try:
+        from .policy_expectation import build_policy_expectation_context
+        policy = build_policy_expectation_context()
+    except Exception:
+        logger.exception("Policy expectation context failed")
+        policy = {}
+
+    return {
+        'headline': regime['regime_plain_judgment'],
+        'detail': regime['regime_plain_detail'],
+        'good_points': regime['regime_good_points'][:3],
+        'bad_points': regime['regime_bad_points'][:3],
+        'policy_pressure': _extract_policy_pressure(world, policy),
+        'market_stress': _summarize_market_stress(crash),
+        'confidence': _build_decision_confidence(regime, reliability, crash),
+    }
+
+
 def build_historical_crash_similarity(top_n: int = 3) -> List[Dict]:
     """歴史的クラッシュ月との類似度を返す。"""
     return find_similar_crash_months(top_n=top_n)
@@ -1499,8 +1664,11 @@ def _latest_validation_reports() -> Dict[tuple, ModelValidationReport]:
 
 
 def build_forecast_model_context() -> Dict:
+    from .model_validation import model_display_grade
+
     reports = _latest_validation_reports()
     rows = []
+    hidden_rows = []
     seen = set()
     snapshots = (
         ForecastSnapshot.objects
@@ -1521,33 +1689,52 @@ def build_forecast_model_context() -> Dict:
         metadata = snapshot.metadata or {}
         report = reports.get(key)
         metrics = report.metrics if report else {}
+        display_grade, display_reason = (
+            model_display_grade(report)
+            if report else ('hidden', '検証結果なし')
+        )
         mae = (
             metadata.get('validation_mae_pct')
             or metadata.get('validation_mae')
             or metrics.get('mae')
         )
-        rows.append({
+        row = {
             'target': snapshot.target,
             'horizon': snapshot.horizon,
             'prediction_display': _forecast_prediction_display(snapshot),
             'unit': metadata.get('unit') or ('%' if metadata.get('prediction_kind') == 'return_pct' else '—'),
             'mae_display': _number_display(mae),
+            'baseline_mae_display': _number_display(metrics.get('baseline_mae')),
+            'skill_score_display': _ratio_pct_display(metrics.get('skill_score')),
+            'direction_accuracy_display': _ratio_pct_display(
+                metrics.get('direction_accuracy')
+            ),
             'model_version': snapshot.model_version,
             'trained_at': snapshot.as_of_date.isoformat(),
             'data_quality_display': f"{metadata.get('data_quality', 0):.0f}%",
-            'kind_label': '参考値',
-            'kind_tone': 'provisional',
-        })
+            'kind_label': display_reason,
+            'kind_tone': 'validated' if display_grade == 'show' else 'provisional',
+            'display_grade': display_grade,
+            'display_reason': display_reason,
+        }
+        if display_grade == 'show':
+            rows.append(row)
+        else:
+            hidden_rows.append(row)
     return {
         'rows': rows,
+        'hidden_rows': hidden_rows,
         'has_rows': bool(rows),
     }
 
 
 def build_model_validation_context() -> Dict:
+    from .model_validation import model_display_grade
+
     rows = []
     for report in ModelValidationReport.objects.order_by('-evaluated_at')[:12]:
         metrics = report.metrics or {}
+        display_grade, display_reason = model_display_grade(report)
         rows.append({
             'model_version': report.model_version,
             'target': report.target,
@@ -1555,6 +1742,8 @@ def build_model_validation_context() -> Dict:
             'sample_count': report.sample_count,
             'event_count': report.event_count,
             'mae_display': _number_display(metrics.get('mae')),
+            'baseline_mae_display': _number_display(metrics.get('baseline_mae')),
+            'skill_score_display': _ratio_pct_display(metrics.get('skill_score')),
             'rmse_display': _number_display(metrics.get('rmse')),
             'direction_accuracy_display': _ratio_pct_display(
                 metrics.get('direction_accuracy')
@@ -1568,6 +1757,8 @@ def build_model_validation_context() -> Dict:
             ),
             'warnings': report.warnings or [],
             'evaluated_at': _format_date_for_display(report.evaluated_at),
+            'display_grade': display_grade,
+            'display_reason': display_reason,
         })
     return {
         'rows': rows,

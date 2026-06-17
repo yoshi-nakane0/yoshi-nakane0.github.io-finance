@@ -424,6 +424,38 @@ class WorldStateSnapshot(models.Model):
         return f'{self.as_of_date}: {self.model_version}'
 
 
+class PolicyExpectationSnapshot(models.Model):
+    """政策金利見通しと金利市場の株価向け逆風/追い風を保存する。"""
+
+    as_of = models.DateTimeField(db_index=True)
+    central_bank = models.CharField(max_length=16, db_index=True, default='FED')
+    effective_rate = models.FloatField(null=True, blank=True)
+    target_lower = models.FloatField(null=True, blank=True)
+    target_upper = models.FloatField(null=True, blank=True)
+
+    implied_next_meeting_delta_bp = models.FloatField(null=True, blank=True)
+    implied_3m_delta_bp = models.FloatField(null=True, blank=True)
+    implied_6m_delta_bp = models.FloatField(null=True, blank=True)
+    implied_12m_delta_bp = models.FloatField(null=True, blank=True)
+
+    rate_shock_1d_bp = models.FloatField(null=True, blank=True)
+    rate_shock_5d_bp = models.FloatField(null=True, blank=True)
+    policy_bias = models.CharField(max_length=32, default='neutral')
+    data_quality = models.FloatField(default=0.0)
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-as_of']
+        indexes = [
+            models.Index(fields=['central_bank', '-as_of']),
+            models.Index(fields=['policy_bias', '-as_of']),
+        ]
+
+    def __str__(self):
+        return f'{self.central_bank} {self.as_of:%Y-%m-%d}: {self.policy_bias}'
+
+
 class FeatureSnapshot(models.Model):
     """予測・検証に使った特徴量を再現可能に保存する。"""
 

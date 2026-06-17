@@ -172,6 +172,35 @@ def _write_regimes(writer, qs: Optional[QuerySet], archived_at: str, reason: str
     return count
 
 
+def _write_vintages(writer, qs: Optional[QuerySet], archived_at: str, reason: str) -> int:
+    if qs is None:
+        return 0
+    count = 0
+    rows = (
+        qs.select_related('indicator')
+        .order_by('indicator__fred_series_id', 'observation_date', 'realtime_start')
+        .iterator(chunk_size=1000)
+    )
+    for vintage in rows:
+        row = _blank_row(archived_at, reason, 'vintage_observation')
+        row.update({
+            'series_id': vintage.indicator.fred_series_id,
+            'source': vintage.source,
+            'frequency': vintage.indicator.frequency,
+            'date': vintage.observation_date.isoformat(),
+            'value': vintage.value,
+            'payload_json': _json({
+                'realtime_start': vintage.realtime_start.isoformat(),
+                'realtime_end': vintage.realtime_end.isoformat(),
+                'collected_at': vintage.collected_at.isoformat(),
+                'metadata': vintage.metadata,
+            }),
+        })
+        writer.writerow(row)
+        count += 1
+    return count
+
+
 def _write_payload_rows(
     writer,
     qs: Optional[QuerySet],
@@ -204,6 +233,7 @@ def archive_macro_rows(
     observation_querysets: Optional[Iterable[QuerySet]] = None,
     price_queryset: Optional[QuerySet] = None,
     regime_queryset: Optional[QuerySet] = None,
+    vintage_queryset: Optional[QuerySet] = None,
     world_state_queryset: Optional[QuerySet] = None,
     feature_queryset: Optional[QuerySet] = None,
     forecast_queryset: Optional[QuerySet] = None,
@@ -219,6 +249,7 @@ def archive_macro_rows(
         Observation,
         PriceObservation,
         RegimeSnapshot,
+        VintageObservation,
         WorldStateSnapshot,
     )
 
@@ -227,6 +258,7 @@ def archive_macro_rows(
         not observation_querysets
         and price_queryset is None
         and regime_queryset is None
+        and vintage_queryset is None
         and world_state_queryset is None
         and feature_queryset is None
         and forecast_queryset is None
@@ -235,6 +267,7 @@ def archive_macro_rows(
         observation_querysets = [Observation.objects.all()]
         price_queryset = PriceObservation.objects.all()
         regime_queryset = RegimeSnapshot.objects.all()
+        vintage_queryset = VintageObservation.objects.all()
         world_state_queryset = WorldStateSnapshot.objects.all()
         feature_queryset = FeatureSnapshot.objects.all()
         forecast_queryset = ForecastSnapshot.objects.all()
@@ -243,6 +276,7 @@ def archive_macro_rows(
     total_candidates = sum(qs.count() for qs in observation_querysets)
     total_candidates += price_queryset.count() if price_queryset is not None else 0
     total_candidates += regime_queryset.count() if regime_queryset is not None else 0
+    total_candidates += vintage_queryset.count() if vintage_queryset is not None else 0
     total_candidates += world_state_queryset.count() if world_state_queryset is not None else 0
     total_candidates += feature_queryset.count() if feature_queryset is not None else 0
     total_candidates += forecast_queryset.count() if forecast_queryset is not None else 0
@@ -265,6 +299,7 @@ def archive_macro_rows(
         )
         price_count = _write_prices(writer, price_queryset, archived_at, reason)
         regime_count = _write_regimes(writer, regime_queryset, archived_at, reason)
+        vintage_count = _write_vintages(writer, vintage_queryset, archived_at, reason)
         world_state_count = _write_payload_rows(
             writer,
             world_state_queryset.order_by('as_of_date') if world_state_queryset is not None else None,
@@ -348,6 +383,7 @@ def archive_macro_rows(
         observation_count
         + price_count
         + regime_count
+        + vintage_count
         + world_state_count
         + feature_count
         + forecast_count
@@ -363,6 +399,7 @@ def archive_macro_rows(
         'observation_count': observation_count,
         'price_count': price_count,
         'regime_count': regime_count,
+        'vintage_count': vintage_count,
         'world_state_count': world_state_count,
         'feature_count': feature_count,
         'forecast_count': forecast_count,
@@ -385,6 +422,7 @@ def archive_macro_rows(
             metadata={
                 'fieldnames': FIELDNAMES,
                 'world_state_count': world_state_count,
+                'vintage_count': vintage_count,
                 'feature_count': feature_count,
                 'forecast_count': forecast_count,
                 'validation_count': validation_count,

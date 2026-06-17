@@ -246,12 +246,14 @@ def _save_vintage_observations(
     if not rows:
         return 0
     with transaction.atomic():
+        before = VintageObservation.objects.count()
         VintageObservation.objects.bulk_create(
             rows,
             batch_size=500,
             ignore_conflicts=True,
         )
-    return len(rows)
+        after = VintageObservation.objects.count()
+    return after - before
 
 
 def _resolve_fetch_start(

@@ -27,45 +27,35 @@
             </div>
             {% else %}
 
-            <section class="wm-dashboard wm-{{ world_model.direction }}" data-field="wm_hero">
+            <section class="wm-dashboard wm-{{ decision.direction }}" data-field="wm_hero">
                 <div class="wm-dashboard__header">
                     <div>
-                        <div class="wm-dashboard__kicker">日経先物ダッシュボード</div>
-                        <h1 class="wm-dashboard__title">今見るべき3項目</h1>
+                        <div class="wm-dashboard__kicker">日経先物 判断</div>
+                        <h1 class="wm-dashboard__title">{{ decision.direction_label }}</h1>
                     </div>
                     <div class="wm-dashboard__meta">
-                        <span data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</span>
-                        <span>{{ world_model.data_quality.level|title }} / {{ world_model.data_quality.score }}/100</span>
+                        <span data-field="last_updated_display">Last Updated: {{ decision.last_updated }}</span>
+                        <span>{{ decision.data_quality_level|title }} / {{ decision.data_quality_score }}/100</span>
                     </div>
                 </div>
 
                 <div class="wm-purpose-nav" aria-label="このページの確認項目">
-                    <span>01 テクニカル</span>
-                    <span>02 市場ストレス</span>
-                    <span>03 {% if world_model.similar_summary.is_statistically_valid %}未来予測{% else %}条件付きシナリオ{% endif %}</span>
+                    <span>01 判定</span>
+                    <span>02 根拠</span>
+                    <span>03 実用ライン</span>
                 </div>
 
-                <div class="wm-readiness-panel readiness-{{ world_model.readiness_level }}">
+                <div class="wm-readiness-panel readiness-{{ decision.readiness_level }}">
                     <div class="wm-readiness-panel__status">
                         <span>判定状態</span>
-                        <strong>
-                            {% if world_model.readiness_level == "ready" %}判定可能{% elif world_model.readiness_level == "limited" %}参考表示{% else %}判定不可{% endif %}
-                        </strong>
+                        <strong>{{ decision.readiness_label }}</strong>
                     </div>
                     <div class="wm-readiness-panel__grid">
-                        <span>取得時刻 <strong>{{ world_model.last_updated_display }}</strong></span>
-                        <span>品質 <strong>{{ world_model.data_quality_score }}/100</strong></span>
-                        <span>Fallback <strong>{% if world_model.data_quality.fallback_used %}あり{% else %}なし{% endif %}</strong></span>
-                        <span>日足 <strong>{{ world_model.readiness_display.daily_bars }}本</strong></span>
-                        <span>主要指標 <strong>{{ world_model.readiness_display.valid_major_indicators }}/6</strong></span>
-                    </div>
-                    <div class="wm-status-strip" data-field="basecalc_status_rows">
-                        {% for row in basecalc_status_rows %}
-                        <span class="wm-status-pill status-{{ row.decision_level }}">
-                            {{ row.label }}は<strong>{{ row.age_display }}</strong>
-                            <small>{{ row.decision_label }} / fallback {{ row.fallback_display }}</small>
-                        </span>
-                        {% endfor %}
+                        <span>現在値 <strong>{{ decision.price|floatformat:0|intcomma }}</strong></span>
+                        <span>信頼度 <strong>{{ decision.confidence }} {{ decision.confidence_score }}/100</strong></span>
+                        <span>Fallback <strong>{% if decision.fallback_used %}あり{% else %}なし{% endif %}</strong></span>
+                        <span>日足 <strong>{{ decision.daily_bars|default:"—" }}本</strong></span>
+                        <span>データ状態 <strong>{{ decision.status_summary }}</strong></span>
                     </div>
                     {% if world_model.readiness.reason_codes %}
                     <div class="wm-readiness-panel__reasons">
@@ -76,7 +66,7 @@
                     {% endif %}
                 </div>
 
-                {% if world_model.readiness_level != "ready" %}
+                {% if decision.readiness_level != "ready" %}
                 <div class="wm-direction-stop">
                     現在のデータは判定条件を満たしていないため、方向予測を停止しています。価格、取得元、足数、フォールバック有無を確認してください。
                 </div>
@@ -86,109 +76,104 @@
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">01</span>
-                            <span class="wm-purpose-card__label">現在の日経先物のテクニカル状況</span>
+                            <span class="wm-purpose-card__label">方向判断</span>
                         </div>
                         <div class="wm-purpose-card__main">
-                            <h2 data-field="direction_label">{{ world_model.scenario_label|default:world_model.direction_label }}</h2>
-                            <div class="wm-purpose-card__badge">{{ world_model.state_label }} / {{ world_model.phase_label }}</div>
-                        </div>
-                        <div class="wm-score-panel wm-score-panel--compact">
-                            <div class="wm-score-row">
-                                <span>方向評価</span>
-                                <strong>{{ world_model.sentiment_score_abs }}%</strong>
-                                <small>{{ world_model.sentiment_score }}</small>
-                                <div class="wm-score-track">
-                                    <i data-value="{{ world_model.sentiment_score_abs }}"></i>
-                                </div>
-                            </div>
-                            <div class="wm-score-row">
-                                <span>継続性</span>
-                                <strong>{{ world_model.continuation_score }}%</strong>
-                                <small>{{ world_model.shock_label }}</small>
-                                <div class="wm-score-track is-green">
-                                    <i data-value="{{ world_model.continuation_score }}"></i>
-                                </div>
-                            </div>
+                            <h2 data-field="direction_label">{{ decision.direction_label }}</h2>
+                            <div class="wm-purpose-card__badge">{{ decision.state_label }}</div>
                         </div>
                         <div class="wm-purpose-card__facts">
-                            <span>強度 <strong>{{ world_model.strength_label }}</strong></span>
-                            <span>価格 <strong>{{ data.price_display|default:"N/A" }}</strong></span>
-                            <span>反落 <strong>{{ world_model.reversal_risk_score }}/100</strong></span>
-                            <span>改善 <strong>{{ world_model.rebound_improvement_score }}/100</strong></span>
+                            <span>現在値 <strong>{{ data.price_display|default:"N/A" }}</strong></span>
+                            <span>信頼度 <strong>{{ decision.confidence }} {{ decision.confidence_score }}/100</strong></span>
                         </div>
                     </article>
 
                     <article class="wm-purpose-card wm-purpose-card--stress">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">02</span>
-                            <span class="wm-purpose-card__label">市場ストレス・急落予測</span>
-                        </div>
-                        <div class="wm-purpose-card__main">
-                            <h2>{{ world_model.shock_label }}</h2>
-                            <div class="wm-purpose-card__badge">突発性 {{ world_model.shock_score }}/100</div>
-                        </div>
-                        <div class="stress-meter">
-                            <div class="stress-meter__track">
-                                <i data-value="{{ world_model.shock_score }}"></i>
-                            </div>
-                            <div class="stress-meter__labels">
-                                <span>通常</span>
-                                <span>警戒</span>
-                            </div>
+                            <span class="wm-purpose-card__label">主な根拠と警戒点</span>
                         </div>
                         <div class="wm-purpose-card__facts">
-                            <span>外部市場 <strong>{{ world_model.market_context.risk_label }}</strong></span>
-                            <span>リスク <strong>{{ world_model.market_context.risk_score }}</strong></span>
+                            {% for item in decision.main_reason %}
+                            <span>根拠 <strong>{{ item }}</strong></span>
+                            {% endfor %}
+                            {% for item in decision.risk_reason %}
+                            <span>警戒 <strong>{{ item }}</strong></span>
+                            {% endfor %}
                         </div>
-                        {% if market_shock and market_shock.has_data %}
-                        <p class="wm-purpose-card__note">{{ market_shock.summary }}</p>
-                        {% else %}
-                        <p class="wm-purpose-card__note">米国3指数の急変データ待ちです。</p>
-                        {% endif %}
                     </article>
 
                     <article class="wm-purpose-card wm-purpose-card--forecast">
                         <div class="wm-forecast-head">
                             <div class="wm-purpose-card__head">
                                 <span class="wm-purpose-card__number">03</span>
-                                <span class="wm-purpose-card__label">{% if world_model.similar_summary.is_statistically_valid %}未来予測{% else %}条件付きシナリオ{% endif %}</span>
-                            </div>
-                        </div>
-                        <div class="wm-forecast-hero">
-                            <div class="wm-forecast-gauge confidence-{{ world_model.confidence|lower }}" data-field="confidence">
-                                <div class="wm-forecast-gauge__ring" style="--forecast-score: {{ world_model.confidence_score|default:0 }}%;">
-                                    <strong>{{ world_model.confidence }}</strong>
-                                    <span>信頼度</span>
-                                </div>
-                            </div>
-                            <div class="wm-forecast-score" data-field="confidence_score_panel">
-                                <div class="wm-forecast-score__value">
-                                    <strong>{{ world_model.confidence_score }}</strong><span>/100</span>
-                                </div>
-                                <div class="wm-forecast-meter">
-                                    <div class="wm-forecast-meter__bar">
-                                        <i data-value="{{ world_model.confidence_score }}"></i>
-                                    </div>
-                                    <div class="wm-forecast-meter__labels">
-                                        <span>0</span>
-                                        <span>50</span>
-                                        <span>100</span>
-                                    </div>
-                                </div>
+                                <span class="wm-purpose-card__label">実用ライン</span>
                             </div>
                         </div>
                         <div class="wm-purpose-targets">
-                            {% for range in world_model.target_ranges %}
-                            <span class="wm-purpose-targets__item">{{ range.label }} <strong>{{ range.low|floatformat:0|intcomma }}〜{{ range.high|floatformat:0|intcomma }}</strong><small>{{ range.basis }}</small></span>
-                            {% empty %}
-                            <span class="wm-purpose-targets__item">レンジ <strong>N/A</strong><small>データ不足</small></span>
+                            <span class="wm-purpose-targets__item">上値候補 <strong>{% if decision.upside_target %}{{ decision.upside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.upside_target %}{{ decision.upside_target.reason }}{% else %}データ不足{% endif %}</small></span>
+                            <span class="wm-purpose-targets__item">下値候補 <strong>{% if decision.downside_target %}{{ decision.downside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.downside_target %}{{ decision.downside_target.reason }}{% else %}データ不足{% endif %}</small></span>
+                            <span class="wm-purpose-targets__item is-warning">無効化 <strong data-field="invalidation_display">{{ decision.invalidation|default:"N/A" }}</strong><small>無効化ライン</small></span>
+                            {% if decision.range_1d %}
+                            <span class="wm-purpose-targets__item">{{ decision.range_1d.label }} <strong>{{ decision.range_1d.low|floatformat:0|intcomma }}〜{{ decision.range_1d.high|floatformat:0|intcomma }}</strong><small>{{ decision.range_1d.basis }}</small></span>
+                            {% endif %}
+                        </div>
+                    </article>
+                </div>
+
+                <div class="wm-purpose-grid">
+                    <article class="wm-purpose-card wm-purpose-card--stress">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">04</span>
+                            <span class="wm-purpose-card__label">市場ストレス</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ decision.market_stress.label }}</h2>
+                            <div class="wm-purpose-card__badge">日経先物への影響: {{ decision.market_stress.impact }}</div>
+                        </div>
+                        <div class="wm-purpose-card__facts">
+                            {% for item in decision.market_stress.reasons %}
+                            <span>主因 <strong>{{ item }}</strong></span>
                             {% endfor %}
-                            <span class="wm-purpose-targets__item is-warning">無効化 <strong data-field="invalidation_display">{{ world_model.invalidation_display }}</strong><small>無効化ライン</small></span>
                         </div>
-                        <div class="wm-forecast-returns">
-                            <span><em>1日 {{ world_model.expected_return_label }}</em><strong>{{ world_model.expected_return_1d|floatformat:2 }}%</strong></span>
-                            <span><em>5日 {{ world_model.expected_return_label }}</em><strong>{{ world_model.expected_return_5d|floatformat:2 }}%</strong></span>
+                    </article>
+
+                    <article class="wm-purpose-card wm-purpose-card--technical">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">05</span>
+                            <span class="wm-purpose-card__label">外部市場</span>
                         </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ decision.external_market.label }}</h2>
+                        </div>
+                        <div class="wm-purpose-card__facts">
+                            {% for item in decision.external_market.reasons %}
+                            <span>理由 <strong>{{ item }}</strong></span>
+                            {% endfor %}
+                        </div>
+                    </article>
+
+                    <article class="wm-purpose-card wm-purpose-card--forecast">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">06</span>
+                            <span class="wm-purpose-card__label">予測ゲート</span>
+                        </div>
+                        {% if decision.can_show_prediction %}
+                        <div class="wm-purpose-card__main">
+                            <h2>予測表示可</h2>
+                            <div class="wm-purpose-card__badge">検証条件を満たしています</div>
+                        </div>
+                        {% else %}
+                        <div class="wm-purpose-card__main">
+                            <h2>予測表示停止</h2>
+                            <div class="wm-purpose-card__badge">未検証の予測はトップに表示しません</div>
+                        </div>
+                        <div class="wm-purpose-card__facts">
+                            {% for reason in decision.prediction_stop_reasons %}
+                            <span>理由 <strong>{{ reason }}</strong></span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </article>
                 </div>
 
@@ -224,28 +209,48 @@
                 <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
             </div>
 
-            <div class="price-display compact-price-display">
-                <div class="price-display__head">
-                    <div>
-                        <span class="price-label">日経先物 最新取得値</span>
-                        <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
+            <details class="card">
+                <summary class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M5 10h14"></path>
+                            <path d="M7 16h10"></path>
+                        </svg>
                     </div>
-                    <div class="last-updated" data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</div>
+                    <div>
+                        <div class="card-title">手動価格入力</div>
+                        <div class="quality-summary">{{ data.price_display|default:"N/A" }}</div>
+                    </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
+                    <div class="price-display compact-price-display">
+                        <div class="price-display__head">
+                            <div>
+                                <span class="price-label">日経先物 最新取得値</span>
+                                <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
+                            </div>
+                            <div class="last-updated" data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</div>
+                        </div>
+                        <form method="get" action="" class="manual-price-form">
+                            <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
+                            <input type="hidden" name="erp_method" value="{{ erp_method }}">
+                            {% if erp_growth_input %}
+                            <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
+                            {% endif %}
+                            <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}">
+                            <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}">
+                            <button type="submit" class="btn-base btn-primary">適用</button>
+                        </form>
+                        <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
+                            {{ world_model.data_warning }}
+                        </div>
+                    </div>
                 </div>
-                <form method="get" action="" class="manual-price-form">
-                    <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
-                    <input type="hidden" name="erp_method" value="{{ erp_method }}">
-                    {% if erp_growth_input %}
-                    <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
-                    {% endif %}
-                    <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}">
-                    <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}">
-                    <button type="submit" class="btn-base btn-primary">適用</button>
-                </form>
-                <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
-                    {{ world_model.data_warning }}
-                </div>
-            </div>
+            </details>
 
             <details class="card quality-card quality-{{ world_model.data_quality.level }}" data-field="data_quality">
                 <summary class="card-header compact-header">
@@ -306,8 +311,8 @@
             </details>
 
             {% if market_shock and market_shock.has_data %}
-            <section class="card us-shock us-shock--{{ market_shock.tone }}">
-                <div class="card-header compact-header">
+            <details class="card us-shock us-shock--{{ market_shock.tone }}">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-blue">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 12h4l3 7 4-14 3 7h4"></path>
@@ -317,7 +322,11 @@
                         <div class="card-title">市場ストレス・急落予測</div>
                         <div class="us-shock-summary">{{ market_shock.summary }}</div>
                     </div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="us-shock-grid">
                     {% for row in market_shock.rows %}
                     <article class="us-shock-card us-shock-card--{{ row.tone }}">
@@ -338,11 +347,12 @@
                     </article>
                     {% endfor %}
                 </div>
-            </section>
+                </div>
+            </details>
             {% endif %}
 
-            <section class="card market-context-card" data-field="market_context">
-                <div class="card-header compact-header">
+            <details class="card market-context-card" data-field="market_context">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 3v18h18"></path>
@@ -353,7 +363,11 @@
                         <div class="card-title">外部市場</div>
                         <div class="quality-summary">{{ world_model.market_context.risk_label }} / {{ world_model.market_context.risk_score }}</div>
                     </div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="context-grid">
                     {% for key, score in world_model.market_context.components.items %}
                     <div class="context-box">
@@ -369,17 +383,55 @@
                     <span>{{ item }}</span>
                     {% endfor %}
                 </div>
-            </section>
+                {% if world_model.market_context.lead_market %}
+                <div class="data-list auxiliary-list">
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">先行マーケット</span>
+                            <span class="label-sub">NQ先物・ES先物・ドル円・VIXの短期方向</span>
+                        </div>
+                        <span class="data-value">{{ world_model.market_context.lead_market.summary }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">逆行アラート</span>
+                            <span class="label-sub">株価先物と為替・金利の不一致</span>
+                        </div>
+                        <span class="data-value">
+                            {% for alert in world_model.market_context.lead_market.alerts %}
+                                {{ alert }}{% if not forloop.last %} / {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">先行性検証</span>
+                            <span class="label-sub">{{ world_model.market_context.lead_market.validation_status }}</span>
+                        </div>
+                        <span class="data-value">
+                            {{ world_model.market_context.lead_market.lead_lag_score|default:"—" }}点 /
+                            的中 {{ world_model.market_context.lead_market.hit_rate|default:"—" }} /
+                            逆信号 {{ world_model.market_context.lead_market.false_signal_rate|default:"—" }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+                </div>
+            </details>
 
-            <section class="card">
-                <div class="card-header compact-header">
+            <details class="card">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-blue">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 12h4l3 7 4-14 3 7h4"></path>
                         </svg>
                     </div>
                     <div class="card-title">テクニカル詳細</div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="sentiment-meter" data-score="{{ world_model.sentiment_score }}" data-field="sentiment_meter">
                     <div class="sentiment-meter__track">
                         <div class="sentiment-meter__fill"></div>
@@ -421,10 +473,11 @@
                         <div class="value" data-field="shock_label">{{ world_model.shock_label }}</div>
                     </div>
                 </div>
-            </section>
+                </div>
+            </details>
 
-            <section class="card">
-                <div class="card-header compact-header">
+            <details class="card">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 19V5"></path>
@@ -432,8 +485,12 @@
                             <path d="m7 14 4-4 3 3 5-7"></path>
                         </svg>
                     </div>
-                    <div class="card-title">ターゲット</div>
-                </div>
+                    <div class="card-title">ターゲット全件</div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="target-grid">
                     <div>
                         <h2 class="section-title">近接節目</h2>
@@ -499,10 +556,11 @@
                         </div>
                     </div>
                 </div>
-            </section>
+                </div>
+            </details>
 
-            <section class="card model-detail-card" data-field="model_detail">
-                <div class="card-header compact-header">
+            <details class="card model-detail-card" data-field="model_detail">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-purple">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 6h16"></path>
@@ -511,7 +569,11 @@
                         </svg>
                     </div>
                     <div class="card-title">{% if world_model.similar_summary.is_statistically_valid %}未来予測詳細{% else %}条件付きシナリオ詳細{% endif %}</div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="summary-grid model-grid">
                     <div class="metric-box">
                         <label>Version</label>
@@ -544,10 +606,11 @@
                     <div class="notice-text">状態遷移データ待ちです。</div>
                     {% endfor %}
                 </div>
-            </section>
+                </div>
+            </details>
 
-            <section class="card">
-                <div class="card-header compact-header">
+            <details class="card">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-amber">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 3v18"></path>
@@ -556,21 +619,30 @@
                         </svg>
                     </div>
                     <div class="card-title">局面と根拠</div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="phase-panel">
                     <span>局面</span>
-                    <strong data-field="phase_label">{{ world_model.primary_scenario|default:world_model.phase_label }}</strong>
-                    <small data-field="sub_scenario">{{ world_model.counter_scenario|default:world_model.sub_scenario }}</small>
+                    <strong data-field="phase_label">
+                        {% if world_model.primary_scenario %}{{ world_model.primary_scenario }}{% elif world_model.phase_label %}{{ world_model.phase_label }}{% else %}N/A{% endif %}
+                    </strong>
+                    <small data-field="sub_scenario">
+                        {% if world_model.counter_scenario %}{{ world_model.counter_scenario }}{% elif world_model.sub_scenario %}{{ world_model.sub_scenario }}{% else %}N/A{% endif %}
+                    </small>
                 </div>
                 <ol class="evidence-list" data-field="evidence">
                     {% for item in world_model.evidence %}
                     <li>{{ item }}</li>
                     {% endfor %}
                 </ol>
-            </section>
+                </div>
+            </details>
 
-            <section class="card">
-                <div class="card-header compact-header">
+            <details class="card">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-purple">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 7h16"></path>
@@ -579,7 +651,11 @@
                         </svg>
                     </div>
                     <div class="card-title">過去類似局面</div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="summary-grid similar-grid" data-field="similar_summary">
                     <div class="metric-box">
                         <label>類似件数</label>
@@ -613,10 +689,11 @@
                     <div class="notice-text">過去データの足数が不足しています。</div>
                     {% endfor %}
                 </div>
-            </section>
+                </div>
+            </details>
 
-            <section class="card">
-                <div class="card-header compact-header">
+            <details class="card">
+                <summary class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M9 11 12 14 22 4"></path>
@@ -624,7 +701,11 @@
                         </svg>
                     </div>
                     <div class="card-title">予測精度</div>
-                </div>
+                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </summary>
+                <div class="accordion-content">
                 <div class="performance-grid" data-field="performance">
                     {% for horizon, item in backtest_performance_by_horizon.items %}
                     <div class="performance-box">
@@ -634,7 +715,8 @@
                     </div>
                     {% endfor %}
                 </div>
-            </section>
+                </div>
+            </details>
 
             <details class="card auxiliary-card">
                 <summary class="card-header">

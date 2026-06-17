@@ -1,0 +1,65 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Key Events & Earnings" [level=3] [ref=e4]
+    - generic [ref=e5]:
+      - link "Events Indicator" [ref=e6] [cursor=pointer]:
+        - /url: /calendar/
+        - img [ref=e8]
+        - generic [ref=e10]:
+          - heading "Events" [level=2] [ref=e11]
+          - generic [ref=e12]: Indicator
+      - link "Earnings Reports & Data" [ref=e13] [cursor=pointer]:
+        - /url: /earning/
+        - img [ref=e15]
+        - generic [ref=e17]:
+          - heading "Earnings" [level=2] [ref=e18]
+          - generic [ref=e19]: Reports & Data
+  - generic [ref=e20]:
+    - heading "Live Stock Trends" [level=3] [ref=e21]
+    - generic [ref=e22]:
+      - link "Macro Economic Regime" [ref=e23] [cursor=pointer]:
+        - /url: /macro/
+        - img [ref=e25]
+        - generic [ref=e28]:
+          - heading "Macro" [level=2] [ref=e29]
+          - generic [ref=e30]: Economic Regime
+      - link "Basecal Nikkei Bias" [ref=e31] [cursor=pointer]:
+        - /url: /basecalc/
+        - img [ref=e33]
+        - generic [ref=e38]:
+          - heading "Basecal" [level=2] [ref=e39]
+          - generic [ref=e40]: Nikkei Bias
+      - link "Sector Market Segments" [ref=e41] [cursor=pointer]:
+        - /url: /sector/
+        - img [ref=e43]
+        - generic [ref=e46]:
+          - heading "Sector" [level=2] [ref=e47]
+          - generic [ref=e48]: Market Segments
+      - link "Prediction AI Forecasts" [ref=e49] [cursor=pointer]:
+        - /url: /prediction/
+        - img [ref=e51]
+        - generic [ref=e54]:
+          - heading "Prediction" [level=2] [ref=e55]
+          - generic [ref=e56]: AI Forecasts
+  - generic [ref=e57]:
+    - heading "Market Forecast" [level=3] [ref=e58]
+    - generic [ref=e59]:
+      - link "Person Key Figures" [ref=e60] [cursor=pointer]:
+        - /url: /person/
+        - img [ref=e62]
+        - generic [ref=e65]:
+          - heading "Person" [level=2] [ref=e66]
+          - generic [ref=e67]: Key Figures
+      - generic [ref=e68]:
+        - img [ref=e70]
+        - generic [ref=e73]:
+          - heading "Explanation" [level=2] [ref=e74]
+          - generic [ref=e75]: Indicators
+  - generic [ref=e76]:
+    - heading "Related" [level=3] [ref=e77]
+    - link "Prompt Management" [ref=e79] [cursor=pointer]:
+      - /url: /prompt/
+      - img [ref=e81]
+      - generic [ref=e83]:
+        - heading "Prompt" [level=2] [ref=e84]
+        - generic [ref=e85]: Management

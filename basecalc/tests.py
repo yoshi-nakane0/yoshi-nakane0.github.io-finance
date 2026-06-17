@@ -3,6 +3,7 @@ from datetime import date, datetime
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -19,7 +20,12 @@ from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
 from . import market_shock, nikkei_bias
 from .backtesting import run_basecalc_backtest
-from .market_context import calculate_context_score, get_market_context_snapshot
+from .market_context import (
+    calculate_context_score,
+    fetch_intraday_context,
+    get_market_context_snapshot,
+    judge_nikkei_lead_context,
+)
 from .market_bars import prune_market_bars
 from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import (
@@ -124,7 +130,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertNotContains(response, 'id="price-refresh"')
 
-    def test_get_without_price_uses_cached_manual_price_only(self):
+    def test_get_without_price_uses_snapshot_without_external_fetch(self):
         cache.set('nikkei_price', 41000, timeout=300)
 
         with (
@@ -138,21 +144,135 @@ class BasecalcUpdateSecurityTests(TestCase):
         per_values.assert_not_called()
         jgb_yield.assert_not_called()
         futures_snapshot.assert_not_called()
-        self.assertEqual(response.context['world_model']['price'], 41000)
+        self.assertNotEqual(response.context['world_model']['price'], 41000)
         self.assertEqual(cache.get('nikkei_price'), 41000)
 
-    def test_manual_price_input_is_kept_for_next_view(self):
+    def test_get_uses_latest_snapshot_without_rebuilding_context(self):
+        snapshot = {
+            'data': {'price_display': '41,000'},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'is_statistically_valid': False},
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': False},
+            'market_context': {},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'erp_method': 'fixed',
+            'erp_growth_input': '',
+            'price_param': '41000',
+            'growth_core_ratio_input': '0.6',
+            'growth_wide_ratio_input': '0.7',
+        }
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.build_context') as build_context, \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 41000)
+        self.assertEqual(rendered_context['decision']['price'], 41000)
+        self.assertEqual(rendered_context['decision']['direction_label'], '上目線')
+        build_context.assert_not_called()
+
+    def test_basecalc_top_stops_prediction_when_gate_is_not_met(self):
+        snapshot = {
+            'data': {'price_display': '41,000'},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Low',
+                'confidence_score': 30,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 78,
+                    'fallback_used': True,
+                },
+                'data_quality_score': 78,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {
+                    'case_count': 8,
+                    'is_statistically_valid': False,
+                },
+                'target_ranges': [{'label': '1日', 'low': 40500, 'high': 41500, 'basis': 'ATR'}],
+                'upside_targets': [{'label': 'T1', 'price': 41800, 'reason': '前日高値'}],
+                'downside_targets': [{'label': 'T1', 'price': 40400, 'reason': '前日安値'}],
+                'invalidation_display': '40,200',
+                'market_context': {'risk_label': 'neutral', 'risk_score': 0, 'components': {}},
+                'evidence': ['EMA20を上回る', '20日勢いが強い'],
+                'expected_return_1d': 0.4,
+                'expected_return_5d': 1.2,
+                'expected_return_label': '過去類似',
+            },
+            'market_shock': {'has_data': False},
+            'market_context': {},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'erp_method': 'fixed',
+            'erp_growth_input': '',
+            'price_param': '41000',
+            'growth_core_ratio_input': '0.6',
+            'growth_wide_ratio_input': '0.7',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '予測表示停止')
+        top_html = response.content.decode('utf-8').split('data-field="model_detail"')[0]
+        self.assertNotIn('期待 1d', top_html)
+
+    def test_manual_price_get_does_not_mutate_snapshot_view(self):
         response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(cache.get('nikkei_price'), 42000)
-        self.assertContains(response, 'name="price" class="erp-input price-input" value="42000"')
+        self.assertIsNone(cache.get('nikkei_price'))
 
         response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['world_model']['price'], 42000)
-        self.assertContains(response, 'name="price" class="erp-input price-input" value="42000"')
+        self.assertNotEqual(response.context['world_model']['price'], 42000)
 
     def test_index_shows_backtest_performance_separately_from_live_performance(self):
         def fake_performance_summary(horizon='1d', *args, **kwargs):
@@ -174,7 +294,18 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'statistical_warning': '' if is_backtest else 'サンプル数が不足しています',
             }
 
-        with patch('basecalc.views.performance_summary', side_effect=fake_performance_summary):
+        from .snapshot import load_basecalc_snapshot
+
+        payload = load_basecalc_snapshot()
+        payload['performance_by_horizon'] = {
+            horizon: fake_performance_summary(horizon)
+            for horizon in ("1d", "3d", "5d")
+        }
+        payload['backtest_performance_by_horizon'] = {
+            horizon: fake_performance_summary(horizon, is_backtest=True)
+            for horizon in ("1d", "3d", "5d")
+        }
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
             response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
 
         self.assertEqual(response.status_code, 200)
@@ -842,6 +973,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             use_lock=True,
             export_history=False,
             export_path='basecalc/data/basecalc_history.json',
+            export_snapshot_path='basecalc/data/latest_snapshot.json',
         )
         self.assertIn('basecalc refresh complete', out.getvalue())
 
@@ -872,8 +1004,39 @@ class BasecalcUpdateSecurityTests(TestCase):
             use_lock=True,
             export_history=True,
             export_path='basecalc/data/test_history.json',
+            export_snapshot_path='basecalc/data/latest_snapshot.json',
         )
-        self.assertIn('exported=True', out.getvalue())
+
+    def test_refresh_basecalc_data_exports_latest_snapshot(self):
+        from .operations import refresh_basecalc_data
+
+        with TemporaryDirectory() as tmpdir:
+            snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
+            with (
+                patch('basecalc.operations.get_nikkei_per_values_for_update', return_value={}),
+                patch('basecalc.operations.get_jgb10y_yield_for_update', return_value=None),
+                patch('basecalc.operations.get_cached_futures_snapshot', return_value=_ready_snapshot()),
+                patch('basecalc.operations.get_market_context_snapshot', return_value={}),
+                patch('basecalc.operations.write_basecalc_status'),
+                patch('basecalc.operations.save_prediction', return_value=None),
+                patch('basecalc.operations.evaluate_due_predictions', return_value=0),
+                patch('basecalc.operations.prune_prediction_history', return_value=0),
+            ):
+                result = refresh_basecalc_data(
+                    save=False,
+                    use_lock=False,
+                    export_snapshot_path=str(snapshot_path),
+                )
+
+            payload = json.loads(snapshot_path.read_text(encoding='utf-8'))
+
+        self.assertTrue(result['snapshot_exported'])
+        self.assertEqual(payload['source'], 'github_actions')
+        self.assertIn('generated_at', payload)
+        self.assertIn('job_duration_sec', payload)
+        self.assertIn('world_model', payload)
+        self.assertIn('data', payload)
+        self.assertIn('performance_by_horizon', payload)
 
 
 class BasecalcMarketShockTest(TestCase):
@@ -942,23 +1105,26 @@ class BasecalcMarketShockTest(TestCase):
         self.assertEqual(nasdaq['continuation_label'], '継続寄り')
 
     def test_basecalc_page_shows_us_index_shock_judgment(self):
-        with patch('basecalc.views.build_market_shock_context') as shock_mock:
-            shock_mock.return_value = {
-                'has_data': True,
+        from .snapshot import load_basecalc_snapshot
+
+        payload = load_basecalc_snapshot()
+        payload['market_shock'] = {
+            'has_data': True,
+            'tone': 'negative',
+            'summary': 'S&P500の急落は継続寄りです。',
+            'rows': [{
+                'label': 'S&P500',
+                'headline': '急落 中 / 継続寄り',
                 'tone': 'negative',
-                'summary': 'S&P500の急落は継続寄りです。',
-                'rows': [{
-                    'label': 'S&P500',
-                    'headline': '急落 中 / 継続寄り',
-                    'tone': 'negative',
-                    'direction': 'drop',
-                    'momentum_20d_display': '-8.5%',
-                    'dd200_display': '-4.0%',
-                    'dd52w_display': '-14.0%',
-                    'continuation_score_display': '80%',
-                    'reason': '下落にボラ・信用・トレンド悪化が重なっています。',
-                }],
-            }
+                'direction': 'drop',
+                'momentum_20d_display': '-8.5%',
+                'dd200_display': '-4.0%',
+                'dd52w_display': '-14.0%',
+                'continuation_score_display': '80%',
+                'reason': '下落にボラ・信用・トレンド悪化が重なっています。',
+            }],
+        }
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
             response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
 
         self.assertEqual(response.status_code, 200)
@@ -1011,17 +1177,17 @@ class BasecalcAnchorSnapshotTests(TestCase):
             'growth_wide_ratio': 0.7,
         }
 
-        with patch(
-            'basecalc.views.load_anchor_snapshot',
-            return_value=anchor_snapshot,
-        ):
-            response = self.client.get(
-                reverse('basecalc:index'),
-                {'price': '53000'},
-            )
+        from .views import build_context
 
-        self.assertEqual(response.status_code, 200)
-        data = response.context['data']
+        request = mock.Mock(
+            GET={'price': '53000'},
+            POST={},
+            user=mock.Mock(is_authenticated=False, is_staff=False),
+        )
+        with patch('basecalc.views.load_anchor_snapshot', return_value=anchor_snapshot):
+            context = build_context(request)
+
+        data = context['data']
         self.assertEqual(data['price'], 53000)
         self.assertEqual(data['fair_price_mid'], 50339.0)
         self.assertEqual(data['valuation_label'], 'Over +')
@@ -1040,17 +1206,17 @@ class BasecalcAnchorSnapshotTests(TestCase):
             'growth_wide_ratio': 0.7,
         }
 
-        with patch(
-            'basecalc.views.load_anchor_snapshot',
-            return_value=anchor_snapshot,
-        ):
-            response = self.client.get(
-                reverse('basecalc:index'),
-                {'price': '50339'},
-            )
+        from .views import build_context
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['data']['valuation_label'], 'Fair')
+        request = mock.Mock(
+            GET={'price': '50339'},
+            POST={},
+            user=mock.Mock(is_authenticated=False, is_staff=False),
+        )
+        with patch('basecalc.views.load_anchor_snapshot', return_value=anchor_snapshot):
+            context = build_context(request)
+
+        self.assertEqual(context['data']['valuation_label'], 'Fair')
 
 
 class BasecalcFuturesSentimentTests(TestCase):
@@ -1174,6 +1340,119 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertEqual(result['risk_label'], 'risk_on')
         self.assertGreater(result['risk_score'], 0)
 
+    def test_market_context_score_includes_neutral_lead_market_when_data_waiting(self):
+        result = calculate_context_score({})
+
+        self.assertIn('lead_market', result)
+        self.assertIn('先行マーケット', result['lead_market']['summary'])
+        self.assertFalse(result['lead_market']['risk_on'])
+        self.assertFalse(result['lead_market']['risk_off'])
+
+    def test_market_context_score_backfills_lead_market_for_cached_context(self):
+        result = calculate_context_score({
+            'risk_score': 0,
+            'risk_label': 'neutral',
+            'components': {},
+            'evidence': ['保存済み外部市場'],
+        })
+
+        self.assertIn('lead_market', result)
+        self.assertIn('lead_lag_score', result['lead_market'])
+
+    def test_judge_nikkei_lead_context_detects_risk_on_and_headwinds(self):
+        result = judge_nikkei_lead_context({
+            'nq_15m': 0.45,
+            'es_15m': 0.22,
+            'usd_jpy_15m': -0.25,
+            'vix_15m': -0.8,
+            'us2y_1h_bp': 6.5,
+            'nq_1h': -0.15,
+        })
+
+        self.assertTrue(result['yen_headwind'])
+        self.assertTrue(result['policy_headwind'])
+        self.assertFalse(result['risk_off'])
+        self.assertIn('円高', result['alerts'][0])
+        self.assertIn('lead_lag_score', result)
+        self.assertIn('hit_rate', result)
+        self.assertIn('false_signal_rate', result)
+        self.assertGreaterEqual(result['lead_lag_score'], 0)
+        self.assertLessEqual(result['lead_lag_score'], 100)
+
+    def test_fetch_intraday_context_uses_short_interval_chart_data(self):
+        payload = {
+            'chart': {
+                'result': [{
+                    'meta': {'regularMarketPrice': 101.0},
+                    'timestamp': [1, 2, 3, 4],
+                    'indicators': {
+                        'quote': [{
+                            'close': [100.0, 100.5, 100.8, 101.0],
+                            'open': [100.0, 100.4, 100.7, 100.9],
+                            'high': [100.2, 100.6, 100.9, 101.1],
+                            'low': [99.8, 100.3, 100.6, 100.8],
+                            'volume': [1, 1, 1, 1],
+                        }]
+                    },
+                }],
+                'error': None,
+            }
+        }
+
+        with patch('basecalc.market_context.requests.get') as get_mock:
+            get_mock.return_value.raise_for_status.return_value = None
+            get_mock.return_value.json.return_value = payload
+            snapshot = fetch_intraday_context('NQ=F', interval='5m', range_='1d')
+
+        get_mock.assert_called_once()
+        self.assertEqual(get_mock.call_args.kwargs['params']['interval'], '5m')
+        self.assertEqual(snapshot['symbol'], 'NQ=F')
+        self.assertIn('change_15m_pct', snapshot)
+        self.assertGreater(snapshot['change_15m_pct'], 0)
+
+    def test_market_context_snapshot_contains_lead_market_cards(self):
+        assets = {
+            'nasdaq100_futures': {
+                'symbol': 'NQ=F',
+                'change_pct': 0.4,
+                'change_15m_pct': 0.3,
+                'change_1h_pct': -0.2,
+            },
+            'sp500_futures': {
+                'symbol': 'ES=F',
+                'change_pct': 0.2,
+                'change_15m_pct': 0.1,
+                'change_1h_pct': 0.1,
+            },
+            'usd_jpy': {
+                'symbol': 'JPY=X',
+                'change_pct': -0.1,
+                'change_15m_pct': -0.3,
+                'change_1h_pct': -0.4,
+            },
+            'vix': {
+                'symbol': '^VIX',
+                'change_pct': -0.5,
+                'change_15m_pct': -0.2,
+                'change_1h_pct': -0.1,
+            },
+            'us2y': {
+                'symbol': '^IRX',
+                'change_pct': 0.0,
+                'change_1h_bp': 7.0,
+            },
+        }
+
+        result = calculate_context_score({'assets': assets})
+
+        self.assertIn('lead_market', result)
+        self.assertIn('alerts', result['lead_market'])
+        self.assertTrue(result['lead_market']['yen_headwind'])
+        self.assertIn('先行マーケット', result['lead_market']['summary'])
+        self.assertIn('lead_lag_score', result['lead_market'])
+        self.assertIn('hit_rate', result['lead_market'])
+        self.assertIn('false_signal_rate', result['lead_market'])
+
     def test_market_context_falls_back_to_saved_price_action_when_yahoo_fails(self):
         indicator, _ = Indicator.objects.update_or_create(
             fred_series_id='PA_GSPC_MOM20',
@@ -1192,7 +1471,10 @@ class BasecalcWorldModelV2SupportTests(TestCase):
             value=5.0,
         )
 
-        with patch('basecalc.market_context._fetch_context_symbol', return_value=None):
+        with (
+            patch('basecalc.market_context.fetch_intraday_context', return_value=None),
+            patch('basecalc.market_context._fetch_context_symbol', return_value=None),
+        ):
             result = get_market_context_snapshot()
 
         self.assertIn('sp500_futures', result['assets'])
@@ -2137,7 +2419,8 @@ class BasecalcWorldModelTests(TestCase):
             upside_targets=[{'price': 41400, 'probability': None}],
             downside_targets=[{'price': 40600, 'probability': None}],
             evidence=[],
-            features={'symbol': 'NIY=F'},
+            expected_returns={'1d': {'value': 0.5}},
+            features={'symbol': 'NIY=F', 'previous_close': 40900, 'close': 41000},
             instrument_key='cme_nikkei_futures',
             readiness_level='ready',
         )
@@ -2145,8 +2428,8 @@ class BasecalcWorldModelTests(TestCase):
             prediction=prediction,
             horizon='1d',
             evaluated_at=timezone.now(),
-            price_at_evaluation=41000,
-            realized_return_pct=0,
+            price_at_evaluation=41041,
+            realized_return_pct=0.1,
             direction_hit=True,
             upside_t1_hit=True,
             downside_t1_hit=True,
@@ -2156,6 +2439,11 @@ class BasecalcWorldModelTests(TestCase):
         state_rows = state_performance_summary()
 
         self.assertEqual(summary['target_t1_hit_rate'], 1.0)
+        self.assertEqual(summary['model_directional_accuracy'], 1.0)
+        self.assertEqual(summary['continuation_directional_accuracy'], 1.0)
+        self.assertEqual(summary['zero_prediction_mae'], 0.1)
+        self.assertEqual(summary['model_mae'], 0.4)
+        self.assertEqual(summary['mae_improvement_rate'], -3.0)
         self.assertEqual(state_rows[0]['target_t1_hit_rate'], 1.0)
 
     def test_calibration_summary_compares_expected_and_realized_returns(self):

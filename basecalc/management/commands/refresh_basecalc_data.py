@@ -28,6 +28,11 @@ class Command(BaseCommand):
             help="Path for exported basecalc history JSON.",
         )
         parser.add_argument(
+            "--export-snapshot-path",
+            default="basecalc/data/latest_snapshot.json",
+            help="Path for exported basecalc display snapshot JSON.",
+        )
+        parser.add_argument(
             "--skip-off-hours",
             action="store_true",
             help="Skip refresh during low-value market hours. Initial implementation always runs.",
@@ -42,6 +47,7 @@ class Command(BaseCommand):
             use_lock=not options["no_lock"],
             export_history=options["export_history"],
             export_path=options["export_path"],
+            export_snapshot_path=options["export_snapshot_path"],
         )
         if result.get("updated"):
             self.stdout.write(

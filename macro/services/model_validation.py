@@ -67,6 +67,27 @@ def _probability_metrics(rows: list[dict]) -> dict:
     }
 
 
+def model_display_grade(report: ModelValidationReport) -> tuple[str, str]:
+    """トップ画面に予測モデルを出してよいかを判定する。"""
+    metrics = report.metrics or {}
+
+    if report.sample_count < 36:
+        return "hidden", "検証サンプル不足"
+
+    if report.event_count is not None and report.event_count < 10:
+        return "hidden", "イベント数不足"
+
+    direction = metrics.get("direction_accuracy")
+    if direction is not None and direction < 0.52:
+        return "hidden", "方向一致率が低い"
+
+    skill_score = metrics.get("skill_score")
+    if skill_score is not None and skill_score <= 0:
+        return "hidden", "単純予測を上回っていない"
+
+    return "show", "参考表示可"
+
+
 def _snapshot_rows(model_version: str, target: str, horizon: str) -> list[dict]:
     snapshots = (
         ForecastSnapshot.objects

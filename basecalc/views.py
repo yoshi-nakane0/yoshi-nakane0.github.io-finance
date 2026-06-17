@@ -33,6 +33,11 @@ from .outcomes import (
     state_performance_summary,
 )
 from .serializers import serialize_snapshot
+from .services.decision_context import (
+    build_basecalc_decision_context,
+    enrich_basecalc_context,
+)
+from .snapshot import load_basecalc_snapshot
 from .status import load_basecalc_status, status_display_rows
 from .status import (
     external_market_status_entry,
@@ -71,6 +76,22 @@ def index(request):
             return HttpResponseForbidden("Forbidden")
 
     force_update = request.method == "POST"
+    if not force_update:
+        snapshot = load_basecalc_snapshot()
+        if snapshot:
+            context = dict(snapshot)
+            context["can_update_basecalc_data"] = can_update_basecalc_data
+            enrich_basecalc_context(context)
+            return render(request, "basecalc/index.html", context)
+        return render(
+            request,
+            "basecalc/index.html",
+            {
+                "error": "事前計算データがありません。更新ジョブを確認してください。",
+                "can_update_basecalc_data": can_update_basecalc_data,
+            },
+        )
+
     try:
         context = build_context(request, force_update=force_update)
     except Exception as exc:
@@ -321,16 +342,27 @@ def build_context(request, force_update=False):
         evaluate_due_predictions(price)
         save_prediction(world_model)
 
+    market_shock_context = build_market_shock_context()
+    basecalc_status_rows = status_display_rows(basecalc_status, world_model)
+    decision = build_basecalc_decision_context(
+        world_model,
+        market_shock_context,
+        basecalc_status_rows,
+        backtest_performance_by_horizon.get("1d"),
+    )
+
     return {
         "data": data,
+        "decision": decision,
         "world_model": world_model,
-        "market_shock": build_market_shock_context(),
+        "market_shock": market_shock_context,
         "market_context": world_model.get("market_context") or {},
         "basecalc_status": basecalc_status,
-        "basecalc_status_rows": status_display_rows(basecalc_status, world_model),
+        "basecalc_status_rows": basecalc_status_rows,
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
         "backtest_performance_by_horizon": backtest_performance_by_horizon,
+        "detail_mode": request.GET.get("detail") == "1",
         "updated": force_update,
         "erp_method": erp_method,
         "erp_growth_input": erp_growth_input,

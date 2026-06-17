@@ -6,6 +6,7 @@ app_name = 'macro'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('audit/', views.audit, name='audit'),
     path('refresh/', views.refresh, name='refresh'),
     path(
         'recompute-crash-backtest/',

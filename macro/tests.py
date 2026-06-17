@@ -1,6 +1,7 @@
 """macro モジュールのユニットテスト。"""
 
 import gzip
+import json
 from io import StringIO
 from datetime import date
 from pathlib import Path
@@ -17,6 +18,7 @@ from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
     DashboardCache,
@@ -26,6 +28,7 @@ from .models import (
     Indicator,
     ModelValidationReport,
     Observation,
+    PolicyExpectationSnapshot,
     PriceObservation,
     RawArchiveManifest,
     RegimeSnapshot,
@@ -39,6 +42,7 @@ from .services import (
     dashboard_cache,
     data_sync,
     detail_analysis,
+    forecast_models,
     forecast_tracking,
     historical_crash,
     judgment,
@@ -55,7 +59,7 @@ from .services import feature_store, world_state
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
-    def test_macro_operations_daily_job_only_triggers_vercel_daily_build(self):
+    def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
         workflow = (
             workflows_dir / 'macro-operations.yml'
@@ -64,34 +68,46 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('cron: "30 5 * * *"', workflow)
         self.assertIn('daily-refresh:', workflow)
         self.assertIn('VERCEL_DEPLOY_HOOK_URL', workflow)
+        self.assertIn('actions/checkout@v4', workflow)
+        self.assertIn('actions/setup-python@v5', workflow)
+        self.assertIn('pip install -r requirements.txt', workflow)
+        self.assertIn('python manage.py migrate --noinput', workflow)
+        self.assertIn('python manage.py refresh_macro_data', workflow)
+        self.assertIn('python manage.py compute_world_state', workflow)
+        self.assertIn('python manage.py settle_forecast_snapshots', workflow)
+        self.assertIn('python manage.py precompute_dashboard', workflow)
+        self.assertIn(
+            'python manage.py export_macro_payload --output static/macro/latest_dashboard.json',
+            workflow,
+        )
+        self.assertIn('git add static/macro/latest_dashboard.json runtime/db.sqlite3 static/macro/*.json', workflow)
+        self.assertIn('git commit -m "Update macro generated data"', workflow)
+        self.assertIn('git push', workflow)
         self.assertIn('curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"', workflow)
-        self.assertIn('timeout-minutes: 5', workflow)
+        self.assertIn('timeout-minutes: 20', workflow)
         self.assertIn('concurrency:', workflow)
         self.assertNotIn('requirements-prod.txt', workflow)
         self.assertNotIn('pip install -r requirements-prod.txt', workflow)
-        self.assertNotIn('python manage.py refresh_macro_data', workflow)
-        self.assertNotIn('python manage.py purge_old_data', workflow)
-        self.assertNotIn('python manage.py precompute_dashboard', workflow)
         self.assertNotIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
         self.assertNotIn('git add db.sqlite3', workflow)
         self.assertNotIn('DATA_BRANCH', workflow)
         self.assertFalse((workflows_dir / 'refresh-macro-data.yml').exists())
 
-    def test_vercel_build_precomputes_macro_dashboard(self):
+    def test_vercel_build_skips_macro_refresh_unless_explicitly_enabled(self):
         build_script = (
             Path(settings.BASE_DIR)
             / 'build_files.sh'
         ).read_text(encoding='utf-8')
 
-        self.assertIn('manage.py precompute_dashboard', build_script)
         self.assertIn('Running finance production build bootstrap', build_script)
         self.assertIn('BUNDLED_SQLITE_PATH', build_script)
+        self.assertIn('RUN_DATA_REFRESH_IN_BUILD', build_script)
+        self.assertIn('Skip data refresh in Vercel build', build_script)
         self.assertIn('manage.py refresh_macro_data', build_script)
-        self.assertIn('manage.py purge_old_data', build_script)
         self.assertIn('manage.py settle_forecast_snapshots', build_script)
-        self.assertIn('manage.py record_macro_update_status', build_script)
-        self.assertIn('--phase refresh_macro_data', build_script)
-        self.assertIn('refresh_macro_data failed during Vercel build', build_script)
+        self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertNotIn('FRED_API_KEY is not set; skipping macro data refresh', build_script)
+        self.assertNotIn('refresh_macro_data failed during Vercel build', build_script)
         self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
         self.assertNotIn('origin/${DATA_BRANCH}:db.sqlite3', build_script)
         self.assertNotIn('ensurepip', build_script)
@@ -572,6 +588,49 @@ class DataSyncNormalizationTest(TestCase):
 
 
 class RawArchiveTest(TestCase):
+    def test_save_vintage_observations_returns_actual_created_count(self):
+        from .models import VintageObservation
+
+        indicator = Indicator.objects.create(
+            fred_series_id='VINTAGE_COUNT_TEST',
+            name_ja='ビンテージ件数テスト',
+            category=Indicator.Category.GROWTH,
+            importance=Indicator.Importance.B,
+        )
+        VintageObservation.objects.create(
+            indicator=indicator,
+            observation_date=date(2026, 1, 1),
+            realtime_start=date(2026, 1, 10),
+            realtime_end=date(2026, 1, 20),
+            value=1.0,
+            collected_at=timezone.now(),
+        )
+
+        created_count = data_sync._save_vintage_observations(
+            indicator,
+            [
+                {
+                    'date': date(2026, 1, 1),
+                    'realtime_start': '2026-01-10',
+                    'realtime_end': '2026-01-20',
+                    'value': 1.0,
+                },
+                {
+                    'date': date(2026, 2, 1),
+                    'realtime_start': '2026-02-10',
+                    'realtime_end': '2026-02-20',
+                    'value': 2.0,
+                },
+            ],
+            {
+                date(2026, 1, 1): 1.0,
+                date(2026, 2, 1): 2.0,
+            },
+        )
+
+        self.assertEqual(created_count, 1)
+        self.assertEqual(VintageObservation.objects.count(), 2)
+
     def test_archive_macro_rows_writes_gzip_csv_outside_serving_db(self):
         indicator = Indicator.objects.create(
             fred_series_id='ARCHIVE_TEST',
@@ -613,6 +672,189 @@ class RawArchiveTest(TestCase):
         self.assertIn('price_observation', content)
         self.assertIn('regime_snapshot', content)
         self.assertEqual(RawArchiveManifest.objects.count(), 1)
+
+    def test_archive_macro_rows_includes_vintage_observations(self):
+        indicator = Indicator.objects.create(
+            fred_series_id='VINTAGE_ARCHIVE_TEST',
+            name_ja='ビンテージアーカイブテスト',
+            category=Indicator.Category.GROWTH,
+            importance=Indicator.Importance.B,
+        )
+        from .models import VintageObservation
+
+        VintageObservation.objects.create(
+            indicator=indicator,
+            observation_date=date(2026, 1, 1),
+            realtime_start=date(2026, 2, 1),
+            realtime_end=date(2026, 2, 28),
+            value=12.3,
+            collected_at=timezone.now(),
+            source='fred',
+            metadata={'source_series_id': 'VINTAGE_ARCHIVE_TEST'},
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            summary = raw_archive.archive_macro_rows(
+                observation_querysets=[],
+                vintage_queryset=VintageObservation.objects.all(),
+                reason='vintage_test',
+                output_dir=Path(tmpdir),
+            )
+            path = Path(summary['path'])
+            with gzip.open(path, 'rt', encoding='utf-8') as handle:
+                content = handle.read()
+
+        self.assertTrue(summary['created'])
+        self.assertEqual(summary['row_count'], 1)
+        self.assertEqual(summary['vintage_count'], 1)
+        self.assertIn('vintage_observation', content)
+        self.assertIn('VINTAGE_ARCHIVE_TEST', content)
+
+    def test_purge_old_data_archives_only_low_importance_old_vintages(self):
+        from .models import VintageObservation
+
+        old_collected_at = timezone.now() - timezone.timedelta(days=370)
+        important = Indicator.objects.create(
+            fred_series_id='VINTAGE_KEEP_A',
+            name_ja='重要ビンテージ',
+            category=Indicator.Category.INFLATION,
+            importance=Indicator.Importance.A,
+        )
+        low = Indicator.objects.create(
+            fred_series_id='VINTAGE_PURGE_C',
+            name_ja='参考ビンテージ',
+            category=Indicator.Category.MARKET,
+            importance=Indicator.Importance.C,
+        )
+        VintageObservation.objects.create(
+            indicator=important,
+            observation_date=date(2025, 1, 1),
+            realtime_start=date(2025, 2, 1),
+            realtime_end=date(2025, 2, 28),
+            value=1.0,
+            collected_at=old_collected_at,
+        )
+        VintageObservation.objects.create(
+            indicator=low,
+            observation_date=date(2025, 1, 1),
+            realtime_start=date(2025, 2, 1),
+            realtime_end=date(2025, 2, 28),
+            value=2.0,
+            collected_at=old_collected_at,
+        )
+
+        archived_series = []
+
+        def fake_archive_macro_rows(**kwargs):
+            archived_series.extend(
+                kwargs['vintage_queryset'].values_list(
+                    'indicator__fred_series_id',
+                    flat=True,
+                )
+            )
+            return {'created': True, 'row_count': 1, 'path': 'archive.csv.gz'}
+
+        with mock.patch(
+            'macro.management.commands.purge_old_data.archive_macro_rows',
+            side_effect=fake_archive_macro_rows,
+        ):
+            call_command('purge_old_data', stdout=StringIO())
+
+        self.assertTrue(
+            VintageObservation.objects.filter(indicator=important).exists(),
+        )
+        self.assertFalse(
+            VintageObservation.objects.filter(indicator=low).exists(),
+        )
+        self.assertEqual(archived_series, ['VINTAGE_PURGE_C'])
+
+
+class VintageStatusTest(TestCase):
+    def test_vintage_status_uses_accumulated_label_and_good_tone_for_100k(self):
+        with mock.patch(
+            'macro.services.dashboard.VintageObservation.objects',
+        ) as manager:
+            manager.count.return_value = 100_036
+            manager.values.return_value.distinct.return_value.count.return_value = 42
+            manager.order_by.return_value.values_list.return_value.first.return_value = (
+                timezone.now() - timezone.timedelta(days=1)
+            )
+
+            context = dashboard.build_vintage_status_context()
+
+        self.assertEqual(context['status_label'], '蓄積済み')
+        self.assertEqual(context['tone'], 'good')
+        self.assertFalse(context['is_large'])
+        self.assertFalse(context['is_stale'])
+        self.assertNotIn('処理中', context['note'] if context['note'] else '')
+
+    def test_vintage_status_warns_when_large_or_stale(self):
+        with mock.patch(
+            'macro.services.dashboard.VintageObservation.objects',
+        ) as manager:
+            manager.count.return_value = 500_001
+            manager.values.return_value.distinct.return_value.count.return_value = 42
+            manager.order_by.return_value.values_list.return_value.first.return_value = (
+                timezone.now() - timezone.timedelta(days=10)
+            )
+
+            context = dashboard.build_vintage_status_context()
+
+        self.assertEqual(context['tone'], 'warning')
+        self.assertTrue(context['is_large'])
+        self.assertTrue(context['archive_recommended'])
+
+
+class PolicyExpectationTest(TestCase):
+    def test_build_policy_expectation_snapshot_detects_policy_headwind(self):
+        from .services.policy_expectation import build_policy_expectation_snapshot
+
+        today = timezone.localdate()
+        for series_id, value in {
+            'FEDFUNDS': 5.33,
+            'DFEDTARL': 5.25,
+            'DFEDTARU': 5.50,
+            'SOFR': 5.31,
+            'DGS2': 4.90,
+            'DGS10': 4.35,
+            'T5YIE': 2.45,
+            'MOVE_INDEX': 125.0,
+            'DEXJPUS': 155.0,
+            'BOJ_POLICY_RATE': 0.10,
+            'JPN10Y': 1.25,
+        }.items():
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': series_id,
+                    'category': Indicator.Category.RATES,
+                    'importance': Indicator.Importance.A,
+                    'frequency': Indicator.Frequency.DAILY,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=today,
+                value=value,
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=today - timezone.timedelta(days=5),
+                value=value - 0.08,
+            )
+
+        snapshot = build_policy_expectation_snapshot()
+
+        self.assertIsInstance(snapshot, PolicyExpectationSnapshot)
+        self.assertEqual(snapshot.central_bank, 'FED')
+        self.assertEqual(snapshot.target_lower, 5.25)
+        self.assertEqual(snapshot.target_upper, 5.50)
+        self.assertEqual(snapshot.policy_bias, 'hawkish_headwind')
+        self.assertGreater(snapshot.rate_shock_5d_bp, 0)
+        self.assertIn('米2年金利', snapshot.payload.get('drivers', []))
+        self.assertEqual(snapshot.payload['values']['BOJ_POLICY_RATE'], 0.10)
+        self.assertEqual(snapshot.payload['values']['JPN10Y'], 1.25)
+        self.assertAlmostEqual(snapshot.payload['values']['US_JP_10Y_DIFF'], 3.10)
 
 
 class ForecastTrackingTest(TestCase):
@@ -1181,13 +1423,22 @@ class DashboardFormatTest(TestCase):
     def test_scenario_analysis_returns_preset_scenarios(self):
         result = scenario.build_scenario_analysis()
 
-        self.assertEqual(len(result['scenarios']), 4)
+        self.assertEqual(len(result['scenarios']), 6)
+        self.assertIn('利下げ後退・米金利上昇', [item['title'] for item in result['scenarios']])
+        self.assertIn('金利低下・リスクオン', [item['title'] for item in result['scenarios']])
         self.assertIn('base_regime_label', result)
         self.assertIn('base_regime_view_display', result)
         self.assertIn('base_regime_fit_display', result)
         self.assertIn('market_stress_delta_display', result['scenarios'][0])
         self.assertIn('regime_view_display', result['scenarios'][0])
         self.assertIn('regime_fit_display', result['scenarios'][0])
+
+    def test_auto_scenarios_include_policy_rate_scenarios(self):
+        result = scenario.build_auto_scenarios()
+
+        titles = [item['title'] for item in result['scenarios']]
+        self.assertIn('利下げ後退・米金利上昇', titles)
+        self.assertIn('金利低下・リスクオン', titles)
 
     def test_scenario_analysis_accepts_custom_inputs(self):
         custom = scenario.scenario_overrides_from_query({
@@ -1229,6 +1480,132 @@ class DashboardFormatTest(TestCase):
             context['warnings'],
         )
 
+    def test_top_indicator_cards_include_only_decision_series(self):
+        keep, _ = Indicator.objects.update_or_create(
+            fred_series_id='PCEPILFE',
+            defaults={
+                'name_ja': 'Core PCE',
+                'category': Indicator.Category.INFLATION,
+                'importance': Indicator.Importance.A,
+                'display_order': 1,
+                'is_active': True,
+            },
+        )
+        drop = Indicator.objects.create(
+            fred_series_id='CPIAUCSL_EXTRA',
+            name_ja='CPI詳細',
+            category=Indicator.Category.INFLATION,
+            importance=Indicator.Importance.A,
+            display_order=2,
+        )
+        Observation.objects.create(
+            indicator=keep,
+            observation_date=date(2026, 5, 1),
+            value=120,
+            prev_value=119,
+            yoy_change=2.8,
+        )
+        Observation.objects.create(
+            indicator=drop,
+            observation_date=date(2026, 5, 1),
+            value=300,
+            prev_value=299,
+            yoy_change=3.1,
+        )
+
+        cards = dashboard.build_top_indicator_cards()
+
+        self.assertIn('PCEPILFE', [card['series_id'] for card in cards])
+        self.assertNotIn('CPIAUCSL_EXTRA', [card['series_id'] for card in cards])
+
+    def test_macro_decision_context_compacts_top_level_judgment(self):
+        snapshot = RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 17),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            rule_strength=62,
+            data_quality=78,
+            evidence=[
+                {'name': '雇用', 'contribution': 0.5, 'signal': '底堅い'},
+                {'name': '信用', 'contribution': 0.4, 'signal': '安定'},
+                {'name': 'VIX', 'contribution': 0.3, 'signal': '平常'},
+                {'name': 'Core PCE', 'contribution': -0.6, 'signal': '高い'},
+                {'name': '金利', 'contribution': -0.5, 'signal': '逆風'},
+                {'name': '生産', 'contribution': -0.4, 'signal': '減速'},
+            ],
+        )
+
+        with mock.patch('macro.services.dashboard.build_crash_alert_context', return_value={
+            'total_score': 22,
+            'level_label': '平常',
+            'data_quality_pct': 90,
+            'components': [
+                {'label': 'MOVE', 'score': 75, 'is_missing': False, 'is_stale': False},
+                {'label': 'VIX', 'score': 20, 'is_missing': False, 'is_stale': False},
+            ],
+        }), mock.patch('macro.services.dashboard.build_world_state_context', return_value={
+            'score_rows': [{'field': 'policy_pressure_score', 'display': '64'}],
+        }):
+            context = dashboard.build_macro_decision_context(snapshot)
+
+        self.assertEqual(context['headline'], '景気は弱含みで物価も重い')
+        self.assertLessEqual(len(context['good_points']), 3)
+        self.assertLessEqual(len(context['bad_points']), 3)
+        self.assertEqual(context['policy_pressure']['score_display'], '64')
+        self.assertEqual(context['market_stress']['score'], 22)
+        self.assertEqual(context['market_stress']['abnormal_items'][0], 'MOVE')
+        self.assertIn(context['confidence']['grade'], ['A', 'B', 'C', 'D'])
+
+    def test_model_display_grade_hides_weak_validation(self):
+        from .services import model_validation
+
+        low_samples = ModelValidationReport(sample_count=12, metrics={'mae': 1})
+        few_events = ModelValidationReport(
+            sample_count=40,
+            event_count=4,
+            metrics={'direction_accuracy': 0.6},
+        )
+        weak_direction = ModelValidationReport(
+            sample_count=40,
+            metrics={'direction_accuracy': 0.5},
+        )
+        usable = ModelValidationReport(
+            sample_count=40,
+            event_count=12,
+            metrics={'direction_accuracy': 0.55},
+        )
+
+        self.assertEqual(
+            model_validation.model_display_grade(low_samples)[0],
+            'hidden',
+        )
+        self.assertEqual(
+            model_validation.model_display_grade(few_events)[1],
+            'イベント数不足',
+        )
+        self.assertEqual(
+            model_validation.model_display_grade(weak_direction)[1],
+            '方向一致率が低い',
+        )
+        self.assertEqual(
+            model_validation.model_display_grade(usable),
+            ('show', '参考表示可'),
+        )
+
+    def test_walk_forward_validation_adds_zero_prediction_baseline(self):
+        rows = []
+        for idx in range(40):
+            rows.append({
+                'as_of_date': date(2020, 1, 1) + relativedelta(months=idx),
+                'x': [float(idx % 3)],
+                'target_value': 1.0 if idx % 2 == 0 else -1.0,
+            })
+
+        result = forecast_models.walk_forward_validate(rows, min_train=36)
+
+        self.assertIn('baseline_mae', result['metrics'])
+        self.assertIn('skill_score', result['metrics'])
+
 
 class DashboardCacheTest(TestCase):
     def test_load_dashboard_payload_accepts_legacy_key(self):
@@ -1244,24 +1621,39 @@ class DashboardCacheTest(TestCase):
             {'last_updated': '2026-05-01'},
         )
 
-    def test_cached_empty_payload_is_marked_as_preparing(self):
-        DashboardCache.objects.create(
-            cache_key='macro_index_v2',
-            payload={
-                'has_observations': False,
-                'last_updated': '—',
-                'similar_periods': [],
-                'linkages': [],
-                'indicator_cards': [],
-                'crash_alert': None,
-                'historical_crash_similarity': [],
-            },
-        )
-
-        response = self.client.get(reverse('macro:index'))
+    def test_missing_static_macro_payload_does_not_recompute_dashboard(self):
+        with mock.patch('macro.views.load_static_macro_payload', return_value=None), \
+             mock.patch('macro.views.build_scenario_analysis') as scenario_analysis:
+            response = self.client.get(reverse('macro:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '基本指標のみ表示しています')
+        self.assertContains(response, '事前計算データがありません')
+        scenario_analysis.assert_not_called()
+
+    def test_static_macro_payload_is_used_as_dashboard_context(self):
+        payload = {
+            'has_observations': True,
+            'last_updated': '2026-06-17',
+            'generated_at': '2026-06-17T09:00:00+09:00',
+            'source': 'github_actions',
+            'data_quality': 92.5,
+            'stale': False,
+            'model_version': 'macro-test-v1',
+            'job_duration_sec': 12.3,
+            'warnings': [],
+            'similar_periods': [],
+            'linkages': [],
+            'indicator_cards': [],
+            'crash_alert': None,
+            'historical_crash_similarity': [],
+            'scenario_analysis': {'scenarios': []},
+        }
+        with mock.patch('macro.views.load_static_macro_payload', return_value=payload):
+            response = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['generated_payload_meta']['source'], 'github_actions')
+        self.assertEqual(response.context['generated_payload_meta']['data_quality'], 92.5)
 
     def test_precompute_dashboard_payload_includes_world_model_sections(self):
         with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None), \
@@ -1283,6 +1675,36 @@ class DashboardCacheTest(TestCase):
         self.assertIn('world_state', payload)
         self.assertIn('forecast_models', payload)
         self.assertIn('model_validation', payload)
+
+    def test_export_macro_payload_command_writes_static_payload_with_metadata(self):
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'latest_dashboard.json'
+            with mock.patch(
+                'macro.management.commands.export_macro_payload.precompute_dashboard_payload',
+                return_value={
+                    'last_updated': '2026-06-17',
+                    'crash_alert': {'data_quality_pct': 92.5},
+                    'regime_model_version': 'macro-test-v1',
+                    'warnings': ['sample warning'],
+                },
+            ):
+                call_command(
+                    'export_macro_payload',
+                    '--output',
+                    str(output),
+                    stdout=StringIO(),
+                )
+
+            payload = json.loads(output.read_text(encoding='utf-8'))
+
+        self.assertEqual(payload['source'], 'github_actions')
+        self.assertEqual(payload['data_quality'], 92.5)
+        self.assertFalse(payload['stale'])
+        self.assertEqual(payload['model_version'], 'macro-test-v1')
+        self.assertIn('generated_at', payload)
+        self.assertIn('job_duration_sec', payload)
+        self.assertEqual(payload['warnings'], ['sample warning'])
+        self.assertEqual(payload['last_updated'], '2026-06-17')
 
 
 class BacktestRegimeCommandTest(TestCase):
@@ -1330,30 +1752,31 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '前回からの変化')
         self.assertNotContains(r, '今後3カ月のベースシナリオ')
         self.assertNotContains(r, 'モデルの信頼度')
-        self.assertContains(r, '判定強度')
-        self.assertContains(r, 'データ鮮度')
-        self.assertContains(r, 'macro-regime-score-axis')
+        self.assertContains(r, 'Macro 現在判断')
+        self.assertContains(r, '総合判断')
+        self.assertContains(r, '良い材料')
+        self.assertContains(r, '悪い材料')
+        self.assertContains(r, '政策・金利')
+        self.assertContains(r, '市場ストレス')
+        self.assertContains(r, '信頼度')
+        self.assertNotContains(r, '判定強度')
+        self.assertNotContains(r, 'macro-regime-score-axis')
         self.assertNotContains(r, 'macro-regime-sub')
         self.assertNotContains(r, '減速 × 高止まり')
-        self.assertContains(r, 'macro-current-state-map')
-        self.assertContains(r, '景気の向き')
-        self.assertContains(r, '注意リスク')
-        self.assertContains(r, '判断材料')
+        self.assertNotContains(r, 'macro-current-state-map')
+        self.assertNotContains(r, '景気の向き')
+        self.assertNotContains(r, '注意リスク')
+        self.assertNotContains(r, '判断材料')
         self.assertNotContains(r, '景気分布（ルール一致度）と主要リスク')
         self.assertNotContains(r, '<summary>判定根拠</summary>')
-        self.assertContains(r, '一目で見る結論')
-        self.assertContains(r, '良い点')
-        self.assertContains(r, '悪い点')
-        self.assertContains(r, '在庫や企業利益の重し')
-        self.assertContains(r, 'これから先')
-        self.assertContains(r, '<details class="macro-regime-details">')
-        self.assertContains(r, '結論・良い点・悪い点・先行き')
-        self.assertContains(r, '景気評価')
+        self.assertContains(r, '良い材料')
+        self.assertContains(r, '悪い材料')
+        self.assertNotContains(r, 'これから先')
+        self.assertNotContains(r, '<details class="macro-regime-details">')
+        self.assertNotContains(r, '結論・良い点・悪い点・先行き')
+        self.assertNotContains(r, '景気評価')
         self.assertNotContains(r, '景気コンディション')
-        self.assertContains(r, '40%')
-        self.assertContains(r, '2/5')
-        self.assertContains(r, '4/5')
-        self.assertContains(r, '更新頻度の目安')
+        self.assertNotContains(r, '更新頻度の目安')
         self.assertNotContains(r, 'macro-regime-details--evidence')
         self.assertContains(r, '鉱工業生産指数')
         self.assertNotContains(r, '判定モデル')
@@ -1376,27 +1799,30 @@ class MacroUrlsTest(TestCase):
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '更新信頼性')
-        self.assertContains(r, '前回更新')
-        self.assertContains(r, '一部失敗')
-        self.assertContains(r, 'VIXCLS: timeout')
-        self.assertContains(r, '欠損 / 古い')
+        self.assertNotContains(r, '更新信頼性')
 
-    @mock.patch('macro.views.build_monthly_model_status')
-    @mock.patch('macro.views.load_dashboard_payload')
+        audit_response = self.client.get(reverse('macro:audit'))
+
+        self.assertEqual(audit_response.status_code, 200)
+        self.assertContains(audit_response, '更新信頼性の詳細')
+        self.assertContains(audit_response, '前回更新')
+        self.assertContains(audit_response, '一部失敗')
+        self.assertContains(audit_response, 'VIXCLS: timeout')
+        self.assertContains(audit_response, '欠損 / 古い')
+
+    @mock.patch('macro.views.load_static_macro_payload')
     def test_index_crash_alert_copy_uses_market_stress_wording(
         self,
-        cache_mock,
-        monthly_status_mock,
+        static_payload_mock,
     ):
-        monthly_status_mock.return_value = None
-        cache_mock.return_value = {
+        static_payload_mock.return_value = {
             'has_observations': True,
             'last_updated': '2026-05-17',
             'similar_periods': [],
             'linkages': [],
             'indicator_cards': [],
             'historical_crash_similarity': [],
+            'monthly_model_status': {},
             'crash_alert': {
                 'total_score': 20,
                 'level': 'calm',
@@ -1432,16 +1858,43 @@ class MacroUrlsTest(TestCase):
                     'score': 25,
                 }],
             },
+            'macro_decision': {
+                'headline': '市場ストレスは平常',
+                'detail': '急落確率ではなく、現在の市場の緊張度です。',
+                'good_points': ['VIXは低位'],
+                'bad_points': [],
+                'policy_pressure': {
+                    'label': '中立',
+                    'summary': '政策金利見通しは中立です。',
+                    'score_display': '—',
+                    'data_quality_display': '—',
+                    'alerts': [],
+                },
+                'market_stress': {
+                    'level_label': '平常',
+                    'score_display': '20/100',
+                    'summary': '急落確率ではなく、現在の市場の緊張度です。',
+                    'data_quality_display': '90%',
+                    'abnormal_items': [],
+                },
+                'confidence': {
+                    'grade': 'B',
+                    'label': '通常',
+                    'score_display': '82%',
+                    'data_freshness_pct': 90,
+                    'sample_note': 'モデル予測は検証条件を満たすものだけ参考表示します。',
+                    'notes': ['主要データの取得状況と判定材料は確認済みです。'],
+                },
+            },
         }
 
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '市場ストレス・急落警戒スコア')
-        self.assertContains(r, '将来の暴落確率ではありません')
-        self.assertContains(r, '判定強度')
+        self.assertContains(r, '市場ストレス')
+        self.assertContains(r, '急落確率ではなく、現在の市場の緊張度です。')
         self.assertContains(r, 'データ品質')
-        self.assertContains(r, '検証未実施')
+        self.assertNotContains(r, '検証未実施')
         self.assertNotContains(r, 'クラッシュ警戒度')
         self.assertNotContains(r, '月次検証: GSPC')
         self.assertNotContains(r, 'ROC-AUC 0.71')
@@ -1449,15 +1902,13 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '平常表示時の取り逃し')
 
     @mock.patch('macro.views.load_crash_probability_model')
-    @mock.patch('macro.views.build_monthly_model_status')
-    @mock.patch('macro.views.load_dashboard_payload')
+    @mock.patch('macro.views.load_static_macro_payload')
     def test_index_shows_crash_probability_model(
         self,
-        cache_mock,
-        monthly_status_mock,
+        static_payload_mock,
         probability_mock,
     ):
-        cache_mock.return_value = {
+        static_payload_mock.return_value = {
             'has_observations': True,
             'last_updated': '2026-05-17',
             'similar_periods': [],
@@ -1465,8 +1916,8 @@ class MacroUrlsTest(TestCase):
             'indicator_cards': [],
             'historical_crash_similarity': [],
             'crash_alert': None,
+            'monthly_model_status': {},
         }
-        monthly_status_mock.return_value = None
         probability_mock.return_value = {
             'prediction_label': '今後63日相当でGSPCが-10%以上下落する推定確率',
             'current_probability_display': '11.1%',
@@ -1491,7 +1942,7 @@ class MacroUrlsTest(TestCase):
             'model_version': 'crash_probability_logistic_v1',
         }
 
-        r = self.client.get(reverse('macro:index'))
+        r = self.client.get(reverse('macro:audit'))
 
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, '急落確率モデル（検証済み参考確率）')
@@ -1509,10 +1960,9 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '投資判断や売買推奨としては使えません')
         self.assertNotContains(r, 'サンプル 180')
 
-    @mock.patch('macro.views.build_monthly_model_status')
-    @mock.patch('macro.views.load_dashboard_payload')
-    def test_index_shows_monthly_model_status(self, cache_mock, monthly_status_mock):
-        cache_mock.return_value = {
+    @mock.patch('macro.views.load_static_macro_payload')
+    def test_index_shows_monthly_model_status(self, static_payload_mock):
+        static_payload_mock.return_value = {
             'has_observations': True,
             'last_updated': '2026-05-17',
             'similar_periods': [],
@@ -1520,23 +1970,23 @@ class MacroUrlsTest(TestCase):
             'indicator_cards': [],
             'historical_crash_similarity': [],
             'crash_alert': None,
-        }
-        monthly_status_mock.return_value = {
-            'tone': 'good',
-            'status_label': '更新済み',
-            'latest_training_date': '2026-05-17',
-            'latest_backtest_date': '2026-05-17 10:00',
-            'warnings': [],
-            'cards': [{
-                'label': '急落確率モデル',
-                'updated_at': '2026-05-17',
-                'sample_label': '検証 120件 / イベント 6件',
-                'metric_label': 'ROC-AUC 0.82 / PR-AUC 0.30',
-                'model_label': 'crash_probability_logistic_v1',
-            }],
+            'monthly_model_status': {
+                'tone': 'good',
+                'status_label': '更新済み',
+                'latest_training_date': '2026-05-17',
+                'latest_backtest_date': '2026-05-17 10:00',
+                'warnings': [],
+                'cards': [{
+                    'label': '急落確率モデル',
+                    'updated_at': '2026-05-17',
+                    'sample_label': '検証 120件 / イベント 6件',
+                    'metric_label': 'ROC-AUC 0.82 / PR-AUC 0.30',
+                    'model_label': 'crash_probability_logistic_v1',
+                }],
+            },
         }
 
-        r = self.client.get(reverse('macro:index'))
+        r = self.client.get(reverse('macro:audit'))
 
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, '月次モデル状態')
@@ -1547,28 +1997,15 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, 'ROC-AUC 0.82 / PR-AUC 0.30')
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})
-    @mock.patch('macro.views.build_historical_crash_similarity')
-    @mock.patch('macro.views.build_crash_alert_context')
-    @mock.patch('macro.views.build_linkages')
-    @mock.patch('macro.views.build_similar_periods')
+    @mock.patch('macro.views.load_static_macro_payload', return_value=None)
     def test_index_serverless_without_cache_skips_heavy_fallback(
         self,
-        build_similar_periods_mock,
-        build_linkages_mock,
-        build_crash_alert_context_mock,
-        build_historical_crash_similarity_mock,
+        static_payload_mock,
     ):
-        build_similar_periods_mock.side_effect = AssertionError('heavy fallback')
-        build_linkages_mock.side_effect = AssertionError('heavy fallback')
-        build_crash_alert_context_mock.side_effect = AssertionError('heavy fallback')
-        build_historical_crash_similarity_mock.side_effect = AssertionError(
-            'heavy fallback'
-        )
-
         r = self.client.get(reverse('macro:index'))
 
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, '基本指標のみ表示しています')
+        self.assertContains(r, '事前計算データがありません')
 
     def test_refresh_without_key_redirects(self):
         user = User.objects.create_superuser(
@@ -1627,12 +2064,17 @@ class MacroUrlsTest(TestCase):
 
         self.assertContains(r, '取得・判定')
         self.assertContains(r, 'macro-refresh-form')
-        self.assertContains(r, 'macro-operation-panel')
-        self.assertContains(r, '月次メンテナンス')
-        self.assertContains(r, '月次検証・急落確率モデル更新')
+        self.assertContains(r, '詳細・監査')
+        self.assertNotContains(r, 'macro-operation-panel')
+        self.assertNotContains(r, '月次メンテナンス')
+        self.assertNotContains(r, '月次検証・急落確率モデル更新')
         self.assertNotContains(r, '確率更新')
 
-    def test_serverless_refresh_button_runs_lightweight_update_only(self):
+    @mock.patch.dict(
+        'os.environ',
+        {'VERCEL': '1', 'MACRO_UPDATE_WEBHOOK_URL': 'https://example.com/update'},
+    )
+    def test_serverless_refresh_button_triggers_update_job_only(self):
         user = User.objects.create_superuser(
             username='serverless-creator',
             email='serverless-creator@example.com',
@@ -1641,37 +2083,25 @@ class MacroUrlsTest(TestCase):
         self.client.force_login(user)
 
         with mock.patch('macro.views._is_serverless_runtime', return_value=True), \
-             mock.patch('macro.views.get_api_key', return_value='key'), \
+             mock.patch('macro.views.requests.post') as post_mock, \
              mock.patch('macro.views.sync_all_indicators') as sync_mock, \
              mock.patch('macro.views.compute_current_regime') as regime_mock, \
              mock.patch('macro.views.compute_current_world_state') as world_state_mock, \
              mock.patch('macro.views.sync_all_price_histories') as price_mock, \
              mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
-             mock.patch('macro.views.build_indicator_cards', return_value=[]), \
-             mock.patch('macro.views.build_crash_alert_context', return_value={}), \
              mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
-            sync_mock.return_value = {
-                'success': [{'series_id': 'VIXCLS'}],
-                'failed': [],
-            }
+            post_mock.return_value.raise_for_status.return_value = None
             get_response = self.client.get(reverse('macro:index'))
             post_response = self.client.post(reverse('macro:refresh'))
 
         self.assertEqual(post_response.status_code, 302)
         self.assertContains(get_response, '取得・判定')
         self.assertContains(get_response, 'macro-refresh-form')
-        sync_mock.assert_called_once_with(
-            series_ids=(
-                'VIXCLS',
-                'BAMLH0A0HYM2',
-                'CBOE_SKEW',
-                'MOVE_INDEX',
-                'VIX_VIX3M_RATIO',
-            ),
-        )
-        regime_mock.assert_called_once()
-        world_state_mock.assert_called_once()
-        save_cache_mock.assert_called_once()
+        post_mock.assert_called_once_with('https://example.com/update', timeout=10)
+        sync_mock.assert_not_called()
+        regime_mock.assert_not_called()
+        world_state_mock.assert_not_called()
+        save_cache_mock.assert_not_called()
         price_mock.assert_not_called()
         precompute_mock.assert_not_called()
 

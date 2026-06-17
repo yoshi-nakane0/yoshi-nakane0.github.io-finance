@@ -112,6 +112,42 @@ SCENARIOS = [
         },
         'crash_overrides': {},
     },
+    {
+        'key': 'rate_cut_delay',
+        'title': '利下げ後退・米金利上昇',
+        'assumption': '景気指標は強いが、利下げ織り込み後退と米金利上昇が株価先物に逆風となる想定',
+        'metric_overrides': {
+            'yield_curve_2y10y': -0.35,
+            'yield_curve_3m10y': -0.25,
+            'breakeven_5y': 0.20,
+            'core_pce_yoy': 0.20,
+        },
+        'crash_overrides': {
+            'T10Y2Y': -0.35,
+            'T10Y3M': -0.25,
+        },
+    },
+    {
+        'key': 'rates_down_risk_on',
+        'title': '金利低下・リスクオン',
+        'assumption': '米金利低下、VIX低下、信用環境改善で株価先物に追い風となる想定',
+        'metric_overrides': {
+            'yield_curve_2y10y': 0.25,
+            'yield_curve_3m10y': 0.25,
+            'hy_spread': -0.40,
+        },
+        'metric_maximums': {
+            'vix': 15.0,
+        },
+        'crash_overrides': {
+            'T10Y2Y': 0.25,
+            'T10Y3M': 0.25,
+            'BAMLH0A0HYM2': -0.40,
+        },
+        'crash_maximums': {
+            'VIXCLS': 15.0,
+        },
+    },
 ]
 
 
@@ -162,6 +198,9 @@ def _apply_metric_scenario(base_metrics: Dict, scenario: Dict) -> Dict:
     for key, minimum in scenario.get('metric_minimums', {}).items():
         current = metrics.get(key)
         metrics[key] = minimum if current is None else max(current, minimum)
+    for key, maximum in scenario.get('metric_maximums', {}).items():
+        current = metrics.get(key)
+        metrics[key] = maximum if current is None else min(current, maximum)
     return metrics
 
 
@@ -252,6 +291,9 @@ def _scenario_value_lookup(scenario: Dict):
             value = overrides[series_id] if value is None else value + overrides[series_id]
         if series_id in minimums:
             value = minimums[series_id] if value is None else max(value, minimums[series_id])
+        if series_id in scenario.get('crash_maximums', {}):
+            maximum = scenario['crash_maximums'][series_id]
+            value = maximum if value is None else min(value, maximum)
         return {**meta, 'value': value}
 
     return lookup
@@ -293,7 +335,119 @@ def _world_state_delta_rows(base_world: Dict, scenario_world: Dict) -> list[Dict
     return rows
 
 
-def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
+def _score_value(payload: Dict, key: str, default: float = 50.0) -> float:
+    value = payload.get(key)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def build_most_likely_scenario(metrics: Dict, base_world: Dict, base_assessment: Dict) -> Dict:
+    label, probability = _top_regime_probability(
+        base_assessment.get('regime_probabilities', {})
+    )
+    return {
+        'key': 'most_likely',
+        'title': '最も近い基本シナリオ',
+        'assumption': (
+            f'現在の状態が大きく変わらない場合。景気の見方は'
+            f'{_regime_view_display(label)}、近さは{_probability_display(probability)}です。'
+        ),
+        'metric_overrides': {},
+        'crash_overrides': {},
+    }
+
+
+def build_top_risk_scenario(metrics: Dict, base_world: Dict) -> Dict:
+    risk_candidates = {
+        'market_stress_score': _score_value(base_world, 'market_stress_score'),
+        'credit_score': 100 - _score_value(base_world, 'credit_score'),
+        'policy_pressure_score': _score_value(base_world, 'policy_pressure_score'),
+        'inflation_score': _score_value(base_world, 'inflation_score'),
+        'risk_appetite_score': 100 - _score_value(base_world, 'risk_appetite_score'),
+    }
+    top_key = max(risk_candidates.items(), key=lambda item: item[1])[0]
+    labels = {
+        'market_stress_score': '市場ストレス',
+        'credit_score': '信用悪化',
+        'policy_pressure_score': '政策圧力',
+        'inflation_score': '物価圧力',
+        'risk_appetite_score': 'リスク選好低下',
+    }
+    return {
+        'key': 'top_risk',
+        'title': '悪化シナリオ',
+        'assumption': f'{labels[top_key]}が一段悪化する想定',
+        'metric_minimums': {'vix': 24.0},
+        'metric_overrides': {
+            'hy_spread': 0.75,
+            'core_pce_yoy': 0.20,
+            'unrate_6m_change': 0.25,
+        },
+        'crash_minimums': {'VIXCLS': 24.0},
+        'crash_overrides': {'BAMLH0A0HYM2': 0.75},
+    }
+
+
+def build_improvement_scenario(metrics: Dict, base_world: Dict) -> Dict:
+    return {
+        'key': 'improvement',
+        'title': '改善シナリオ',
+        'assumption': 'VIX低下、信用スプレッド縮小、金利圧力低下、リスク選好改善を想定',
+        'metric_overrides': {
+            'hy_spread': -0.50,
+            'core_pce_yoy': -0.20,
+            'yield_curve_2y10y': 0.20,
+            'yield_curve_3m10y': 0.20,
+        },
+        'metric_maximums': {'vix': 16.0},
+        'crash_overrides': {'BAMLH0A0HYM2': -0.50},
+        'crash_maximums': {'VIXCLS': 16.0},
+    }
+
+
+def build_market_shock_scenario(metrics: Dict, base_world: Dict) -> Dict:
+    return {
+        'key': 'market_shock',
+        'title': 'ショックシナリオ',
+        'assumption': '外部ショックでVIX急騰と信用悪化が同時に起きる想定',
+        'metric_minimums': {'vix': 35.0},
+        'metric_overrides': {
+            'hy_spread': 1.50,
+            'unrate_6m_change': 0.35,
+        },
+        'crash_minimums': {'VIXCLS': 35.0},
+        'crash_overrides': {'BAMLH0A0HYM2': 1.50},
+    }
+
+
+def build_auto_scenarios() -> Dict:
+    metrics = collect_key_metrics()
+    base_alert = compute_crash_alert()
+    base_world = build_world_state_assessment_from_metrics(
+        metrics,
+        crash_alert_payload=base_alert,
+    )
+    base_assessment = build_regime_assessment_from_metrics(metrics)
+    scenarios = [
+        build_most_likely_scenario(metrics, base_world, base_assessment),
+        build_top_risk_scenario(metrics, base_world),
+        build_improvement_scenario(metrics, base_world),
+        build_market_shock_scenario(metrics, base_world),
+    ]
+    scenarios.extend(
+        scenario
+        for scenario in SCENARIOS
+        if scenario.get('key') in ('rate_cut_delay', 'rates_down_risk_on')
+    )
+    return build_scenario_analysis(scenario_list=scenarios)
+
+
+def build_scenario_analysis(
+    custom_scenario: Optional[Dict] = None,
+    scenario_list: Optional[list[Dict]] = None,
+) -> Dict:
     base_metrics = collect_key_metrics()
     base_assessment = build_regime_assessment_from_metrics(base_metrics)
     base_label, base_probability = _top_regime_probability(
@@ -307,7 +461,7 @@ def build_scenario_analysis(custom_scenario: Optional[Dict] = None) -> Dict:
     )
 
     scenarios = []
-    scenario_list = [*SCENARIOS]
+    scenario_list = list(scenario_list or SCENARIOS)
     if custom_scenario:
         scenario_list.insert(0, custom_scenario)
 

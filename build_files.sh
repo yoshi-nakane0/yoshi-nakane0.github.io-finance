@@ -33,31 +33,14 @@ if [ -f static/earning/data/eps_sales.csv ]; then
   $PYTHON_BIN manage.py import_eps_sales_csv static/earning/data/eps_sales.csv
 fi
 
-if [ -n "${FRED_API_KEY:-}" ]; then
-  if ! $PYTHON_BIN manage.py refresh_macro_data; then
-    echo "Macro data refresh failed; continuing with existing data"
-    $PYTHON_BIN manage.py record_macro_update_status \
-      --source vercel_build \
-      --status failed \
-      --phase refresh_macro_data \
-      --message "refresh_macro_data failed during Vercel build" || true
-  fi
+if [ "${RUN_DATA_REFRESH_IN_BUILD:-0}" = "1" ]; then
+  $PYTHON_BIN manage.py refresh_macro_data
+  $PYTHON_BIN manage.py purge_old_data
+  $PYTHON_BIN manage.py settle_forecast_snapshots || true
+  $PYTHON_BIN manage.py precompute_dashboard
 else
-  echo "FRED_API_KEY is not set; skipping macro data refresh"
-  $PYTHON_BIN manage.py record_macro_update_status \
-    --source vercel_build \
-    --status skipped \
-    --message "FRED_API_KEY is not set; skipped macro data refresh" || true
+  echo "Skip data refresh in Vercel build"
 fi
-
-# 日次更新で増えた古い行を削除し、同梱 SQLite を無料枠内に保つ
-$PYTHON_BIN manage.py purge_old_data
-
-# 期限が来た過去予測に実績値を入れて、予測履歴を検証可能にする
-$PYTHON_BIN manage.py settle_forecast_snapshots || true
-
-# Macro ページの重い計算結果を deploy 時に作り、アクセス時の 504 を防ぐ
-$PYTHON_BIN manage.py precompute_dashboard
 
 if [ -z "${DATABASE_URL:-}" ]; then
   cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"

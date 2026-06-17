@@ -10,8 +10,10 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, Optional
 
+from django.conf import settings
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ LEGACY_DASHBOARD_CACHE_KEYS = (
 INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 UPDATE_STATUS_CACHE_KEY = 'macro_update_status_v1'
+STATIC_MACRO_PAYLOAD_PATH = Path('static/macro/latest_dashboard.json')
 
 
 def indicator_detail_cache_key(series_id: str) -> str:
@@ -74,6 +77,31 @@ def load_dashboard_payload() -> Optional[dict]:
     if cache_obj is None:
         return None
     return cache_obj.payload
+
+
+def load_static_macro_payload(path: str | Path | None = None) -> Optional[dict]:
+    payload_path = Path(path) if path else settings.BASE_DIR / STATIC_MACRO_PAYLOAD_PATH
+    if not payload_path.exists():
+        return None
+    try:
+        with payload_path.open(encoding='utf-8') as fp:
+            payload = json.load(fp)
+    except (OSError, json.JSONDecodeError):
+        logger.exception('failed to read static macro payload: %s', payload_path)
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def write_static_macro_payload(payload: dict, path: str | Path | None = None) -> None:
+    payload_path = Path(path) if path else settings.BASE_DIR / STATIC_MACRO_PAYLOAD_PATH
+    payload_path.parent.mkdir(parents=True, exist_ok=True)
+    serialized = json.loads(json.dumps(payload, default=_json_default))
+    payload_path.write_text(
+        json.dumps(serialized, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+        encoding='utf-8',
+    )
 
 
 def load_dashboard_cache_meta() -> dict:
@@ -204,6 +232,7 @@ def precompute_dashboard_payload() -> dict:
         build_historical_crash_similarity,
         build_indicator_cards,
         build_linkages,
+        build_macro_decision_context,
         build_forecast_model_context,
         build_model_validation_context,
         build_monthly_model_status,
@@ -212,19 +241,38 @@ def precompute_dashboard_payload() -> dict:
         build_world_state_context,
         build_world_model_operations_context,
         build_similar_periods,
+        TOP_MACRO_SERIES,
         load_regime_probability_model,
     )
     from .data_sync import get_latest_observation_date
-    from .scenario import build_scenario_analysis
+    from .scenario import build_auto_scenarios
+    from .policy_expectation import (
+        build_policy_expectation_context,
+        build_policy_expectation_snapshot,
+    )
 
     latest_obs_date = get_latest_observation_date()
+    from ..models import RegimeSnapshot
+    latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
+    all_indicator_cards = build_indicator_cards()
+    top_indicator_cards = [
+        card for card in all_indicator_cards
+        if card.get('series_id') in TOP_MACRO_SERIES
+    ]
+
+    try:
+        build_policy_expectation_snapshot()
+    except Exception:
+        logger.exception('policy expectation precompute failed')
 
     return {
         'has_observations': latest_obs_date is not None,
         'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
+        'macro_decision': build_macro_decision_context(latest_snapshot),
         'similar_periods': build_similar_periods(),
         'linkages': build_linkages(),
-        'indicator_cards': build_indicator_cards(),
+        'indicator_cards': top_indicator_cards,
+        'audit_indicator_cards': all_indicator_cards,
         'crash_alert': build_crash_alert_context(),
         'monthly_model_status': build_monthly_model_status(),
         'forecast_monitor': build_forecast_monitor_context(),
@@ -235,7 +283,8 @@ def precompute_dashboard_payload() -> dict:
         'raw_archive_status': build_raw_archive_context(),
         'vintage_status': build_vintage_status_context(),
         'regime_probability_model': load_regime_probability_model(),
-        'scenario_analysis': build_scenario_analysis(),
+        'policy_expectation': build_policy_expectation_context(),
+        'scenario_analysis': build_auto_scenarios(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }
 

@@ -267,6 +267,7 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
                 "risk_label": context_score["risk_label"],
                 "components": context_score["components"],
                 "evidence": context_score["evidence"],
+                "lead_market": context_score.get("lead_market") or {},
             }
         ),
         "main_scenario": main_scenario,
@@ -632,6 +633,7 @@ def blocked_world_model(
                 "risk_label": context_score["risk_label"],
                 "components": context_score["components"],
                 "evidence": context_score["evidence"],
+                "lead_market": context_score.get("lead_market") or {},
             }
         ),
         "main_scenario": "データ品質が不足しているため判定できません",
@@ -732,6 +734,7 @@ def limited_world_model(
                 "risk_label": context_score["risk_label"],
                 "components": context_score["components"],
                 "evidence": context_score["evidence"],
+                "lead_market": context_score.get("lead_market") or {},
             }
         ),
         "main_scenario": "データ品質が限定的なため方向判定は停止しています",
