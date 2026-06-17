@@ -111,7 +111,13 @@ def save_prediction(
                 features=features,
                 transition_probs=world_model.get("transition_probs") or [],
                 expected_returns=world_model.get("expected_returns") or {},
-                context=world_model.get("market_context") or world_model.get("context") or {},
+                context=_json_safe_context(
+                    world_model.get("intermarket_technicals")
+                    or world_model.get("us_index_confirmation")
+                    or world_model.get("market_context")
+                    or world_model.get("context")
+                    or {}
+                ),
                 instrument_key=features.get("instrument_key") or readiness.get("instrument_key") or "unknown",
                 instrument_type=features.get("instrument_type") or readiness.get("instrument_type") or "unknown",
                 source_symbol=features.get("source_symbol") or features.get("symbol") or "",
@@ -342,6 +348,45 @@ def performance_summary(
     except DatabaseError:
         logger.exception("Failed to read basecalc performance")
         return _empty_performance_summary()
+
+
+def intermarket_comparison_summary(
+    horizon="1d",
+    *,
+    instrument_key="cme_nikkei_futures",
+    readiness_level="ready",
+    is_backtest=False,
+):
+    variants = {
+        "nikkei_only": "日経先物テクニカルのみ",
+        "nikkei_plus_nasdaq100": "日経先物テクニカル + NASDAQ100",
+        "nikkei_plus_sp500_dow": "日経先物テクニカル + S&P500 + NYダウ",
+        "nikkei_plus_us3": "日経先物テクニカル + 米国3指数全部",
+    }
+    try:
+        outcomes = PredictionOutcome.objects.filter(horizon=horizon).select_related("prediction")
+        if instrument_key:
+            outcomes = outcomes.filter(prediction__instrument_key=instrument_key)
+        if readiness_level:
+            outcomes = outcomes.filter(prediction__readiness_level=readiness_level)
+        if is_backtest is not None:
+            outcomes = outcomes.filter(prediction__is_backtest=is_backtest)
+
+        rows = {key: _empty_intermarket_variant(label) for key, label in variants.items()}
+        for outcome in outcomes[:5000]:
+            realized_return = _to_float(outcome.realized_return_pct)
+            if realized_return is None:
+                continue
+            actual_direction = _direction_from_return(realized_return)
+            if actual_direction is None:
+                continue
+            scores = _variant_scores(outcome.prediction)
+            for key, score in scores.items():
+                _accumulate_variant(rows[key], score, actual_direction, outcome)
+        return {key: _finalize_intermarket_variant(row) for key, row in rows.items()}
+    except DatabaseError:
+        logger.exception("Failed to read intermarket comparison")
+        return {key: _empty_intermarket_variant(label) for key, label in variants.items()}
 
 
 def state_performance_summary(horizon="1d", limit=12):
@@ -581,6 +626,153 @@ def _baseline_performance_metrics(outcomes, horizon):
         "model_mae": model_mae,
         "mae_improvement_rate": improvement,
     }
+
+
+def _empty_intermarket_variant(label):
+    return {
+        "label": label,
+        "sample_count": 0,
+        "direction_hits": 0,
+        "brier_values": [],
+        "mfe_values": [],
+        "mae_values": [],
+        "upside_hits": 0,
+        "downside_hits": 0,
+        "invalidations": 0,
+        "chase_warning_count": 0,
+        "chase_warning_reversals": 0,
+    }
+
+
+def _variant_scores(prediction):
+    features = prediction.features or {}
+    nikkei_score = _to_float(features.get("nikkei_technical_score"))
+    if nikkei_score is None:
+        nikkei_score = _to_float(prediction.sentiment_score) or 0
+    components = features.get("us_index_components") or {}
+    nasdaq = _component_score(components, "nasdaq100_futures")
+    sp500 = _component_score(components, "sp500_futures")
+    dow = _component_score(components, "dow_futures")
+    us3 = _to_float(features.get("us_index_confirmation_score"))
+    if us3 is None:
+        us3 = nasdaq * 0.45 + sp500 * 0.35 + dow * 0.20
+    return {
+        "nikkei_only": nikkei_score,
+        "nikkei_plus_nasdaq100": nikkei_score + nasdaq * 0.15,
+        "nikkei_plus_sp500_dow": nikkei_score + (sp500 * 0.35 + dow * 0.20) * 0.15,
+        "nikkei_plus_us3": nikkei_score + us3 * 0.15,
+    }
+
+
+def _component_score(components, key):
+    component = components.get(key) if isinstance(components, dict) else {}
+    if isinstance(component, dict):
+        return _to_float(component.get("score")) or 0
+    return 0
+
+
+def _accumulate_variant(row, score, actual_direction, outcome):
+    predicted_direction = _direction_from_score(score)
+    if predicted_direction is None:
+        return
+    row["sample_count"] += 1
+    hit = predicted_direction == actual_direction
+    if hit:
+        row["direction_hits"] += 1
+    probability_up = _score_to_up_probability(score)
+    actual_up = 1 if actual_direction == "up" else 0
+    row["brier_values"].append((probability_up - actual_up) ** 2)
+    if outcome.mfe_pct is not None:
+        row["mfe_values"].append(outcome.mfe_pct)
+    if outcome.mae_pct is not None:
+        row["mae_values"].append(outcome.mae_pct)
+    if outcome.upside_t1_hit:
+        row["upside_hits"] += 1
+    if outcome.downside_t1_hit:
+        row["downside_hits"] += 1
+    if outcome.invalidation_hit:
+        row["invalidations"] += 1
+    if abs(score) < 15:
+        row["chase_warning_count"] += 1
+        if not hit:
+            row["chase_warning_reversals"] += 1
+
+
+def _finalize_intermarket_variant(row):
+    total = row["sample_count"]
+    if not total:
+        return {
+            "label": row["label"],
+            "sample_count": 0,
+            "directional_accuracy": 0,
+            "brier_score": 0,
+            "avg_mfe_pct": 0,
+            "avg_mae_pct": 0,
+            "upside_zone_hit_rate": 0,
+            "downside_zone_hit_rate": 0,
+            "invalidation_rate": 0,
+            "chase_warning_reversal_rate": 0,
+        }
+    chase_total = row["chase_warning_count"]
+    return {
+        "label": row["label"],
+        "sample_count": total,
+        "directional_accuracy": round(row["direction_hits"] / total, 2),
+        "brier_score": _average(row["brier_values"]),
+        "avg_mfe_pct": _average(row["mfe_values"]),
+        "avg_mae_pct": _average(row["mae_values"]),
+        "upside_zone_hit_rate": round(row["upside_hits"] / total, 2),
+        "downside_zone_hit_rate": round(row["downside_hits"] / total, 2),
+        "invalidation_rate": round(row["invalidations"] / total, 2),
+        "chase_warning_reversal_rate": round(row["chase_warning_reversals"] / chase_total, 2)
+        if chase_total
+        else 0,
+    }
+
+
+def _direction_from_score(score):
+    if score >= 15:
+        return "up"
+    if score <= -15:
+        return "down"
+    return None
+
+
+def _direction_from_return(realized_return):
+    if realized_return > 0:
+        return "up"
+    if realized_return < 0:
+        return "down"
+    return None
+
+
+def _score_to_up_probability(score):
+    score = max(-100, min(100, _to_float(score) or 0))
+    return 0.5 + (score / 200)
+
+
+def _json_safe_context(context):
+    if not isinstance(context, dict):
+        return {}
+    safe = {}
+    for key, value in context.items():
+        if isinstance(value, dict):
+            safe[key] = _json_safe_context(value)
+        elif isinstance(value, list):
+            safe[key] = [
+                _json_safe_context(item)
+                if isinstance(item, dict)
+                else item.isoformat()
+                if hasattr(item, "isoformat")
+                else item
+                for item in value
+                if isinstance(item, (dict, int, float, str, bool)) or item is None or hasattr(item, "isoformat")
+            ]
+        elif hasattr(value, "isoformat"):
+            safe[key] = value.isoformat()
+        elif isinstance(value, (int, float, str, bool)) or value is None:
+            safe[key] = value
+    return safe
 
 
 def _continuation_direction(prediction):

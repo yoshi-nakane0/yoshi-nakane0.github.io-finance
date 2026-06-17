@@ -23,7 +23,8 @@ def serialize_snapshot(world_model):
         "directional_allowed": world_model.get("directional_allowed"),
         "transition_probs": world_model.get("transition_probs") or [],
         "expected_returns": world_model.get("expected_returns") or {},
-        "market_context": world_model.get("market_context") or {},
+        "intermarket_technicals": world_model.get("intermarket_technicals") or {},
+        "basecalc_signal": world_model.get("basecalc_signal") or {},
         "targets": {
             "upside": world_model.get("upside_targets") or [],
             "downside": world_model.get("downside_targets") or [],

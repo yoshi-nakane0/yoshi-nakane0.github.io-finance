@@ -35,6 +35,8 @@ fi
 
 if [ "${RUN_DATA_REFRESH_IN_BUILD:-0}" = "1" ]; then
   $PYTHON_BIN manage.py refresh_macro_data
+  $PYTHON_BIN manage.py compute_world_state
+  $PYTHON_BIN manage.py run_macro_forecast
   $PYTHON_BIN manage.py purge_old_data
   $PYTHON_BIN manage.py settle_forecast_snapshots || true
   $PYTHON_BIN manage.py precompute_dashboard

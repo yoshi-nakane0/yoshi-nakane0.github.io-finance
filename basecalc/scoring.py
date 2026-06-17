@@ -32,7 +32,7 @@ def calculate_sentiment_score(features, similar_summary=None):
     volatility_score = _volatility_score(features)
     structure_score = _structure_score(features)
     similar_score = _similar_case_score(similar_summary)
-    context_score = calculate_context_component(features)
+    context_score = calculate_us_index_confirmation_component(features)
     raw_score = round(
         trend_score
         + momentum_score
@@ -63,7 +63,7 @@ def calculate_sentiment_score(features, similar_summary=None):
             "volatility": round(volatility_score, 1),
             "structure": round(structure_score, 1),
             "similar": round(similar_score, 1),
-            "context": round(context_score, 1),
+            "us_index_confirmation": round(context_score, 1),
             "quality_penalty": round(quality_penalty, 1),
             "conflict_penalty": -round(conflict["penalty"], 1),
         },
@@ -251,13 +251,13 @@ def _similar_case_score(similar_summary):
     return clamp((up_rate - down_rate) * 10, -10, 10)
 
 
-def calculate_context_component(features: dict) -> float:
-    risk_score = features.get("context_risk_score")
+def calculate_us_index_confirmation_component(features: dict) -> float:
+    risk_score = features.get("us_index_confirmation_score")
     try:
         risk_score = float(risk_score or 0)
     except (TypeError, ValueError):
         risk_score = 0
-    return clamp(risk_score / 100 * 15, -15, 15)
+    return clamp(risk_score / 100 * 12, -12, 12)
 
 
 def calculate_volatility_regime(features: dict) -> dict:

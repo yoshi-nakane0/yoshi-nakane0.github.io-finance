@@ -106,6 +106,82 @@ class Observation(models.Model):
         )
 
 
+class IndicatorSeries(models.Model):
+    """予測エンジン向けの系列マスタ。
+
+    既存の Indicator は画面表示と従来同期処理を支え、このモデルは
+    ヴィンテージ管理やカテゴリ別の状態ベクトル生成に必要な属性を明示する。
+    """
+
+    class Source(models.TextChoices):
+        FRED = 'fred', 'FRED'
+        BLS = 'bls', 'BLS'
+        BEA = 'bea', 'BEA'
+        BOJ = 'boj', 'BOJ'
+        ESRI = 'esri', 'ESRI'
+        OECD = 'oecd', 'OECD'
+        YFINANCE = 'yfinance', 'Yahoo Finance'
+        OTHER = 'other', 'Other'
+
+    class Frequency(models.TextChoices):
+        DAILY = 'daily', '日次'
+        WEEKLY = 'weekly', '週次'
+        MONTHLY = 'monthly', '月次'
+        QUARTERLY = 'quarterly', '四半期'
+
+    class Category(models.TextChoices):
+        GROWTH = 'growth', '成長'
+        LABOR = 'labor', '雇用・賃金'
+        INFLATION = 'inflation', '物価'
+        POLICY = 'policy', '政策'
+        CREDIT = 'credit', '信用'
+        MARKET = 'market', '市場'
+        GLOBAL = 'global', '世界需要'
+        JAPAN = 'japan', '日本'
+
+    code = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=255)
+    source = models.CharField(
+        max_length=32,
+        choices=Source.choices,
+        default=Source.FRED,
+    )
+    frequency = models.CharField(
+        max_length=16,
+        choices=Frequency.choices,
+        default=Frequency.MONTHLY,
+    )
+    category = models.CharField(
+        max_length=32,
+        choices=Category.choices,
+        default=Category.GROWTH,
+    )
+    direction = models.IntegerField(default=1)
+    release_lag_days = models.IntegerField(default=0)
+    is_core = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    indicator = models.OneToOneField(
+        Indicator,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='series_profile',
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'code']
+        indexes = [
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['source', 'code']),
+        ]
+
+    def __str__(self):
+        return f'{self.code} ({self.name})'
+
+
 class VintageObservation(models.Model):
     """取得時点ごとの経済統計値。
 
@@ -143,6 +219,43 @@ class VintageObservation(models.Model):
     def __str__(self):
         return (
             f'{self.indicator.fred_series_id} {self.observation_date} '
+            f'vintage {self.realtime_start}: {self.value}'
+        )
+
+
+class ObservationVintage(models.Model):
+    """IndicatorSeries に紐づくリアルタイム・ヴィンテージ値。"""
+
+    series = models.ForeignKey(
+        IndicatorSeries,
+        on_delete=models.CASCADE,
+        related_name='vintages',
+    )
+    observation_date = models.DateField()
+    value = models.FloatField()
+    realtime_start = models.DateField()
+    realtime_end = models.DateField(null=True, blank=True)
+    fetched_at = models.DateTimeField()
+    source_revision_id = models.CharField(max_length=128, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['series', 'observation_date', '-realtime_start']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['series', 'observation_date', 'realtime_start', 'realtime_end'],
+                name='uq_series_observation_vintage',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['series', 'observation_date', '-realtime_start']),
+            models.Index(fields=['series', 'realtime_start']),
+        ]
+
+    def __str__(self):
+        return (
+            f'{self.series.code} {self.observation_date} '
             f'vintage {self.realtime_start}: {self.value}'
         )
 
@@ -370,6 +483,122 @@ class ForecastSnapshot(models.Model):
             f'{self.as_of_date}: {self.model_version} '
             f'{self.target} {self.horizon}={self.prediction_value}'
         )
+
+
+class MacroForecastRun(models.Model):
+    """経済状態推定エンジンの1回分の実行結果。"""
+
+    as_of = models.DateField(unique=True)
+    forecast = models.OneToOneField(
+        ForecastSnapshot,
+        on_delete=models.CASCADE,
+        related_name='macro_run',
+    )
+    primary_regime = models.CharField(max_length=32)
+    previous_regime = models.CharField(max_length=32, blank=True)
+    confidence = models.FloatField(default=0.0)
+    data_quality_score = models.FloatField(default=0.0)
+    state_vector = models.JSONField(default=dict, blank=True)
+    regime_probabilities = models.JSONField(default=dict, blank=True)
+    risk_probabilities = models.JSONField(default=dict, blank=True)
+    report = models.JSONField(default=dict, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+    model_version = models.CharField(max_length=64, default='macro_hatzius_v1')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-as_of']
+        indexes = [
+            models.Index(fields=['-as_of']),
+            models.Index(fields=['primary_regime', '-as_of']),
+        ]
+
+    def __str__(self):
+        return f'{self.as_of}: {self.primary_regime}'
+
+
+class MacroScenario(models.Model):
+    """基本・上振れ・下振れのシナリオと反証条件。"""
+
+    class Name(models.TextChoices):
+        BASELINE = 'baseline', '基本'
+        UPSIDE = 'upside', '上振れ'
+        DOWNSIDE = 'downside', '下振れ'
+
+    class NikkeiBias(models.TextChoices):
+        LONG = 'long', '上昇支援'
+        SHORT = 'short', '下落圧力'
+        NEUTRAL = 'neutral', '中立'
+
+    run = models.ForeignKey(
+        MacroForecastRun,
+        on_delete=models.CASCADE,
+        related_name='scenarios',
+    )
+    name = models.CharField(max_length=32, choices=Name.choices)
+    probability = models.FloatField()
+    growth_view = models.TextField()
+    inflation_view = models.TextField()
+    policy_view = models.TextField()
+    market_view = models.TextField()
+    nikkei_bias = models.CharField(
+        max_length=16,
+        choices=NikkeiBias.choices,
+        default=NikkeiBias.NEUTRAL,
+    )
+    key_drivers = models.JSONField(default=list, blank=True)
+    invalidation_triggers = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['run', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['run', 'name'],
+                name='uq_macro_scenario_run_name',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['name', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.run.as_of} {self.name}: {self.probability:.0%}'
+
+
+class MacroForecastOutcome(models.Model):
+    """保存済み予測が後からどれだけ当たったかを記録する。"""
+
+    forecast = models.ForeignKey(
+        ForecastSnapshot,
+        on_delete=models.CASCADE,
+        related_name='macro_outcomes',
+    )
+    target_date = models.DateField()
+    target_name = models.CharField(max_length=64)
+    predicted_value = models.FloatField(null=True, blank=True)
+    predicted_prob = models.FloatField(null=True, blank=True)
+    actual_value = models.FloatField(null=True, blank=True)
+    brier_score = models.FloatField(null=True, blank=True)
+    absolute_error = models.FloatField(null=True, blank=True)
+    direction_hit = models.BooleanField(null=True, blank=True)
+    evaluated_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-target_date', '-evaluated_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['forecast', 'target_date', 'target_name'],
+                name='uq_macro_forecast_outcome_target',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['target_name', '-target_date']),
+            models.Index(fields=['forecast', 'target_name']),
+        ]
+
+    def __str__(self):
+        return f'{self.forecast_id} {self.target_name} @ {self.target_date}'
 
 
 class WorldStateSnapshot(models.Model):

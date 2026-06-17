@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone as dt_timezone
 
 from django.core.cache import cache
@@ -7,21 +6,8 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .anchor_snapshot import (
-    DEFAULT_ERP_METHOD,
-    DEFAULT_GROWTH_CORE_RATIO,
-    DEFAULT_GROWTH_WIDE_RATIO,
-    calculate_erp_fixed,
-    calculate_growth_center_percent,
-    calculate_valuation_label,
-    load_anchor_snapshot,
-    normalize_erp_method,
-    normalize_growth_percent,
-    normalize_ratio,
-)
-from .market_shock import build_market_shock_context
+from .intermarket_technicals import get_intermarket_technical_snapshot
 from .market_bars import attach_saved_daily_bars
-from .market_context import calculate_context_score, get_market_context_snapshot
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
@@ -40,9 +26,7 @@ from .services.decision_context import (
 from .snapshot import load_basecalc_snapshot
 from .status import load_basecalc_status, status_display_rows
 from .status import (
-    external_market_status_entry,
-    jgb_status_entry,
-    per_status_entry,
+    intermarket_status_entry,
     price_status_entry,
 )
 from .world_model import build_world_model
@@ -52,8 +36,8 @@ CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
 CACHE_KEY_FUTURES = "nikkei_futures_snapshot"
 CACHE_KEY_FUTURES_LAST_GOOD = "nikkei_futures_snapshot_last_good"
-CACHE_KEY_MARKET_CONTEXT = "basecalc_market_context"
-CACHE_KEY_MARKET_CONTEXT_FETCHED_AT = "basecalc_market_context_fetched_at"
+CACHE_KEY_INTERMARKET_CONTEXT = "basecalc_intermarket_technicals"
+CACHE_KEY_INTERMARKET_FETCHED_AT = "basecalc_intermarket_technicals_fetched_at"
 CACHE_KEY_JGB = "nikkei_jgb10y_yield_percent"
 CACHE_KEY_DIVIDEND_INDEX = "nikkei_dividend_yield_index"
 CACHE_KEY_PER_FETCHED_AT = "nikkei_per_fetched_at"
@@ -215,7 +199,6 @@ def history(request):
 def build_context(request, force_update=False):
     params = request.POST if force_update else request.GET
     can_update_basecalc_data = request.user.is_authenticated and request.user.is_staff
-    forward_per = cache.get(CACHE_KEY_FWD)
     price_override = normalize_price(parse_float_param(params.get("price")))
     futures_snapshot = get_cached_futures_snapshot()
     price = (
@@ -225,20 +208,15 @@ def build_context(request, force_update=False):
     )
     if price_override is None and price is None:
         price = price_from_futures_snapshot(futures_snapshot)
-    jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
-    dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
 
     if force_update:
-        forward_per, jgb10y_yield_percent, dividend_yield_index_percent, futures_snapshot, price = update_market_caches(
-            forward_per,
-            jgb10y_yield_percent,
-            dividend_yield_index_percent,
+        futures_snapshot, price = update_market_caches(
             price,
             update_price_from_futures=price_override is None,
         )
-        market_context = update_market_context_cache()
+        intermarket_context = update_intermarket_technical_cache()
     else:
-        market_context = get_cached_market_context()
+        intermarket_context = get_cached_intermarket_technical_context()
 
     if price_override is not None:
         price = price_override
@@ -246,88 +224,18 @@ def build_context(request, force_update=False):
     elif force_update and price is not None:
         cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
 
-    if forward_per is None:
-        forward_per = 0.0
     if price is None:
         price = 0.0
-    if jgb10y_yield_percent is None:
-        jgb10y_yield_percent = 0.0
-
-    anchor_snapshot = load_anchor_snapshot()
-    anchor_enabled = anchor_snapshot is not None
-    default_erp_method = (
-        anchor_snapshot.get("erp_method", DEFAULT_ERP_METHOD)
-        if anchor_enabled
-        else DEFAULT_ERP_METHOD
-    )
-    erp_method = normalize_erp_method(params.get("erp_method", default_erp_method))
-    erp_growth_input, erp_growth_percent = normalize_growth_input(
-        params,
-        erp_method,
-        anchor_snapshot,
-        anchor_enabled,
-    )
-    growth_core_ratio, growth_wide_ratio = normalize_growth_ratios(
-        params,
-        anchor_snapshot,
-        anchor_enabled,
-    )
-
-    calc_price = anchor_snapshot.get("anchor_price") if anchor_enabled else price
-    calc_forward_per = anchor_snapshot.get("forward_per") if anchor_enabled else forward_per
-    calc_jgb10y_yield_percent = (
-        anchor_snapshot.get("jgb10y_yield_percent")
-        if anchor_enabled
-        else jgb10y_yield_percent
-    )
-    calc_dividend_yield_index_percent = (
-        anchor_snapshot.get("dividend_yield_index_percent")
-        if anchor_enabled
-        else dividend_yield_index_percent
-    )
-    erp_fixed = calculate_erp_fixed(
-        erp_method,
-        calc_forward_per,
-        calc_jgb10y_yield_percent,
-        calc_dividend_yield_index_percent,
-        erp_growth_percent,
-    )
-    growth_center_percent = calculate_growth_center_percent(
-        erp_method,
-        erp_growth_percent,
-    )
-
-    data = calculate_bias(
-        calc_price,
-        calc_forward_per,
-        dividend_yield_index_percent=calc_dividend_yield_index_percent,
-        jgb10y_yield_percent=calc_jgb10y_yield_percent,
-        erp_fixed=erp_fixed,
-        growth_center_percent=growth_center_percent,
-        growth_core_ratio=growth_core_ratio,
-        growth_wide_ratio=growth_wide_ratio,
-    )
-    data = decorate_valuation_data(
-        data,
-        price,
-        calc_forward_per,
-        calc_jgb10y_yield_percent,
-        calc_dividend_yield_index_percent,
-        anchor_snapshot,
-        anchor_enabled,
-    )
 
     futures_snapshot = attach_saved_daily_bars(futures_snapshot)
-    world_model = build_world_model(price, futures_snapshot, market_context)
+    world_model = build_world_model(price, futures_snapshot, intermarket_context)
     basecalc_status = _status_with_current_values(
         load_basecalc_status(),
         futures_snapshot=futures_snapshot,
         world_model=world_model,
-        forward_per=forward_per,
-        dividend_yield_index_percent=dividend_yield_index_percent,
-        jgb10y_yield_percent=jgb10y_yield_percent,
-        market_context=market_context,
+        intermarket_context=intermarket_context,
     )
+    data = build_technical_data(price)
     data["world_model"] = world_model
     data.update(world_model)
     performance = performance_summary("1d")
@@ -342,7 +250,7 @@ def build_context(request, force_update=False):
         evaluate_due_predictions(price)
         save_prediction(world_model)
 
-    market_shock_context = build_market_shock_context()
+    market_shock_context = {"has_data": False}
     basecalc_status_rows = status_display_rows(basecalc_status, world_model)
     decision = build_basecalc_decision_context(
         world_model,
@@ -356,7 +264,7 @@ def build_context(request, force_update=False):
         "decision": decision,
         "world_model": world_model,
         "market_shock": market_shock_context,
-        "market_context": world_model.get("market_context") or {},
+        "intermarket_technicals": world_model.get("intermarket_technicals") or {},
         "basecalc_status": basecalc_status,
         "basecalc_status_rows": basecalc_status_rows,
         "performance": performance,
@@ -364,11 +272,7 @@ def build_context(request, force_update=False):
         "backtest_performance_by_horizon": backtest_performance_by_horizon,
         "detail_mode": request.GET.get("detail") == "1",
         "updated": force_update,
-        "erp_method": erp_method,
-        "erp_growth_input": erp_growth_input,
         "price_param": format_price_param(price),
-        "growth_core_ratio_input": f"{growth_core_ratio:.1f}",
-        "growth_wide_ratio_input": f"{growth_wide_ratio:.1f}",
         "can_update_basecalc_data": can_update_basecalc_data,
     }
 
@@ -378,10 +282,7 @@ def _status_with_current_values(
     *,
     futures_snapshot,
     world_model,
-    forward_per,
-    dividend_yield_index_percent,
-    jgb10y_yield_percent,
-    market_context,
+    intermarket_context,
 ):
     status = dict(base_status or {})
     status.update(
@@ -390,74 +291,25 @@ def _status_with_current_values(
                 futures_snapshot,
                 world_model.get("readiness_level"),
             ),
-            "per": per_status_entry(
-                cache.get(CACHE_KEY_PER_LATEST_VALUES)
-                or {
-                    "index_based": forward_per,
-                    "dividend_yield_index_based": dividend_yield_index_percent,
-                },
-                success=forward_per is not None
-                or dividend_yield_index_percent is not None,
-            ),
-            "jgb": jgb_status_entry(
-                jgb10y_yield_percent,
-                success=jgb10y_yield_percent is not None,
-            ),
-            "external_market": external_market_status_entry(market_context),
+            "intermarket": intermarket_status_entry(intermarket_context),
         }
     )
     return status
 
 
 def update_market_caches(
-    forward_per,
-    jgb10y_yield_percent,
-    dividend_yield_index_percent,
     price,
     update_price_from_futures=False,
 ):
-    with ThreadPoolExecutor() as executor:
-        futures = {
-            "per_values": executor.submit(get_nikkei_per_values_for_update),
-            "jgb": executor.submit(get_jgb10y_yield_for_update),
-        }
-
-        per_vals = futures["per_values"].result()
-        if per_vals:
-            if per_vals.get("index_based"):
-                forward_per = per_vals["index_based"]
-                cache.set(CACHE_KEY_FWD, forward_per, timeout=None)
-            if per_vals.get("dividend_yield_index_based") is not None:
-                dividend_yield_index_percent = per_vals[
-                    "dividend_yield_index_based"
-                ]
-                cache.set(
-                    CACHE_KEY_DIVIDEND_INDEX,
-                    dividend_yield_index_percent,
-                    timeout=None,
-                )
-
-        val = futures["jgb"].result()
-        if val is not None:
-            jgb10y_yield_percent = val
-            cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=CACHE_TTL_JGB)
-
-        futures_snapshot = get_cached_futures_snapshot()
-        snapshot_price = price_from_futures_snapshot(futures_snapshot)
-        if isinstance(futures_snapshot, dict):
-            cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
-            cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
-        if update_price_from_futures and snapshot_price is not None:
-            price = snapshot_price
-            cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
-
-    return (
-        forward_per,
-        jgb10y_yield_percent,
-        dividend_yield_index_percent,
-        futures_snapshot,
-        price,
-    )
+    futures_snapshot = get_cached_futures_snapshot()
+    snapshot_price = price_from_futures_snapshot(futures_snapshot)
+    if isinstance(futures_snapshot, dict):
+        cache.set(CACHE_KEY_FUTURES, futures_snapshot, timeout=CACHE_TTL_PRICE)
+        cache.set(CACHE_KEY_FUTURES_LAST_GOOD, futures_snapshot, timeout=None)
+    if update_price_from_futures and snapshot_price is not None:
+        price = snapshot_price
+        cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
+    return futures_snapshot, price
 
 
 def get_cached_futures_snapshot():
@@ -484,24 +336,24 @@ def get_futures_snapshot_for_update():
     return snapshot
 
 
-def get_cached_market_context():
-    context = cache.get(CACHE_KEY_MARKET_CONTEXT)
+def get_cached_intermarket_technical_context():
+    context = cache.get(CACHE_KEY_INTERMARKET_CONTEXT)
     if isinstance(context, dict):
         return context
     latest_prediction = (
         WorldModelPrediction.objects.exclude(context={}).order_by("-created_at").first()
     )
     if latest_prediction and isinstance(latest_prediction.context, dict):
-        return latest_prediction.context
-    return calculate_context_score({})
+        saved = latest_prediction.context
+        if "confirmation_score" in saved:
+            return saved
+    return get_intermarket_technical_snapshot()
 
 
-def update_market_context_cache():
-    context = get_market_context_snapshot()
-    if not context:
-        context = calculate_context_score({})
-    cache.set(CACHE_KEY_MARKET_CONTEXT, context, timeout=CACHE_TTL_JGB)
-    cache.set(CACHE_KEY_MARKET_CONTEXT_FETCHED_AT, timezone.now(), timeout=None)
+def update_intermarket_technical_cache():
+    context = get_intermarket_technical_snapshot()
+    cache.set(CACHE_KEY_INTERMARKET_CONTEXT, context, timeout=CACHE_TTL_JGB)
+    cache.set(CACHE_KEY_INTERMARKET_FETCHED_AT, timezone.now(), timeout=None)
     return context
 
 
@@ -570,6 +422,13 @@ def timestamp_needs_refresh(fetched_at, min_interval_sec, now=None):
     return (now - fetched_at).total_seconds() >= min_interval_sec
 
 
+def build_technical_data(price):
+    return {
+        "price": round(price, 0) if price else 0,
+        "price_display": format_price(price, decimals=0),
+    }
+
+
 def get_stale_futures_snapshot():
     snapshot = cache.get(CACHE_KEY_FUTURES_LAST_GOOD)
     if isinstance(snapshot, dict):
@@ -611,111 +470,6 @@ def get_stale_futures_snapshot():
         "is_stale": is_stale,
         "fallback_reason": "saved_snapshot",
     })
-
-
-def normalize_growth_input(params, erp_method, anchor_snapshot, anchor_enabled):
-    growth_param = params.get("erp_growth")
-    default_growth_percent = (
-        anchor_snapshot.get("erp_growth_percent") if anchor_enabled else None
-    )
-    growth_value = (
-        parse_float_param(growth_param)
-        if growth_param is not None
-        else default_growth_percent
-    )
-    erp_growth_percent = normalize_growth_percent(growth_value, erp_method)
-    erp_growth_input = None
-    if erp_method == "method_b" and erp_growth_percent is not None:
-        erp_growth_input = f"{erp_growth_percent:.1f}"
-    return erp_growth_input, erp_growth_percent
-
-
-def normalize_growth_ratios(params, anchor_snapshot, anchor_enabled):
-    default_growth_core_ratio = (
-        anchor_snapshot.get("growth_core_ratio", DEFAULT_GROWTH_CORE_RATIO)
-        if anchor_enabled
-        else DEFAULT_GROWTH_CORE_RATIO
-    )
-    default_growth_wide_ratio = (
-        anchor_snapshot.get("growth_wide_ratio", DEFAULT_GROWTH_WIDE_RATIO)
-        if anchor_enabled
-        else DEFAULT_GROWTH_WIDE_RATIO
-    )
-    growth_core_ratio = normalize_ratio(
-        parse_float_param(params.get("growth_core_ratio")),
-        default_value=default_growth_core_ratio,
-    )
-    growth_wide_ratio = normalize_ratio(
-        parse_float_param(params.get("growth_wide_ratio")),
-        default_value=default_growth_wide_ratio,
-    )
-    return growth_core_ratio, growth_wide_ratio
-
-
-def decorate_valuation_data(
-    data,
-    price,
-    calc_forward_per,
-    calc_jgb10y_yield_percent,
-    calc_dividend_yield_index_percent,
-    anchor_snapshot,
-    anchor_enabled,
-):
-    data["price"] = round(price, 0)
-    data["forward_per"] = calc_forward_per
-    data["jgb10y_yield_percent"] = calc_jgb10y_yield_percent
-    data["dividend_yield_index_percent"] = calc_dividend_yield_index_percent
-    data["valuation_label"] = calculate_valuation_label(
-        price,
-        data.get("fair_price_core_low"),
-        data.get("fair_price_core_high"),
-        data.get("fair_price_wide_low"),
-        data.get("fair_price_wide_high"),
-    )
-    fair_price_mid = data.get("fair_price_mid")
-    data["fair_price_gap_pct"] = (
-        round(((price - fair_price_mid) / fair_price_mid) * 100.0, 2)
-        if fair_price_mid
-        else None
-    )
-    data["price_display"] = format_price(data.get("price"), decimals=0)
-    data["fair_price_gap_pct_display"] = format_percent(data.get("fair_price_gap_pct"))
-    data["valuation_class"] = valuation_class(data.get("valuation_label"))
-    data["fair_price_gap_class"] = gap_class(data.get("fair_price_gap_pct"))
-    data["forward_eps_display"] = format_price(data.get("forward_eps"), decimals=2)
-    data["fair_price_core_low_display"] = format_price(
-        data.get("fair_price_core_low"),
-        decimals=0,
-    )
-    data["fair_price_core_high_display"] = format_price(
-        data.get("fair_price_core_high"),
-        decimals=0,
-    )
-    data["fair_price_wide_low_display"] = format_price(
-        data.get("fair_price_wide_low"),
-        decimals=0,
-    )
-    data["fair_price_wide_high_display"] = format_price(
-        data.get("fair_price_wide_high"),
-        decimals=0,
-    )
-    if anchor_enabled:
-        data["anchor_status_display"] = "ACTIVE"
-        data["anchor_date_display"] = str(anchor_snapshot.get("anchor_date") or "")
-        data["anchor_price_display"] = format_price(
-            anchor_snapshot.get("anchor_price"),
-            decimals=0,
-        )
-        data["anchor_forward_per_display"] = format_price(
-            anchor_snapshot.get("forward_per"),
-            decimals=2,
-        )
-    else:
-        data["anchor_status_display"] = "NOT SET"
-        data["anchor_date_display"] = ""
-        data["anchor_price_display"] = ""
-        data["anchor_forward_per_display"] = ""
-    return data
 
 
 def _prediction_history_row(prediction, horizon):
@@ -857,30 +611,12 @@ def format_percent(value):
         return ""
 
 
-def valuation_class(label):
-    if label in ("Over", "Over +"):
-        return "value text-red"
-    if label in ("Under", "Deep Under"):
-        return "value text-green"
-    if label == "Fair":
-        return "value text-blue"
-    return "value text-muted"
-
-
-def gap_class(value):
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError):
-        return "value text-muted"
-    if numeric > 0:
-        return "value text-red"
-    if numeric < 0:
-        return "value text-green"
-    return "value text-blue"
-
-
 def _parse_date(value):
     if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
         return None
 
 
@@ -888,7 +624,3 @@ def _parse_bool(value, default=None):
     if value in (None, ""):
         return default
     return str(value).lower() in {"1", "true", "yes", "on"}
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except ValueError:
-        return None

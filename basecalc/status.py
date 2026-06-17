@@ -2,19 +2,11 @@ import datetime
 import json
 from pathlib import Path
 
-from django.core.cache import cache
 from django.utils import timezone
 
-from .nikkei_bias import (
-    MOF_JGB10Y_CSV_URL,
-    NIKKEI_PER_DATA_PATH,
-)
-
-
 BASECALC_STATUS_PATH = Path(__file__).resolve().parent / "data" / "basecalc_status.json"
-CACHE_KEY_JGB_FETCHED_AT = "nikkei_jgb10y_fetched_at"
 
-STATUS_KEYS = ("price_data", "per", "jgb", "external_market")
+STATUS_KEYS = ("price_data", "intermarket")
 
 STATUS_LABELS = {
     "ready": "判定可能",
@@ -80,58 +72,23 @@ def price_status_entry(snapshot, readiness_level="blocked", now=None):
     }
 
 
-def per_status_entry(values=None, success=True, now=None):
+def intermarket_status_entry(intermarket_context=None, now=None):
     now = now or timezone.now()
-    values = values if isinstance(values, dict) else {}
-    payload = _load_json(NIKKEI_PER_DATA_PATH)
-    fetched_at = _parse_datetime(values.get("fetched_at")) or _parse_datetime((payload or {}).get("fetched_at"))
-    date_value = values.get("date") or (payload or {}).get("date")
-    age_days = _age_days_from_date(date_value, now)
-    has_values = bool(values) or bool(payload)
-    return {
-        "last_success_at": _iso(fetched_at or now) if success and has_values else None,
-        "last_failed_at": None if success else _iso(now),
-        "source": values.get("source") or (payload or {}).get("source") or "basecalc/data/nikkei_per.json",
-        "age_minutes": _age_minutes(fetched_at, now),
-        "age_days": age_days,
-        "as_of_date": date_value,
-        "fallback_used": False,
-        "decision_level": "limited" if has_values else "blocked",
-        "decision_label": "参考" if has_values else "停止",
-    }
-
-
-def jgb_status_entry(value=None, success=True, now=None):
-    now = now or timezone.now()
-    fetched_at = cache.get(CACHE_KEY_JGB_FETCHED_AT)
-    if success and value is not None and not fetched_at:
-        fetched_at = now
-    return {
-        "last_success_at": _iso(fetched_at) if success and value is not None else None,
-        "last_failed_at": None if success and value is not None else _iso(now),
-        "source": MOF_JGB10Y_CSV_URL,
-        "age_minutes": _age_minutes(fetched_at, now),
-        "fallback_used": False,
-        "decision_level": "limited" if value is not None else "blocked",
-        "decision_label": "参考" if value is not None else "停止",
-    }
-
-
-def external_market_status_entry(market_context=None, now=None):
-    now = now or timezone.now()
-    context = market_context if isinstance(market_context, dict) else {}
-    assets = context.get("assets") if isinstance(context.get("assets"), dict) else {}
+    context = intermarket_context if isinstance(intermarket_context, dict) else {}
+    components = context.get("components") if isinstance(context.get("components"), dict) else {}
+    readiness = context.get("readiness") if isinstance(context.get("readiness"), dict) else {}
     fetched_at = _parse_datetime(context.get("fetched_at"))
-    success = bool(assets)
+    success = bool(components)
+    level = readiness.get("level") or ("ready" if success else "blocked")
     return {
         "last_success_at": _iso(fetched_at or now) if success else None,
         "last_failed_at": None if success else _iso(now),
-        "source": "yahoo",
+        "source": "NQ=F / ES=F / YM=F",
         "age_minutes": _age_minutes(fetched_at or now, now) if success else None,
         "fallback_used": False,
-        "asset_count": len(assets),
-        "decision_level": "limited" if success else "blocked",
-        "decision_label": "参考" if success else "停止",
+        "asset_count": len(components),
+        "decision_level": level,
+        "decision_label": STATUS_LABELS.get(level, "停止"),
     }
 
 
@@ -140,9 +97,7 @@ def status_display_rows(status, world_model=None):
     rows = []
     for key, label in (
         ("price_data", "価格データ"),
-        ("per", "PER"),
-        ("jgb", "JGB"),
-        ("external_market", "外部市場"),
+        ("intermarket", "米国3指数確認"),
     ):
         entry = status.get(key) if isinstance(status.get(key), dict) else {}
         if key == "price_data" and isinstance(world_model, dict):
@@ -183,17 +138,8 @@ def _empty_status():
         "schema": "basecalc_status_v1",
         "updated_at": None,
         "price_data": {},
-        "per": {},
-        "jgb": {},
-        "external_market": {},
+        "intermarket": {},
     }
-
-
-def _load_json(path):
-    try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
 
 
 def _source_label(source, symbol):
@@ -219,17 +165,6 @@ def _parse_datetime(value):
     return timestamp
 
 
-def _parse_payload_date(value):
-    if not value:
-        return None
-    for fmt in ("%Y.%m.%d", "%Y-%m-%d", "%Y/%m/%d"):
-        try:
-            return datetime.datetime.strptime(str(value), fmt).date()
-        except ValueError:
-            continue
-    return None
-
-
 def _age_minutes(timestamp, now):
     timestamp = _parse_datetime(timestamp)
     if timestamp is None:
@@ -239,16 +174,7 @@ def _age_minutes(timestamp, now):
     return max(0, int((now - timestamp).total_seconds() // 60))
 
 
-def _age_days_from_date(value, now):
-    parsed = _parse_payload_date(value)
-    if parsed is None:
-        return None
-    return max(0, (timezone.localdate(now) - parsed).days)
-
-
 def _display_age(key, entry):
-    if key == "per" and entry.get("age_days") is not None:
-        return f"{entry['age_days']}日前"
     minutes = entry.get("age_minutes")
     if minutes is None:
         return "不明"

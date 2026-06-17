@@ -6,7 +6,7 @@ def build_basecalc_decision_context(
 ):
     world_model = world_model or {}
     market_shock = market_shock or {}
-    market_context = world_model.get("market_context") or {}
+    intermarket = world_model.get("us_index_confirmation") or world_model.get("intermarket_technicals") or {}
     data_quality = world_model.get("data_quality") or {}
     readiness_display = world_model.get("readiness_display") or {}
 
@@ -33,7 +33,7 @@ def build_basecalc_decision_context(
         "invalidation": world_model.get("invalidation_display"),
         "range_1d": _primary_range(world_model.get("target_ranges")),
         "market_stress": _market_stress_summary(world_model, market_shock),
-        "external_market": _external_market_summary(market_context),
+        "us_index_confirmation": _us_index_confirmation_summary(intermarket),
         "status_summary": _status_summary(status_rows),
         "can_show_prediction": can_show_prediction(world_model, performance),
         "prediction_stop_reasons": prediction_stop_reasons(world_model, performance),
@@ -44,6 +44,7 @@ def enrich_basecalc_context(context):
     if not isinstance(context, dict):
         return context
     world_model = context.get("world_model") or {}
+    _ensure_intermarket_display_defaults(world_model)
     market_shock = context.get("market_shock") or {}
     status_rows = context.get("basecalc_status_rows") or []
     context["decision"] = build_basecalc_decision_context(
@@ -55,6 +56,53 @@ def enrich_basecalc_context(context):
     )
     context.setdefault("detail_mode", False)
     return context
+
+
+def _ensure_intermarket_display_defaults(world_model):
+    if not isinstance(world_model, dict):
+        return
+    intermarket = world_model.get("us_index_confirmation") or world_model.get("intermarket_technicals") or {}
+    if not intermarket:
+        intermarket = {
+            "confirmation_score": 0,
+            "confirmation_label": "mixed",
+            "risk_label": "technical_confirm",
+            "components": {},
+            "evidence": ["米国3指数データ待ち"],
+            "readiness": {
+                "level": "blocked",
+                "usable": False,
+                "reason": "米国3指数データなし",
+            },
+        }
+    world_model.setdefault("us_index_confirmation", intermarket)
+    world_model.setdefault("intermarket_technicals", intermarket)
+    world_model.setdefault("primary_setup_label", world_model.get("state_label") or "状態確認中")
+    world_model.setdefault("primary_setup", "range_wait")
+    world_model.setdefault("technical_regime", world_model.get("state_key") or "range")
+    world_model.setdefault("chase_risk", "unknown")
+    if not world_model.get("scenarios"):
+        world_model["scenarios"] = {
+            "baseline": {
+                "text": world_model.get("main_scenario") or "日経先物テクニカルを確認中です。",
+            },
+            "upside": {
+                "text": "日経先物の上値抵抗ゾーン突破を確認します。",
+            },
+            "downside": {
+                "text": "日経先物の下値支持ゾーン割れを確認します。",
+            },
+        }
+    if not world_model.get("horizons"):
+        direction = world_model.get("direction") or "neutral"
+        main_bias = "up" if direction == "up" else "down" if direction == "down" else "range"
+        world_model["horizons"] = {
+            horizon: {
+                "main_bias": main_bias,
+                "setup_label": world_model.get("primary_setup_label") or "",
+            }
+            for horizon in ("1d", "3d", "5d")
+        }
 
 
 def can_show_prediction(world_model, performance=None):
@@ -116,9 +164,9 @@ def _top_risk(world_model, market_shock):
         reasons.append("突発性")
     if market_shock.get("has_data") and market_shock.get("tone") == "negative":
         reasons.append(market_shock.get("summary") or "外部市場ストレス")
-    market_context = world_model.get("market_context") or {}
-    if market_context.get("risk_label") == "risk_off":
-        reasons.append("外部市場ストレス")
+    intermarket = world_model.get("us_index_confirmation") or {}
+    if intermarket.get("confirmation_label") in {"confirm_down", "divergent"}:
+        reasons.append("米国3指数確認が弱い")
     return reasons[:3] or ["目立つ警戒点は限定的です"]
 
 
@@ -155,34 +203,36 @@ def _market_stress_summary(world_model, market_shock):
     reasons = []
     if market_shock.get("has_data") and market_shock.get("summary"):
         reasons.append(market_shock["summary"])
-    market_context = world_model.get("market_context") or {}
-    reasons.extend(market_context.get("evidence") or [])
+    intermarket = world_model.get("us_index_confirmation") or {}
+    reasons.extend(intermarket.get("evidence") or [])
     return {
         "label": label,
         "reasons": reasons[:2] or ["主要3指数に急変判定は出ていません。"],
-        "impact": _market_impact_label(market_context.get("risk_label")),
+        "impact": _market_impact_label(intermarket.get("confirmation_label")),
     }
 
 
-def _external_market_summary(market_context):
-    market_context = market_context or {}
-    risk_label = market_context.get("risk_label")
+def _us_index_confirmation_summary(intermarket):
+    intermarket = intermarket or {}
+    label = intermarket.get("confirmation_label")
     return {
         "label": {
-            "risk_on": "やや追い風",
-            "risk_off": "やや逆風",
-            "neutral": "中立",
-        }.get(risk_label, "データ待ち"),
-        "reasons": (market_context.get("evidence") or ["外部市場データ待ち"])[:2],
+            "confirm_up": "上昇確認",
+            "confirm_down": "下落確認",
+            "divergent": "方向分裂",
+            "mixed": "まちまち",
+        }.get(label, "データ待ち"),
+        "reasons": (intermarket.get("evidence") or ["米国3指数データ待ち"])[:2],
     }
 
 
-def _market_impact_label(risk_label):
+def _market_impact_label(confirmation_label):
     return {
-        "risk_on": "追い風",
-        "risk_off": "逆風",
-        "neutral": "中立",
-    }.get(risk_label, "中立")
+        "confirm_up": "確認",
+        "confirm_down": "警戒",
+        "divergent": "警戒",
+        "mixed": "中立",
+    }.get(confirmation_label, "中立")
 
 
 def _readiness_label(level):

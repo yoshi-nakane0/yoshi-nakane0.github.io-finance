@@ -20,6 +20,8 @@ from django.utils import timezone
 from ..models import (
     ForecastSnapshot,
     Indicator,
+    MacroForecastOutcome,
+    MacroForecastRun,
     ModelValidationReport,
     Observation,
     PriceObservation,
@@ -1763,6 +1765,117 @@ def build_model_validation_context() -> Dict:
     return {
         'rows': rows,
         'has_rows': bool(rows),
+    }
+
+
+def build_macro_forecast_report_context() -> Dict:
+    run = (
+        MacroForecastRun.objects
+        .prefetch_related('scenarios')
+        .order_by('-as_of')
+        .first()
+    )
+    if run is None:
+        return {}
+    report = run.report or {}
+    scenarios = []
+    for scenario in run.scenarios.all():
+        scenarios.append({
+            'name': scenario.get_name_display(),
+            'name_key': scenario.name,
+            'probability_display': f'{scenario.probability * 100:.0f}%',
+            'growth_view': scenario.growth_view,
+            'inflation_view': scenario.inflation_view,
+            'policy_view': scenario.policy_view,
+            'market_view': scenario.market_view,
+            'nikkei_bias': scenario.get_nikkei_bias_display(),
+            'key_drivers': scenario.key_drivers,
+            'invalidation_triggers': scenario.invalidation_triggers,
+        })
+    axes = []
+    for key, axis in (run.state_vector.get('axes') or {}).items():
+        axes.append({
+            'key': key,
+            'label': axis.get('label'),
+            'score_display': f"{axis.get('score', 0):.0f}%",
+        })
+    return {
+        'as_of': run.as_of.isoformat(),
+        'primary_regime': run.primary_regime,
+        'previous_regime': run.previous_regime,
+        'confidence_display': f'{run.confidence:.0f}%',
+        'data_quality_display': f'{run.data_quality_score:.0f}%',
+        'headline': report.get('headline') or '',
+        'judgment': report.get('judgment') or '',
+        'nikkei_implication': report.get('nikkei_implication') or '',
+        'axes': axes,
+        'scenarios': scenarios,
+        'warnings': run.warnings or [],
+        'model_version': run.model_version,
+    }
+
+
+def build_macro_outcome_validation_context() -> Dict:
+    cutoff = timezone.localdate() - timedelta(days=90)
+    outcomes = list(
+        MacroForecastOutcome.objects
+        .filter(target_date__gte=cutoff)
+        .select_related('forecast')
+        .order_by('-target_date', '-evaluated_at')[:50]
+    )
+    if not outcomes:
+        return {}
+
+    hit_values = [
+        outcome.direction_hit for outcome in outcomes
+        if outcome.direction_hit is not None
+    ]
+    brier_values = [
+        outcome.brier_score for outcome in outcomes
+        if outcome.brier_score is not None
+    ]
+    direction_accuracy = (
+        sum(1 for value in hit_values if value) / len(hit_values)
+        if hit_values else None
+    )
+    avg_brier = (
+        sum(float(value) for value in brier_values) / len(brier_values)
+        if brier_values else None
+    )
+    rows = []
+    for outcome in outcomes[:8]:
+        rows.append({
+            'target_date': outcome.target_date.isoformat(),
+            'target_name': outcome.target_name,
+            'predicted_prob_display': (
+                f'{outcome.predicted_prob * 100:.0f}%'
+                if outcome.predicted_prob is not None else '—'
+            ),
+            'actual_value_display': (
+                f'{outcome.actual_value:.0f}'
+                if outcome.actual_value is not None else '—'
+            ),
+            'brier_score_display': (
+                f'{outcome.brier_score:.3f}'
+                if outcome.brier_score is not None else '—'
+            ),
+            'direction_hit_display': (
+                '的中' if outcome.direction_hit is True
+                else '外れ' if outcome.direction_hit is False
+                else '—'
+            ),
+            'model_version': outcome.forecast.model_version,
+        })
+    return {
+        'period_label': '過去90日',
+        'total_count': len(outcomes),
+        'direction_accuracy_display': (
+            f'{direction_accuracy * 100:.0f}%' if direction_accuracy is not None else '—'
+        ),
+        'avg_brier_score_display': (
+            f'{avg_brier:.3f}' if avg_brier is not None else '—'
+        ),
+        'rows': rows,
     }
 
 

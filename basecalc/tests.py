@@ -18,6 +18,11 @@ from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
 from .futures_sentiment import calculate_futures_sentiment
 from .indicators import calculate_atr, calculate_ema, calculate_macd, calculate_rsi
+from .intermarket_technicals import (
+    US_INDEX_SYMBOLS,
+    build_us_index_technical_context,
+    evaluate_intermarket_readiness,
+)
 from . import market_shock, nikkei_bias
 from .backtesting import run_basecalc_backtest
 from .market_context import (
@@ -35,14 +40,16 @@ from .outcomes import (
     confidence_adjustment_for_state,
     evaluate_due_predictions,
     improvement_insights,
+    intermarket_comparison_summary,
     performance_summary,
     save_prediction,
     state_performance_summary,
 )
 from .persistence import export_basecalc_history, import_basecalc_history
 from .readiness import evaluate_world_model_readiness
+from .scoring import calculate_sentiment_score
 from .similarity import find_similar_cases
-from .status import per_status_entry, status_display_rows
+from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
 from .views import (
@@ -314,7 +321,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '過去検証')
         self.assertContains(response, '検証 600')
 
-    def test_staff_post_update_fetches_external_data(self):
+    def test_staff_post_update_does_not_fetch_valuation_data(self):
         user = User.objects.create_user(
             username='basecalc-staff',
             password='test-password',
@@ -335,6 +342,7 @@ class BasecalcUpdateSecurityTests(TestCase):
                 return_value=1.2,
             ) as jgb_yield,
             patch('basecalc.views.get_stale_futures_snapshot', return_value=None) as futures_snapshot,
+            patch('basecalc.views.get_intermarket_technical_snapshot', return_value={}),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -342,11 +350,11 @@ class BasecalcUpdateSecurityTests(TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        per_values.assert_called_once()
-        jgb_yield.assert_called_once()
+        per_values.assert_not_called()
+        jgb_yield.assert_not_called()
         self.assertGreaterEqual(futures_snapshot.call_count, 1)
-        self.assertEqual(cache.get('nikkei_forward_per'), 18.5)
-        self.assertEqual(cache.get('nikkei_jgb10y_yield_percent'), 1.2)
+        self.assertIsNone(cache.get('nikkei_forward_per'))
+        self.assertIsNone(cache.get('nikkei_jgb10y_yield_percent'))
         self.assertEqual(cache.get('nikkei_price'), 40000)
 
     def test_staff_post_update_caches_saved_futures_snapshot(self):
@@ -389,6 +397,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             ),
             patch('basecalc.views.get_jgb10y_yield_percent', return_value=1.2),
             patch('basecalc.views.get_stale_futures_snapshot', return_value=snapshot),
+            patch('basecalc.views.get_intermarket_technical_snapshot', return_value={}),
         ):
             response = self.client.post(
                 reverse('basecalc:index'),
@@ -834,8 +843,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         )
 
         with (
-            patch('basecalc.operations.get_nikkei_per_values_for_update', return_value={}),
-            patch('basecalc.operations.get_jgb10y_yield_for_update', return_value=None),
+            patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
             patch('basecalc.operations.write_basecalc_status'),
         ):
             result = refresh_basecalc_data(save=False, use_lock=False)
@@ -879,21 +887,22 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['index_based'], 18.5)
         self.assertEqual(result['dividend_yield_index_based'], 1.8)
 
-    def test_per_status_prefers_fetched_value_metadata_over_local_file(self):
-        status = per_status_entry(
+    def test_intermarket_status_uses_us_index_confirmation_readiness(self):
+        status = intermarket_status_entry(
             {
-                'index_based': 23.93,
-                'dividend_yield_index_based': 1.36,
-                'date': timezone.localdate().strftime('%Y.%m.%d'),
-                'source': 'remote-test',
+                'components': {
+                    'nasdaq100_futures': {'score': 30},
+                    'sp500_futures': {'score': 25},
+                    'dow_futures': {'score': 10},
+                },
+                'readiness': {'level': 'ready'},
                 'fetched_at': timezone.now(),
-            },
-            success=True,
+            }
         )
 
-        self.assertEqual(status['source'], 'remote-test')
-        self.assertEqual(status['age_days'], 0)
-        self.assertEqual(status['decision_level'], 'limited')
+        self.assertEqual(status['source'], 'NQ=F / ES=F / YM=F')
+        self.assertEqual(status['asset_count'], 3)
+        self.assertEqual(status['decision_level'], 'ready')
 
     def test_nikkei_per_values_prefers_newer_local_payload_over_old_remote(self):
         remote = {
@@ -1013,10 +1022,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         with TemporaryDirectory() as tmpdir:
             snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
             with (
-                patch('basecalc.operations.get_nikkei_per_values_for_update', return_value={}),
-                patch('basecalc.operations.get_jgb10y_yield_for_update', return_value=None),
                 patch('basecalc.operations.get_cached_futures_snapshot', return_value=_ready_snapshot()),
-                patch('basecalc.operations.get_market_context_snapshot', return_value={}),
+                patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
                 patch('basecalc.operations.write_basecalc_status'),
                 patch('basecalc.operations.save_prediction', return_value=None),
                 patch('basecalc.operations.evaluate_due_predictions', return_value=0),
@@ -1164,19 +1171,7 @@ class BasecalcAnchorSnapshotTests(TestCase):
         self.assertEqual(snapshot['dividend_yield_index_percent'], 1.48)
         self.assertEqual(snapshot['fair_price_mid'], 50339.0)
 
-    def test_view_compares_current_price_against_anchor_fair_range(self):
-        anchor_snapshot = {
-            'anchor_date': '2025.12',
-            'anchor_price': 50339,
-            'forward_per': 23.87,
-            'jgb10y_yield_percent': 2.236,
-            'dividend_yield_index_percent': 1.48,
-            'erp_method': 'method_a',
-            'erp_growth_percent': None,
-            'growth_core_ratio': 0.6,
-            'growth_wide_ratio': 0.7,
-        }
-
+    def test_view_keeps_basecalc_data_technical_without_anchor_valuation(self):
         from .views import build_context
 
         request = mock.Mock(
@@ -1184,28 +1179,16 @@ class BasecalcAnchorSnapshotTests(TestCase):
             POST={},
             user=mock.Mock(is_authenticated=False, is_staff=False),
         )
-        with patch('basecalc.views.load_anchor_snapshot', return_value=anchor_snapshot):
+        with patch('basecalc.views.get_intermarket_technical_snapshot', return_value={}):
             context = build_context(request)
 
         data = context['data']
         self.assertEqual(data['price'], 53000)
-        self.assertEqual(data['fair_price_mid'], 50339.0)
-        self.assertEqual(data['valuation_label'], 'Over +')
-        self.assertEqual(data['fair_price_gap_pct_display'], '+5.29%')
+        self.assertEqual(data['price_display'], '53,000')
+        self.assertNotIn('fair_price_mid', data)
+        self.assertNotIn('valuation_label', data)
 
-    def test_view_marks_current_price_inside_anchor_range_as_fair(self):
-        anchor_snapshot = {
-            'anchor_date': '2025.12',
-            'anchor_price': 50339,
-            'forward_per': 23.87,
-            'jgb10y_yield_percent': 2.236,
-            'dividend_yield_index_percent': 1.48,
-            'erp_method': 'method_a',
-            'erp_growth_percent': None,
-            'growth_core_ratio': 0.6,
-            'growth_wide_ratio': 0.7,
-        }
-
+    def test_view_does_not_emit_fair_value_label(self):
         from .views import build_context
 
         request = mock.Mock(
@@ -1213,10 +1196,11 @@ class BasecalcAnchorSnapshotTests(TestCase):
             POST={},
             user=mock.Mock(is_authenticated=False, is_staff=False),
         )
-        with patch('basecalc.views.load_anchor_snapshot', return_value=anchor_snapshot):
+        with patch('basecalc.views.get_intermarket_technical_snapshot', return_value={}):
             context = build_context(request)
 
-        self.assertEqual(context['data']['valuation_label'], 'Fair')
+        self.assertEqual(context['data']['price'], 50339)
+        self.assertNotIn('valuation_label', context['data'])
 
 
 class BasecalcFuturesSentimentTests(TestCase):
@@ -1481,6 +1465,119 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertEqual(result['assets']['sp500_futures']['source'], 'macro_price_action')
         self.assertGreater(result['risk_score'], 0)
 
+    def test_intermarket_readiness_blocks_when_all_three_us_indexes_missing(self):
+        result = evaluate_intermarket_readiness({'assets': {'vix': {'change_pct': -5.0}}})
+
+        self.assertEqual(result['level'], 'blocked')
+        self.assertFalse(result['usable'])
+        self.assertIn('米国3指数データなし', result['reason'])
+
+    def test_us_index_technical_context_uses_only_nasdaq_sp500_and_dow(self):
+        assets = {
+            'nasdaq100_futures': {
+                'symbol': 'NQ=F',
+                'price': 160,
+                'previous_close': 150,
+                'change_pct': 1.5,
+                'closes': [100, 110, 120, 130, 140, 150, 160],
+                'highs': [101, 111, 121, 131, 141, 151, 161],
+                'lows': [99, 109, 119, 129, 139, 149, 159],
+            },
+            'sp500_futures': {
+                'symbol': 'ES=F',
+                'price': 460,
+                'previous_close': 450,
+                'change_pct': 0.9,
+                'closes': [400, 410, 420, 430, 440, 450, 460],
+                'highs': [401, 411, 421, 431, 441, 451, 461],
+                'lows': [399, 409, 419, 429, 439, 449, 459],
+            },
+            'dow_futures': {
+                'symbol': 'YM=F',
+                'price': 360,
+                'previous_close': 350,
+                'change_pct': 0.4,
+                'closes': [320, 325, 330, 340, 345, 350, 360],
+                'highs': [321, 326, 331, 341, 346, 351, 361],
+                'lows': [319, 324, 329, 339, 344, 349, 359],
+            },
+            'usd_jpy': {'symbol': 'JPY=X', 'change_pct': 3.0},
+            'vix': {'symbol': '^VIX', 'change_pct': -12.0},
+            'crude_oil': {'symbol': 'CL=F', 'change_pct': -4.0},
+        }
+
+        result = build_us_index_technical_context(assets)
+
+        self.assertEqual(set(result['components'].keys()), set(US_INDEX_SYMBOLS.keys()))
+        self.assertEqual(result['risk_label'], 'technical_confirm')
+        self.assertGreaterEqual(result['confirmation_score'], 25)
+        self.assertIn(result['confirmation_label'], {'confirm_up', 'mixed'})
+        self.assertNotIn('usd_jpy', result['components'])
+        self.assertNotIn('vix', result['components'])
+
+    def test_sentiment_score_uses_us_index_confirmation_not_broad_market_context(self):
+        base_features = {
+            'price': 41000,
+            'ema5': 41200,
+            'ema20': 41100,
+            'ema60': 40500,
+            'vwap': 40900,
+            'macd': 120,
+            'macd_signal': 90,
+            'rsi14': 58,
+            'change_5d_pct': 1.0,
+            'daily_change_pct': 0.4,
+            'atr_ratio': 1.0,
+            'structure_bias': 1,
+            'indicator_validity': {
+                'ema20': True,
+                'ema60': True,
+                'vwap': True,
+                'macd': True,
+                'rsi14': True,
+                'atr14': True,
+            },
+            'data_quality': {'level': 'good', 'score': 90},
+        }
+
+        without_confirmation = calculate_sentiment_score({
+            **base_features,
+            'context_risk_score': -100,
+            'us_index_confirmation_score': 0,
+        })
+        with_confirmation = calculate_sentiment_score({
+            **base_features,
+            'context_risk_score': -100,
+            'us_index_confirmation_score': 60,
+        })
+
+        self.assertEqual(without_confirmation['external_context_score'], 0)
+        self.assertGreater(with_confirmation['external_context_score'], 0)
+
+    def test_world_model_exports_basecalc_signal_contract_scope_and_exclusions(self):
+        snapshot = _ready_snapshot(80)
+        intermarket = build_us_index_technical_context({
+            key: {
+                'symbol': symbol,
+                'price': 110,
+                'previous_close': 100,
+                'change_pct': 1.0,
+                'closes': [90, 94, 98, 100, 104, 108, 110],
+                'highs': [91, 95, 99, 101, 105, 109, 111],
+                'lows': [89, 93, 97, 99, 103, 107, 109],
+            }
+            for key, symbol in US_INDEX_SYMBOLS.items()
+        })
+
+        result = build_world_model(snapshot['price'], snapshot, intermarket)
+
+        self.assertEqual(result['basecalc_signal']['scope'], 'technical_with_us_index_confirmation')
+        self.assertEqual(result['basecalc_signal']['source'], 'basecalc')
+        self.assertIn('fx', result['basecalc_signal']['excluded_inputs'])
+        self.assertIn('vix', result['basecalc_signal']['excluded_inputs'])
+        self.assertIn('nasdaq100_futures_price_action', result['basecalc_signal']['included_inputs'])
+        self.assertIn('us_index_confirmation_score', result['features'])
+
 
 class BasecalcReliabilitySpecTests(TestCase):
     def test_225navi_niy_snapshot_is_official_quality(self):
@@ -1502,10 +1599,9 @@ class BasecalcReliabilitySpecTests(TestCase):
                     'decision_level': 'ready',
                     'decision_label': '判定可能',
                 },
-                'per': {
+                'intermarket': {
                     'age_minutes': 1440,
-                    'age_days': 3,
-                    'source': 'nikkei',
+                    'source': 'NQ=F / ES=F / YM=F',
                     'fallback_used': False,
                     'decision_level': 'limited',
                     'decision_label': '参考',
@@ -1516,7 +1612,7 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertEqual(rows[0]['age_display'], '12分前')
         self.assertEqual(rows[0]['fallback_display'], 'なし')
         self.assertEqual(rows[0]['decision_label'], '判定可能')
-        self.assertEqual(rows[1]['age_display'], '3日前')
+        self.assertEqual(rows[1]['age_display'], '1日前')
         self.assertEqual(rows[1]['decision_label'], '参考')
 
     def test_good_yahoo_niy_snapshot_is_ready(self):
@@ -1982,6 +2078,58 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(result['1d']['source'], 'sentiment_fallback')
         self.assertEqual(result['1d']['reliability'], 'low')
         self.assertEqual(result['1d']['display_label'], '未検証の参考値')
+
+    def test_intermarket_comparison_summary_returns_four_variants(self):
+        prediction = WorldModelPrediction.objects.create(
+            price=41000,
+            state_key='dip_buy',
+            state_label='押し目買い',
+            direction='up',
+            sentiment_score=30,
+            continuation_score=65,
+            shock_score=20,
+            confidence='Middle',
+            confidence_score=55,
+            main_scenario='scenario',
+            sub_scenario='sub',
+            features={
+                'nikkei_technical_score': 22,
+                'us_index_confirmation_score': 50,
+                'us_index_components': {
+                    'nasdaq100_futures': {'score': 70},
+                    'sp500_futures': {'score': 45},
+                    'dow_futures': {'score': 20},
+                },
+            },
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41400,
+            realized_return_pct=1.0,
+            direction_hit=True,
+            upside_t1_hit=True,
+            mfe_pct=1.4,
+            mae_pct=-0.3,
+        )
+
+        result = intermarket_comparison_summary('1d')
+
+        self.assertEqual(
+            set(result.keys()),
+            {
+                'nikkei_only',
+                'nikkei_plus_nasdaq100',
+                'nikkei_plus_sp500_dow',
+                'nikkei_plus_us3',
+            },
+        )
+        self.assertEqual(result['nikkei_plus_us3']['sample_count'], 1)
+        self.assertIn('brier_score', result['nikkei_plus_us3'])
+        self.assertIn('avg_mae_pct', result['nikkei_plus_us3'])
 
     def test_snapshot_api_returns_world_model_json(self):
         response = self.client.get(reverse('basecalc:snapshot_api'), {'price': '41000'})

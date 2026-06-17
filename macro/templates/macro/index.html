@@ -39,6 +39,63 @@
                 </ul>
             {% endif %}
 
+            {% if macro_forecast_report %}
+                <section class="macro-section macro-decision" id="macro-forecast-report">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title macro-section-title--pulse">経済状態推定</h2>
+                        <span class="macro-regime-status-pill">品質 {{ macro_forecast_report.data_quality_display }}</span>
+                    </div>
+                    <div class="macro-regime-answer">
+                        <div class="macro-regime-answer-label">結論</div>
+                        <div class="macro-regime-answer-main">{{ macro_forecast_report.headline }}</div>
+                        <p class="macro-regime-answer-detail">{{ macro_forecast_report.judgment }}</p>
+                        <p class="macro-regime-answer-detail">{{ macro_forecast_report.nikkei_implication }}</p>
+                    </div>
+                    {% if macro_forecast_report.axes %}
+                        <div class="macro-current-state-map">
+                            <div class="macro-state-section">
+                                <div class="macro-state-card-grid">
+                                    {% for axis in macro_forecast_report.axes %}
+                                        <div class="macro-state-card macro-direction-card macro-state-card--{{ axis.key }}">
+                                            <div class="macro-state-card__top">
+                                                <span class="macro-state-card__title">{{ axis.key }}</span>
+                                                <span class="macro-state-card__badge">{{ axis.label }}</span>
+                                            </div>
+                                            <strong class="macro-direction-card__value">{{ axis.score_display }}</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if macro_forecast_report.scenarios %}
+                        <div class="macro-scenario-grid">
+                            {% for item in macro_forecast_report.scenarios %}
+                                <article class="macro-scenario-card">
+                                    <div class="macro-state-section-head">
+                                        <span class="macro-state-section-title">{{ item.name }} {{ item.probability_display }}</span>
+                                        <span class="macro-state-section-note">日経: {{ item.nikkei_bias }}</span>
+                                    </div>
+                                    <p>{{ item.growth_view }}</p>
+                                    <p>{{ item.inflation_view }}</p>
+                                    <p>{{ item.policy_view }}</p>
+                                    <p>{{ item.market_view }}</p>
+                                    <span class="macro-state-section-note">判断が変わる条件</span>
+                                    <ul>
+                                        {% for trigger in item.invalidation_triggers %}
+                                            <li>{{ trigger }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="macro-regime-meta">
+                        <span class="macro-regime-updated">基準日: {{ macro_forecast_report.as_of }} / {{ macro_forecast_report.model_version }}</span>
+                    </div>
+                </section>
+            {% endif %}
+
             {% if macro_decision %}
                 <section class="macro-section macro-decision" id="macro-current-state">
                     <div class="macro-section-headline">
@@ -635,6 +692,45 @@
                             </div>
                         {% endfor %}
                     </div>
+                </section>
+            {% endif %}
+
+            {% if macro_outcome_validation %}
+                <section class="macro-section macro-model-validation">
+                    <h2 class="macro-section-title macro-section-title--brain">Macro予測検証</h2>
+                    <div class="macro-monthly-status-grid">
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">期間</span>
+                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.period_label }}</span>
+                        </div>
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">件数</span>
+                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.total_count }}</span>
+                        </div>
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">方向的中</span>
+                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.direction_accuracy_display }}</span>
+                        </div>
+                        <div class="macro-monthly-status-item">
+                            <span class="macro-monthly-status-label">Brier Score</span>
+                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.avg_brier_score_display }}</span>
+                        </div>
+                    </div>
+                    {% if macro_outcome_validation.rows %}
+                        <div class="macro-model-validation-list">
+                            {% for row in macro_outcome_validation.rows %}
+                                <div class="macro-model-validation-row">
+                                    <span>{{ row.target_date }}</span>
+                                    <span>{{ row.target_name }}</span>
+                                    <span>予測 {{ row.predicted_prob_display }}</span>
+                                    <span>実績 {{ row.actual_value_display }}</span>
+                                    <span>Brier {{ row.brier_score_display }}</span>
+                                    <span>{{ row.direction_hit_display }}</span>
+                                    <span>{{ row.model_version }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </section>
             {% endif %}
 

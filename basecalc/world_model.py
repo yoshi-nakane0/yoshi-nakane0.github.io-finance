@@ -26,8 +26,8 @@ from .scoring import (
 )
 from .confidence import calculate_confidence_score
 from .data_quality import evaluate_snapshot_quality
+from .intermarket_technicals import build_us_index_technical_context
 from .instrument import normalize_instrument
-from .market_context import calculate_context_score
 from .model_version import BASECALC_MODEL_VERSION
 from .outcomes import (
     apply_sentiment_score_adjustment,
@@ -37,13 +37,18 @@ from .similarity import find_similar_cases
 from .state_machine import estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
 from .readiness import evaluate_indicator_validity, evaluate_world_model_readiness
+from .scenario_engine import build_scenarios
+from .signal_contract import build_basecalc_signal_contract
+from .technical_regime import classify_technical_regime
+from .technical_state import build_technical_state
 
 JST = ZoneInfo("Asia/Tokyo")
 
 
-def build_world_model(price, market_snapshot=None, market_context=None, as_of=None):
+def build_world_model(price, market_snapshot=None, intermarket_context=None, as_of=None):
     price = _to_float(price)
     snapshot = market_snapshot or {}
+    intermarket_context = build_us_index_technical_context(intermarket_context or {})
     if price is None or price <= 0:
         data_quality = evaluate_snapshot_quality(snapshot)
         readiness = evaluate_world_model_readiness(
@@ -52,11 +57,16 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
             data_quality=data_quality,
             daily_ohlcv={},
         )
-        return blocked_world_model(price, snapshot, data_quality, readiness)
+        return blocked_world_model(
+            price,
+            snapshot,
+            data_quality,
+            readiness,
+            intermarket_context=intermarket_context,
+        )
 
     daily_snapshot = _snapshot_for_timeframe(snapshot, "1d")
     data_quality = (snapshot.get("quality") if isinstance(snapshot, dict) else None) or evaluate_snapshot_quality(snapshot)
-    context_score = calculate_context_score(market_context or {})
     ohlcv = _normalize_ohlcv(price, daily_snapshot, allow_synthetic=False)
     readiness = evaluate_world_model_readiness(
         price=price,
@@ -71,8 +81,7 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
             data_quality,
             readiness,
             ohlcv=ohlcv,
-            market_context=market_context,
-            context_score=context_score,
+            intermarket_context=intermarket_context,
         )
 
     features = build_features(
@@ -98,9 +107,9 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
             "bar_counts": readiness["bar_counts"],
             "indicator_validity": readiness["indicator_validity"],
             "is_canonical_instrument": instrument.get("is_canonical"),
-            "context_risk_score": context_score["risk_score"],
-            "context_risk_label": context_score["risk_label"],
-            "context_components": context_score["components"],
+            "us_index_confirmation_score": intermarket_context["confirmation_score"],
+            "us_index_confirmation_label": intermarket_context["confirmation_label"],
+            "us_index_components": intermarket_context["components"],
         }
     )
     if readiness["level"] == "limited":
@@ -111,28 +120,29 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
             readiness,
             features=features,
             ohlcv=ohlcv,
-            market_context=market_context,
-            context_score=context_score,
+            intermarket_context=intermarket_context,
         )
 
-    first_score = calculate_sentiment_score(features)
+    nikkei_features = {**features, "us_index_confirmation_score": 0}
+    first_score = calculate_sentiment_score(nikkei_features)
     direction = _direction_from_score(first_score["sentiment_score"])
     features["sentiment_score"] = first_score["sentiment_score"]
     similar_summary = find_similar_cases(
-        features,
+        nikkei_features,
         ohlcv,
         instrument_key=readiness["instrument_key"],
         as_of=as_of,
         timeframe="1d",
     )
-    sentiment = calculate_sentiment_score(features, similar_summary)
+    sentiment = calculate_sentiment_score(nikkei_features, similar_summary)
     direction = _direction_from_score(sentiment["sentiment_score"])
     features["sentiment_score"] = sentiment["sentiment_score"]
     features["trend_score"] = sentiment["trend_score"]
     features["momentum_score"] = sentiment["momentum_score"]
     features["reversal_risk_score"] = sentiment["reversal_risk_score"]
     features["rebound_improvement_score"] = sentiment["rebound_improvement_score"]
-    features["external_context_score"] = sentiment["external_context_score"]
+    features["external_context_score"] = 0
+    features["nikkei_technical_score"] = sentiment["sentiment_score"]
 
     continuation_score = calculate_continuation_score(features, direction)
     shock_score = calculate_shock_score(features)
@@ -144,6 +154,12 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         direction,
         continuation_score,
         shock_score,
+    )
+    technical_setup = classify_technical_regime(
+        features,
+        direction,
+        state_key,
+        intermarket_context,
     )
     performance_adjustment = confidence_adjustment_for_state(state_key)
     adjusted_score = apply_sentiment_score_adjustment(
@@ -189,11 +205,15 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         performance_adjustment,
         data_quality,
     )
+    confidence_result = _apply_intermarket_confidence_adjustment(
+        confidence_result,
+        intermarket_context,
+    )
     confidence = confidence_result["label"]
     invalidation_price = _invalidation_price(direction, targets, price)
     evidence = build_evidence(features, similar_summary, direction)
     evidence.extend(_quality_evidence(data_quality))
-    evidence.extend(_context_evidence(context_score))
+    evidence.extend(_intermarket_evidence(intermarket_context))
     if transition_probs:
         evidence.append(
             f"次に移りやすい局面は{transition_probs[0]['label']}（{transition_probs[0]['probability']:.0%}）"
@@ -206,13 +226,20 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         evidence.append(_performance_adjustment_text(performance_adjustment))
     main_scenario = build_main_scenario(direction, targets)
     sub_scenario = build_sub_scenario(direction, invalidation_price)
+    scenarios = build_scenarios(
+        direction,
+        technical_setup,
+        targets,
+        intermarket_context,
+        _invalidation_text(direction, invalidation_price),
+    )
     last_updated = _format_last_updated(snapshot)
     stale_minutes = _stale_minutes(snapshot)
-
-    return {
+    result = {
         "is_ready": True,
         "model_version": BASECALC_MODEL_VERSION,
         "price": round(price, 0),
+        "as_of": as_of.isoformat() if hasattr(as_of, "isoformat") else "",
         "readiness": readiness,
         "readiness_display": _readiness_display(readiness),
         "readiness_level": readiness["level"],
@@ -223,6 +250,9 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "state_key": state_key,
         "state_label": state_label,
         "phase_label": phase_label,
+        "technical_regime": technical_setup["technical_regime"],
+        "primary_setup": technical_setup["primary_setup"],
+        "primary_setup_label": technical_setup["primary_setup_label"],
         "primary_scenario": dual_scenario["primary_scenario"],
         "counter_scenario": dual_scenario["counter_scenario"],
         "scenario_label": dual_scenario["scenario_label"],
@@ -231,6 +261,12 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "reversal_risk_score": sentiment["reversal_risk_score"],
         "rebound_improvement_score": sentiment["rebound_improvement_score"],
         "external_context_score": sentiment["external_context_score"],
+        "nikkei_technical_score": sentiment["sentiment_score"],
+        "us_index_confirmation_score": intermarket_context["confirmation_score"],
+        "us_index_confirmation_label": intermarket_context["confirmation_label"],
+        "us_index_confirmation": intermarket_context,
+        "intermarket_technicals": intermarket_context,
+        "chase_risk": _chase_risk(intermarket_context),
         "sentiment_key": sentiment["sentiment_key"],
         "sentiment_label": sentiment["sentiment_label"],
         "sentiment_score": sentiment["sentiment_score"],
@@ -260,18 +296,10 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "expected_return_5d": _expected_return_value(expected_returns, "5d"),
         "expected_return_source": _expected_return_source(expected_returns, "3d"),
         "expected_return_label": _expected_return_label(expected_returns, "3d"),
-        "market_context": _json_safe_context(
-            {
-                **(market_context or {}),
-                "risk_score": context_score["risk_score"],
-                "risk_label": context_score["risk_label"],
-                "components": context_score["components"],
-                "evidence": context_score["evidence"],
-                "lead_market": context_score.get("lead_market") or {},
-            }
-        ),
         "main_scenario": main_scenario,
         "sub_scenario": sub_scenario,
+        "scenarios": scenarios,
+        "horizons": _horizon_signals(direction, expected_returns, technical_setup),
         "invalidation_price": invalidation_price,
         "invalidation": targets["invalidation"],
         "invalidation_reason": _invalidation_reason(direction, targets["invalidation"]),
@@ -287,12 +315,15 @@ def build_world_model(price, market_snapshot=None, market_context=None, as_of=No
         "evidence": evidence[:6],
         "performance_adjustment": performance_adjustment or {"applied": False},
         "features": _json_safe_features(features),
+        "nikkei_state_vector": _json_safe_features(build_technical_state(features)),
         "last_updated_display": last_updated,
         "is_stale": bool(snapshot.get("is_stale")) or stale_minutes > 15,
         "stale_minutes": stale_minutes,
         "data_warning": _data_warning(snapshot, stale_minutes),
         "components": sentiment["components"],
     }
+    result["basecalc_signal"] = build_basecalc_signal_contract(result)
+    return result
 
 
 def build_features(price, snapshot, ohlcv, indicator_validity=None):
@@ -569,10 +600,10 @@ def blocked_world_model(
     readiness=None,
     *,
     ohlcv=None,
-    market_context=None,
-    context_score=None,
+    intermarket_context=None,
 ):
     snapshot = snapshot if isinstance(snapshot, dict) else {}
+    intermarket_context = build_us_index_technical_context(intermarket_context or {})
     data_quality = data_quality or evaluate_snapshot_quality(snapshot)
     readiness = readiness or evaluate_world_model_readiness(
         price=price,
@@ -580,9 +611,8 @@ def blocked_world_model(
         data_quality=data_quality,
         daily_ohlcv=ohlcv or {},
     )
-    context_score = context_score or calculate_context_score(market_context or {})
     evidence = readiness.get("warnings") or ["データ品質が不足しています"]
-    return {
+    result = {
         "is_ready": False,
         "model_version": BASECALC_MODEL_VERSION,
         "price": round(price, 0) if _to_float(price) else None,
@@ -604,6 +634,15 @@ def blocked_world_model(
         "reversal_risk_score": 0,
         "rebound_improvement_score": 0,
         "external_context_score": 0,
+        "nikkei_technical_score": 0,
+        "us_index_confirmation_score": intermarket_context["confirmation_score"],
+        "us_index_confirmation_label": intermarket_context["confirmation_label"],
+        "us_index_confirmation": intermarket_context,
+        "intermarket_technicals": intermarket_context,
+        "technical_regime": "data_unavailable",
+        "primary_setup": "range_wait",
+        "primary_setup_label": "判定停止",
+        "chase_risk": "unknown",
         "sentiment_key": "neutral",
         "sentiment_label": "判定不可",
         "sentiment_score": 0,
@@ -626,18 +665,16 @@ def blocked_world_model(
         "expected_return_5d": 0,
         "expected_return_source": "",
         "expected_return_label": "判定停止",
-        "market_context": _json_safe_context(
-            {
-                **(market_context or {}),
-                "risk_score": context_score["risk_score"],
-                "risk_label": context_score["risk_label"],
-                "components": context_score["components"],
-                "evidence": context_score["evidence"],
-                "lead_market": context_score.get("lead_market") or {},
-            }
-        ),
         "main_scenario": "データ品質が不足しているため判定できません",
         "sub_scenario": "価格データ、取得元、足数を確認してください",
+        "scenarios": build_scenarios(
+            "neutral",
+            {"primary_setup_label": "判定停止"},
+            _empty_targets(),
+            intermarket_context,
+            "方向判定停止中",
+        ),
+        "horizons": {},
         "invalidation_price": None,
         "invalidation": {},
         "invalidation_reason": "",
@@ -668,6 +705,8 @@ def blocked_world_model(
         "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
         "components": {},
     }
+    result["basecalc_signal"] = build_basecalc_signal_contract(result)
+    return result
 
 
 def limited_world_model(
@@ -678,12 +717,11 @@ def limited_world_model(
     *,
     features,
     ohlcv,
-    market_context=None,
-    context_score=None,
+    intermarket_context=None,
 ):
-    context_score = context_score or calculate_context_score(market_context or {})
+    intermarket_context = build_us_index_technical_context(intermarket_context or {})
     evidence = (readiness.get("warnings") or []) + _quality_evidence(data_quality)
-    return {
+    result = {
         "is_ready": True,
         "model_version": BASECALC_MODEL_VERSION,
         "price": round(price, 0),
@@ -705,6 +743,15 @@ def limited_world_model(
         "reversal_risk_score": 0,
         "rebound_improvement_score": 0,
         "external_context_score": 0,
+        "nikkei_technical_score": 0,
+        "us_index_confirmation_score": intermarket_context["confirmation_score"],
+        "us_index_confirmation_label": intermarket_context["confirmation_label"],
+        "us_index_confirmation": intermarket_context,
+        "intermarket_technicals": intermarket_context,
+        "technical_regime": "limited",
+        "primary_setup": "range_wait",
+        "primary_setup_label": "参考表示",
+        "chase_risk": "unknown",
         "sentiment_key": "neutral",
         "sentiment_label": "参考表示",
         "sentiment_score": 0,
@@ -727,18 +774,16 @@ def limited_world_model(
         "expected_return_5d": 0,
         "expected_return_source": "",
         "expected_return_label": "方向判定停止",
-        "market_context": _json_safe_context(
-            {
-                **(market_context or {}),
-                "risk_score": context_score["risk_score"],
-                "risk_label": context_score["risk_label"],
-                "components": context_score["components"],
-                "evidence": context_score["evidence"],
-                "lead_market": context_score.get("lead_market") or {},
-            }
-        ),
         "main_scenario": "データ品質が限定的なため方向判定は停止しています",
         "sub_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+        "scenarios": build_scenarios(
+            "neutral",
+            {"primary_setup_label": "参考表示"},
+            _empty_targets(),
+            intermarket_context,
+            "方向判定停止中",
+        ),
+        "horizons": {},
         "invalidation_price": None,
         "invalidation": {},
         "invalidation_reason": "",
@@ -760,6 +805,8 @@ def limited_world_model(
         "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
         "components": {},
     }
+    result["basecalc_signal"] = build_basecalc_signal_contract(result)
+    return result
 
 
 def empty_world_model():
@@ -988,13 +1035,66 @@ def _quality_evidence(quality):
     return evidence[:3]
 
 
-def _context_evidence(context_score):
-    label = {
-        "risk_on": "外部市場はリスクオン寄り",
-        "risk_off": "外部市場はリスクオフ寄り",
-        "neutral": "外部市場は中立寄り",
-    }.get(context_score.get("risk_label"), "外部市場は中立寄り")
-    return [label] + list(context_score.get("evidence") or [])[:2]
+def _intermarket_evidence(intermarket_context):
+    context = intermarket_context or {}
+    readiness = context.get("readiness") or {}
+    if not readiness.get("usable"):
+        return [readiness.get("reason") or "米国3指数確認なし"]
+    return list(context.get("evidence") or ["米国3指数確認はデータ待ち"])[:3]
+
+
+def _apply_intermarket_confidence_adjustment(confidence_result, intermarket_context):
+    result = dict(confidence_result or {})
+    score = int(result.get("score") or 0)
+    components = dict(result.get("components") or {})
+    us_score = int((intermarket_context or {}).get("confirmation_score") or 0)
+    if us_score >= 25:
+        adjustment = 8
+    elif us_score <= -25:
+        adjustment = -10
+    else:
+        adjustment = 0
+    score = max(0, min(100, score + adjustment))
+    components["us_index_confirmation"] = adjustment
+    result["score"] = score
+    result["label"] = _confidence_label(score)
+    result["components"] = components
+    if us_score <= -25:
+        warnings = list(result.get("warnings") or [])
+        warnings.append("米国3指数確認が弱く、追いかけリスクを上げています")
+        result["warnings"] = warnings
+    return result
+
+
+def _confidence_label(score):
+    if score >= 75:
+        return "High"
+    if score >= 45:
+        return "Middle"
+    return "Low"
+
+
+def _chase_risk(intermarket_context):
+    score = int((intermarket_context or {}).get("confirmation_score") or 0)
+    label = (intermarket_context or {}).get("confirmation_label")
+    if score <= -25 or label == "divergent":
+        return "high"
+    if score >= 25:
+        return "low"
+    return "medium"
+
+
+def _horizon_signals(direction, expected_returns, setup):
+    rows = {}
+    for horizon in ("1d", "3d", "5d"):
+        expected = (expected_returns or {}).get(horizon)
+        value = expected.get("value") if isinstance(expected, dict) else expected
+        rows[horizon] = {
+            "main_bias": "up" if direction == "up" else "down" if direction == "down" else "range",
+            "setup_label": (setup or {}).get("primary_setup_label") or "",
+            "expected_return_pct": value,
+        }
+    return rows
 
 
 def _json_safe_features(features):

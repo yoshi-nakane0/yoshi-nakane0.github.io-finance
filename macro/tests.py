@@ -74,6 +74,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('python manage.py migrate --noinput', workflow)
         self.assertIn('python manage.py refresh_macro_data', workflow)
         self.assertIn('python manage.py compute_world_state', workflow)
+        self.assertIn('python manage.py run_macro_forecast', workflow)
         self.assertIn('python manage.py settle_forecast_snapshots', workflow)
         self.assertIn('python manage.py precompute_dashboard', workflow)
         self.assertIn(
@@ -104,6 +105,8 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('RUN_DATA_REFRESH_IN_BUILD', build_script)
         self.assertIn('Skip data refresh in Vercel build', build_script)
         self.assertIn('manage.py refresh_macro_data', build_script)
+        self.assertIn('manage.py compute_world_state', build_script)
+        self.assertIn('manage.py run_macro_forecast', build_script)
         self.assertIn('manage.py settle_forecast_snapshots', build_script)
         self.assertIn('manage.py precompute_dashboard', build_script)
         self.assertNotIn('FRED_API_KEY is not set; skipping macro data refresh', build_script)
@@ -2702,3 +2705,172 @@ class ExternalClientParseTest(TestCase):
                 Indicator.objects.filter(category=cat).exists(),
                 f"missing category: {cat}",
             )
+
+
+class HatziusStyleMacroEngineTest(TestCase):
+    def test_state_vector_returns_required_economic_axes(self):
+        from macro.services.state_vector import build_economic_state_vector
+
+        snapshot = WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=62,
+            labor_score=44,
+            inflation_score=71,
+            policy_pressure_score=58,
+            liquidity_score=53,
+            credit_score=64,
+            market_trend_score=55,
+            market_stress_score=28,
+            recession_risk_score=18,
+            inflation_reacceleration_score=72,
+            financial_stress_score=24,
+            data_quality=83,
+            feature_vector={'sample': 1.0},
+        )
+
+        vector = build_economic_state_vector(snapshot)
+
+        self.assertEqual(vector['as_of'], '2026-06-17')
+        self.assertEqual(
+            set(vector['axes'].keys()),
+            {
+                'growth_momentum',
+                'inflation_pressure',
+                'labor_slack',
+                'policy_stance',
+                'financial_conditions',
+                'credit_stress',
+                'global_demand',
+                'japan_cycle',
+                'nikkei_macro_bias',
+            },
+        )
+        self.assertEqual(vector['axes']['growth_momentum']['label'], '改善')
+        self.assertEqual(vector['axes']['inflation_pressure']['label'], '再加速警戒')
+        self.assertEqual(vector['axes']['credit_stress']['label'], '低い')
+        self.assertEqual(vector['quality']['score'], 83)
+
+    def test_forecast_runner_saves_probability_distribution_and_scenarios(self):
+        from macro.models import MacroScenario
+        from macro.services.forecast_runner import run_macro_forecast
+
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=57,
+            inflation_score=64,
+            policy_pressure_score=60,
+            liquidity_score=58,
+            credit_score=62,
+            market_trend_score=59,
+            market_stress_score=26,
+            recession_risk_score=20,
+            inflation_reacceleration_score=63,
+            financial_stress_score=22,
+            data_quality=87,
+            feature_vector={'growth': 66},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            confidence=74,
+            data_quality=87,
+            regime_probabilities={
+                'expansion': 0.58,
+                'slowdown': 0.24,
+                'contraction': 0.07,
+                'recovery': 0.11,
+            },
+            risk_probabilities={
+                'recession': 0.15,
+                'inflation_reacceleration': 0.68,
+                'financial_stress': 0.18,
+            },
+        )
+
+        result = run_macro_forecast(as_of=date(2026, 6, 17))
+
+        self.assertEqual(result.snapshot.target, 'macro_regime')
+        self.assertEqual(result.snapshot.horizon, '3m_6m')
+        self.assertEqual(
+            result.snapshot.metadata['regime_probabilities']['expansion'],
+            0.58,
+        )
+        self.assertEqual(MacroScenario.objects.count(), 3)
+        self.assertEqual(
+            sum(s.probability for s in MacroScenario.objects.all()),
+            1.0,
+        )
+        self.assertEqual(
+            set(MacroScenario.objects.values_list('name', flat=True)),
+            {'baseline', 'upside', 'downside'},
+        )
+        baseline = MacroScenario.objects.get(name='baseline')
+        self.assertIn(
+            '米10年金利が急上昇し株式バリュエーションを圧迫',
+            baseline.invalidation_triggers,
+        )
+
+    def test_validation_records_brier_score_and_direction_hit(self):
+        from macro.models import MacroForecastOutcome
+        from macro.services.validation import evaluate_forecast_snapshot
+
+        forecast = ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.70,
+            metadata={'primary_regime': 'expansion'},
+        )
+
+        outcome = evaluate_forecast_snapshot(
+            forecast,
+            target_date=date(2026, 4, 1),
+            target_name='expansion',
+            actual_value=1.0,
+        )
+
+        self.assertIsInstance(outcome, MacroForecastOutcome)
+        self.assertAlmostEqual(outcome.predicted_prob, 0.70)
+        self.assertAlmostEqual(outcome.brier_score, 0.09)
+        self.assertTrue(outcome.direction_hit)
+
+    def test_dashboard_summarizes_macro_forecast_outcomes(self):
+        from macro.models import MacroForecastOutcome
+        from macro.services.dashboard import build_macro_outcome_validation_context
+
+        forecast = ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.70,
+        )
+        MacroForecastOutcome.objects.create(
+            forecast=forecast,
+            target_date=timezone.localdate(),
+            target_name='expansion',
+            predicted_prob=0.70,
+            actual_value=1.0,
+            brier_score=0.09,
+            direction_hit=True,
+        )
+        MacroForecastOutcome.objects.create(
+            forecast=forecast,
+            target_date=timezone.localdate(),
+            target_name='inflation_reacceleration',
+            predicted_prob=0.40,
+            actual_value=1.0,
+            brier_score=0.36,
+            direction_hit=False,
+        )
+
+        context = build_macro_outcome_validation_context()
+
+        self.assertEqual(context['period_label'], '過去90日')
+        self.assertEqual(context['total_count'], 2)
+        self.assertEqual(context['direction_accuracy_display'], '50%')
+        self.assertEqual(context['avg_brier_score_display'], '0.225')
+        self.assertEqual(len(context['rows']), 2)

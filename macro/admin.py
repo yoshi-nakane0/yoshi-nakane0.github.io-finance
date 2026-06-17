@@ -5,8 +5,13 @@ from .models import (
     FeatureSnapshot,
     ForecastSnapshot,
     Indicator,
+    IndicatorSeries,
+    MacroForecastOutcome,
+    MacroForecastRun,
+    MacroScenario,
     ModelValidationReport,
     Observation,
+    ObservationVintage,
     PriceObservation,
     RawArchiveManifest,
     RegimeSnapshot,
@@ -47,6 +52,29 @@ class ObservationAdmin(admin.ModelAdmin):
     list_filter = ('indicator',)
     date_hierarchy = 'observation_date'
     ordering = ('indicator', '-observation_date')
+
+
+@admin.register(IndicatorSeries)
+class IndicatorSeriesAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'source', 'frequency', 'category', 'is_active')
+    list_filter = ('source', 'frequency', 'category', 'is_active')
+    search_fields = ('code', 'name')
+    ordering = ('category', 'code')
+
+
+@admin.register(ObservationVintage)
+class ObservationVintageAdmin(admin.ModelAdmin):
+    list_display = (
+        'series',
+        'observation_date',
+        'realtime_start',
+        'realtime_end',
+        'value',
+        'fetched_at',
+    )
+    list_filter = ('series',)
+    date_hierarchy = 'observation_date'
+    ordering = ('series', '-observation_date', '-realtime_start')
 
 
 @admin.register(RegimeSnapshot)
@@ -94,6 +122,45 @@ class ForecastSnapshotAdmin(admin.ModelAdmin):
     date_hierarchy = 'as_of_date'
     search_fields = ('model_version', 'target', 'horizon', 'features_hash')
     ordering = ('-as_of_date', '-created_at')
+
+
+@admin.register(MacroForecastRun)
+class MacroForecastRunAdmin(admin.ModelAdmin):
+    list_display = (
+        'as_of',
+        'primary_regime',
+        'confidence',
+        'data_quality_score',
+        'model_version',
+    )
+    list_filter = ('primary_regime', 'model_version')
+    date_hierarchy = 'as_of'
+    search_fields = ('primary_regime', 'model_version')
+    ordering = ('-as_of',)
+
+
+@admin.register(MacroScenario)
+class MacroScenarioAdmin(admin.ModelAdmin):
+    list_display = ('run', 'name', 'probability', 'nikkei_bias')
+    list_filter = ('name', 'nikkei_bias')
+    search_fields = ('growth_view', 'inflation_view', 'policy_view', 'market_view')
+    ordering = ('-run__as_of', 'name')
+
+
+@admin.register(MacroForecastOutcome)
+class MacroForecastOutcomeAdmin(admin.ModelAdmin):
+    list_display = (
+        'forecast',
+        'target_date',
+        'target_name',
+        'predicted_prob',
+        'actual_value',
+        'brier_score',
+        'direction_hit',
+    )
+    list_filter = ('target_name', 'direction_hit')
+    date_hierarchy = 'target_date'
+    ordering = ('-target_date', '-evaluated_at')
 
 
 @admin.register(WorldStateSnapshot)

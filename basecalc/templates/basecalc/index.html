@@ -76,6 +76,101 @@
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">01</span>
+                            <span class="wm-purpose-card__label">日経先物テクニカル結論</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ decision.direction_label }}</h2>
+                            <div class="wm-purpose-card__badge">{{ world_model.scenarios.baseline.text }}</div>
+                        </div>
+                    </article>
+
+                    <article class="wm-purpose-card wm-purpose-card--forecast">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">02</span>
+                            <span class="wm-purpose-card__label">現在のセットアップ</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ world_model.primary_setup_label }}</h2>
+                            <div class="wm-purpose-card__badge">{{ world_model.technical_regime }}</div>
+                        </div>
+                    </article>
+
+                    <article class="wm-purpose-card wm-purpose-card--stress">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">03</span>
+                            <span class="wm-purpose-card__label">米国3指数の確認</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ decision.us_index_confirmation.label }}</h2>
+                            <div class="wm-purpose-card__badge">追いかけリスク: {{ world_model.chase_risk }}</div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="wm-purpose-grid">
+                    {% for horizon, item in world_model.horizons.items %}
+                    <article class="wm-purpose-card wm-purpose-card--forecast">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">04</span>
+                            <span class="wm-purpose-card__label">{{ horizon }} の方向</span>
+                        </div>
+                        <div class="wm-purpose-card__main">
+                            <h2>{{ item.main_bias }}</h2>
+                            <div class="wm-purpose-card__badge">{{ item.setup_label }}</div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div class="data-list auxiliary-list">
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">基本シナリオ</span>
+                            <span class="label-sub">日経先物本体を主判断</span>
+                        </div>
+                        <span class="data-value">{{ world_model.scenarios.baseline.text }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">上振れシナリオ</span>
+                            <span class="label-sub">米国3指数確認は補助</span>
+                        </div>
+                        <span class="data-value">{{ world_model.scenarios.upside.text }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">下振れシナリオ</span>
+                            <span class="label-sub">追いかけリスク確認</span>
+                        </div>
+                        <span class="data-value">{{ world_model.scenarios.downside.text }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">上値抵抗ゾーン</span>
+                            <span class="label-sub">日経先物チャート由来</span>
+                        </div>
+                        <span class="data-value">{{ decision.upside_target.price|floatformat:0|intcomma|default:"N/A" }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">下値支持ゾーン</span>
+                            <span class="label-sub">日経先物チャート由来</span>
+                        </div>
+                        <span class="data-value">{{ decision.downside_target.price|floatformat:0|intcomma|default:"N/A" }}</span>
+                    </div>
+                    <div class="data-row">
+                        <div class="label-group">
+                            <span class="label-main">無効化ライン</span>
+                            <span class="label-sub">日経先物チャート由来</span>
+                        </div>
+                        <span class="data-value">{{ decision.invalidation|default:"N/A" }}</span>
+                    </div>
+                </div>
+
+                <div class="wm-purpose-grid">
+                    <article class="wm-purpose-card wm-purpose-card--technical">
+                        <div class="wm-purpose-card__head">
+                            <span class="wm-purpose-card__number">01</span>
                             <span class="wm-purpose-card__label">方向判断</span>
                         </div>
                         <div class="wm-purpose-card__main">
@@ -141,13 +236,13 @@
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">05</span>
-                            <span class="wm-purpose-card__label">外部市場</span>
+                            <span class="wm-purpose-card__label">米国3指数確認</span>
                         </div>
                         <div class="wm-purpose-card__main">
-                            <h2>{{ decision.external_market.label }}</h2>
+                            <h2>{{ decision.us_index_confirmation.label }}</h2>
                         </div>
                         <div class="wm-purpose-card__facts">
-                            {% for item in decision.external_market.reasons %}
+                            {% for item in decision.us_index_confirmation.reasons %}
                             <span>理由 <strong>{{ item }}</strong></span>
                             {% endfor %}
                         </div>
@@ -180,14 +275,8 @@
             </section>
 
             <div class="action-row top-actions">
-                <form method="get" action="" id="erp-form" class="inline-form">
+                <form method="get" action="" id="recalc-form" class="inline-form">
                     <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
-                    <input type="hidden" name="erp_method" value="{{ erp_method }}">
-                    {% if erp_growth_input %}
-                    <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
-                    {% endif %}
-                    <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}" data-field="growth_core_ratio_input">
-                    <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}" data-field="growth_wide_ratio_input">
                     <button type="submit" class="btn-base btn-primary">再計算</button>
                 </form>
                 {% if can_update_basecalc_data %}
@@ -237,12 +326,6 @@
                         </div>
                         <form method="get" action="" class="manual-price-form">
                             <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
-                            <input type="hidden" name="erp_method" value="{{ erp_method }}">
-                            {% if erp_growth_input %}
-                            <input type="hidden" name="erp_growth" value="{{ erp_growth_input }}">
-                            {% endif %}
-                            <input type="hidden" name="growth_core_ratio" value="{{ growth_core_ratio_input|default:'0.6' }}">
-                            <input type="hidden" name="growth_wide_ratio" value="{{ growth_wide_ratio_input|default:'0.7' }}">
                             <button type="submit" class="btn-base btn-primary">適用</button>
                         </form>
                         <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
@@ -351,7 +434,7 @@
             </details>
             {% endif %}
 
-            <details class="card market-context-card" data-field="market_context">
+            <details class="card market-context-card" data-field="intermarket_technicals">
                 <summary class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -360,8 +443,8 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="card-title">外部市場</div>
-                        <div class="quality-summary">{{ world_model.market_context.risk_label }} / {{ world_model.market_context.risk_score }}</div>
+                        <div class="card-title">米国3指数確認</div>
+                        <div class="quality-summary">{{ world_model.us_index_confirmation.confirmation_label }} / {{ world_model.us_index_confirmation.confirmation_score }}</div>
                     </div>
                     <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"></path>
@@ -369,53 +452,20 @@
                 </summary>
                 <div class="accordion-content">
                 <div class="context-grid">
-                    {% for key, score in world_model.market_context.components.items %}
+                    {% for key, item in world_model.us_index_confirmation.components.items %}
                     <div class="context-box">
                         <span>{{ key }}</span>
-                        <strong>{{ score }}</strong>
+                        <strong>{{ item.score }}</strong>
                     </div>
                     {% empty %}
-                    <div class="notice-text">外部市場データ待ちです。</div>
+                    <div class="notice-text">米国3指数データ待ちです。</div>
                     {% endfor %}
                 </div>
                 <div class="warning-list context-evidence">
-                    {% for item in world_model.market_context.evidence %}
+                    {% for item in world_model.us_index_confirmation.evidence %}
                     <span>{{ item }}</span>
                     {% endfor %}
                 </div>
-                {% if world_model.market_context.lead_market %}
-                <div class="data-list auxiliary-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">先行マーケット</span>
-                            <span class="label-sub">NQ先物・ES先物・ドル円・VIXの短期方向</span>
-                        </div>
-                        <span class="data-value">{{ world_model.market_context.lead_market.summary }}</span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">逆行アラート</span>
-                            <span class="label-sub">株価先物と為替・金利の不一致</span>
-                        </div>
-                        <span class="data-value">
-                            {% for alert in world_model.market_context.lead_market.alerts %}
-                                {{ alert }}{% if not forloop.last %} / {% endif %}
-                            {% endfor %}
-                        </span>
-                    </div>
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">先行性検証</span>
-                            <span class="label-sub">{{ world_model.market_context.lead_market.validation_status }}</span>
-                        </div>
-                        <span class="data-value">
-                            {{ world_model.market_context.lead_market.lead_lag_score|default:"—" }}点 /
-                            的中 {{ world_model.market_context.lead_market.hit_rate|default:"—" }} /
-                            逆信号 {{ world_model.market_context.lead_market.false_signal_rate|default:"—" }}
-                        </span>
-                    </div>
-                </div>
-                {% endif %}
                 </div>
             </details>
 
@@ -715,91 +765,6 @@
                     </div>
                     {% endfor %}
                 </div>
-                </div>
-            </details>
-
-            <details class="card auxiliary-card">
-                <summary class="card-header">
-                    <div class="card-icon text-blue">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M7 11l5-8 5 8"></path>
-                            <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-                        </svg>
-                    </div>
-                    <div class="card-title">参考：バリュエーション</div>
-                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-                </summary>
-                <div class="accordion-content">
-                    <form method="get" action="" class="erp-form">
-                        <input type="hidden" name="price" value="{{ price_param|default:'' }}">
-                        <div class="control-row">
-                            <select name="erp_method" class="erp-input erp-select" aria-label="ERP算出方法">
-                                <option value="method_a" {% if erp_method == "method_a" %}selected{% endif %}>A 益回り</option>
-                                <option value="method_b" {% if erp_method == "method_b" %}selected{% endif %}>B 益回り+成長</option>
-                                <option value="method_c" {% if erp_method == "method_c" %}selected{% endif %}>C 配当+成長</option>
-                            </select>
-                            {% with growth_selected=erp_growth_input|default:"2.1" %}
-                            <select name="erp_growth" class="erp-input erp-select input-growth" aria-label="g 選択">
-                                <option value="1.7" {% if growth_selected == "1.7" %}selected{% endif %}>1.7</option>
-                                <option value="2.1" {% if growth_selected == "2.1" %}selected{% endif %}>2.1</option>
-                                <option value="2.7" {% if growth_selected == "2.7" %}selected{% endif %}>2.7</option>
-                            </select>
-                            {% endwith %}
-                        </div>
-                        <div class="control-row">
-                            <input type="number" name="growth_core_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_core_ratio_input|default:'0.6' }}" aria-label="Core幅">
-                            <input type="number" name="growth_wide_ratio" class="erp-input input-value" step="0.1" min="0.1" max="2.0" value="{{ growth_wide_ratio_input|default:'0.7' }}" aria-label="Wide幅">
-                            <button type="submit" class="btn-base btn-primary">適用</button>
-                        </div>
-                    </form>
-
-                    <div class="data-list auxiliary-list">
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range Core</span>
-                                <span class="label-sub">補助的な割安・割高レンジ</span>
-                            </div>
-                            <span class="data-value">
-                                {{ data.fair_price_core_low_display }} ~ {{ data.fair_price_core_high_display }}
-                            </span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Fair Range Wide</span>
-                                <span class="label-sub">広めの確認レンジ</span>
-                            </div>
-                            <span class="data-value">
-                                {{ data.fair_price_wide_low_display }} ~ {{ data.fair_price_wide_high_display }}
-                            </span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Valuation</span>
-                                <span class="label-sub">主判断には使わない補助材料</span>
-                            </div>
-                            <span class="{{ data.valuation_class|default:'data-value text-muted' }}">{{ data.valuation_label|default:"" }}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">Gap vs Mid</span>
-                            </div>
-                            <span class="{{ data.fair_price_gap_class|default:'data-value text-muted' }}">{{ data.fair_price_gap_pct_display|default:"" }}</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">参考 PER</span>
-                            </div>
-                            <span class="data-value">{{ data.forward_per|default:"" }}x</span>
-                        </div>
-                        <div class="data-row">
-                            <div class="label-group">
-                                <span class="label-main">JGB 10Y</span>
-                            </div>
-                            <span class="data-value">{{ data.jgb10y_yield_percent|floatformat:3 }}%</span>
-                        </div>
-                    </div>
                 </div>
             </details>
 

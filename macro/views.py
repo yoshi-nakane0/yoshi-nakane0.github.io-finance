@@ -186,6 +186,8 @@ def index(request):
             'regime_probability_model': load_regime_probability_model(),
             'monthly_model_status': {},
             'forecast_monitor': {},
+            'macro_forecast_report': {},
+            'macro_outcome_validation': {},
             'world_state': {},
             'forecast_models': {},
             'model_validation': {},
@@ -221,6 +223,8 @@ def index(request):
     context.setdefault('historical_crash_similarity', [])
     context.setdefault('monthly_model_status', {})
     context.setdefault('forecast_monitor', {})
+    context.setdefault('macro_forecast_report', {})
+    context.setdefault('macro_outcome_validation', {})
     context.setdefault('world_state', {})
     context.setdefault('forecast_models', {})
     context.setdefault('model_validation', {})
@@ -270,6 +274,8 @@ def audit(request):
     context.setdefault('historical_crash_similarity', [])
     context.setdefault('monthly_model_status', {})
     context.setdefault('forecast_monitor', {})
+    context.setdefault('macro_forecast_report', {})
+    context.setdefault('macro_outcome_validation', {})
     context.setdefault('world_state', {})
     context.setdefault('forecast_models', {})
     context.setdefault('model_validation', {})

@@ -10,26 +10,18 @@ from .outcomes import (
     save_prediction,
 )
 from .persistence import export_basecalc_history
-from .market_shock import build_market_shock_context
-from .market_context import get_market_context_snapshot
+from .intermarket_technicals import get_intermarket_technical_snapshot
 from .services.decision_context import build_basecalc_decision_context
 from .snapshot import write_basecalc_snapshot
 from .status import (
-    external_market_status_entry,
-    jgb_status_entry,
-    per_status_entry,
+    intermarket_status_entry,
     price_status_entry,
     status_display_rows,
     write_basecalc_status,
 )
 from .views import (
-    CACHE_KEY_DIVIDEND_INDEX,
-    CACHE_KEY_FWD,
-    CACHE_KEY_JGB,
     CACHE_KEY_PRICE,
     get_cached_futures_snapshot,
-    get_jgb10y_yield_for_update,
-    get_nikkei_per_values_for_update,
     normalize_price,
     price_from_futures_snapshot,
 )
@@ -54,54 +46,23 @@ def refresh_basecalc_data(
         }
     started = time.monotonic()
     try:
-        forward_per = cache.get(CACHE_KEY_FWD)
-        jgb10y_yield_percent = cache.get(CACHE_KEY_JGB)
-        dividend_yield_index_percent = cache.get(CACHE_KEY_DIVIDEND_INDEX)
         futures_snapshot = get_cached_futures_snapshot()
         price = normalize_price(cache.get(CACHE_KEY_PRICE))
         if price is None:
             price = price_from_futures_snapshot(futures_snapshot)
-        per_values = get_nikkei_per_values_for_update()
-        if per_values:
-            if per_values.get("index_based"):
-                forward_per = per_values["index_based"]
-                cache.set(CACHE_KEY_FWD, forward_per, timeout=None)
-            if per_values.get("dividend_yield_index_based") is not None:
-                dividend_yield_index_percent = per_values["dividend_yield_index_based"]
-                cache.set(
-                    CACHE_KEY_DIVIDEND_INDEX,
-                    dividend_yield_index_percent,
-                    timeout=None,
-                )
-        refreshed_jgb = get_jgb10y_yield_for_update()
-        if refreshed_jgb is not None:
-            jgb10y_yield_percent = refreshed_jgb
-            cache.set(CACHE_KEY_JGB, jgb10y_yield_percent, timeout=None)
         futures_snapshot = get_cached_futures_snapshot()
         snapshot_price = price_from_futures_snapshot(futures_snapshot)
         if snapshot_price is not None:
             price = snapshot_price
             cache.set(CACHE_KEY_PRICE, price, timeout=None)
-        market_context = get_market_context_snapshot()
-        world_model = build_world_model(price or 0, futures_snapshot, market_context)
+        intermarket_context = get_intermarket_technical_snapshot()
+        world_model = build_world_model(price or 0, futures_snapshot, intermarket_context)
         basecalc_status = {
             "price_data": price_status_entry(
                 futures_snapshot,
                 world_model.get("readiness_level"),
             ),
-            "per": per_status_entry(
-                {
-                    "index_based": forward_per,
-                    "dividend_yield_index_based": dividend_yield_index_percent,
-                },
-                success=forward_per is not None
-                or dividend_yield_index_percent is not None,
-            ),
-            "jgb": jgb_status_entry(
-                jgb10y_yield_percent,
-                success=jgb10y_yield_percent is not None,
-            ),
-            "external_market": external_market_status_entry(market_context),
+            "intermarket": intermarket_status_entry(intermarket_context),
         }
         write_basecalc_status(basecalc_status)
         prediction = save_prediction(world_model) if save else None
@@ -150,7 +111,7 @@ def export_basecalc_snapshot(
     job_duration_sec,
 ):
     price = world_model.get("price") or 0
-    market_shock_context = build_market_shock_context()
+    market_shock_context = {"has_data": False}
     basecalc_status_rows = status_display_rows(basecalc_status, world_model)
     backtest_performance_by_horizon = {
         horizon: performance_summary(horizon, is_backtest=True)
@@ -177,7 +138,7 @@ def export_basecalc_snapshot(
         "decision": decision,
         "world_model": world_model,
         "market_shock": market_shock_context,
-        "market_context": world_model.get("market_context") or {},
+        "intermarket_technicals": world_model.get("intermarket_technicals") or {},
         "basecalc_status": basecalc_status,
         "basecalc_status_rows": basecalc_status_rows,
         "performance": performance_summary("1d"),
@@ -187,11 +148,7 @@ def export_basecalc_snapshot(
         "backtest_performance_by_horizon": backtest_performance_by_horizon,
         "detail_mode": False,
         "updated": False,
-        "erp_method": "fixed",
-        "erp_growth_input": "",
         "price_param": f"{price:.0f}" if price else "",
-        "growth_core_ratio_input": "0.6",
-        "growth_wide_ratio_input": "0.7",
     }
     write_basecalc_snapshot(payload, export_snapshot_path)
     return payload
