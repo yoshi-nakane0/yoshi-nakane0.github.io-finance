@@ -71,17 +71,17 @@
       "decision_label": "停止",
       "decision_level": "blocked",
       "fallback_used": false,
-      "last_failed_at": "2026-06-17T21:21:43.868824+00:00",
+      "last_failed_at": "2026-06-17T23:51:05.886393+00:00",
       "last_success_at": null,
       "source": "NQ=F / ES=F / YM=F"
     },
     "price_data": {
-      "age_minutes": 166,
+      "age_minutes": 149,
       "decision_label": "判定可能",
       "decision_level": "ready",
       "fallback_used": false,
       "last_failed_at": null,
-      "last_success_at": "2026-06-17T18:35:16.038649+00:00",
+      "last_success_at": "2026-06-17T21:21:43.870735+00:00",
       "source": "225navi:NIY=F"
     }
   },
@@ -94,7 +94,7 @@
       "key": "price_data",
       "label": "価格データ",
       "last_failed_at": "",
-      "last_success_at": "2026-06-17T18:35:16.038649+00:00",
+      "last_success_at": "2026-06-17T21:21:43.870735+00:00",
       "source": "225navi:NIY=F"
     },
     {
@@ -104,7 +104,7 @@
       "fallback_display": "なし",
       "key": "intermarket",
       "label": "米国3指数確認",
-      "last_failed_at": "2026-06-17T21:21:43.868824+00:00",
+      "last_failed_at": "2026-06-17T23:51:05.886393+00:00",
       "last_success_at": "",
       "source": "NQ=F / ES=F / YM=F"
     }
@@ -114,7 +114,7 @@
     "world_model": {
       "as_of": "",
       "basecalc_signal": {
-        "as_of": "2026-06-18 03:35 JST",
+        "as_of": "2026-06-18 06:21 JST",
         "confidence_label": "Middle",
         "confidence_score": 68,
         "directional_allowed": true,
@@ -770,7 +770,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-17T21:21:43.701556+00:00",
+        "fetched_at": "2026-06-17T23:51:05.718975+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -798,7 +798,7 @@
       "invalidation_text": "62,350割れで上昇判定を撤回",
       "is_ready": true,
       "is_stale": true,
-      "last_updated_display": "2026-06-18 03:35 JST",
+      "last_updated_display": "2026-06-18 06:21 JST",
       "main_scenario": "71,180から72,080方向を試しやすい",
       "model_version": "wm_v2.0.0",
       "momentum_score": 17.9,
@@ -1200,7 +1200,7 @@
         "source": "225navi",
         "symbol": "NIY=F"
       },
-      "stale_minutes": 166,
+      "stale_minutes": 149,
       "state_key": "bull_trend_continuation",
       "state_label": "上昇継続",
       "strength_label": "強い",
@@ -1327,7 +1327,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-17T21:21:43.701556+00:00",
+        "fetched_at": "2026-06-17T23:51:05.718975+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1361,7 +1361,7 @@
     },
     "fallback_used": false,
     "invalidation": "62,350",
-    "last_updated": "2026-06-18 03:35 JST",
+    "last_updated": "2026-06-18 06:21 JST",
     "main_reason": [
       "EMA5 > EMA20 > EMA60で短中期が上向き",
       "現在値がVWAP上",
@@ -1405,7 +1405,7 @@
     }
   },
   "detail_mode": false,
-  "generated_at": "2026-06-17T21:21:46.141477+00:00",
+  "generated_at": "2026-06-17T23:51:08.225805+00:00",
   "intermarket_technicals": {
     "components": {},
     "confirmation_label": "mixed",
@@ -1414,7 +1414,7 @@
     "evidence": [
       "米国3指数データなし"
     ],
-    "fetched_at": "2026-06-17T21:21:43.701556+00:00",
+    "fetched_at": "2026-06-17T23:51:05.718975+00:00",
     "readiness": {
       "level": "blocked",
       "missing": [
@@ -1427,52 +1427,52 @@
     },
     "risk_label": "technical_confirm"
   },
-  "job_duration_sec": 3.322,
+  "job_duration_sec": 2.899,
   "market_shock": {
     "has_data": false
   },
   "model_version": "wm_v2.0.0",
   "performance": {
-    "avg_confidence_score": 55.0,
-    "avg_mae_pct": 0,
+    "avg_confidence_score": 62.0,
+    "avg_mae_pct": -0.02,
     "avg_mfe_pct": 0,
     "avg_return_pct": 0,
     "continuation_directional_accuracy": 1.0,
     "directional_accuracy": 0.0,
     "invalidation_rate": 0.0,
     "mae_improvement_rate": 0,
-    "median_mae_pct": 0.0,
+    "median_mae_pct": -0.02,
     "median_mfe_pct": 0.0,
     "median_return_pct": 0.0,
     "model_directional_accuracy": 0.0,
-    "model_mae": 0.39,
+    "model_mae": 0.32,
     "sample_quality": "insufficient",
     "statistical_warning": "サンプル数が不足しています",
     "target_t1_hit_rate": 0.0,
     "target_t2_hit_rate": 0.0,
-    "total_predictions": 1,
+    "total_predictions": 2,
     "zero_prediction_mae": 0.0
   },
   "performance_by_horizon": {
     "1d": {
-      "avg_confidence_score": 55.0,
-      "avg_mae_pct": 0,
+      "avg_confidence_score": 62.0,
+      "avg_mae_pct": -0.02,
       "avg_mfe_pct": 0,
       "avg_return_pct": 0,
       "continuation_directional_accuracy": 1.0,
       "directional_accuracy": 0.0,
       "invalidation_rate": 0.0,
       "mae_improvement_rate": 0,
-      "median_mae_pct": 0.0,
+      "median_mae_pct": -0.02,
       "median_mfe_pct": 0.0,
       "median_return_pct": 0.0,
       "model_directional_accuracy": 0.0,
-      "model_mae": 0.39,
+      "model_mae": 0.32,
       "sample_quality": "insufficient",
       "statistical_warning": "サンプル数が不足しています",
       "target_t1_hit_rate": 0.0,
       "target_t2_hit_rate": 0.0,
-      "total_predictions": 1,
+      "total_predictions": 2,
       "zero_prediction_mae": 0.0
     },
     "3d": {
@@ -1526,7 +1526,7 @@
   "world_model": {
     "as_of": "",
     "basecalc_signal": {
-      "as_of": "2026-06-18 03:35 JST",
+      "as_of": "2026-06-18 06:21 JST",
       "confidence_label": "Middle",
       "confidence_score": 68,
       "directional_allowed": true,
@@ -2182,7 +2182,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-17T21:21:43.701556+00:00",
+      "fetched_at": "2026-06-17T23:51:05.718975+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
@@ -2210,7 +2210,7 @@
     "invalidation_text": "62,350割れで上昇判定を撤回",
     "is_ready": true,
     "is_stale": true,
-    "last_updated_display": "2026-06-18 03:35 JST",
+    "last_updated_display": "2026-06-18 06:21 JST",
     "main_scenario": "71,180から72,080方向を試しやすい",
     "model_version": "wm_v2.0.0",
     "momentum_score": 17.9,
@@ -2612,7 +2612,7 @@
       "source": "225navi",
       "symbol": "NIY=F"
     },
-    "stale_minutes": 166,
+    "stale_minutes": 149,
     "state_key": "bull_trend_continuation",
     "state_label": "上昇継続",
     "strength_label": "強い",
@@ -2739,7 +2739,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-17T21:21:43.701556+00:00",
+      "fetched_at": "2026-06-17T23:51:05.718975+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
