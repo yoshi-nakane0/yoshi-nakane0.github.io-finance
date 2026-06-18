@@ -1,0 +1,64 @@
+{
+  "house_view_validation": {
+    "accuracy_sections": {
+      "backtest": {
+        "data_modes": {
+          "revised_reference": {
+            "hit_count": 7,
+            "hit_rate": 0.6364,
+            "sample_count": 11,
+            "too_bullish_count": 2,
+            "too_defensive_count": 2
+          }
+        },
+        "generated_at": "2026-06-18T07:24:58.340034+00:00",
+        "hit_count": 7,
+        "hit_rate": 0.6364,
+        "horizons": {
+          "3m": {
+            "hit_count": 2,
+            "hit_rate": 0.5,
+            "sample_count": 4,
+            "too_bullish_count": 1,
+            "too_defensive_count": 1
+          },
+          "6m": {
+            "hit_count": 5,
+            "hit_rate": 0.7143,
+            "sample_count": 7,
+            "too_bullish_count": 1,
+            "too_defensive_count": 1
+          }
+        },
+        "period": {
+          "end": "2026-06-18",
+          "start": "2015-01-01"
+        },
+        "sample_count": 11,
+        "sample_kind": "backtest_replay",
+        "status": "available",
+        "too_bullish_count": 2,
+        "too_defensive_count": 2
+      },
+      "live": {
+        "hit_count": 0,
+        "hit_rate": null,
+        "sample_count": 0,
+        "sample_kind": "live_saved_forecasts",
+        "status": "waiting_for_realizations",
+        "too_bullish_count": 0,
+        "too_defensive_count": 0
+      }
+    },
+    "generated_at": "2026-06-18T07:24:58.724979+00:00",
+    "hit_count": 0,
+    "hit_rate": null,
+    "model_version": "macro_hatzius_v1",
+    "rows": [],
+    "sample_count": 0,
+    "target": "macro_regime",
+    "warnings": [
+      "検証件数が少ないため、的中率は暫定です。"
+    ]
+  }
+}

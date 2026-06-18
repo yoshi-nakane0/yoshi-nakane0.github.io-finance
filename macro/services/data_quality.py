@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from dataclasses import asdict, dataclass
 from datetime import date
 from typing import Optional
@@ -62,7 +63,19 @@ def _is_stale(indicator: Indicator, observation_date: date, as_of: date) -> bool
     limit_days = FRESHNESS_LIMIT_DAYS.get(indicator.frequency)
     if limit_days is None:
         return False
-    return max((as_of - observation_date).days, 0) > limit_days
+    freshness_date = observation_date
+    if indicator.frequency == Indicator.Frequency.MONTHLY:
+        freshness_date = observation_date.replace(
+            day=monthrange(observation_date.year, observation_date.month)[1],
+        )
+    elif indicator.frequency == Indicator.Frequency.QUARTERLY:
+        month = ((observation_date.month - 1) // 3 + 1) * 3
+        freshness_date = date(
+            observation_date.year,
+            month,
+            monthrange(observation_date.year, month)[1],
+        )
+    return max((as_of - freshness_date).days, 0) > limit_days
 
 
 def build_data_quality_gate(*, as_of: Optional[date] = None) -> DataQualityGateResult:

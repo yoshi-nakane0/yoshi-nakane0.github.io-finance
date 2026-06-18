@@ -71,6 +71,10 @@ jobs:
           python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
           python manage.py export_macro_model_cards --output static/macro/model_cards.json
           python manage.py export_macro_operations_status --output static/macro/operations_status.json
+          python manage.py export_macro_goldman_outlook --output static/macro/goldman_outlook_comparison.json
+          python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json
+          python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json
+          python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
 
       - name: Commit generated data
         run: |
@@ -145,6 +149,8 @@ jobs:
           python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json
           python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
           python manage.py export_macro_model_cards --output static/macro/model_cards.json
+          python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json
+          python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
 
       - name: Commit weekly forecast ledger
         if: ${{ env.DATABASE_URL != '' }}
@@ -210,6 +216,9 @@ jobs:
           python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
           python manage.py export_macro_model_cards --output static/macro/model_cards.json
           python manage.py export_macro_operations_status --output static/macro/operations_status.json
+          python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json
+          python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json
+          python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
 
       - name: Commit generated model outputs
         run: |
@@ -225,7 +234,10 @@ jobs:
             static/macro/macro_forecast_model.json \
             static/macro/model_validation_report.json \
             static/macro/model_cards.json \
-            static/macro/operations_status.json
+            static/macro/operations_status.json \
+            static/macro/house_view_validation.json \
+            static/macro/vintage_quality_report.json \
+            static/macro/validation_weights.json
           if git diff --cached --quiet; then
             echo "No model output changes."
             exit 0

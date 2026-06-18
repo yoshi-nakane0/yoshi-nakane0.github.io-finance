@@ -1,21 +1,19 @@
 {
-  "as_of": "2026-06-17",
+  "as_of": "2026-06-18",
   "blocking_issues": [],
-  "confidence_grade": "B",
-  "confidence_score": 89,
+  "confidence_grade": "A",
+  "confidence_score": 98,
   "data_quality_report": {
     "as_of": "2026-06-18",
     "blocking_issues": [],
-    "confidence_cap": "B",
+    "confidence_cap": "A",
     "display_allowed": true,
-    "freshness_score": 75.0,
+    "freshness_score": 100.0,
     "missing_required_count": 0,
     "required_count": 8,
-    "stale_required_count": 2,
+    "stale_required_count": 0,
     "usable_for_decision": true,
-    "warnings": [
-      "主要指標が2件古くなっています: PCE（2026-04-01）, Core PCE（2026-04-01）"
-    ]
+    "warnings": []
   },
   "display_allowed": true,
   "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
@@ -33,7 +31,8 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
-    "主要指標が2件古くなっています: PCE（2026-04-01）, Core PCE（2026-04-01）",
+    "N225 1m: 検証サンプル不足",
+    "IXIC 1m: 検証サンプル不足",
     "金利再上昇時に株価先物へ逆風"
   ],
   "probabilities": {

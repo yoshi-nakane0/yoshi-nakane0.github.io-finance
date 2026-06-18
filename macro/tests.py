@@ -2,8 +2,8 @@
 
 import gzip
 import json
+from datetime import date, timedelta
 from io import StringIO
-from datetime import date
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
@@ -33,6 +33,7 @@ from .models import (
     PriceObservation,
     RawArchiveManifest,
     RegimeSnapshot,
+    VintageObservation,
     WorldStateSnapshot,
     WorldModelRun,
 )
@@ -112,6 +113,23 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
             workflow,
         )
+        self.assertIn(
+            'python manage.py export_macro_goldman_outlook --output static/macro/goldman_outlook_comparison.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_validation_weights --output static/macro/validation_weights.json',
+            workflow,
+        )
+        self.assertNotIn('python manage.py run_house_view_backtest', workflow)
         self.assertIn('python manage.py weekly_macro_validation', workflow)
         self.assertIn('python manage.py run_macro_forecast', workflow)
         self.assertIn('python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json', workflow)
@@ -143,6 +161,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('static/macro/model_validation_report.json', monthly_block)
         self.assertIn('static/macro/model_cards.json', monthly_block)
         self.assertIn('static/macro/operations_status.json', monthly_block)
+        self.assertIn('static/macro/validation_weights.json', monthly_block)
 
     def test_local_macro_pipeline_exports_static_json_outputs(self):
         script = (Path(settings.BASE_DIR) / 'scripts' / 'run_macro_local_pipeline.sh').read_text(
@@ -183,8 +202,38 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
             script,
         )
+        self.assertIn(
+            'python manage.py export_macro_goldman_outlook --output static/macro/goldman_outlook_comparison.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_validation_weights --output static/macro/validation_weights.json',
+            script,
+        )
+        self.assertNotIn('python manage.py run_house_view_backtest', script)
         self.assertIn('git add static/macro/*.json', script)
         self.assertNotIn('runtime/db.sqlite3', script)
+
+        backtest_script = (
+            Path(settings.BASE_DIR) / 'scripts' / 'run_macro_house_view_backtest.sh'
+        ).read_text(encoding='utf-8')
+        self.assertIn('set -euo pipefail', backtest_script)
+        self.assertIn(
+            'python manage.py run_house_view_backtest --output static/macro/house_view_backtest.json',
+            backtest_script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json',
+            backtest_script,
+        )
 
     def test_vercel_build_skips_macro_refresh_unless_explicitly_enabled(self):
         build_script = (
@@ -224,6 +273,16 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('"outputDirectory": "staticfiles"', vercel_config)
         self.assertIn('name = "yoshi-nakane-finance"', python_project)
         self.assertIn('"Django==5.2.14"', python_project)
+
+    def test_macro_index_template_displays_backtest_and_live_accuracy(self):
+        template = (
+            Path(settings.BASE_DIR) / 'macro' / 'templates' / 'macro' / 'index.html'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('house_view_validation.accuracy_sections.backtest', template)
+        self.assertIn('house_view_validation.accuracy_sections.live', template)
+        self.assertIn('Backtest精度', template)
+        self.assertIn('Live精度', template)
 
     def test_macro_world_model_workflows_include_new_jobs(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -579,6 +638,389 @@ class MacroWorldModelStorageTest(TestCase):
         self.assertEqual(rows[0]['target_mode'], 'monthly_fallback')
 
 
+class MacroReliabilityEnhancementTest(TestCase):
+    def test_goldman_outlook_comparison_uses_free_public_sources(self):
+        from macro.services.goldman_outlook import build_goldman_outlook_comparison
+
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=82,
+            data_quality=95,
+            risk_probabilities={'recession_probability': 0.18},
+            regime_probabilities={'expansion': 0.7, 'slowdown': 0.2},
+        )
+
+        report = build_goldman_outlook_comparison()
+
+        self.assertEqual(report['source_scope'], 'free_public_goldman_sachs_pages')
+        self.assertTrue(report['free_public_sources'])
+        self.assertTrue(
+            all(
+                source['url'].startswith('https://www.goldmansachs.com/')
+                for source in report['free_public_sources']
+            )
+        )
+        self.assertEqual(
+            report['goldman_sachs_public_outlook']['forecasts']['us_gdp_growth_q4q4_2026'],
+            2.5,
+        )
+        self.assertIn('recession_probability_12m', report['comparison'])
+
+    def test_house_view_validation_scores_settled_regime_predictions(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.7,
+            metadata={'primary_regime': 'expansion'},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=80,
+            data_quality=90,
+        )
+
+        report = build_house_view_validation_report()
+
+        self.assertEqual(report['sample_count'], 1)
+        self.assertEqual(report['hit_count'], 1)
+        self.assertEqual(report['hit_rate'], 1.0)
+        self.assertEqual(report['rows'][0]['predicted_regime'], 'expansion')
+        self.assertEqual(report['rows'][0]['actual_regime'], 'expansion')
+
+    def test_house_view_validation_separates_backtest_and_live_accuracy(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.7,
+            metadata={'primary_regime': 'slowdown'},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            confidence=80,
+            data_quality=90,
+        )
+        with TemporaryDirectory() as tmpdir:
+            backtest_path = Path(tmpdir) / 'house_view_backtest.json'
+            backtest_path.write_text(
+                json.dumps({
+                    'backtest_accuracy': {
+                        'sample_count': 12,
+                        'hit_count': 9,
+                        'hit_rate': 0.75,
+                        'horizons': {
+                            '3m': {'sample_count': 6, 'hit_rate': 0.8333},
+                            '6m': {'sample_count': 6, 'hit_rate': 0.6667},
+                        },
+                        'data_modes': {
+                            'point_in_time': {'sample_count': 8, 'hit_rate': 0.875},
+                            'revised_reference': {'sample_count': 4, 'hit_rate': 0.5},
+                        },
+                    },
+                }),
+                encoding='utf-8',
+            )
+
+            report = build_house_view_validation_report(backtest_path=backtest_path)
+
+        self.assertEqual(report['accuracy_sections']['backtest']['hit_rate'], 0.75)
+        self.assertEqual(report['accuracy_sections']['backtest']['sample_count'], 12)
+        self.assertEqual(report['accuracy_sections']['live']['hit_rate'], 1.0)
+        self.assertEqual(report['accuracy_sections']['live']['sample_count'], 1)
+        self.assertNotEqual(
+            report['accuracy_sections']['backtest']['sample_kind'],
+            report['accuracy_sections']['live']['sample_kind'],
+        )
+
+    def test_house_view_backtest_replays_monthly_predictions_for_3m_and_6m(self):
+        from macro.services.house_view_backtest import run_house_view_backtest
+
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=75,
+            data_quality=90,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 7, 1),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            confidence=75,
+            data_quality=90,
+        )
+
+        with mock.patch(
+            'macro.services.house_view_backtest.regime.build_current_regime_assessment',
+            return_value={
+                'regime_label': 'expansion',
+                'rule_strength': 70,
+                'data_quality': 85,
+                'warnings': [],
+            },
+        ):
+            report = run_house_view_backtest(
+                start=date(2026, 1, 1),
+                end=date(2026, 1, 1),
+                horizons=(3, 6),
+                data_mode='revised_reference',
+            )
+
+        self.assertEqual(report['execution_scope'], 'local_heavy_backtest')
+        self.assertEqual(report['backtest_accuracy']['sample_count'], 2)
+        self.assertEqual(report['backtest_accuracy']['hit_count'], 1)
+        self.assertEqual(report['backtest_accuracy']['hit_rate'], 0.5)
+        self.assertEqual(report['backtest_accuracy']['horizons']['3m']['hit_rate'], 1.0)
+        self.assertEqual(report['backtest_accuracy']['horizons']['6m']['hit_rate'], 0.0)
+        self.assertEqual(report['backtest_accuracy']['data_modes']['revised_reference']['sample_count'], 2)
+        self.assertEqual(report['rows'][0]['validation_target'], 'macro_regime_3m')
+        self.assertEqual(report['rows'][1]['miss_type'], 'too_bullish')
+
+    def test_house_view_backtest_point_in_time_uses_vintage_values(self):
+        from macro.services.house_view_backtest import run_house_view_backtest
+
+        indicator, _ = Indicator.objects.update_or_create(
+            fred_series_id='INDPRO',
+            defaults={
+                'name_ja': '鉱工業生産',
+                'category': Indicator.Category.GROWTH,
+                'source': Indicator.Source.FRED,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.MONTHLY,
+            },
+        )
+        VintageObservation.objects.create(
+            indicator=indicator,
+            observation_date=date(2025, 1, 1),
+            realtime_start=date(2025, 1, 1),
+            realtime_end=date(9999, 12, 31),
+            value=95.0,
+            collected_at=timezone.now(),
+        )
+        VintageObservation.objects.create(
+            indicator=indicator,
+            observation_date=date(2026, 1, 1),
+            realtime_start=date(2026, 1, 1),
+            realtime_end=date(9999, 12, 31),
+            value=100.0,
+            collected_at=timezone.now(),
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=75,
+            data_quality=90,
+        )
+
+        with mock.patch(
+            'macro.services.house_view_backtest.regime.build_regime_assessment_from_metrics',
+            return_value={
+                'regime_label': 'expansion',
+                'rule_strength': 70,
+                'data_quality': 85,
+                'warnings': [],
+            },
+        ) as assessment_mock:
+            report = run_house_view_backtest(
+                start=date(2026, 1, 1),
+                end=date(2026, 1, 1),
+                horizons=(3,),
+                data_mode='point_in_time',
+            )
+
+        metrics = assessment_mock.call_args.args[0]
+        self.assertEqual(metrics['indpro_value'], 100.0)
+        self.assertAlmostEqual(metrics['indpro_yoy'], 5.2631578, places=4)
+        self.assertEqual(report['rows'][0]['data_mode'], 'point_in_time')
+        self.assertEqual(report['backtest_accuracy']['data_modes']['point_in_time']['sample_count'], 1)
+
+    def test_run_house_view_backtest_command_writes_summary_json(self):
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=75,
+            data_quality=90,
+        )
+        with TemporaryDirectory() as tmpdir, mock.patch(
+            'macro.services.house_view_backtest.regime.build_current_regime_assessment',
+            return_value={
+                'regime_label': 'expansion',
+                'rule_strength': 70,
+                'data_quality': 85,
+                'warnings': [],
+            },
+        ):
+            output_path = Path(tmpdir) / 'backtest.json'
+            call_command(
+                'run_house_view_backtest',
+                start='2026-01-01',
+                end='2026-01-01',
+                horizons='3',
+                output=str(output_path),
+                stdout=StringIO(),
+            )
+
+            payload = json.loads(output_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(payload['execution_scope'], 'local_heavy_backtest')
+        self.assertIn('backtest_accuracy', payload)
+        self.assertEqual(payload['backtest_accuracy']['sample_count'], 1)
+
+    def test_vintage_quality_report_flags_missing_revision_safe_data(self):
+        from macro.services.vintage_quality import build_vintage_quality_report
+
+        covered = Indicator.objects.create(
+            fred_series_id='COVERED',
+            name_ja='covered',
+            category=Indicator.Category.GROWTH,
+            source=Indicator.Source.FRED,
+            importance=Indicator.Importance.A,
+        )
+        missing = Indicator.objects.create(
+            fred_series_id='MISSING',
+            name_ja='missing',
+            category=Indicator.Category.INFLATION,
+            source=Indicator.Source.FRED,
+            importance=Indicator.Importance.A,
+        )
+        VintageObservation.objects.create(
+            indicator=covered,
+            observation_date=date(2026, 1, 1),
+            realtime_start=date(2026, 1, 15),
+            realtime_end=date(9999, 12, 31),
+            value=1.0,
+            collected_at=timezone.now(),
+        )
+
+        report = build_vintage_quality_report()
+
+        self.assertGreaterEqual(report['fred_active_series_count'], 2)
+        self.assertGreaterEqual(report['vintage_covered_series_count'], 1)
+        self.assertLess(report['vintage_coverage_pct'], 100.0)
+        self.assertFalse(report['strict_point_in_time_ready'])
+        self.assertIn(missing.fred_series_id, report['missing_vintage_series'])
+
+    def test_validation_weights_are_adjusted_from_latest_validation_results(self):
+        from macro.services.validation_weights import build_validation_weight_report
+
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=60,
+            metrics={'direction_accuracy': 0.64, 'skill_score': 0.2},
+        )
+        weak = ModelValidationReport.objects.create(
+            model_version='macro_forecast_lightgbm_v1',
+            target='PAYEMS',
+            horizon='3m',
+            sample_count=60,
+            metrics={'direction_accuracy': 0.48, 'skill_score': -0.1},
+        )
+
+        report = build_validation_weight_report()
+        weights = {
+            row['model_key']: row
+            for row in report['validation_weights']
+        }
+
+        self.assertEqual(report['weighting_policy'], 'validation_adjusted')
+        self.assertGreater(
+            weights['return_lightgbm_v2:GSPC:3m']['validation_weight'],
+            weights['macro_forecast_lightgbm_v1:PAYEMS:3m']['validation_weight'],
+        )
+        self.assertEqual(
+            weights['macro_forecast_lightgbm_v1:PAYEMS:3m']['report_id'],
+            weak.id,
+        )
+
+    def test_validation_weights_include_house_view_backtest_result(self):
+        from macro.services.validation_weights import build_validation_weight_report
+
+        with TemporaryDirectory() as tmpdir:
+            backtest_path = Path(tmpdir) / 'house_view_backtest.json'
+            backtest_path.write_text(
+                json.dumps({
+                    'generated_at': '2026-06-18T00:00:00+00:00',
+                    'backtest_accuracy': {
+                        'sample_count': 20,
+                        'hit_count': 16,
+                        'hit_rate': 0.8,
+                    },
+                }),
+                encoding='utf-8',
+            )
+
+            report = build_validation_weight_report(
+                house_view_backtest_path=backtest_path,
+            )
+
+        weights = {
+            row['model_key']: row
+            for row in report['validation_weights']
+        }
+        house_view_weight = weights['macro_hatzius_v1:macro_regime:backtest']
+        self.assertEqual(house_view_weight['source'], 'house_view_backtest')
+        self.assertEqual(house_view_weight['sample_count'], 20)
+        self.assertGreater(house_view_weight['validation_weight'], 0.7)
+
+    def test_model_validation_export_warns_when_latest_report_is_stale(self):
+        from macro.management.commands.export_macro_model_validation import (
+            build_model_validation_report,
+        )
+
+        report = ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=60,
+            metrics={'direction_accuracy': 0.6},
+        )
+        stale_at = timezone.now() - timedelta(days=40)
+        ModelValidationReport.objects.filter(id=report.id).update(evaluated_at=stale_at)
+
+        payload = build_model_validation_report()
+
+        self.assertTrue(payload['freshness']['is_stale'])
+        self.assertGreaterEqual(payload['freshness']['age_days'], 40)
+        self.assertTrue(payload['warnings'])
+
+    def test_new_reliability_export_commands_write_static_json(self):
+        with TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            commands = {
+                'export_macro_goldman_outlook': (
+                    output_dir / 'goldman.json',
+                    'goldman_sachs_public_outlook',
+                ),
+                'export_macro_house_view_validation': (
+                    output_dir / 'house_validation.json',
+                    'house_view_validation',
+                ),
+                'export_macro_vintage_quality': (
+                    output_dir / 'vintage.json',
+                    'vintage_quality_report',
+                ),
+                'export_macro_validation_weights': (
+                    output_dir / 'weights.json',
+                    'validation_weight_report',
+                ),
+            }
+
+            for command_name, (output_path, expected_key) in commands.items():
+                call_command(command_name, output=str(output_path), stdout=StringIO())
+                payload = json.loads(output_path.read_text(encoding='utf-8'))
+                self.assertIn(expected_key, payload)
+
+
 class UpdateLocalDataCommandTest(SimpleTestCase):
     def test_macro_task_refreshes_data_then_precomputes_dashboard(self):
         from macro.management.commands.update_local_data import Command
@@ -680,6 +1122,38 @@ class DataSyncNormalizationTest(TestCase):
             rows[23].expanding_z_score,
         )
         self.assertGreater(rows[24].expanding_z_score, rows[23].expanding_z_score)
+
+    def test_sync_indicator_deduplicates_same_date_rows_before_insert(self):
+        indicator = Indicator.objects.create(
+            fred_series_id='PA_DUPLICATE_TEST',
+            source=Indicator.Source.YFINANCE_DAILY,
+            name_ja='重複保存テスト',
+            category=Indicator.Category.MARKET,
+            importance=Indicator.Importance.B,
+            frequency=Indicator.Frequency.DAILY,
+        )
+        raw_rows = [
+            (date(2026, 6, 17), 10.0),
+            (date(2026, 6, 17), 11.0),
+            (date(2026, 6, 18), 12.0),
+        ]
+
+        with mock.patch(
+            'macro.services.data_sync._fetch_for_source',
+            return_value=raw_rows,
+        ):
+            first = data_sync.sync_indicator(indicator)
+            second = data_sync.sync_indicator(indicator)
+
+        stored = list(
+            Observation.objects
+            .filter(indicator=indicator)
+            .order_by('observation_date')
+            .values_list('observation_date', 'value')
+        )
+        self.assertEqual(first['created'], 2)
+        self.assertEqual(second['created'], 0)
+        self.assertEqual(stored, [(date(2026, 6, 17), 11.0), (date(2026, 6, 18), 12.0)])
 
 
 class RawArchiveTest(TestCase):
@@ -1231,6 +1705,41 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(report['missing_required_count'], 7)
         self.assertLess(report['freshness_score'], 50)
         self.assertTrue(report['blocking_issues'])
+
+    def test_data_quality_treats_recent_monthly_pce_as_fresh(self):
+        specs = [
+            ('CPIAUCSL', 'CPI', Indicator.Frequency.MONTHLY, date(2026, 5, 1)),
+            ('CPILFESL', 'Core CPI', Indicator.Frequency.MONTHLY, date(2026, 5, 1)),
+            ('PCEPI', 'PCE', Indicator.Frequency.MONTHLY, date(2026, 4, 1)),
+            ('PCEPILFE', 'Core PCE', Indicator.Frequency.MONTHLY, date(2026, 4, 1)),
+            ('UNRATE', '失業率', Indicator.Frequency.MONTHLY, date(2026, 5, 1)),
+            ('DGS10', '米10年金利', Indicator.Frequency.DAILY, date(2026, 6, 17)),
+            ('VIXCLS', 'VIX', Indicator.Frequency.DAILY, date(2026, 6, 17)),
+            ('BAMLH0A0HYM2', '信用スプレッド', Indicator.Frequency.DAILY, date(2026, 6, 17)),
+        ]
+        for series_id, name, frequency, observation_date in specs:
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': name,
+                    'category': Indicator.Category.INFLATION,
+                    'importance': Indicator.Importance.A,
+                    'frequency': frequency,
+                    'is_active': True,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=observation_date,
+                value=1.0,
+            )
+
+        report = data_quality.build_data_quality_report(as_of=date(2026, 6, 18))
+
+        self.assertEqual(report['freshness_score'], 100.0)
+        self.assertEqual(report['confidence_cap'], 'A')
+        self.assertEqual(report['stale_required_count'], 0)
+        self.assertEqual(report['warnings'], [])
 
     def test_house_view_uses_quality_gate_as_top_level_confidence_limit(self):
         WorldStateSnapshot.objects.create(

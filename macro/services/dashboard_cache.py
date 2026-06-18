@@ -248,8 +248,12 @@ def precompute_dashboard_payload() -> dict:
     )
     from .data_sync import get_latest_observation_date
     from .data_quality import build_data_quality_report
+    from .goldman_outlook import build_goldman_outlook_comparison
     from .house_view import build_house_view_context
+    from .house_view_validation import build_house_view_validation_report
     from .scenario import build_auto_scenarios
+    from .validation_weights import build_validation_weight_report
+    from .vintage_quality import build_vintage_quality_report
     from .policy_expectation import (
         build_policy_expectation_context,
         build_policy_expectation_snapshot,
@@ -274,6 +278,10 @@ def precompute_dashboard_payload() -> dict:
         'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
         'data_quality_report': build_data_quality_report(),
         'house_view': build_house_view_context(),
+        'goldman_outlook_comparison': build_goldman_outlook_comparison(),
+        'house_view_validation': build_house_view_validation_report(),
+        'vintage_quality_report': build_vintage_quality_report(),
+        'validation_weight_report': build_validation_weight_report(),
         'macro_decision': build_macro_decision_context(latest_snapshot),
         'macro_forecast_report': build_macro_forecast_report_context(),
         'macro_outcome_validation': build_macro_outcome_validation_context(),

@@ -1,0 +1,81 @@
+{
+  "comparison": {
+    "growth_view": {
+      "goldman_public_view": "above_consensus_us_growth",
+      "house_view_expansion_probability": 0.6568708855634098,
+      "house_view_regime": "slowdown"
+    },
+    "inflation_view": {
+      "goldman_public_core_pce_dec_2026_yoy": 2.1,
+      "house_view_inflation_metric": null,
+      "note": "House View はレジーム中心のため、直接比較できる数値がない場合は空欄にする。"
+    },
+    "recession_probability_12m": {
+      "difference": -0.128,
+      "goldman_public_value": 0.2,
+      "house_view_value": 0.07198151800287787,
+      "metric": "recession_probability_12m"
+    }
+  },
+  "free_public_sources": [
+    {
+      "published_at": "2026-01-15",
+      "title": "US GDP Growth Is Projected to Outperform Economist Forecasts in 2026",
+      "url": "https://www.goldmansachs.com/insights/articles/us-gdp-growth-is-projected-to-outperform-economist-forecasts-in-2026"
+    },
+    {
+      "published_at": "2025-12-19",
+      "title": "The Global Economy Is Forecast to Post 'Sturdy' Growth of 2.8% in 2026",
+      "url": "https://www.goldmansachs.com/insights/articles/the-global-economy-forecast-to-post-sturdy-growth-in-2026"
+    },
+    {
+      "published_at": "2025-12-03",
+      "title": "The Outlook for Fed Rate Cuts in 2026",
+      "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
+    }
+  ],
+  "generated_at": "2026-06-18T07:05:27.351439+00:00",
+  "goldman_sachs_public_outlook": {
+    "as_of": "2026-01-11",
+    "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
+    "forecasts": {
+      "core_pce_dec_2026_yoy": 2.1,
+      "fed_cuts_2026_count": 2,
+      "fed_terminal_rate_range": "3.0-3.25",
+      "global_gdp_growth_2026": 2.8,
+      "recession_probability_12m": 0.2,
+      "us_gdp_growth_full_year_2026": 2.8,
+      "us_gdp_growth_q4q4_2026": 2.5,
+      "us_gdp_growth_range_2026": "2.0-2.5"
+    },
+    "qualitative_view": {
+      "growth": "US growth above consensus, supported by tax cuts and easier financial conditions.",
+      "inflation": "Core inflation moderates as tariff pass-through fades.",
+      "labor": "Labor market is the most uncertain part of the outlook.",
+      "rates": "Policy rates decline, but the 2026 path is less clear."
+    }
+  },
+  "house_view_snapshot": {
+    "as_of": "2026-06-18",
+    "confidence": 76.0,
+    "data_quality": 95.0,
+    "primary_regime": "slowdown",
+    "regime_probabilities": {
+      "contraction": 0.02018798202221658,
+      "expansion": 0.6568708855634098,
+      "recovery": 0.17495960104105565,
+      "slowdown": 0.147981531373318
+    },
+    "risk_probabilities": {
+      "acceleration": 0.7181067459277792,
+      "financial_stress": 0.192833942731104,
+      "inflation_reacceleration": 0.8233758532469887,
+      "recession": 0.07198151800287787
+    }
+  },
+  "limitations": [
+    "Goldman Sachs の有料・会員限定レポートは使わない。",
+    "公開ページに数値がない項目は、無理に推定せず比較不能として扱う。"
+  ],
+  "source_scope": "free_public_goldman_sachs_pages"
+}
