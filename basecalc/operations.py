@@ -11,6 +11,7 @@ from .outcomes import (
 )
 from .persistence import export_basecalc_history
 from .intermarket_technicals import get_intermarket_technical_snapshot
+from .market_shock import build_market_shock_context
 from .services.decision_context import build_basecalc_decision_context
 from .snapshot import write_basecalc_snapshot
 from .status import (
@@ -75,6 +76,8 @@ def refresh_basecalc_data(
         export_basecalc_snapshot(
             world_model=world_model,
             basecalc_status=basecalc_status,
+            futures_snapshot=futures_snapshot,
+            intermarket_context=intermarket_context,
             export_snapshot_path=export_snapshot_path,
             job_duration_sec=round(time.monotonic() - started, 3),
         )
@@ -107,11 +110,16 @@ def export_basecalc_snapshot(
     *,
     world_model,
     basecalc_status,
+    futures_snapshot=None,
+    intermarket_context=None,
     export_snapshot_path,
     job_duration_sec,
 ):
     price = world_model.get("price") or 0
-    market_shock_context = {"has_data": False}
+    market_shock_context = _safe_market_shock_context(
+        futures_snapshot,
+        intermarket_context,
+    )
     basecalc_status_rows = status_display_rows(basecalc_status, world_model)
     backtest_performance_by_horizon = {
         horizon: performance_summary(horizon, is_backtest=True)
@@ -152,3 +160,18 @@ def export_basecalc_snapshot(
     }
     write_basecalc_snapshot(payload, export_snapshot_path)
     return payload
+
+
+def _safe_market_shock_context(futures_snapshot=None, intermarket_context=None):
+    try:
+        return build_market_shock_context(
+            base_snapshot=futures_snapshot,
+            intermarket_context=intermarket_context,
+        )
+    except Exception:
+        return {
+            "has_data": False,
+            "summary": "市場ショック判定データなし",
+            "tone": "unknown",
+            "rows": [],
+        }

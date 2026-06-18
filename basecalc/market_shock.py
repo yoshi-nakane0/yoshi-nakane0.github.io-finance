@@ -21,6 +21,22 @@ TARGETS = (
     {'symbol': 'IXIC', 'label': 'NASDAQ'},
 )
 
+INTERMARKET_LABELS = {
+    'nasdaq100_futures': 'NASDAQ100先物',
+    'sp500_futures': 'S&P500先物',
+    'dow_futures': 'NYダウ先物',
+    'usdjpy': 'USDJPY',
+    'vix': 'VIX',
+    'us10y': '米10年金利',
+    'crude_oil': '原油',
+}
+
+INDEX_FUTURES_TARGETS = {
+    'sp500_futures': 'GSPC',
+    'dow_futures': 'DJI',
+    'nasdaq100_futures': 'IXIC',
+}
+
 MOMENTUM_TRIGGER_PCT = 3.5
 
 
@@ -235,14 +251,18 @@ def build_market_shock_context(
     *,
     alert: Optional[Dict] = None,
     as_of: Optional[date] = None,
+    base_snapshot: Optional[Dict] = None,
+    intermarket_context: Optional[Dict] = None,
 ) -> Dict:
     """急変判定の表示用コンテキストを返す。"""
     target_date = as_of or timezone.localdate()
     alert_context = alert or compute_crash_alert(as_of=target_date)
-    rows = [
+    index_rows = [
         _row_for_target(target, alert=alert_context, as_of=target_date)
         for target in TARGETS
     ]
+    base_rows = _basecalc_asset_rows(base_snapshot, intermarket_context)
+    rows = _merge_index_futures(index_rows, base_rows)
     active = [row for row in rows if row['direction'] in ('surge', 'drop')]
     if not active:
         summary = '主要3指数に急変判定は出ていません。'
@@ -266,3 +286,136 @@ def build_market_shock_context(
         'rows': rows,
         'has_data': any(row['direction'] != 'unknown' for row in rows),
     }
+
+
+def _merge_index_futures(index_rows: List[Dict], base_rows: List[Dict]) -> List[Dict]:
+    by_symbol = {row.get('symbol'): dict(row) for row in index_rows}
+    merged = []
+    for row in base_rows:
+        target_symbol = INDEX_FUTURES_TARGETS.get(row.get('symbol'))
+        if target_symbol and target_symbol in by_symbol:
+            by_symbol[target_symbol]['futures'] = _futures_summary(row)
+            if by_symbol[target_symbol].get('direction') == 'unknown':
+                by_symbol[target_symbol].update(
+                    {
+                        'headline': row.get('headline'),
+                        'tone': row.get('tone'),
+                        'direction': row.get('direction'),
+                        'momentum_20d': row.get('momentum_20d'),
+                        'momentum_20d_display': row.get('momentum_20d_display'),
+                        'continuation_score_display': row.get('continuation_score_display'),
+                        'reason': row.get('reason'),
+                    }
+                )
+        else:
+            merged.append(row)
+    merged.extend(by_symbol.get(target['symbol']) for target in TARGETS)
+    return [row for row in merged if row]
+
+
+def _futures_summary(row: Dict) -> Dict:
+    return {
+        'label': row.get('label'),
+        'headline': row.get('headline'),
+        'direction': row.get('direction'),
+        'momentum_20d_display': row.get('momentum_20d_display'),
+        'continuation_score_display': row.get('continuation_score_display'),
+        'reason': row.get('reason'),
+    }
+
+
+def _basecalc_asset_rows(
+    base_snapshot: Optional[Dict],
+    intermarket_context: Optional[Dict],
+) -> List[Dict]:
+    rows = []
+    if isinstance(base_snapshot, dict):
+        change_pct = _to_float(base_snapshot.get('change_pct'))
+        rows.append(
+            _simple_asset_row(
+                symbol=base_snapshot.get('symbol') or 'NIY=F',
+                label='日経先物',
+                change_pct=change_pct,
+                threshold=3.0,
+                reason='日経先物本体の直近変化率を確認しています。',
+            )
+        )
+    components = (
+        intermarket_context.get('components')
+        if isinstance(intermarket_context, dict)
+        else {}
+    ) or {}
+    for key, component in components.items():
+        if key not in INTERMARKET_LABELS or not isinstance(component, dict):
+            continue
+        change_pct = _to_float(component.get('change_pct'))
+        if change_pct is None:
+            score = _to_float(component.get('score'))
+            change_pct = score / 20 if score is not None else None
+        rows.append(
+            _simple_asset_row(
+                symbol=key,
+                label=INTERMARKET_LABELS[key],
+                change_pct=change_pct,
+                threshold=2.0 if key != 'vix' else 8.0,
+                reason='basecalc内の補助市場データから急変を確認しています。',
+            )
+        )
+    return rows
+
+
+def _simple_asset_row(symbol, label, change_pct, threshold, reason):
+    direction = _move_direction_from_change(change_pct, threshold)
+    if direction == 'surge':
+        headline = f"急騰 {_severity(abs(change_pct or 0))}"
+        tone = 'positive'
+        continuation_label = '要確認'
+        score = min(100, round(abs(change_pct or 0) / max(threshold, 0.1) * 35))
+    elif direction == 'drop':
+        headline = f"急落 {_severity(abs(change_pct or 0))}"
+        tone = 'negative'
+        continuation_label = '要確認'
+        score = min(100, round(abs(change_pct or 0) / max(threshold, 0.1) * 35))
+    elif direction == 'calm':
+        headline = '急変なし'
+        tone = 'neutral'
+        continuation_label = '通常変動'
+        score = None
+    else:
+        headline = 'データ不足'
+        tone = 'unknown'
+        continuation_label = '判定保留'
+        score = None
+    return {
+        'symbol': symbol,
+        'label': label,
+        'headline': headline,
+        'tone': tone,
+        'direction': direction,
+        'continuation_score': score,
+        'continuation_score_display': f'{score}%' if score is not None else '—',
+        'continuation_label': continuation_label,
+        'momentum_20d': change_pct,
+        'momentum_20d_display': _fmt_pct(change_pct),
+        'dd200_display': '—',
+        'dd52w_display': '—',
+        'observation_date': '—',
+        'reason': reason,
+    }
+
+
+def _move_direction_from_change(change_pct, threshold):
+    if change_pct is None:
+        return 'unknown'
+    if change_pct >= threshold:
+        return 'surge'
+    if change_pct <= -threshold:
+        return 'drop'
+    return 'calm'
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None

@@ -1,7 +1,11 @@
 def build_scenarios(direction: str, setup: dict, targets: dict, intermarket: dict, invalidation_text: str) -> dict:
     setup_label = (setup or {}).get("primary_setup_label") or "方向確認待ち"
     confirmation = (intermarket or {}).get("confirmation_label")
+    confirmation_score = (intermarket or {}).get("confirmation_score") or 0
     us_text = _us_confirmation_text(confirmation)
+    upside_path = _price_path("up", (targets or {}).get("upside") or [], confirmation_score)
+    downside_path = _price_path("down", (targets or {}).get("downside") or [], -confirmation_score)
+    invalidation_path = _invalidation_path((targets or {}).get("invalidation") or {})
 
     if direction == "up":
         baseline = f"{setup_label}。押し目を作った後、直近高値の再試行を基本にします。"
@@ -25,16 +29,24 @@ def build_scenarios(direction: str, setup: dict, targets: dict, intermarket: dic
             "label": "上振れシナリオ",
             "text": upside,
             "targets": (targets or {}).get("upside") or [],
+            "path": upside_path,
         },
         "downside": {
             "label": "下振れシナリオ",
             "text": downside,
             "targets": (targets or {}).get("downside") or [],
+            "path": downside_path,
         },
         "invalidation": {
             "label": "無効化ライン",
             "text": invalidation_text or "日経先物の重要価格帯で判断します。",
             "level": (targets or {}).get("invalidation") or {},
+            "path": invalidation_path,
+        },
+        "price_paths": {
+            "upside": upside_path,
+            "downside": downside_path,
+            "invalidation": invalidation_path,
         },
     }
 
@@ -46,3 +58,41 @@ def _us_confirmation_text(label):
         "divergent": "米国3指数確認は分裂しており、追いかけは避けます。",
         "mixed": "米国3指数確認はまちまちです。",
     }.get(label, "米国3指数確認はデータ待ちです。")
+
+
+def _price_path(direction, target_rows, confirmation_score):
+    first = target_rows[0] if target_rows else {}
+    base_probability = first.get("probability") if isinstance(first, dict) else None
+    if base_probability is None:
+        base_probability = 0.0
+    adjustment = max(-0.15, min(0.15, float(confirmation_score or 0) / 300))
+    adjusted = max(0.0, min(0.95, float(base_probability) + adjustment))
+    return {
+        "direction": direction,
+        "target_label": first.get("label") or "T1",
+        "target_price": first.get("price"),
+        "base_probability": round(float(base_probability), 2),
+        "adjusted_probability": round(adjusted, 2),
+        "assumption": _path_assumption(direction, confirmation_score),
+    }
+
+
+def _invalidation_path(level):
+    return {
+        "direction": "invalidation",
+        "target_label": "無効化",
+        "target_price": level.get("price") if isinstance(level, dict) else None,
+        "base_probability": 0.0,
+        "adjusted_probability": 0.0,
+        "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+    }
+
+
+def _path_assumption(direction, confirmation_score):
+    if direction == "up":
+        if confirmation_score > 0:
+            return "米国3指数の確認が上値到達を補助します。"
+        return "米国3指数の確認が弱い場合、上値到達は参考値に下げます。"
+    if confirmation_score > 0:
+        return "米国3指数の弱さが下値到達を補助します。"
+    return "米国3指数の確認が弱い場合、下値到達は参考値に下げます。"

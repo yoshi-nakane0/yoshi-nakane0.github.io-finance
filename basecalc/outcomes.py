@@ -16,6 +16,7 @@ from .market_bars import (
     market_bars_between,
     nearest_bar_for_horizon,
 )
+from .baselines import baseline_comparison_summary
 
 logger = logging.getLogger(__name__)
 
@@ -343,6 +344,7 @@ def performance_summary(
             "median_mfe_pct": _median(mfe_values),
             "sample_quality": _sample_quality(total),
             "statistical_warning": "" if total >= 30 else "サンプル数が不足しています",
+            "baseline_comparison": baseline_comparison_summary(outcomes, horizon),
             **_baseline_performance_metrics(outcomes, horizon),
         }
     except DatabaseError:
@@ -558,6 +560,7 @@ def _empty_performance_summary():
         "median_mfe_pct": 0,
         "sample_quality": "insufficient",
         "statistical_warning": "サンプル数が不足しています",
+        "baseline_comparison": {"sample_count": 0, "rows": [], "best_baseline": {}},
     }
 
 

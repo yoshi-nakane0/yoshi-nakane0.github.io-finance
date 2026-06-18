@@ -7,7 +7,10 @@ from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .intermarket_technicals import get_intermarket_technical_snapshot
+from .intermarket_technicals import build_us_index_technical_context
 from .market_bars import attach_saved_daily_bars
+from .market_shock import build_market_shock_context
+from .market_context import _price_action_fallback_assets
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
@@ -31,6 +34,8 @@ from .status import (
 )
 from .world_model import build_world_model
 from .data_quality import is_snapshot_stale
+from .calibration import confidence_calibration_summary
+from .validation import validation_design_summary
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -65,6 +70,7 @@ def index(request):
         if snapshot:
             context = dict(snapshot)
             context["can_update_basecalc_data"] = can_update_basecalc_data
+            hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
             return render(request, "basecalc/index.html", context)
         return render(
@@ -190,6 +196,18 @@ def history(request):
             readiness_level=readiness_level,
             is_backtest=is_backtest,
         ),
+        "confidence_calibration_rows": confidence_calibration_summary(
+            horizon,
+            instrument_key=instrument_key,
+            readiness_level=readiness_level,
+            is_backtest=is_backtest,
+        ),
+        "validation_design": validation_design_summary(
+            horizon,
+            instrument_key=instrument_key,
+            readiness_level=readiness_level,
+            is_backtest=is_backtest,
+        ),
         "improvement_insights": improvement_insights(horizon),
         "horizons": ("1d", "3d", "5d"),
     }
@@ -250,7 +268,10 @@ def build_context(request, force_update=False):
         evaluate_due_predictions(price)
         save_prediction(world_model)
 
-    market_shock_context = {"has_data": False}
+    market_shock_context = _safe_market_shock_context(
+        futures_snapshot,
+        intermarket_context,
+    )
     basecalc_status_rows = status_display_rows(basecalc_status, world_model)
     decision = build_basecalc_decision_context(
         world_model,
@@ -274,6 +295,53 @@ def build_context(request, force_update=False):
         "updated": force_update,
         "price_param": format_price_param(price),
         "can_update_basecalc_data": can_update_basecalc_data,
+    }
+
+
+def _safe_market_shock_context(futures_snapshot=None, intermarket_context=None):
+    try:
+        return build_market_shock_context(
+            base_snapshot=futures_snapshot,
+            intermarket_context=intermarket_context,
+        )
+    except Exception:
+        return {
+            "has_data": False,
+            "summary": "市場ショック判定データなし",
+            "tone": "unknown",
+            "rows": [],
+        }
+
+
+def hydrate_saved_snapshot_context(context):
+    world_model = context.get("world_model") or {}
+    if not isinstance(world_model, dict):
+        return context
+    intermarket = world_model.get("us_index_confirmation") or {}
+    components = intermarket.get("components") if isinstance(intermarket, dict) else {}
+    if not components:
+        fallback_context = build_us_index_technical_context(_price_action_fallback_assets())
+        if fallback_context.get("components"):
+            world_model["us_index_confirmation"] = fallback_context
+            world_model["intermarket_technicals"] = fallback_context
+            context["intermarket_technicals"] = fallback_context
+    market_shock = context.get("market_shock") or {}
+    if not market_shock.get("has_data"):
+        context["market_shock"] = _safe_market_shock_context(
+            _snapshot_from_world_model(world_model),
+            world_model.get("us_index_confirmation") or world_model.get("intermarket_technicals"),
+        )
+    return context
+
+
+def _snapshot_from_world_model(world_model):
+    features = world_model.get("features") or {}
+    return {
+        "symbol": features.get("symbol") or world_model.get("source_symbol") or "NIY=F",
+        "price": world_model.get("price"),
+        "change_pct": features.get("change_1d_pct")
+        or features.get("daily_change_pct")
+        or world_model.get("change_pct"),
     }
 
 

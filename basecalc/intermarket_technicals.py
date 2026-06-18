@@ -83,7 +83,11 @@ def build_us_index_technical_context(assets: dict) -> dict:
 
 
 def get_intermarket_technical_snapshot() -> dict:
-    from .market_context import _fetch_context_symbol, fetch_intraday_context
+    from .market_context import (
+        _fetch_context_symbol,
+        _price_action_fallback_assets,
+        fetch_intraday_context,
+    )
 
     assets = {}
     for key, symbol in US_INDEX_SYMBOLS.items():
@@ -92,6 +96,10 @@ def get_intermarket_technical_snapshot() -> dict:
             snapshot = _fetch_context_symbol(symbol)
         if snapshot:
             assets[key] = snapshot
+    fallback_assets = _price_action_fallback_assets()
+    for key in US_INDEX_SYMBOLS:
+        if key not in assets and key in fallback_assets:
+            assets[key] = fallback_assets[key]
     return build_us_index_technical_context(assets)
 
 

@@ -22,9 +22,13 @@ from .intermarket_technicals import (
     US_INDEX_SYMBOLS,
     build_us_index_technical_context,
     evaluate_intermarket_readiness,
+    get_intermarket_technical_snapshot,
 )
 from . import market_shock, nikkei_bias
+from .baselines import baseline_comparison_summary
 from .backtesting import run_basecalc_backtest
+from .calibration import confidence_calibration_summary
+from .validation import validation_design_summary
 from .market_context import (
     calculate_context_score,
     fetch_intraday_context,
@@ -51,6 +55,7 @@ from .scoring import calculate_sentiment_score
 from .similarity import find_similar_cases
 from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
+from .scenario_engine import build_scenarios
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -269,6 +274,105 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '予測表示停止')
         top_html = response.content.decode('utf-8').split('data-field="model_detail"')[0]
         self.assertNotIn('期待 1d', top_html)
+
+    def test_index_summarizes_targets_in_plain_japanese(self):
+        snapshot = {
+            'data': {'price_display': '41,000'},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {
+                    'case_count': 60,
+                    'is_statistically_valid': True,
+                },
+                'target_ranges': [{'label': '1日', 'low': 40500, 'high': 41500, 'basis': 'ATR'}],
+                'upside_targets': [
+                    {
+                        'label': 'T1',
+                        'price': 41800,
+                        'reason': '前日高値',
+                        'probability_display': '62%',
+                        'distance_pct': 1.95,
+                        'sample_count': 42,
+                        'reliability': 'medium',
+                    },
+                    {
+                        'label': 'T2',
+                        'price': 42200,
+                        'reason': '節目突破',
+                        'probability_display': '48%',
+                        'distance_pct': 2.93,
+                        'sample_count': 42,
+                        'reliability': 'low',
+                    },
+                ],
+                'downside_targets': [
+                    {
+                        'label': 'T1',
+                        'price': 40400,
+                        'reason': '前日安値',
+                        'probability_display': '45%',
+                        'distance_pct': -1.46,
+                        'sample_count': 42,
+                        'reliability': 'medium',
+                    }
+                ],
+                'near_levels': {
+                    'upside': [{'price': 41200, 'reason': '近い節目', 'distance_pct': 0.49}],
+                    'downside': [{'price': 40800, 'reason': '近い節目', 'distance_pct': -0.49}],
+                },
+                'invalidation_display': '40,200',
+                'market_context': {'risk_label': 'neutral', 'risk_score': 0, 'components': {}},
+                'evidence': ['EMA20を上回る', '20日勢いが強い'],
+                'expected_return_1d': 0.4,
+                'expected_return_5d': 1.2,
+                'expected_return_label': '過去類似',
+            },
+            'market_shock': {'has_data': False},
+            'market_context': {},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'erp_method': 'fixed',
+            'erp_growth_input': '',
+            'price_param': '41000',
+            'growth_core_ratio_input': '0.6',
+            'growth_wide_ratio_input': '0.7',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '上値 第1候補')
+        self.assertContains(response, '下値 第1候補')
+        self.assertContains(response, '判定を弱める価格')
+        self.assertContains(response, '詳細ターゲット')
+        self.assertContains(response, '第2候補')
+        self.assertContains(response, '到達しやすさ')
+        self.assertContains(response, '根拠:')
+        self.assertNotContains(response, 'ターゲット全件')
+        self.assertNotContains(response, 'targetではなく節目')
 
     def test_manual_price_get_does_not_mutate_snapshot_view(self):
         response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
@@ -1139,6 +1243,115 @@ class BasecalcMarketShockTest(TestCase):
         self.assertContains(response, 'S&amp;P500の急落は継続寄りです。')
         self.assertContains(response, '急落 中 / 継続寄り')
 
+    def test_snapshot_view_hydrates_missing_stress_and_us_index_cards(self):
+        from .snapshot import load_basecalc_snapshot
+
+        self._create_price_action('PA_GSPC_MOM20', -7.0)
+        self._create_price_action('PA_DJI_MOM20', -5.0)
+        self._create_price_action('PA_IXIC_MOM20', -8.0)
+        payload = load_basecalc_snapshot()
+        payload['market_shock'] = {'has_data': False}
+        world_model = payload['world_model']
+        world_model['us_index_confirmation'] = {
+            'confirmation_score': 0,
+            'confirmation_label': 'mixed',
+            'components': {},
+            'evidence': ['米国3指数データなし'],
+            'readiness': {'level': 'blocked', 'reason': '米国3指数データなし'},
+        }
+        world_model['intermarket_technicals'] = world_model['us_index_confirmation']
+        world_model['features'] = {
+            **(world_model.get('features') or {}),
+            'symbol': 'NIY=F',
+            'change_1d_pct': -3.8,
+        }
+        payload['backtest_performance_by_horizon']['1d']['baseline_comparison'] = {
+            'sample_count': 300,
+            'rows': [{'key': 'model', 'label': '現行モデル', 'sample_count': 300}],
+            'best_baseline': {'key': 'model'},
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, '米国3指数データなし')
+        self.assertContains(response, '下落確認')
+        self.assertContains(response, '日経先物')
+        self.assertNotContains(response, 'ベースライン比較未整備')
+
+    def test_build_context_uses_basecalc_market_shock_context(self):
+        request = mock.Mock(
+            GET={},
+            POST={},
+            user=mock.Mock(is_authenticated=False, is_staff=False),
+        )
+        shock_context = {
+            'has_data': True,
+            'tone': 'negative',
+            'summary': 'S&P500の急落は継続寄りです。',
+            'rows': [],
+        }
+
+        with (
+            patch('basecalc.views.get_cached_futures_snapshot', return_value=_ready_snapshot()),
+            patch('basecalc.views.get_cached_intermarket_technical_context', return_value={}),
+            patch('basecalc.views.build_market_shock_context', return_value=shock_context),
+        ):
+            from .views import build_context
+
+            context = build_context(request, force_update=False)
+
+        self.assertEqual(context['market_shock']['summary'], shock_context['summary'])
+        self.assertIn(shock_context['summary'], context['decision']['market_stress']['reasons'])
+
+    def test_market_shock_context_includes_basecalc_assets(self):
+        result = market_shock.build_market_shock_context(
+            alert={'market_stress_score': 30, 'category_summary': []},
+            as_of=date(2026, 5, 18),
+            base_snapshot={'change_pct': -4.2, 'price': 66670},
+            intermarket_context={
+                'components': {
+                    'nasdaq100_futures': {'change_pct': -2.1, 'score': -35},
+                }
+            },
+        )
+
+        labels = {row['label'] for row in result['rows']}
+        self.assertIn('日経先物', labels)
+        self.assertIn('NASDAQ', labels)
+        nasdaq = next(row for row in result['rows'] if row['label'] == 'NASDAQ')
+        self.assertEqual(nasdaq['futures']['label'], 'NASDAQ100先物')
+        self.assertTrue(result['has_data'])
+        self.assertIn('急落', result['summary'])
+
+    def test_market_shock_merges_us_index_and_futures_rows(self):
+        self._create_price_action('PA_GSPC_MOM20', -7.0)
+        self._create_price_action('PA_DJI_MOM20', -4.0)
+        self._create_price_action('PA_IXIC_MOM20', -8.0)
+
+        result = market_shock.build_market_shock_context(
+            alert={'market_stress_score': 30, 'category_summary': []},
+            as_of=date(2026, 5, 18),
+            intermarket_context={
+                'components': {
+                    'sp500_futures': {'change_pct': -1.8, 'score': -30},
+                    'dow_futures': {'change_pct': -1.2, 'score': -20},
+                    'nasdaq100_futures': {'change_pct': -2.4, 'score': -45},
+                },
+            },
+        )
+
+        labels = [row['label'] for row in result['rows']]
+        self.assertEqual(labels.count('S&P500'), 1)
+        self.assertEqual(labels.count('NYダウ'), 1)
+        self.assertEqual(labels.count('NASDAQ'), 1)
+        self.assertNotIn('S&P500先物', labels)
+        self.assertNotIn('NYダウ先物', labels)
+        self.assertNotIn('NASDAQ100先物', labels)
+        sp500 = next(row for row in result['rows'] if row['label'] == 'S&P500')
+        self.assertEqual(sp500['futures']['label'], 'S&P500先物')
+
 
 class BasecalcAnchorSnapshotTests(TestCase):
     def test_anchor_values_override_top_level_latest_values(self):
@@ -1309,6 +1522,45 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         )
 
         self.assertAlmostEqual(sum(row['probability'] for row in transitions), 1.0, places=2)
+
+    def test_state_machine_uses_learned_transition_matrix(self):
+        transitions = estimate_transition_probabilities(
+            'range_neutral',
+            {'sentiment_score': 5, 'continuation_score': 30, 'shock_score': 20},
+            performance_stats={
+                'transition_matrix': {
+                    'range_neutral': {
+                        'dip_buy': {'count': 8, 'probability': 0.8},
+                        'return_sell': {'count': 1, 'probability': 0.1},
+                    },
+                },
+                'transition_sample_count': 10,
+            },
+        )
+
+        self.assertEqual(transitions[0]['state_key'], 'dip_buy')
+        self.assertGreater(transitions[0]['probability'], 0.5)
+        self.assertEqual(transitions[0]['source'], 'learned')
+
+    def test_scenarios_include_price_path_simulation(self):
+        scenarios = build_scenarios(
+            'up',
+            {'primary_setup_label': '押し目買い'},
+            {
+                'upside': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                'downside': [{'label': 'T1', 'price': 40400, 'probability': 0.31}],
+                'invalidation': {'price': 40200},
+            },
+            {'confirmation_label': 'confirm_up', 'confirmation_score': 35},
+            '40,200を割ると上昇判定は弱まる',
+        )
+
+        path = scenarios['upside']['path']
+        self.assertEqual(path['direction'], 'up')
+        self.assertEqual(path['target_label'], 'T1')
+        self.assertEqual(path['target_price'], 41800)
+        self.assertGreater(path['adjusted_probability'], 0.62)
+        self.assertIn('price_paths', scenarios)
 
     def test_market_context_score_handles_risk_on_mock(self):
         result = calculate_context_score(
@@ -1514,6 +1766,39 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertIn(result['confirmation_label'], {'confirm_up', 'mixed'})
         self.assertNotIn('usd_jpy', result['components'])
         self.assertNotIn('vix', result['components'])
+
+    def test_us_index_snapshot_falls_back_to_saved_price_action(self):
+        for series_id, value in (
+            ('PA_GSPC_MOM20', -6.0),
+            ('PA_DJI_MOM20', -5.0),
+            ('PA_IXIC_MOM20', -8.0),
+        ):
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': series_id,
+                    'category': Indicator.Category.MARKET,
+                    'importance': Indicator.Importance.B,
+                    'frequency': Indicator.Frequency.DAILY,
+                    'source': Indicator.Source.YFINANCE_DAILY,
+                    'is_active': True,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=timezone.localdate(),
+                value=value,
+            )
+
+        with (
+            patch('basecalc.market_context.fetch_intraday_context', return_value=None),
+            patch('basecalc.market_context._fetch_context_symbol', return_value=None),
+        ):
+            result = get_intermarket_technical_snapshot()
+
+        self.assertEqual(result['readiness']['level'], 'ready')
+        self.assertEqual(set(result['components'].keys()), set(US_INDEX_SYMBOLS.keys()))
+        self.assertEqual(result['confirmation_label'], 'confirm_down')
 
     def test_sentiment_score_uses_us_index_confirmation_not_broad_market_context(self):
         base_features = {
@@ -2593,6 +2878,59 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(summary['model_mae'], 0.4)
         self.assertEqual(summary['mae_improvement_rate'], -3.0)
         self.assertEqual(state_rows[0]['target_t1_hit_rate'], 1.0)
+        self.assertIn('baseline_comparison', summary)
+
+    def test_baseline_comparison_reports_named_models(self):
+        rows = []
+        specs = (
+            ('up', 0.8, 0.5, 0.9, 40800, 41200),
+            ('down', -0.6, -0.4, -0.7, 41000, 40900),
+        )
+        for direction, realized, expected, previous_close, current_close, price_at_eval in specs:
+            prediction = WorldModelPrediction.objects.create(
+                model_version='wm_v2.0.0',
+                price=41000,
+                state_key='range_neutral',
+                state_label='レンジ中立',
+                direction=direction,
+                sentiment_score=40 if direction == 'up' else -40,
+                continuation_score=20,
+                shock_score=20,
+                confidence='Middle',
+                confidence_score=65,
+                data_quality_score=90,
+                main_scenario='test',
+                evidence=[],
+                expected_returns={'1d': {'value': expected}},
+                features={
+                    'symbol': 'NIY=F',
+                    'previous_close': previous_close,
+                    'close': current_close,
+                    'ema5': current_close + (10 if direction == 'up' else -10),
+                    'ema20': current_close,
+                    'vwap': current_close - (5 if direction == 'up' else -5),
+                    'atr14': 400,
+                },
+                instrument_key='cme_nikkei_futures',
+                readiness_level='ready',
+            )
+            rows.append(
+                PredictionOutcome.objects.create(
+                    prediction=prediction,
+                    horizon='1d',
+                    evaluated_at=timezone.now(),
+                    price_at_evaluation=price_at_eval,
+                    realized_return_pct=realized,
+                    direction_hit=True,
+                )
+            )
+
+        result = baseline_comparison_summary(rows, '1d')
+
+        keys = {row['key'] for row in result['rows']}
+        self.assertTrue({'always_up', 'always_neutral', 'continuation', 'ema_cross', 'vwap_side', 'model'}.issubset(keys))
+        self.assertEqual(result['sample_count'], 2)
+        self.assertGreaterEqual(result['best_baseline']['directional_accuracy'], 0)
 
     def test_calibration_summary_compares_expected_and_realized_returns(self):
         prediction = WorldModelPrediction.objects.create(
@@ -2629,6 +2967,95 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(rows[0]['sample_count'], 1)
         self.assertEqual(rows[0]['avg_expected_pct'], 0.4)
         self.assertEqual(rows[0]['avg_realized_pct'], 0.2)
+
+    def test_confidence_calibration_buckets_actual_results(self):
+        for confidence_score, realized, direction_hit, t1_hit in (
+            (55, 0.3, True, True),
+            (68, -0.4, False, False),
+            (82, 0.9, True, True),
+        ):
+            prediction = WorldModelPrediction.objects.create(
+                model_version='wm_v2.0.0',
+                price=41000,
+                state_key='range_neutral',
+                state_label='レンジ中立',
+                direction='up',
+                sentiment_score=20,
+                continuation_score=20,
+                shock_score=20,
+                confidence='Middle',
+                confidence_score=confidence_score,
+                data_quality_score=90,
+                main_scenario='test',
+                evidence=[],
+                expected_returns={'1d': {'value': 0.4}},
+                features={'symbol': 'NIY=F'},
+                instrument_key='cme_nikkei_futures',
+                readiness_level='ready',
+            )
+            PredictionOutcome.objects.create(
+                prediction=prediction,
+                horizon='1d',
+                evaluated_at=timezone.now(),
+                price_at_evaluation=41100,
+                realized_return_pct=realized,
+                direction_hit=direction_hit,
+                upside_t1_hit=t1_hit,
+            )
+
+        rows = confidence_calibration_summary('1d')
+        by_bucket = {row['bucket']: row for row in rows}
+
+        self.assertEqual(by_bucket['50台']['directional_accuracy'], 1.0)
+        self.assertEqual(by_bucket['60台']['directional_accuracy'], 0.0)
+        self.assertEqual(by_bucket['80台']['target_t1_hit_rate'], 1.0)
+        self.assertIn('avg_return_pct', by_bucket['80台'])
+
+    def test_validation_design_summary_splits_periods_and_regimes(self):
+        base_time = timezone.now() - timezone.timedelta(days=80)
+        for index, (state_key, realized, hit, atr_ratio) in enumerate(
+            (
+                ('range_neutral', 0.4, True, 0.006),
+                ('range_neutral', -0.5, False, 0.007),
+                ('bull_trend_continuation', 0.9, True, 0.018),
+                ('bear_trend_continuation', -0.8, True, 0.02),
+            )
+        ):
+            prediction = WorldModelPrediction.objects.create(
+                model_version='wm_v2.0.0',
+                prediction_timestamp=base_time + timezone.timedelta(days=index * 20),
+                price=41000,
+                state_key=state_key,
+                state_label=STATE_DEFINITIONS[state_key]['label'],
+                direction='up' if realized > 0 else 'down',
+                sentiment_score=30,
+                continuation_score=20,
+                shock_score=20,
+                confidence='Middle',
+                confidence_score=65,
+                data_quality_score=90,
+                main_scenario='test',
+                evidence=[],
+                expected_returns={'1d': {'value': 0.4}},
+                features={'symbol': 'NIY=F', 'atr14': 41000 * atr_ratio},
+                instrument_key='cme_nikkei_futures',
+                readiness_level='ready',
+            )
+            PredictionOutcome.objects.create(
+                prediction=prediction,
+                horizon='1d',
+                evaluated_at=timezone.now(),
+                price_at_evaluation=41100,
+                realized_return_pct=realized,
+                direction_hit=hit,
+            )
+
+        summary = validation_design_summary('1d')
+
+        self.assertTrue(summary['walk_forward'])
+        self.assertTrue(summary['period_splits'])
+        self.assertIn('volatility_regimes', summary)
+        self.assertTrue(summary['market_regimes'])
 
     def test_backtest_command_dry_run_uses_saved_market_bars(self):
         start = timezone.now() - timezone.timedelta(days=60)

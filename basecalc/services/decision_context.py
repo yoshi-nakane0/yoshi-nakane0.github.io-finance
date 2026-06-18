@@ -45,6 +45,7 @@ def enrich_basecalc_context(context):
         return context
     world_model = context.get("world_model") or {}
     _ensure_intermarket_display_defaults(world_model)
+    _ensure_target_display_defaults(world_model)
     market_shock = context.get("market_shock") or {}
     status_rows = context.get("basecalc_status_rows") or []
     context["decision"] = build_basecalc_decision_context(
@@ -143,7 +144,10 @@ def prediction_stop_reasons(world_model, performance=None):
     if data_quality.get("level") in {"bad"}:
         reasons.append("データ品質不足")
     if performance is not None and not _has_baseline_validation(performance):
-        reasons.append("ベースライン比較未整備")
+        if _has_baseline_metrics(performance):
+            reasons.append("ベースライン比較未達")
+        else:
+            reasons.append("ベースライン比較未整備")
     return reasons or ["予測表示条件を満たしていません"]
 
 
@@ -171,14 +175,84 @@ def _top_risk(world_model, market_shock):
 
 
 def _primary_target(targets):
-    for target in targets or []:
+    for index, target in enumerate(targets or []):
         if isinstance(target, dict) and target.get("price") is not None:
             return {
-                "label": target.get("label") or "T1",
+                "label": target.get("display_label") or _target_display_label(target.get("label"), index),
                 "price": target.get("price"),
                 "reason": target.get("reason") or "",
+                "probability_label": target.get("probability_label") or _target_probability_label(target),
             }
     return None
+
+
+def _ensure_target_display_defaults(world_model):
+    if not isinstance(world_model, dict):
+        return
+    for key in ("upside_targets", "downside_targets"):
+        for index, target in enumerate(world_model.get(key) or []):
+            if not isinstance(target, dict):
+                continue
+            target.setdefault("display_label", _target_display_label(target.get("label"), index))
+            target.setdefault("probability_label", _target_probability_label(target))
+            target.setdefault("distance_label", _target_distance_label(target.get("distance_pct")))
+            target.setdefault("sample_label", _target_sample_label(target.get("sample_count")))
+            target.setdefault("reliability_label", _target_reliability_label(target.get("reliability")))
+    near_levels = world_model.get("near_levels") or {}
+    for key in ("upside", "downside"):
+        for level in near_levels.get(key) or []:
+            if not isinstance(level, dict):
+                continue
+            level.setdefault("distance_label", _target_distance_label(level.get("distance_pct")))
+
+
+def _target_display_label(label, index):
+    label_text = str(label or "").strip().upper()
+    if label_text.startswith("T") and label_text[1:].isdigit():
+        return f"第{label_text[1:]}候補"
+    if not label_text:
+        return f"第{index + 1}候補"
+    return str(label)
+
+
+def _target_probability_label(target):
+    display = target.get("probability_display")
+    if display:
+        return str(display)
+    probability = target.get("probability")
+    if probability is None:
+        return "参考"
+    try:
+        return f"{float(probability) * 100:.0f}%"
+    except (TypeError, ValueError):
+        return "参考"
+
+
+def _target_distance_label(value):
+    if value is None:
+        return ""
+    try:
+        return f"{float(value):.2f}%"
+    except (TypeError, ValueError):
+        return ""
+
+
+def _target_sample_label(value):
+    if value is None:
+        return ""
+    try:
+        return f"検証{int(value)}件"
+    except (TypeError, ValueError):
+        return ""
+
+
+def _target_reliability_label(value):
+    labels = {
+        "high": "信頼度高め",
+        "medium": "通常",
+        "low": "参考",
+    }
+    return labels.get(str(value or "").lower(), "")
 
 
 def _primary_range(ranges):
@@ -257,6 +331,12 @@ def _status_summary(status_rows):
 def _has_baseline_validation(performance):
     if not isinstance(performance, dict):
         return False
+    comparison = performance.get("baseline_comparison")
+    if isinstance(comparison, dict):
+        if int(comparison.get("sample_count") or 0) >= 30:
+            best = comparison.get("best_baseline") or {}
+            if best.get("key") == "model":
+                return True
     required = {
         "model_directional_accuracy",
         "continuation_directional_accuracy",
@@ -277,3 +357,21 @@ def _has_baseline_validation(performance):
     if model_accuracy < continuation_accuracy:
         return False
     return zero_mae > 0 and model_mae <= zero_mae
+
+
+def _has_baseline_metrics(performance):
+    if not isinstance(performance, dict):
+        return False
+    comparison = performance.get("baseline_comparison")
+    if isinstance(comparison, dict) and int(comparison.get("sample_count") or 0) > 0:
+        return True
+    required = {
+        "model_directional_accuracy",
+        "continuation_directional_accuracy",
+        "zero_prediction_mae",
+        "model_mae",
+        "mae_improvement_rate",
+    }
+    return required.issubset(performance.keys()) and int(
+        performance.get("total_predictions") or 0
+    ) > 0

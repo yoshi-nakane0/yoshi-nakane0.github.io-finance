@@ -1648,11 +1648,12 @@ details.card[open] .accordion-toggle {
 
 .target-row {
     display: grid;
-    grid-template-columns: 36px minmax(80px, 1fr);
+    grid-template-columns: minmax(82px, 0.72fr) minmax(110px, 1fr);
     grid-template-areas:
         "label price"
-        "reason reason";
-    gap: 2px 10px;
+        "reason reason"
+        "meta meta";
+    gap: 6px 10px;
     align-items: center;
     padding: 12px;
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1660,26 +1661,49 @@ details.card[open] .accordion-toggle {
     background: rgba(255, 255, 255, 0.035);
 }
 
-.target-row span {
+.target-row > span {
     grid-area: label;
     color: var(--color-text-muted);
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     font-weight: 800;
+    line-height: 1.25;
 }
 
-.target-row strong {
+.target-row > strong {
     grid-area: price;
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 1.12rem;
     font-feature-settings: "tnum";
     text-align: right;
+    overflow-wrap: anywhere;
 }
 
-.target-row small {
+.target-row > small {
     grid-area: reason;
     color: var(--color-text-muted);
     font-size: 0.78rem;
     line-height: 1.35;
+}
+
+.target-row__meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.target-row__meta span {
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(15, 23, 42, 0.36);
+    color: rgba(203, 213, 225, 0.86);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
 }
 
 .muted-row {
@@ -2610,4 +2634,3 @@ summary.accordion-summary::-webkit-details-marker {
     .history-item__grid {
         grid-template-columns: 1fr;
     }
-

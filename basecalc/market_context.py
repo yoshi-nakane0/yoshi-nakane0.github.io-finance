@@ -387,11 +387,18 @@ def _price_action_fallback_assets():
         if observation is None:
             continue
         latest_date = max(latest_date, observation.observation_date) if latest_date else observation.observation_date
+        momentum = float(observation.value or 0)
+        base_price = 100.0
+        latest_price = base_price * (1 + momentum / 100)
+        closes = _linear_series(base_price, latest_price, 21)
         assets[key] = {
             "symbol": label,
-            "price": None,
-            "previous_close": None,
-            "change_pct": round(float(observation.value or 0) / 5, 2),
+            "price": round(latest_price, 4),
+            "previous_close": round(closes[-2], 4),
+            "change_pct": round(momentum, 2),
+            "closes": closes,
+            "highs": [round(value * 1.002, 4) for value in closes],
+            "lows": [round(value * 0.998, 4) for value in closes],
             "source": "macro_price_action",
             "fetched_at": timezone.make_aware(
                 timezone.datetime.combine(
@@ -409,6 +416,13 @@ def _price_action_fallback_assets():
         for asset in assets.values():
             asset["fetched_at"] = fetched_at
     return assets
+
+
+def _linear_series(start, end, count):
+    if count <= 1:
+        return [round(end, 4)]
+    step = (end - start) / (count - 1)
+    return [round(start + step * index, 4) for index in range(count)]
 
 
 def _label(key):

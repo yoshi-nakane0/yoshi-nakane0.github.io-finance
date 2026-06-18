@@ -104,11 +104,12 @@ def estimate_transition_probabilities(
     similar_summary=None,
 ) -> list[dict]:
     definition = get_state_definition(state_key)
-    next_states = definition["next_states"]
+    next_states = list(definition["next_states"])
     sentiment = int(features.get("sentiment_score") or 0)
     continuation = int(features.get("continuation_score") or 0)
     shock = int(features.get("shock_score") or 0)
     similar_summary = similar_summary or {}
+    learned = _learned_transitions(state_key, performance_stats)
     weights = []
     for index, next_state in enumerate(next_states):
         next_definition = get_state_definition(next_state)
@@ -126,7 +127,13 @@ def estimate_transition_probabilities(
             weight += 0.3
         if similar_summary.get("directional_accuracy") and bias in {"up", "down"}:
             weight += float(similar_summary["directional_accuracy"]) * 0.2
+        if next_state in learned:
+            weight += learned[next_state]["probability"] * 2
         weights.append(max(weight, 0.05))
+    for next_state, meta in learned.items():
+        if next_state not in next_states:
+            next_states.append(next_state)
+            weights.append(max(meta["probability"] * 2, 0.05))
     total = sum(weights) or 1
     rows = []
     for next_state, weight in zip(next_states, weights):
@@ -136,8 +143,12 @@ def estimate_transition_probabilities(
                 "state_key": next_state,
                 "label": state_def["label"],
                 "probability": round(weight / total, 2),
+                "source": "learned" if next_state in learned else "rule",
+                "sample_count": learned.get(next_state, {}).get("count", 0),
             }
         )
+    if learned:
+        rows = sorted(rows, key=lambda row: row["probability"], reverse=True)
     return _normalize_probabilities(rows)
 
 
@@ -191,3 +202,22 @@ def _normalize_probabilities(rows):
         normalized.append({**row, "probability": probability})
     normalized.append({**rows[-1], "probability": round(max(0, 1 - running), 2)})
     return normalized
+
+
+def _learned_transitions(state_key, performance_stats):
+    performance_stats = performance_stats or {}
+    matrix = performance_stats.get("transition_matrix") or {}
+    rows = matrix.get(state_key) or {}
+    if performance_stats.get("transition_sample_count", 0) < 5:
+        return {}
+    learned = {}
+    for next_state, meta in rows.items():
+        probability = meta.get("probability") if isinstance(meta, dict) else None
+        count = meta.get("count", 0) if isinstance(meta, dict) else 0
+        if probability is None:
+            continue
+        learned[next_state] = {
+            "probability": float(probability),
+            "count": int(count or 0),
+        }
+    return learned

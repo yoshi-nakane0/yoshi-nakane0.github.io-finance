@@ -206,12 +206,9 @@
                             </div>
                         </div>
                         <div class="wm-purpose-targets">
-                            <span class="wm-purpose-targets__item">上値候補 <strong>{% if decision.upside_target %}{{ decision.upside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.upside_target %}{{ decision.upside_target.reason }}{% else %}データ不足{% endif %}</small></span>
-                            <span class="wm-purpose-targets__item">下値候補 <strong>{% if decision.downside_target %}{{ decision.downside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.downside_target %}{{ decision.downside_target.reason }}{% else %}データ不足{% endif %}</small></span>
-                            <span class="wm-purpose-targets__item is-warning">無効化 <strong data-field="invalidation_display">{{ decision.invalidation|default:"N/A" }}</strong><small>無効化ライン</small></span>
-                            {% if decision.range_1d %}
-                            <span class="wm-purpose-targets__item">{{ decision.range_1d.label }} <strong>{{ decision.range_1d.low|floatformat:0|intcomma }}〜{{ decision.range_1d.high|floatformat:0|intcomma }}</strong><small>{{ decision.range_1d.basis }}</small></span>
-                            {% endif %}
+                            <span class="wm-purpose-targets__item">上値 {{ decision.upside_target.label|default:"第1候補" }} <strong>{% if decision.upside_target %}{{ decision.upside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.upside_target %}根拠: {{ decision.upside_target.reason|default:"データ不足" }}{% else %}データ不足{% endif %}</small></span>
+                            <span class="wm-purpose-targets__item">下値 {{ decision.downside_target.label|default:"第1候補" }} <strong>{% if decision.downside_target %}{{ decision.downside_target.price|floatformat:0|intcomma }}{% else %}N/A{% endif %}</strong><small>{% if decision.downside_target %}根拠: {{ decision.downside_target.reason|default:"データ不足" }}{% else %}データ不足{% endif %}</small></span>
+                            <span class="wm-purpose-targets__item is-warning">判定を弱める価格 <strong data-field="invalidation_display">{{ decision.invalidation|default:"N/A" }}</strong><small>ここを抜けたら見方を落とす</small></span>
                         </div>
                     </article>
                 </div>
@@ -425,8 +422,14 @@
                             <span>200日線 {{ row.dd200_display }}</span>
                             <span>52週高値 {{ row.dd52w_display }}</span>
                             <span>継続目安 {{ row.continuation_score_display }}</span>
+                            {% if row.futures %}
+                            <span>{{ row.futures.label }} {{ row.futures.momentum_20d_display }}</span>
+                            {% endif %}
                         </div>
                         <p class="us-shock-reason">{{ row.reason }}</p>
+                        {% if row.futures %}
+                        <p class="us-shock-reason">{{ row.futures.label }}: {{ row.futures.headline }} / {{ row.futures.reason }}</p>
+                        {% endif %}
                     </article>
                     {% endfor %}
                 </div>
@@ -535,7 +538,7 @@
                             <path d="m7 14 4-4 3 3 5-7"></path>
                         </svg>
                     </div>
-                    <div class="card-title">ターゲット全件</div>
+                    <div class="card-title">詳細ターゲット</div>
                     <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"></path>
                     </svg>
@@ -547,16 +550,24 @@
                         <div class="target-list" data-field="near_levels">
                             {% for level in world_model.near_levels.upside %}
                             <div class="target-row">
-                                <span>上値</span>
+                                <span>上値の節目</span>
                                 <strong>{{ level.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ level.reason }} / 距離 {{ level.distance_pct|floatformat:2 }}% / targetではなく節目</small>
+                                <small>根拠: {{ level.reason|default:"近い節目" }}</small>
+                                <div class="target-row__meta">
+                                    {% if level.distance_label %}<span>価格差 {{ level.distance_label }}</span>{% endif %}
+                                    <span>参考ライン</span>
+                                </div>
                             </div>
                             {% endfor %}
                             {% for level in world_model.near_levels.downside %}
                             <div class="target-row">
-                                <span>下値</span>
+                                <span>下値の節目</span>
                                 <strong>{{ level.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ level.reason }} / 距離 {{ level.distance_pct|floatformat:2 }}% / targetではなく節目</small>
+                                <small>根拠: {{ level.reason|default:"近い節目" }}</small>
+                                <div class="target-row__meta">
+                                    {% if level.distance_label %}<span>価格差 {{ level.distance_label }}</span>{% endif %}
+                                    <span>参考ライン</span>
+                                </div>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -568,9 +579,9 @@
                         <div class="target-list" data-field="target_ranges">
                             {% for range in world_model.target_ranges %}
                             <div class="target-row">
-                                <span>{{ range.label }}</span>
+                                <span>{{ range.label }}レンジ</span>
                                 <strong>{{ range.low|floatformat:0|intcomma }}〜{{ range.high|floatformat:0|intcomma }}</strong>
-                                <small>{{ range.basis }}</small>
+                                <small>根拠: {{ range.basis|default:"データ不足" }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -582,9 +593,15 @@
                         <div class="target-list" data-field="upside_targets">
                             {% for target in world_model.upside_targets %}
                             <div class="target-row">
-                                <span>{{ target.label }}</span>
+                                <span>{{ target.display_label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / 到達 {{ target.probability_display }} / 距離 {{ target.distance_pct|floatformat:2 }}% / 標本 {{ target.sample_count }} / {{ target.reliability }}</small>
+                                <small>根拠: {{ target.reason|default:"データ不足" }}</small>
+                                <div class="target-row__meta">
+                                    <span>到達しやすさ {{ target.probability_label }}</span>
+                                    {% if target.distance_label %}<span>価格差 {{ target.distance_label }}</span>{% endif %}
+                                    {% if target.sample_label %}<span>{{ target.sample_label }}</span>{% endif %}
+                                    {% if target.reliability_label %}<span>{{ target.reliability_label }}</span>{% endif %}
+                                </div>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -596,9 +613,15 @@
                         <div class="target-list" data-field="downside_targets">
                             {% for target in world_model.downside_targets %}
                             <div class="target-row">
-                                <span>{{ target.label }}</span>
+                                <span>{{ target.display_label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>{{ target.reason }} / 到達 {{ target.probability_display }} / 距離 {{ target.distance_pct|floatformat:2 }}% / 標本 {{ target.sample_count }} / {{ target.reliability }}</small>
+                                <small>根拠: {{ target.reason|default:"データ不足" }}</small>
+                                <div class="target-row__meta">
+                                    <span>到達しやすさ {{ target.probability_label }}</span>
+                                    {% if target.distance_label %}<span>価格差 {{ target.distance_label }}</span>{% endif %}
+                                    {% if target.sample_label %}<span>{{ target.sample_label }}</span>{% endif %}
+                                    {% if target.reliability_label %}<span>{{ target.reliability_label }}</span>{% endif %}
+                                </div>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -761,7 +784,7 @@
                     <div class="performance-box">
                         <span>{{ horizon }}</span>
                         <strong>{{ item.directional_accuracy|floatformat:2 }}</strong>
-                        <small>過去検証 {{ item.total_predictions }} / T1 {{ item.target_t1_hit_rate|floatformat:2 }}</small>
+                        <small>過去検証 {{ item.total_predictions }} / 過去T1到達率 {{ item.target_t1_hit_rate|floatformat:2 }}</small>
                     </div>
                     {% endfor %}
                 </div>

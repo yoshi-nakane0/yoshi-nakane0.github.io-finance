@@ -33,6 +33,7 @@ from .outcomes import (
     apply_sentiment_score_adjustment,
     confidence_adjustment_for_state,
 )
+from .baselines import learned_transition_stats
 from .similarity import find_similar_cases
 from .state_machine import estimate_expected_returns, estimate_transition_probabilities
 from .targets import build_targets
@@ -182,6 +183,7 @@ def build_world_model(price, market_snapshot=None, intermarket_context=None, as_
     transition_probs = estimate_transition_probabilities(
         state_key,
         features,
+        performance_stats=learned_transition_stats(state_key),
         similar_summary=similar_summary,
     )
     expected_returns = estimate_expected_returns(
