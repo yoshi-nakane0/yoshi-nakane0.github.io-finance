@@ -30,6 +30,7 @@ from ..models import (
     WorldStateSnapshot,
 )
 from .crash_alert import FRESHNESS_LIMIT_DAYS, compute_crash_alert
+from .data_quality import build_data_quality_report
 from .crash_probability import wilson_interval
 from .historical_crash import find_similar_crash_months
 from .judgment import evaluate as evaluate_judgment
@@ -1303,6 +1304,7 @@ def _build_decision_confidence(
     regime: Dict,
     reliability: Dict,
     crash: Optional[Dict],
+    quality_report: Optional[Dict] = None,
 ) -> Dict:
     data_quality = regime.get('data_quality_pct') or 0
     rule_strength = regime.get('rule_strength_pct') or 0
@@ -1337,6 +1339,28 @@ def _build_decision_confidence(
     if not notes:
         notes.append('主要データの取得状況と判定材料は確認済みです。')
 
+    quality_report = quality_report or {}
+    cap = quality_report.get('confidence_cap')
+    grade_order = {'A': 4, 'B': 3, 'C': 2, 'D': 1}
+    if cap and grade_order.get(grade, 1) > grade_order.get(cap, 1):
+        grade = cap
+        label = {
+            'A': '高い',
+            'B': '通常',
+            'C': '注意',
+            'D': '低い',
+        }.get(grade, label)
+        if grade == 'C':
+            base_score = min(base_score, 69)
+        elif grade == 'D':
+            base_score = min(base_score, 49)
+    for issue in quality_report.get('blocking_issues') or []:
+        if issue not in notes:
+            notes.append(issue)
+    for warning in quality_report.get('warnings') or []:
+        if warning not in notes:
+            notes.append(warning)
+
     return {
         'grade': grade,
         'label': label,
@@ -1357,6 +1381,7 @@ def build_macro_decision_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
     )
     crash = build_crash_alert_context()
     world = build_world_state_context()
+    quality_report = build_data_quality_report()
     try:
         from .policy_expectation import build_policy_expectation_context
         policy = build_policy_expectation_context()
@@ -1371,7 +1396,12 @@ def build_macro_decision_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
         'bad_points': regime['regime_bad_points'][:3],
         'policy_pressure': _extract_policy_pressure(world, policy),
         'market_stress': _summarize_market_stress(crash),
-        'confidence': _build_decision_confidence(regime, reliability, crash),
+        'confidence': _build_decision_confidence(
+            regime,
+            reliability,
+            crash,
+            quality_report,
+        ),
     }
 
 

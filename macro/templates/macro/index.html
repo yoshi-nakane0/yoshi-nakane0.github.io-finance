@@ -39,6 +39,56 @@
                 </ul>
             {% endif %}
 
+            {% if house_view %}
+                <section class="macro-section macro-decision" id="macro-house-view">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title macro-section-title--pulse">House View</h2>
+                        <span class="macro-regime-status-pill">信頼度 {{ house_view.confidence_grade }} / {{ house_view.confidence_score }}%</span>
+                    </div>
+                    <div class="macro-regime-answer">
+                        <div class="macro-regime-answer-label">公式見解</div>
+                        <div class="macro-regime-answer-main">{{ house_view.house_view }}</div>
+                        {% if not house_view.display_allowed %}
+                            <p class="macro-regime-answer-detail">主要データに不足があるため、この見解は参考扱いです。</p>
+                        {% endif %}
+                    </div>
+                    <div class="macro-regime-materials">
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-pos">主な根拠</span>
+                            <ul>
+                                {% for point in house_view.key_drivers %}
+                                    <li>{{ point }}</li>
+                                {% empty %}
+                                    <li>根拠データの更新待ちです。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-neg">主なリスク</span>
+                            <ul>
+                                {% for point in house_view.main_risks %}
+                                    <li>{{ point }}</li>
+                                {% empty %}
+                                    <li>大きなリスクは限定的です。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="macro-regime-material">
+                        <span class="macro-regime-material-title">判断が変わる条件</span>
+                        <ul>
+                            {% for trigger in house_view.invalidation_triggers %}
+                                <li>{{ trigger }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="macro-regime-meta">
+                        <span class="macro-regime-updated">基準日: {{ house_view.as_of }} / {{ house_view.regime_label }}</span>
+                        <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査</a>
+                    </div>
+                </section>
+            {% endif %}
+
             {% if macro_forecast_report %}
                 <section class="macro-section macro-decision" id="macro-forecast-report">
                     <div class="macro-section-headline">

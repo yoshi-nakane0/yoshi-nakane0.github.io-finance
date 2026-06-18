@@ -26,6 +26,7 @@ from .models import (
     FeatureSnapshot,
     ForecastSnapshot,
     Indicator,
+    MacroForecastRun,
     ModelValidationReport,
     Observation,
     PolicyExpectationSnapshot,
@@ -40,10 +41,12 @@ from .services import (
     crash_probability,
     dashboard,
     dashboard_cache,
+    data_quality,
     data_sync,
     detail_analysis,
     forecast_models,
     forecast_tracking,
+    house_view,
     historical_crash,
     judgment,
     linkage,
@@ -81,18 +84,107 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'python manage.py export_macro_payload --output static/macro/latest_dashboard.json',
             workflow,
         )
-        self.assertIn('git add static/macro/latest_dashboard.json runtime/db.sqlite3 static/macro/*.json', workflow)
+        self.assertIn(
+            'python manage.py export_macro_house_view --output static/macro/house_view.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_quality --output static/macro/data_quality_report.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_scenarios --output static/macro/scenario_ledger.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_validation --output static/macro/model_validation_report.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_cards --output static/macro/model_cards.json',
+            workflow,
+        )
+        self.assertIn(
+            'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
+            workflow,
+        )
+        self.assertIn('python manage.py weekly_macro_validation', workflow)
+        self.assertIn('python manage.py run_macro_forecast', workflow)
+        self.assertIn('python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json', workflow)
+        self.assertIn('git add static/macro/*.json', workflow)
+        self.assertNotIn('git add static/macro/latest_dashboard.json runtime/db.sqlite3', workflow)
         self.assertIn('git commit -m "Update macro generated data"', workflow)
         self.assertIn('git push', workflow)
         self.assertIn('curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"', workflow)
         self.assertIn('timeout-minutes: 20', workflow)
         self.assertIn('concurrency:', workflow)
         self.assertNotIn('requirements-prod.txt', workflow)
-        self.assertNotIn('pip install -r requirements-prod.txt', workflow)
         self.assertNotIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
         self.assertNotIn('git add db.sqlite3', workflow)
         self.assertNotIn('DATA_BRANCH', workflow)
         self.assertFalse((workflows_dir / 'refresh-macro-data.yml').exists())
+        monthly_block = workflow.split('monthly-maintenance:', 1)[1]
+        self.assertIn(
+            'python manage.py export_macro_model_validation --output static/macro/model_validation_report.json',
+            monthly_block,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_cards --output static/macro/model_cards.json',
+            monthly_block,
+        )
+        self.assertIn(
+            'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
+            monthly_block,
+        )
+        self.assertIn('static/macro/model_validation_report.json', monthly_block)
+        self.assertIn('static/macro/model_cards.json', monthly_block)
+        self.assertIn('static/macro/operations_status.json', monthly_block)
+
+    def test_local_macro_pipeline_exports_static_json_outputs(self):
+        script = (Path(settings.BASE_DIR) / 'scripts' / 'run_macro_local_pipeline.sh').read_text(
+            encoding='utf-8',
+        )
+
+        self.assertIn('set -euo pipefail', script)
+        self.assertIn('python manage.py run_model_validation', script)
+        self.assertIn(
+            'python manage.py export_macro_payload --output static/macro/latest_dashboard.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_house_view --output static/macro/house_view.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_quality --output static/macro/data_quality_report.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_scenarios --output static/macro/scenario_ledger.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_validation --output static/macro/model_validation_report.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_cards --output static/macro/model_cards.json',
+            script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
+            script,
+        )
+        self.assertIn('git add static/macro/*.json', script)
+        self.assertNotIn('runtime/db.sqlite3', script)
 
     def test_vercel_build_skips_macro_refresh_unless_explicitly_enabled(self):
         build_script = (
@@ -1096,6 +1188,116 @@ class DashboardFormatTest(TestCase):
     def test_format_signed_positive(self):
         self.assertEqual(dashboard.format_signed(0.5, 2), '+0.50')
 
+    def test_data_quality_gate_caps_confidence_when_required_series_missing(self):
+        unrate, _ = Indicator.objects.update_or_create(
+            fred_series_id='UNRATE',
+            defaults={
+                'name_ja': '失業率',
+                'category': Indicator.Category.EMPLOYMENT,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.MONTHLY,
+                'is_active': True,
+            },
+        )
+        Observation.objects.create(
+            indicator=unrate,
+            observation_date=date(2026, 6, 1),
+            value=4.0,
+        )
+        for series_id, name in [
+            ('CPIAUCSL', 'CPI'),
+            ('CPILFESL', 'Core CPI'),
+            ('PCEPI', 'PCE'),
+            ('PCEPILFE', 'Core PCE'),
+            ('DGS10', '米10年金利'),
+            ('VIXCLS', 'VIX'),
+            ('BAMLH0A0HYM2', '信用スプレッド'),
+        ]:
+            Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': name,
+                    'category': Indicator.Category.INFLATION,
+                    'importance': Indicator.Importance.A,
+                    'frequency': Indicator.Frequency.MONTHLY,
+                    'is_active': True,
+                },
+            )
+
+        report = data_quality.build_data_quality_report(as_of=date(2026, 6, 18))
+
+        self.assertFalse(report['usable_for_decision'])
+        self.assertEqual(report['confidence_cap'], 'C')
+        self.assertEqual(report['missing_required_count'], 7)
+        self.assertLess(report['freshness_score'], 50)
+        self.assertTrue(report['blocking_issues'])
+
+    def test_house_view_uses_quality_gate_as_top_level_confidence_limit(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=71,
+            inflation_score=82,
+            policy_pressure_score=63,
+            credit_score=58,
+            liquidity_score=55,
+            risk_appetite_score=61,
+            market_trend_score=57,
+            market_stress_score=29,
+            recession_risk_score=17,
+            inflation_reacceleration_score=82,
+            financial_stress_score=19,
+            data_quality=92,
+            explanation={
+                'positive_drivers': ['雇用はまだ強い'],
+                'negative_drivers': ['Core PCEが高い'],
+            },
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            inflation_flag=RegimeSnapshot.InflationFlag.HIGH,
+            rule_strength=80,
+            data_quality=92,
+            regime_probabilities={
+                'expansion': 0.66,
+                'slowdown': 0.20,
+                'contraction': 0.07,
+                'recovery': 0.07,
+            },
+            risk_probabilities={
+                'inflation_reacceleration': 0.82,
+                'financial_stress': 0.19,
+            },
+        )
+        ModelValidationReport.objects.create(
+            model_version='crash_probability_logistic_v1',
+            target='GSPC',
+            horizon='63d',
+            sample_count=30,
+            event_count=4,
+            metrics={'roc_auc': 0.55, 'pr_auc': 0.11},
+        )
+
+        with mock.patch('macro.services.house_view.build_data_quality_report', return_value={
+            'as_of': '2026-06-17',
+            'usable_for_decision': False,
+            'display_allowed': False,
+            'confidence_cap': 'C',
+            'freshness_score': 42,
+            'missing_required_count': 4,
+            'blocking_issues': ['主要系列の欠損があります。'],
+            'warnings': ['トップ判断は参考扱いです。'],
+        }):
+            result = house_view.build_house_view_context()
+
+        self.assertIn('拡大寄り', result['house_view'])
+        self.assertIn('物価再加速', result['house_view'])
+        self.assertEqual(result['confidence_grade'], 'C')
+        self.assertFalse(result['display_allowed'])
+        self.assertIn('雇用はまだ強い', result['key_drivers'])
+        self.assertIn('主要系列の欠損があります。', result['blocking_issues'])
+
     def test_regime_context_uses_rule_strength_not_confidence_pct(self):
         snapshot = RegimeSnapshot.objects.create(
             snapshot_date=date(2026, 5, 17),
@@ -1559,9 +1761,38 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['market_stress']['abnormal_items'][0], 'MOVE')
         self.assertIn(context['confidence']['grade'], ['A', 'B', 'C', 'D'])
 
-    def test_model_display_grade_hides_weak_validation(self):
+    def test_macro_decision_confidence_uses_data_quality_gate_cap(self):
+        snapshot = RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 5, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            inflation_flag=RegimeSnapshot.InflationFlag.NORMAL,
+            rule_strength=95,
+            data_quality=95,
+            evidence=[],
+        )
+
+        with mock.patch('macro.services.dashboard.build_crash_alert_context', return_value={
+            'total_score': 12,
+            'level_label': '平常',
+            'data_quality_pct': 95,
+            'components': [],
+        }), mock.patch('macro.services.dashboard.build_world_state_context', return_value={
+            'score_rows': [],
+        }), mock.patch('macro.services.dashboard.build_data_quality_report', return_value={
+            'confidence_cap': 'C',
+            'blocking_issues': ['主要系列の欠損があります。'],
+            'warnings': [],
+        }):
+            context = dashboard.build_macro_decision_context(snapshot)
+
+        self.assertEqual(context['confidence']['grade'], 'C')
+        self.assertLessEqual(context['confidence']['score'], 69)
+        self.assertIn('主要系列の欠損があります。', context['confidence']['notes'])
+
+    def test_model_display_grade_uses_show_reference_hidden_blocked(self):
         from .services import model_validation
 
+        no_validation = ModelValidationReport(sample_count=0, metrics={})
         low_samples = ModelValidationReport(sample_count=12, metrics={'mae': 1})
         few_events = ModelValidationReport(
             sample_count=40,
@@ -1579,20 +1810,24 @@ class DashboardFormatTest(TestCase):
         )
 
         self.assertEqual(
+            model_validation.model_display_grade(no_validation)[0],
+            'blocked',
+        )
+        self.assertEqual(
             model_validation.model_display_grade(low_samples)[0],
             'hidden',
         )
         self.assertEqual(
-            model_validation.model_display_grade(few_events)[1],
-            'イベント数不足',
+            model_validation.model_display_grade(few_events)[0],
+            'reference',
         )
         self.assertEqual(
-            model_validation.model_display_grade(weak_direction)[1],
-            '方向一致率が低い',
+            model_validation.model_display_grade(weak_direction)[0],
+            'reference',
         )
         self.assertEqual(
             model_validation.model_display_grade(usable),
-            ('show', '参考表示可'),
+            ('show', 'トップ表示可'),
         )
 
     def test_walk_forward_validation_adds_zero_prediction_baseline(self):
@@ -1658,6 +1893,37 @@ class DashboardCacheTest(TestCase):
         self.assertEqual(response.context['generated_payload_meta']['source'], 'github_actions')
         self.assertEqual(response.context['generated_payload_meta']['data_quality'], 92.5)
 
+    def test_audit_uses_data_quality_report_for_primary_reliability(self):
+        payload = {
+            'has_observations': True,
+            'last_updated': '2026-06-17',
+            'data_quality_report': {
+                'as_of': '2026-06-18',
+                'freshness_score': 42.5,
+                'missing_required_count': 3,
+                'stale_required_count': 2,
+                'required_count': 8,
+                'usable_for_decision': False,
+                'confidence_cap': 'C',
+                'display_allowed': False,
+                'blocking_issues': ['主要指標が3件未取得です。'],
+                'warnings': ['トップの総合判断は参考扱いです。'],
+            },
+            'indicator_cards': [],
+            'audit_indicator_cards': [],
+            'similar_periods': [],
+            'linkages': [],
+        }
+        with mock.patch('macro.views.load_static_macro_payload', return_value=payload):
+            response = self.client.get(reverse('macro:audit'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '判断用データ品質')
+        self.assertContains(response, '42.5% / 参考扱い')
+        self.assertContains(response, '3件 / 2件')
+        self.assertContains(response, '信頼度上限 C')
+        self.assertContains(response, '主要指標が3件未取得です。')
+
     def test_precompute_dashboard_payload_includes_world_model_sections(self):
         with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None), \
              mock.patch('macro.services.dashboard.build_similar_periods', return_value=[]), \
@@ -1672,12 +1938,16 @@ class DashboardCacheTest(TestCase):
              mock.patch('macro.services.dashboard.build_world_model_operations_context', return_value={}), \
              mock.patch('macro.services.dashboard.build_raw_archive_context', return_value={}), \
              mock.patch('macro.services.scenario.build_scenario_analysis', return_value={}), \
-             mock.patch('macro.services.dashboard.build_historical_crash_similarity', return_value=[]):
+             mock.patch('macro.services.dashboard.build_historical_crash_similarity', return_value=[]), \
+             mock.patch('macro.services.house_view.build_house_view_context', return_value={'house_view': '公式見解'}), \
+             mock.patch('macro.services.data_quality.build_data_quality_report', return_value={'freshness_score': 80}):
             payload = dashboard_cache.precompute_dashboard_payload()
 
         self.assertIn('world_state', payload)
         self.assertIn('forecast_models', payload)
         self.assertIn('model_validation', payload)
+        self.assertEqual(payload['house_view']['house_view'], '公式見解')
+        self.assertEqual(payload['data_quality_report']['freshness_score'], 80)
 
     def test_export_macro_payload_command_writes_static_payload_with_metadata(self):
         with TemporaryDirectory() as tmpdir:
@@ -1687,6 +1957,8 @@ class DashboardCacheTest(TestCase):
                 return_value={
                     'last_updated': '2026-06-17',
                     'crash_alert': {'data_quality_pct': 92.5},
+                    'data_quality_report': {'freshness_score': 88},
+                    'house_view': {'house_view': '公式見解'},
                     'regime_model_version': 'macro-test-v1',
                     'warnings': ['sample warning'],
                 },
@@ -1701,13 +1973,91 @@ class DashboardCacheTest(TestCase):
             payload = json.loads(output.read_text(encoding='utf-8'))
 
         self.assertEqual(payload['source'], 'github_actions')
-        self.assertEqual(payload['data_quality'], 92.5)
+        self.assertEqual(payload['data_quality'], 88)
         self.assertFalse(payload['stale'])
         self.assertEqual(payload['model_version'], 'macro-test-v1')
         self.assertIn('generated_at', payload)
         self.assertIn('job_duration_sec', payload)
         self.assertEqual(payload['warnings'], ['sample warning'])
         self.assertEqual(payload['last_updated'], '2026-06-17')
+        self.assertEqual(payload['data_quality_report']['freshness_score'], 88)
+        self.assertEqual(payload['house_view']['house_view'], '公式見解')
+
+    def test_additional_macro_json_exports_are_available(self):
+        ModelValidationReport.objects.create(
+            model_version='macro_hatzius_v1',
+            target='GSPC',
+            horizon='3m',
+            sample_count=40,
+            event_count=12,
+            metrics={'direction_accuracy': 0.56, 'mae': 1.2},
+            warnings=['検証メモ'],
+        )
+        WorldModelRun.objects.create(
+            cadence=WorldModelRun.Cadence.DAILY,
+            name='daily-refresh',
+            status=WorldModelRun.Status.SUCCESS,
+            started_at=timezone.now(),
+            finished_at=timezone.now(),
+        )
+        with TemporaryDirectory() as tmpdir:
+            validation_path = Path(tmpdir) / 'model_validation_report.json'
+            cards_path = Path(tmpdir) / 'model_cards.json'
+            operations_path = Path(tmpdir) / 'operations_status.json'
+
+            call_command('export_macro_model_validation', '--output', str(validation_path), stdout=StringIO())
+            call_command('export_macro_model_cards', '--output', str(cards_path), stdout=StringIO())
+            call_command('export_macro_operations_status', '--output', str(operations_path), stdout=StringIO())
+
+            validation_payload = json.loads(validation_path.read_text(encoding='utf-8'))
+            cards_payload = json.loads(cards_path.read_text(encoding='utf-8'))
+            operations_payload = json.loads(operations_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(validation_payload['model_validation_report'][0]['display_grade'], 'show')
+        self.assertEqual(cards_payload['model_cards'][0]['display_policy'], 'show')
+        self.assertEqual(operations_payload['operations_status'][0]['status'], 'success')
+
+    def test_scenario_ledger_exports_verifiable_hypotheses(self):
+        from macro.models import MacroScenario
+        from macro.management.commands.export_macro_scenarios import build_scenario_ledger
+
+        forecast = ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.6,
+        )
+        run = MacroForecastRun.objects.create(
+            as_of=date(2026, 6, 17),
+            forecast=forecast,
+            primary_regime='expansion_with_inflation_risk',
+            confidence=72,
+            data_quality_score=80,
+        )
+        MacroScenario.objects.create(
+            run=run,
+            name=MacroScenario.Name.DOWNSIDE,
+            probability=0.28,
+            growth_view='金利上昇で成長に逆風',
+            inflation_view='物価再加速',
+            policy_view='利下げ後退',
+            market_view='株価に逆風',
+            nikkei_bias=MacroScenario.NikkeiBias.SHORT,
+            key_drivers=['DGS10 +25bp以上', 'VIX +15%以上'],
+            invalidation_triggers=['DGS10 -20bp以上', '信用スプレッド縮小'],
+        )
+
+        payload = build_scenario_ledger()
+        item = payload['scenario_ledger'][0]
+
+        self.assertEqual(item['scenario_id'], 'downside_2026-06-17')
+        self.assertEqual(item['watch_window'], '20 trading days')
+        self.assertEqual(item['confirmation_rules'], ['DGS10 +25bp以上', 'VIX +15%以上'])
+        self.assertEqual(item['invalidation_rules'], ['DGS10 -20bp以上', '信用スプレッド縮小'])
+        self.assertEqual(item['status'], 'open')
+        self.assertIsNone(item['outcome'])
+        self.assertEqual(item['expected_market_impact']['nikkei_futures'], 'downside_pressure')
 
 
 class BacktestRegimeCommandTest(TestCase):

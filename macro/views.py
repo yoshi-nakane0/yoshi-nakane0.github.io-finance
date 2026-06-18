@@ -43,6 +43,7 @@ from .services.dashboard_cache import (
     save_macro_update_status,
 )
 from .services.data_sync import sync_all_indicators
+from .services.data_quality import build_data_quality_report
 from .services.detail import (
     DEFAULT_RANGE_PARAM,
     RANGE_OPTIONS,
@@ -54,6 +55,7 @@ from .services.fred_client import get_api_key
 from .services.regime import compute_current_regime
 from .services.world_state import compute_current_world_state
 from .services.yfinance_client import sync_all_price_histories
+from .services.house_view import build_house_view_context
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +182,8 @@ def index(request):
             'can_run_macro_model_jobs': _can_run_macro_model_jobs(request.user),
             'indicator_cards': [],
             'crash_alert': None,
+            'data_quality_report': build_data_quality_report(),
+            'house_view': build_house_view_context(),
             'historical_crash_similarity': [],
             'lightgbm_prediction': load_lightgbm_prediction(),
             'crash_probability_model': load_crash_probability_model(),
@@ -220,6 +224,8 @@ def index(request):
     }
     context.setdefault('indicator_cards', [])
     context.setdefault('crash_alert', None)
+    context.setdefault('data_quality_report', {})
+    context.setdefault('house_view', {})
     context.setdefault('historical_crash_similarity', [])
     context.setdefault('monthly_model_status', {})
     context.setdefault('forecast_monitor', {})
@@ -271,6 +277,8 @@ def audit(request):
         context.get('audit_indicator_cards') or context.get('indicator_cards') or [],
     )
     context.setdefault('crash_alert', None)
+    context.setdefault('data_quality_report', {})
+    context.setdefault('house_view', {})
     context.setdefault('historical_crash_similarity', [])
     context.setdefault('monthly_model_status', {})
     context.setdefault('forecast_monitor', {})

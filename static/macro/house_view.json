@@ -1,0 +1,48 @@
+{
+  "as_of": "2026-06-17",
+  "blocking_issues": [],
+  "confidence_grade": "B",
+  "confidence_score": 89,
+  "data_quality_report": {
+    "as_of": "2026-06-18",
+    "blocking_issues": [],
+    "confidence_cap": "B",
+    "display_allowed": true,
+    "freshness_score": 75.0,
+    "missing_required_count": 0,
+    "required_count": 8,
+    "stale_required_count": 2,
+    "usable_for_decision": true,
+    "warnings": [
+      "主要指標が2件古くなっています: PCE（2026-04-01）, Core PCE（2026-04-01）"
+    ]
+  },
+  "display_allowed": true,
+  "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
+  "invalidation_triggers": [
+    "失業率が3か月連続で上昇",
+    "Core PCEが2か月連続で再加速",
+    "米10年金利が急上昇",
+    "信用スプレッドが急拡大"
+  ],
+  "key_drivers": [
+    "失業率が低い",
+    "HYスプレッドが低い",
+    "鉱工業生産が前年比で増加",
+    "雇用はまだ強い",
+    "インフレ再加速リスクが高い"
+  ],
+  "main_risks": [
+    "主要指標が2件古くなっています: PCE（2026-04-01）, Core PCE（2026-04-01）",
+    "金利再上昇時に株価先物へ逆風"
+  ],
+  "probabilities": {
+    "contraction": 0.02018798202221658,
+    "expansion": 0.6568708855634098,
+    "financial_stress": 0.192833942731104,
+    "inflation_reacceleration": 0.8233758532469887,
+    "recovery": 0.17495960104105565,
+    "slowdown": 0.147981531373318
+  },
+  "regime_label": "inflation_risk"
+}

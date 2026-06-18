@@ -11,6 +11,9 @@ from macro.services.regime import MODEL_VERSION as REGIME_MODEL_VERSION
 
 
 def _payload_data_quality(payload):
+    quality_report = payload.get('data_quality_report') or {}
+    if quality_report.get('freshness_score') is not None:
+        return quality_report.get('freshness_score')
     crash_alert = payload.get('crash_alert') or {}
     if crash_alert.get('data_quality_pct') is not None:
         return crash_alert.get('data_quality_pct')

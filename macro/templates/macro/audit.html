@@ -26,23 +26,69 @@
                     <h2 class="macro-section-title macro-section-title--shield">更新信頼性の詳細</h2>
                     <a href="{% url 'macro:index' %}" class="macro-scenario-reset">トップへ戻る</a>
                 </div>
+                {% if data_quality_report %}
+                    <div class="macro-reliability-grid">
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">判断用データ品質</span>
+                            <span class="macro-reliability-value">
+                                {{ data_quality_report.freshness_score }}% / {% if data_quality_report.usable_for_decision %}利用可{% else %}参考扱い{% endif %}
+                            </span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">欠損 / 古い</span>
+                            <span class="macro-reliability-value">{{ data_quality_report.missing_required_count }}件 / {{ data_quality_report.stale_required_count }}件</span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">信頼度上限</span>
+                            <span class="macro-reliability-value">信頼度上限 {{ data_quality_report.confidence_cap }}</span>
+                        </div>
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">基準日</span>
+                            <span class="macro-reliability-value">{{ data_quality_report.as_of }}</span>
+                        </div>
+                    </div>
+                    {% if data_quality_report.blocking_issues or data_quality_report.warnings %}
+                        <div class="macro-reliability-detail-grid">
+                            <div>
+                                <span class="macro-reliability-detail-title">品質ゲート</span>
+                                <ul class="macro-reliability-detail-list">
+                                    {% for issue in data_quality_report.blocking_issues %}
+                                        <li>{{ issue }}</li>
+                                    {% empty %}
+                                        <li>判断を止める問題はありません。</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div>
+                                <span class="macro-reliability-detail-title">注意</span>
+                                <ul class="macro-reliability-detail-list">
+                                    {% for warning in data_quality_report.warnings %}
+                                        <li>{{ warning }}</li>
+                                    {% empty %}
+                                        <li>追加の注意はありません。</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
                 {% if macro_reliability %}
                     <div class="macro-reliability-grid">
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">前回更新</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.update_status_label }}</span>
+                        </div>
                         <div class="macro-reliability-item">
                             <span class="macro-reliability-label">最終データ日</span>
                             <span class="macro-reliability-value">{{ macro_reliability.last_data_date }}</span>
                         </div>
                         <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">データ鮮度</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.data_freshness_pct }}% / {{ macro_reliability.freshness_label }}</span>
+                            <span class="macro-reliability-label">更新完了</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.last_update_finished_at }}</span>
                         </div>
                         <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">欠損 / 古い</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.missing_count }}件 / {{ macro_reliability.stale_count }}件</span>
-                        </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">前回更新</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.update_status_label }}</span>
+                            <span class="macro-reliability-label">処理失敗</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.failed_count }}件</span>
                         </div>
                     </div>
                     {% if macro_reliability.failed_items or macro_reliability.missing_items or macro_reliability.stale_items %}

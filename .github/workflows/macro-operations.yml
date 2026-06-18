@@ -64,12 +64,19 @@ jobs:
           python manage.py settle_forecast_snapshots
           python manage.py precompute_dashboard
           python manage.py export_macro_payload --output static/macro/latest_dashboard.json
+          python manage.py export_macro_house_view --output static/macro/house_view.json
+          python manage.py export_macro_quality --output static/macro/data_quality_report.json
+          python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json
+          python manage.py export_macro_scenarios --output static/macro/scenario_ledger.json
+          python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
+          python manage.py export_macro_model_cards --output static/macro/model_cards.json
+          python manage.py export_macro_operations_status --output static/macro/operations_status.json
 
       - name: Commit generated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/latest_dashboard.json runtime/db.sqlite3 static/macro/*.json
+          git add static/macro/*.json
           if git diff --cached --quiet; then
             echo "No generated data changes."
             exit 0
@@ -130,7 +137,27 @@ jobs:
 
       - name: Run weekly validation
         if: ${{ env.DATABASE_URL != '' }}
-        run: python manage.py weekly_macro_validation
+        run: |
+          python manage.py weekly_macro_validation
+          python manage.py run_macro_forecast
+          python manage.py settle_forecast_snapshots
+          python manage.py run_model_validation
+          python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json
+          python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
+          python manage.py export_macro_model_cards --output static/macro/model_cards.json
+
+      - name: Commit weekly forecast ledger
+        if: ${{ env.DATABASE_URL != '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static/macro/*.json
+          if git diff --cached --quiet; then
+            echo "No weekly forecast ledger changes."
+            exit 0
+          fi
+          git commit -m "Update weekly macro forecast ledger"
+          git push
 
       - name: Trigger Vercel rebuild
         if: ${{ env.DATABASE_URL != '' }}
@@ -178,7 +205,11 @@ jobs:
         run: python manage.py migrate --noinput
 
       - name: Run monthly maintenance
-        run: python manage.py monthly_macro_maintenance
+        run: |
+          python manage.py monthly_macro_maintenance
+          python manage.py export_macro_model_validation --output static/macro/model_validation_report.json
+          python manage.py export_macro_model_cards --output static/macro/model_cards.json
+          python manage.py export_macro_operations_status --output static/macro/operations_status.json
 
       - name: Commit generated model outputs
         run: |
@@ -191,7 +222,10 @@ jobs:
             static/macro/lightgbm_prediction.json \
             static/macro/regime_probability_model.json \
             static/macro/return_forecast_model.json \
-            static/macro/macro_forecast_model.json
+            static/macro/macro_forecast_model.json \
+            static/macro/model_validation_report.json \
+            static/macro/model_cards.json \
+            static/macro/operations_status.json
           if git diff --cached --quiet; then
             echo "No model output changes."
             exit 0

@@ -247,6 +247,8 @@ def precompute_dashboard_payload() -> dict:
         load_regime_probability_model,
     )
     from .data_sync import get_latest_observation_date
+    from .data_quality import build_data_quality_report
+    from .house_view import build_house_view_context
     from .scenario import build_auto_scenarios
     from .policy_expectation import (
         build_policy_expectation_context,
@@ -270,6 +272,8 @@ def precompute_dashboard_payload() -> dict:
     return {
         'has_observations': latest_obs_date is not None,
         'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
+        'data_quality_report': build_data_quality_report(),
+        'house_view': build_house_view_context(),
         'macro_decision': build_macro_decision_context(latest_snapshot),
         'macro_forecast_report': build_macro_forecast_report_context(),
         'macro_outcome_validation': build_macro_outcome_validation_context(),
