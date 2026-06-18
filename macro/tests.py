@@ -2999,7 +2999,7 @@ class MacroUrlsTest(TestCase):
         precompute_mock.assert_called_once()
         save_cache_mock.assert_called_once_with({'last_updated': '2026-05-17'})
 
-    def test_monthly_maintenance_runs_backtest_model_and_cache_update(self):
+    def test_monthly_maintenance_post_only_shows_local_command_guidance(self):
         user = User.objects.create_superuser(
             username='backtest-creator',
             email='backtest-creator@example.com',
@@ -3008,39 +3008,17 @@ class MacroUrlsTest(TestCase):
         self.client.force_login(user)
 
         with mock.patch('macro.views._is_serverless_runtime', return_value=False), \
-             mock.patch('macro.views.call_command') as call_command_mock, \
              mock.patch('macro.views.precompute_dashboard_payload') as precompute_mock, \
              mock.patch('macro.views.save_dashboard_payload') as save_cache_mock:
-            precompute_mock.return_value = {'crash_alert': {'total_score': 18}}
-
             r = self.client.post(reverse('macro:recompute_crash_backtest'))
+            messages = list(r.wsgi_request._messages)
 
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(call_command_mock.call_count, 2)
-        self.assertEqual(
-            call_command_mock.call_args_list[0],
-            mock.call(
-                'backtest_crash_alert',
-                target='GSPC',
-                horizon_days=63,
-                drawdown_threshold=-10.0,
-                output='static/macro/crash_alert_backtest.json',
-                csv_output='static/macro/crash_alert_backtest.csv',
-            ),
+        self.assertTrue(
+            any('python manage.py monthly_macro_maintenance' in str(item) for item in messages)
         )
-        self.assertEqual(
-            call_command_mock.call_args_list[1],
-            mock.call(
-                'train_crash_probability_model',
-                target='GSPC',
-                horizon_days=63,
-                drawdown_threshold=-10.0,
-                validation_months=120,
-            ),
-        )
-        save_cache_mock.assert_called_once_with(
-            {'crash_alert': {'total_score': 18}}
-        )
+        precompute_mock.assert_not_called()
+        save_cache_mock.assert_not_called()
 
     def test_indicator_detail_existing(self):
         # マイグレーションでシードされた CPIAUCSL は存在する想定

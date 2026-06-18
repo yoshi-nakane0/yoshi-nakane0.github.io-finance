@@ -1,0 +1,293 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>basecalc - 検証レポート</title>
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=world-model-20260524">
+</head>
+<body>
+    <div class="app-container">
+        {% include "common/app_header.html" with page_title="basecalc検証" page_slug="basecalc" %}
+
+        <main class="content">
+            <div class="history-nav validation-nav">
+                <a href="{% url 'basecalc:index' %}" class="btn-base btn-outline">判定へ戻る</a>
+                <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
+            </div>
+
+            <section class="card wm-hero wm-neutral">
+                <div class="wm-hero__top">
+                    <div>
+                        <span class="eyebrow">Saved Validation</span>
+                        <h1 class="wm-direction">検証レポート</h1>
+                        <div class="wm-subline">
+                            <span>保存済み結果</span>
+                            {% if has_report %}
+                            <span>｜</span>
+                            <span>{{ report.generated_at }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="confidence-badge confidence-middle">表示専用</div>
+                </div>
+                {% if has_report %}
+                <div class="summary-grid history-summary">
+                    <div class="metric-box">
+                        <label>対象</label>
+                        <div class="value">{{ report.filters.instrument_key|default:"N/A" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>状態</label>
+                        <div class="value">{{ report.filters.readiness_level|default:"N/A" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>種別</label>
+                        <div class="value">{% if report.filters.is_backtest %}backtest{% else %}live{% endif %}</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="notice-text validation-empty">保存済みの検証レポートがありません。管理コマンドで作成してください。</p>
+                {% endif %}
+            </section>
+
+            {% for item in horizon_reports %}
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 14l3-3 3 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 結果</div>
+                </div>
+                <div class="summary-grid history-summary">
+                    <div class="metric-box">
+                        <label>検証数</label>
+                        <div class="value">{{ item.summary.total_predictions }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>方向一致</label>
+                        <div class="value">{{ item.summary.directional_accuracy|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>過去T1到達率</label>
+                        <div class="value">{{ item.summary.target_t1_hit_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>無効化</label>
+                        <div class="value">{{ item.summary.invalidation_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>平均損益</label>
+                        <div class="value">{{ item.summary.avg_return_pct|floatformat:2 }}%</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>平均信頼度</label>
+                        <div class="value">{{ item.summary.avg_confidence_score|floatformat:1 }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-amber">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M8 17V9"></path>
+                            <path d="M13 17V5"></path>
+                            <path d="M18 17v-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 検証設計</div>
+                </div>
+                <div class="state-table">
+                    {% for row in item.validation_design.walk_forward %}
+                    <div class="state-row">
+                        <strong>{{ row.label }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% endfor %}
+                    {% for row in item.validation_design.period_splits %}
+                    <div class="state-row">
+                        <strong>{{ row.label }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="state-row">
+                        <strong>{{ item.validation_design.recent_window.label }}</strong>
+                        <span>件数 {{ item.validation_design.recent_window.sample_count }}</span>
+                        <span>方向 {{ item.validation_design.recent_window.directional_accuracy|floatformat:2 }}</span>
+                        <span>平均 {{ item.validation_design.recent_window.avg_return_pct|floatformat:2 }}%</span>
+                        <span>過去T1到達率 {{ item.validation_design.recent_window.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>{{ item.validation_design.recent_window.sample_quality }}</span>
+                    </div>
+                    {% for row in item.validation_design.volatility_regimes %}
+                    <div class="state-row">
+                        <strong>{{ row.label }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">検証設計に使えるデータはまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-amber">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 改善候補</div>
+                </div>
+                <div class="insight-list">
+                    {% for insight in item.improvement_insights %}
+                    <article class="insight-item insight-{{ insight.severity }}">
+                        <div>
+                            <strong>{{ insight.title }}</strong>
+                            <span>{{ insight.metric }}</span>
+                        </div>
+                        <p>{{ insight.detail }}</p>
+                        <small>{{ insight.suggestion }}</small>
+                    </article>
+                    {% empty %}
+                    <div class="notice-text">改善候補はまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-purple">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 17h16"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 局面別</div>
+                </div>
+                <div class="state-table">
+                    {% for row in item.state_summaries %}
+                    <div class="state-row">
+                        <strong>{{ row.state_label }}</strong>
+                        <span>件数 {{ row.total_predictions }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                        <span>期待 {{ row.expected_return_pct|floatformat:2 }}%</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">検証済みデータはまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M8 14l2-2 2 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 信頼度別</div>
+                </div>
+                <div class="state-table">
+                    {% for row in item.confidence_calibration_rows %}
+                    <div class="state-row">
+                        <strong>{{ row.bucket }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
+                        <span>平均損益 {{ row.avg_return_pct|floatformat:2 }}%</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">信頼度ごとの実績はまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 14l3-3 3 2 5-6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} 予測と実績</div>
+                </div>
+                <div class="state-table">
+                    {% for row in item.calibration_rows %}
+                    <div class="state-row">
+                        <strong>{{ row.bucket }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>予測 {{ row.avg_expected_pct|floatformat:2 }}%</span>
+                        <span>実績 {{ row.avg_realized_pct|floatformat:2 }}%</span>
+                        <span>ズレ {{ row.avg_error_pct|floatformat:2 }}%</span>
+                        <span>{{ row.sample_quality }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">予測と実績を比較できる検証済みデータはまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header compact-header">
+                    <div class="card-icon text-purple">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16"></path>
+                            <path d="M4 12h16"></path>
+                            <path d="M4 17h10"></path>
+                        </svg>
+                    </div>
+                    <div class="card-title">{{ item.horizon }} ベースライン比較</div>
+                </div>
+                <div class="state-table">
+                    {% for row in item.summary.baseline_comparison.rows %}
+                    <div class="state-row">
+                        <strong>{{ row.label }}</strong>
+                        <span>件数 {{ row.sample_count }}</span>
+                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
+                        <span>Balanced {{ row.balanced_accuracy|floatformat:2 }}</span>
+                        <span>Brier {{ row.brier_score|floatformat:2 }}</span>
+                        <span>控除後 {{ row.risk_adjusted_return_pct|floatformat:2 }}%</span>
+                    </div>
+                    {% empty %}
+                    <div class="notice-text">ベースライン比較はまだありません。</div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% empty %}
+            {% if has_report %}
+            <section class="card">
+                <div class="notice-text">表示できる検証期間がありません。</div>
+            </section>
+            {% endif %}
+            {% endfor %}
+        </main>
+    </div>
+</body>
+</html>

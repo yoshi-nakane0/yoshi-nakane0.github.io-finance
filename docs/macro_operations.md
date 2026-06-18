@@ -30,6 +30,9 @@ python manage.py weekly_macro_validation
 
 ## 月次メンテナンス
 
+月次メンテナンスは重い検証とモデル更新を含むため、Web画面からは実行しません。
+ローカルまたはCIの管理コマンドとして実行し、Web画面は保存済み結果だけを表示します。
+
 ```bash
 python manage.py monthly_macro_maintenance
 ```

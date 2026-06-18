@@ -523,6 +523,16 @@ details.card[open] .accordion-toggle {
     line-height: 1.55;
 }
 
+.inline-link {
+    color: var(--color-accent-blue);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.inline-link:hover {
+    text-decoration: underline;
+}
+
 .single-action {
     margin-top: 16px;
 }
@@ -1841,6 +1851,7 @@ details.card[open] .accordion-toggle {
 
 .history-nav {
     display: grid;
+    gap: 10px;
 }
 
 .history-summary {
@@ -2062,6 +2073,10 @@ details.card[open] .accordion-toggle {
 @container (min-width: 520px) {
     .history-filter {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .history-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 

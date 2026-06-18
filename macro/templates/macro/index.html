@@ -432,11 +432,8 @@
                         </div>
                         <div class="macro-operation-row">
                             <span class="macro-operation-title">月次メンテナンス</span>
-                            <span class="macro-operation-meta">月次検証・急落確率モデル更新</span>
-                            <form method="post" action="{% url 'macro:recompute_crash_backtest' %}" class="macro-operation-form">
-                                {% csrf_token %}
-                                <button class="macro-operation-button macro-operation-button--test" type="submit"{% if not can_run_macro_model_jobs %} disabled title="ローカル環境で実行してください"{% endif %}>実行</button>
-                            </form>
+                            <span class="macro-operation-meta">ローカルで実行</span>
+                            <code class="macro-operation-command">python manage.py monthly_macro_maintenance</code>
                         </div>
                     </div>
                 {% endif %}

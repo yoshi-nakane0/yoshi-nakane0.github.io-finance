@@ -6,7 +6,6 @@ from datetime import datetime
 
 import requests
 from django.contrib import messages
-from django.core.management import call_command
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -430,36 +429,14 @@ def refresh(request):
 
 @require_POST
 def recompute_crash_backtest(request):
-    """月次検証と急落確率モデル再学習をまとめて実行する。"""
+    """重い月次検証は画面から実行せず、ローカル実行コマンドを案内する。"""
     if not is_creator_user(request.user):
         return HttpResponseForbidden("権限がありません。")
-    if _is_serverless_runtime():
-        messages.warning(request, "重い月次メンテナンスはローカル環境で実行してください。")
-        return redirect(reverse('macro:index'))
-
-    try:
-        call_command(
-            'backtest_crash_alert',
-            target='GSPC',
-            horizon_days=63,
-            drawdown_threshold=-10.0,
-            output='static/macro/crash_alert_backtest.json',
-            csv_output='static/macro/crash_alert_backtest.csv',
-        )
-        call_command(
-            'train_crash_probability_model',
-            target='GSPC',
-            horizon_days=63,
-            drawdown_threshold=-10.0,
-            validation_months=120,
-        )
-        payload = precompute_dashboard_payload()
-        save_dashboard_payload(payload)
-    except Exception as exc:
-        logger.exception("Monthly crash maintenance failed")
-        messages.error(request, f"月次メンテナンスに失敗しました: {exc}")
-    else:
-        messages.success(request, "月次検証と急落確率モデルを更新しました")
+    messages.warning(
+        request,
+        "重い月次メンテナンスは画面から実行しません。"
+        "ローカルで `python manage.py monthly_macro_maintenance` を実行してください。",
+    )
     return redirect(reverse('macro:index'))
 
 

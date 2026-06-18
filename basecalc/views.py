@@ -14,12 +14,9 @@ from .market_context import _price_action_fallback_assets
 from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
-    calibration_summary,
     evaluate_due_predictions,
-    improvement_insights,
     performance_summary,
     save_prediction,
-    state_performance_summary,
 )
 from .serializers import serialize_snapshot
 from .services.decision_context import (
@@ -32,10 +29,9 @@ from .status import (
     intermarket_status_entry,
     price_status_entry,
 )
+from .validation_report import load_validation_report
 from .world_model import build_world_model
 from .data_quality import is_snapshot_stale
-from .calibration import confidence_calibration_summary
-from .validation import validation_design_summary
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -189,29 +185,29 @@ def history(request):
             readiness_level=readiness_level,
             is_backtest=is_backtest,
         ),
-        "state_summaries": state_performance_summary(horizon),
-        "calibration_rows": calibration_summary(
-            horizon,
-            instrument_key=instrument_key,
-            readiness_level=readiness_level,
-            is_backtest=is_backtest,
-        ),
-        "confidence_calibration_rows": confidence_calibration_summary(
-            horizon,
-            instrument_key=instrument_key,
-            readiness_level=readiness_level,
-            is_backtest=is_backtest,
-        ),
-        "validation_design": validation_design_summary(
-            horizon,
-            instrument_key=instrument_key,
-            readiness_level=readiness_level,
-            is_backtest=is_backtest,
-        ),
-        "improvement_insights": improvement_insights(horizon),
         "horizons": ("1d", "3d", "5d"),
     }
     return render(request, "basecalc/history.html", context)
+
+
+def validation(request):
+    report = load_validation_report()
+    horizon_reports = []
+    if report:
+        for horizon, payload in (report.get("horizons") or {}).items():
+            if isinstance(payload, dict):
+                horizon_reports.append(
+                    {
+                        "horizon": horizon,
+                        **payload,
+                    }
+                )
+    context = {
+        "report": report or {},
+        "has_report": bool(report),
+        "horizon_reports": horizon_reports,
+    }
+    return render(request, "basecalc/validation.html", context)
 
 
 def build_context(request, force_update=False):

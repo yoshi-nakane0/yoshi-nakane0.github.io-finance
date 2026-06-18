@@ -2032,6 +2032,20 @@ body {
     margin: 0;
 }
 
+.macro-operation-command {
+    grid-area: action;
+    max-width: 12rem;
+    padding: 0.42rem 0.52rem;
+    border: 1px solid rgba(112, 168, 226, 0.28);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.78);
+    color: var(--macro-text);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
 .macro-operation-button {
     display: inline-flex;
     align-items: center;

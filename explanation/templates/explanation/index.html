@@ -17,6 +17,68 @@
       {% endif %}
 
       <section class="common-section">
+        <p class="common-kicker">Entry</p>
+        <h1 class="common-title">{{ long_judgment.label }}</h1>
+        <div class="common-list">
+          <div class="common-row">
+            <span>判断</span>
+            <strong>{{ long_judgment.stance }}</strong>
+          </div>
+          <div class="common-row">
+            <span>目標</span>
+            <strong>{{ long_judgment.price }}</strong>
+          </div>
+          <div class="common-row">
+            <span>到達確率</span>
+            <strong>{{ long_judgment.probability }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>セットアップ</span>
+            <strong>{{ long_judgment.setup }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="common-section">
+        <p class="common-kicker">Entry</p>
+        <h1 class="common-title">{{ short_judgment.label }}</h1>
+        <div class="common-list">
+          <div class="common-row">
+            <span>判断</span>
+            <strong>{{ short_judgment.stance }}</strong>
+          </div>
+          <div class="common-row">
+            <span>目標</span>
+            <strong>{{ short_judgment.price }}</strong>
+          </div>
+          <div class="common-row">
+            <span>到達確率</span>
+            <strong>{{ short_judgment.probability }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>セットアップ</span>
+            <strong>{{ short_judgment.setup }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">world model 予測数値</h2>
+        <div class="common-list">
+          {% for item in world_model_predictions %}
+            <div class="common-row">
+              <span>{{ item.horizon }} / {{ item.bias }}</span>
+              <strong>{{ item.expected_return }}</strong>
+            </div>
+            <div class="common-row common-row--stack">
+              <span>{{ item.horizon }} setup</span>
+              <strong>{{ item.setup }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="common-section">
         <p class="common-kicker">日経先物 1日〜5日</p>
         <h1 class="common-title">最終判断：{{ snapshot.final_label }}</h1>
         <div class="common-list">

@@ -374,6 +374,66 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertNotContains(response, 'ターゲット全件')
         self.assertNotContains(response, 'targetではなく節目')
 
+    def test_validation_page_reads_saved_report_without_live_aggregation(self):
+        report = {
+            'schema': 'basecalc_validation_report_v1',
+            'generated_at': '2026-06-18T08:00:00+09:00',
+            'filters': {
+                'instrument_key': 'cme_nikkei_futures',
+                'readiness_level': 'ready',
+                'is_backtest': True,
+            },
+            'horizons': {
+                '1d': {
+                    'summary': {
+                        'total_predictions': 120,
+                        'directional_accuracy': 0.56,
+                        'target_t1_hit_rate': 0.44,
+                        'invalidation_rate': 0.08,
+                        'avg_return_pct': 0.21,
+                        'avg_confidence_score': 62.4,
+                    },
+                    'validation_design': {
+                        'walk_forward': [],
+                        'period_splits': [],
+                        'recent_window': {
+                            'label': '直近60日',
+                            'sample_count': 32,
+                            'directional_accuracy': 0.59,
+                            'avg_return_pct': 0.3,
+                            'target_t1_hit_rate': 0.47,
+                            'sample_quality': 'reliable',
+                        },
+                        'volatility_regimes': [],
+                        'market_regimes': [],
+                    },
+                    'calibration_rows': [],
+                    'confidence_calibration_rows': [],
+                    'state_summaries': [],
+                    'improvement_insights': [],
+                }
+            },
+        }
+
+        with (
+            patch('basecalc.views.load_validation_report', return_value=report),
+            patch('basecalc.validation_report.performance_summary') as performance,
+            patch('basecalc.validation_report.calibration_summary') as calibration,
+            patch('basecalc.validation_report.confidence_calibration_summary') as confidence,
+            patch('basecalc.validation_report.validation_design_summary') as validation_design,
+        ):
+            response = self.client.get(reverse('basecalc:validation'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '検証レポート')
+        self.assertContains(response, '保存済み結果')
+        self.assertContains(response, '120')
+        self.assertContains(response, '0.56')
+        performance.assert_not_called()
+        calibration.assert_not_called()
+        confidence.assert_not_called()
+        validation_design.assert_not_called()
+
     def test_manual_price_get_does_not_mutate_snapshot_view(self):
         response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
 
@@ -2695,39 +2755,13 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(apply_confidence_adjustment('Middle', adjustment), 'Low')
         self.assertLess(apply_sentiment_score_adjustment(42, adjustment), 42)
 
-    def test_history_page_shows_improvement_insights(self):
-        for index in range(5):
-            prediction = WorldModelPrediction.objects.create(
-                price=41000,
-                state_key='dip_buy',
-                state_label='押し目買い',
-                direction='up',
-                sentiment_score=42,
-                continuation_score=62,
-                shock_score=25,
-                confidence='Middle',
-                main_scenario='test',
-                invalidation_price=40600,
-                upside_targets=[{'price': 41400}, {'price': 41800}],
-                downside_targets=[{'price': 40600}, {'price': 40200}],
-                evidence=[],
-                features={'symbol': 'NIY=F'},
-            )
-            PredictionOutcome.objects.create(
-                prediction=prediction,
-                horizon='1d',
-                evaluated_at=timezone.now(),
-                price_at_evaluation=40500 - index,
-                realized_return_pct=-1.22,
-                direction_hit=False,
-                invalidation_hit=True,
-            )
-
+    def test_history_page_links_to_saved_validation_report(self):
         response = self.client.get(reverse('basecalc:history'), {'horizon': '1d'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '改善候補')
-        self.assertContains(response, '押し目買い')
+        self.assertContains(response, '検証・分析')
+        self.assertContains(response, '検証レポートを開く')
+        self.assertNotContains(response, '改善候補')
 
     def test_outcome_evaluation_uses_daily_horizons(self):
         created_at = timezone.now() - timezone.timedelta(days=6)
@@ -3056,6 +3090,51 @@ class BasecalcWorldModelTests(TestCase):
         self.assertTrue(summary['period_splits'])
         self.assertIn('volatility_regimes', summary)
         self.assertTrue(summary['market_regimes'])
+
+    def test_build_validation_report_command_writes_saved_report_json(self):
+        prediction = WorldModelPrediction.objects.create(
+            model_version='wm_v2.0.0',
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='up',
+            sentiment_score=20,
+            continuation_score=20,
+            shock_score=20,
+            confidence='Middle',
+            confidence_score=65,
+            data_quality_score=90,
+            main_scenario='test',
+            evidence=[],
+            expected_returns={'1d': {'value': 0.4}},
+            features={'symbol': 'NIY=F', 'atr14': 400},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+            is_backtest=True,
+        )
+        PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41200,
+            realized_return_pct=0.5,
+            direction_hit=True,
+            upside_t1_hit=True,
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / 'validation_report.json'
+            call_command(
+                'build_basecalc_validation_report',
+                output=str(output_path),
+                horizons='1d',
+            )
+            payload = json.loads(output_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(payload['schema'], 'basecalc_validation_report_v1')
+        self.assertEqual(payload['filters']['is_backtest'], True)
+        self.assertEqual(payload['horizons']['1d']['summary']['total_predictions'], 1)
+        self.assertIn('validation_design', payload['horizons']['1d'])
 
     def test_backtest_command_dry_run_uses_saved_market_bars(self):
         start = timezone.now() - timezone.timedelta(days=60)

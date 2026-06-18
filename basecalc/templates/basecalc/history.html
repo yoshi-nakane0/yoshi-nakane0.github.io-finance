@@ -15,6 +15,7 @@
         <main class="content">
             <div class="history-nav">
                 <a href="{% url 'basecalc:index' %}" class="btn-base btn-outline">判定へ戻る</a>
+                <a href="{% url 'basecalc:validation' %}" class="btn-base btn-outline">検証レポート</a>
             </div>
 
             <section class="card wm-hero wm-neutral">
@@ -98,190 +99,17 @@
 
             <section class="card">
                 <div class="card-header compact-header">
-                    <div class="card-icon text-amber">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 9v4"></path>
-                            <path d="M12 17h.01"></path>
-                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">改善候補</div>
-                </div>
-                <div class="insight-list">
-                    {% for insight in improvement_insights %}
-                    <article class="insight-item insight-{{ insight.severity }}">
-                        <div>
-                            <strong>{{ insight.title }}</strong>
-                            <span>{{ insight.metric }}</span>
-                        </div>
-                        <p>{{ insight.detail }}</p>
-                        <small>{{ insight.suggestion }}</small>
-                    </article>
-                    {% empty %}
-                    <div class="notice-text">改善候補はまだありません。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
-                    <div class="card-icon text-purple">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M4 7h16"></path>
-                            <path d="M4 12h16"></path>
-                            <path d="M4 17h16"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">局面別</div>
-                </div>
-                <div class="state-table">
-                    {% for row in state_summaries %}
-                    <div class="state-row">
-                        <strong>{{ row.state_label }}</strong>
-                        <span>件数 {{ row.total_predictions }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
-                        <span>期待 {{ row.expected_return_pct|floatformat:2 }}%</span>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">検証済みデータはまだありません。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
-                    <div class="card-icon text-amber">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 3v18h18"></path>
-                            <path d="M8 17V9"></path>
-                            <path d="M13 17V5"></path>
-                            <path d="M18 17v-6"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">検証設計</div>
-                </div>
-                <div class="state-table">
-                    {% for row in validation_design.walk_forward %}
-                    <div class="state-row">
-                        <strong>{{ row.label }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
-                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>{{ row.sample_quality }}</span>
-                    </div>
-                    {% endfor %}
-                    {% for row in validation_design.period_splits %}
-                    <div class="state-row">
-                        <strong>{{ row.label }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
-                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>{{ row.sample_quality }}</span>
-                    </div>
-                    {% endfor %}
-                    <div class="state-row">
-                        <strong>{{ validation_design.recent_window.label }}</strong>
-                        <span>件数 {{ validation_design.recent_window.sample_count }}</span>
-                        <span>方向 {{ validation_design.recent_window.directional_accuracy|floatformat:2 }}</span>
-                        <span>平均 {{ validation_design.recent_window.avg_return_pct|floatformat:2 }}%</span>
-                        <span>過去T1到達率 {{ validation_design.recent_window.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>{{ validation_design.recent_window.sample_quality }}</span>
-                    </div>
-                    {% for row in validation_design.volatility_regimes %}
-                    <div class="state-row">
-                        <strong>{{ row.label }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>平均 {{ row.avg_return_pct|floatformat:2 }}%</span>
-                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>{{ row.sample_quality }}</span>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">検証設計に使えるデータはまだありません。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
                     <div class="card-icon text-green">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 3v18h18"></path>
                             <path d="M7 14l3-3 3 2 5-6"></path>
                         </svg>
                     </div>
-                    <div class="card-title">予測と実績</div>
+                    <div class="card-title">検証・分析</div>
                 </div>
-                <div class="state-table">
-                    {% for row in calibration_rows %}
-                    <div class="state-row">
-                        <strong>{{ row.bucket }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>予測 {{ row.avg_expected_pct|floatformat:2 }}%</span>
-                        <span>実績 {{ row.avg_realized_pct|floatformat:2 }}%</span>
-                        <span>ズレ {{ row.avg_error_pct|floatformat:2 }}%</span>
-                        <span>{{ row.sample_quality }}</span>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">予測と実績を比較できる検証済みデータはまだありません。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
-                    <div class="card-icon text-blue">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 3v18h18"></path>
-                            <path d="M8 14l2-2 2 2 5-6"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">信頼度別の実績</div>
-                </div>
-                <div class="state-table">
-                    {% for row in confidence_calibration_rows %}
-                    <div class="state-row">
-                        <strong>{{ row.bucket }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>過去T1到達率 {{ row.target_t1_hit_rate|floatformat:2 }}</span>
-                        <span>平均損益 {{ row.avg_return_pct|floatformat:2 }}%</span>
-                        <span>{{ row.sample_quality }}</span>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">信頼度ごとの実績はまだありません。</div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header compact-header">
-                    <div class="card-icon text-purple">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M4 7h16"></path>
-                            <path d="M4 12h16"></path>
-                            <path d="M4 17h10"></path>
-                        </svg>
-                    </div>
-                    <div class="card-title">ベースライン比較</div>
-                </div>
-                <div class="state-table">
-                    {% for row in summary.baseline_comparison.rows %}
-                    <div class="state-row">
-                        <strong>{{ row.label }}</strong>
-                        <span>件数 {{ row.sample_count }}</span>
-                        <span>方向 {{ row.directional_accuracy|floatformat:2 }}</span>
-                        <span>Balanced {{ row.balanced_accuracy|floatformat:2 }}</span>
-                        <span>Brier {{ row.brier_score|floatformat:2 }}</span>
-                        <span>控除後 {{ row.risk_adjusted_return_pct|floatformat:2 }}%</span>
-                    </div>
-                    {% empty %}
-                    <div class="notice-text">ベースライン比較はまだありません。</div>
-                    {% endfor %}
+                <div class="notice-text">
+                    重い検証と分析は保存済みレポートで確認します。
+                    <a href="{% url 'basecalc:validation' %}" class="inline-link">検証レポートを開く</a>
                 </div>
             </section>
 
