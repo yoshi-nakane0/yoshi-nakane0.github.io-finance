@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explanation</title>
+  <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+</head>
+<body>
+  <div class="app-container">
+    {% include "common/app_header.html" with page_title="Explanation" page_slug="explanation" %}
+
+    <main class="common-page">
+      {% if is_preview %}
+        <p class="common-notice">保存済み判断がないため、保存済みデータから一時表示しています。</p>
+      {% endif %}
+
+      <section class="common-section">
+        <p class="common-kicker">日経先物 1日〜5日</p>
+        <h1 class="common-title">最終判断：{{ snapshot.final_label }}</h1>
+        <div class="common-list">
+          <div class="common-row">
+            <span>実行姿勢</span>
+            <strong>{{ snapshot.action_posture }}</strong>
+          </div>
+          <div class="common-row">
+            <span>信頼度</span>
+            <strong>{{ snapshot.confidence_grade }} / {{ snapshot.confidence_score }}%</strong>
+          </div>
+          <div class="common-row">
+            <span>判定状態</span>
+            <strong>{{ status_label }}</strong>
+          </div>
+          <div class="common-row">
+            <span>更新</span>
+            <strong>{{ as_of_display }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">判断理由</h2>
+        <div class="common-card-grid">
+          <article class="common-card">
+            <h3>Macro</h3>
+            <p>{{ macro.summary }}</p>
+          </article>
+          <article class="common-card">
+            <h3>Basecalc</h3>
+            <p>{{ basecalc.summary }}</p>
+          </article>
+          <article class="common-card">
+            <h3>Audit</h3>
+            <p>{{ snapshot.audit_items.0 }}</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">理由</h2>
+        <ol class="common-ordered-list">
+          {% for reason in reasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">見るべき水準</h2>
+        <div class="common-list">
+          <div class="common-row">
+            <span>上値抵抗</span>
+            <strong>{{ basecalc.resistance }}円</strong>
+          </div>
+          <div class="common-row">
+            <span>下値支持</span>
+            <strong>{{ basecalc.support }}円</strong>
+          </div>
+          <div class="common-row">
+            <span>無効化</span>
+            <strong>{{ basecalc.invalidation }}円</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">シナリオ</h2>
+        <div class="common-list">
+          <div class="common-row common-row--stack">
+            <span>{{ scenario.baseline.title }}</span>
+            <strong>{{ scenario.baseline.text }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>{{ scenario.upside.title }}</span>
+            <strong>{{ scenario.upside.text }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>{{ scenario.downside.title }}</span>
+            <strong>{{ scenario.downside.text }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <details class="common-section">
+        <summary class="common-section-title">監査</summary>
+        <ul class="common-bullet-list">
+          {% for item in snapshot.audit_items %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+
+      <nav class="common-link-row" aria-label="詳細確認">
+        {% for link in audit_links %}
+          <a href="{{ link.url }}">{{ link.label }}</a>
+        {% endfor %}
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

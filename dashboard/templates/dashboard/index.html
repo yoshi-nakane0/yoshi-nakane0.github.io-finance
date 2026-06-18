@@ -54,7 +54,24 @@
     <!-- Group: Live Stock Trends -->
     <section class="dashboard-section dashboard-section--deferred">
       <h3 class="section-title">Live Stock Trends</h3>
-      <div class="grid-container grid-cols-2">
+      <div class="grid-container grid-cols-3">
+
+        <!-- Explanation -->
+        <a href="{% url 'explanation:index' %}" class="dashboard-card category-market type-explanation">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="text-wrapper">
+            <h2 class="card-title">Explanation</h2>
+            <span class="card-subtitle">Final View</span>
+          </div>
+        </a>
 
         <!-- Macro -->
         <a href="{% url 'macro:index' %}" class="dashboard-card category-analysis type-macro">
@@ -114,15 +131,7 @@
           </div>
         </a>
 
-      </div>
-    </section>
-
-    <!-- Group: Market Forecast Reports -->
-    <section class="dashboard-section dashboard-section--deferred">
-      <h3 class="section-title">Market Forecast</h3>
-      <div class="grid-container grid-cols-2 grid-compact">
-
-        <!-- 5. Person -->
+        <!-- Person -->
         <a href="{% url 'person:index' %}" class="dashboard-card category-market type-person">
           <div class="icon-wrapper">
             <svg viewBox="0 0 24 24">
@@ -136,48 +145,31 @@
           </div>
         </a>
 
-        <!-- 6. Explanation -->
-        <div class="dashboard-card category-market type-explanation">
-          <div class="icon-wrapper">
-            <svg viewBox="0 0 24 24">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <div class="text-wrapper">
-            <h2 class="card-title">Explanation</h2>
-            <span class="card-subtitle">Indicators</span>
-          </div>
-        </div>
-
       </div>
     </section>
 
-        <!-- Group: Related -->
-        <section class="dashboard-section dashboard-section--deferred">
-          <h3 class="section-title">Related</h3>
-          <div class="grid-container grid-cols-4">
-            
-            <!-- 7. Prompt -->
-            <a href="{% url 'prompt:index' %}" class="dashboard-card category-ai type-prompt">
-              <div class="icon-wrapper">
-                <svg viewBox="0 0 24 24">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-              </div>
-              <div class="text-wrapper">
-                <h2 class="card-title">Prompt</h2>
-                <span class="card-subtitle">Management</span>
-              </div>
-            </a>
+    <!-- Group: Market Forecast Reports -->
+    <section class="dashboard-section dashboard-section--deferred">
+      <h3 class="section-title">Market Forecast</h3>
+      <div class="grid-container grid-cols-1 grid-compact">
 
+        <!-- Prompt -->
+        <a href="{% url 'prompt:index' %}" class="dashboard-card category-ai type-prompt">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
           </div>
-        </section>
+          <div class="text-wrapper">
+            <h2 class="card-title">Prompt</h2>
+            <span class="card-subtitle">Management</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
   </div>
   <script>
     (function () {

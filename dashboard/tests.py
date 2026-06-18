@@ -9,7 +9,7 @@ class DashboardPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="dashboard-page"', html=False)
-        self.assertContains(response, "dashboard-section--deferred", count=3)
+        self.assertContains(response, "dashboard-section--deferred", count=2)
         self.assertContains(response, "/static/common/css/layout.css", html=False)
         self.assertContains(response, "/static/dashboard/css/style.css", html=False)
 
@@ -39,6 +39,36 @@ class DashboardPageTests(TestCase):
         self.assertLess(basecalc_position, sector_position)
         self.assertLess(sector_position, prediction_position)
         self.assertNotIn("type-macro grid-span-2", live_stock_section)
+
+    def test_dashboard_places_live_stock_and_prompt_layout(self):
+        response = self.client.get(reverse("dashboard:index"))
+        content = response.content.decode()
+        live_stock_start = content.index("Live Stock Trends")
+        market_forecast_start = content.index("Market Forecast")
+        live_stock_section = content[live_stock_start:market_forecast_start]
+        market_forecast_end = content.index("</section>", market_forecast_start)
+        market_forecast_section = content[market_forecast_start:market_forecast_end]
+
+        self.assertIn("type-explanation", live_stock_section)
+        self.assertIn("type-macro", live_stock_section)
+        self.assertIn("type-basecalc", live_stock_section)
+        self.assertIn("grid-container grid-cols-3", live_stock_section)
+        self.assertIn("type-prediction", live_stock_section)
+        self.assertIn("type-person", live_stock_section)
+        self.assertIn("grid-container grid-cols-1", market_forecast_section)
+        self.assertIn("type-prompt", market_forecast_section)
+        self.assertNotIn("type-person", market_forecast_section)
+
+        explanation_position = live_stock_section.index("type-explanation")
+        macro_position = live_stock_section.index("type-macro")
+        basecalc_position = live_stock_section.index("type-basecalc")
+        prediction_position = live_stock_section.index("type-prediction")
+        person_position = live_stock_section.index("type-person")
+
+        self.assertLess(explanation_position, macro_position)
+        self.assertLess(macro_position, basecalc_position)
+        self.assertLess(prediction_position, person_position)
+        self.assertNotIn("Related", content)
 
     def test_admin_panel_shows_login_for_anonymous_user(self):
         response = self.client.get(reverse("dashboard:admin_panel"))

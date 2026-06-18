@@ -40,9 +40,12 @@ if [ "${RUN_DATA_REFRESH_IN_BUILD:-0}" = "1" ]; then
   $PYTHON_BIN manage.py purge_old_data
   $PYTHON_BIN manage.py settle_forecast_snapshots || true
   $PYTHON_BIN manage.py precompute_dashboard
+  $PYTHON_BIN manage.py precompute_explanation
 else
   echo "Skip data refresh in Vercel build"
 fi
+
+$PYTHON_BIN manage.py precompute_explanation || true
 
 if [ -z "${DATABASE_URL:-}" ]; then
   cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"

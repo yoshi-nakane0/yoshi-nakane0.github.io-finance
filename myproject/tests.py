@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+from django.db import OperationalError
 from django.test import SimpleTestCase, TestCase
 
 from myproject.auth import ensure_env_superuser
@@ -70,3 +71,45 @@ class RuntimeAdminProvisioningTests(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
         self.assertTrue(user.check_password('runtime-password'))
+
+
+class ExplanationRoutingTests(TestCase):
+    def test_explanation_page_exists(self):
+        response = self.client.get('/explanation/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '最終判断')
+        self.assertContains(response, 'Macro')
+        self.assertContains(response, 'Basecalc')
+        self.assertContains(response, 'Audit')
+
+    def test_explanation_latest_api_exists(self):
+        response = self.client.get('/explanation/api/latest/')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('final', payload)
+        self.assertIn('macro', payload)
+        self.assertIn('basecalc', payload)
+        self.assertIn('audit', payload)
+
+    def test_explanation_page_falls_back_when_snapshot_table_is_missing(self):
+        with mock.patch(
+            'explanation.views.ExplanationSnapshot.objects.order_by',
+            side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+        ):
+            response = self.client.get('/explanation/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '保存済み判断がないため')
+        self.assertContains(response, '最終判断')
+
+    def test_explanation_api_falls_back_when_snapshot_table_is_missing(self):
+        with mock.patch(
+            'explanation.views.ExplanationSnapshot.objects.order_by',
+            side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+        ):
+            response = self.client.get('/explanation/api/latest/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('final', response.json())

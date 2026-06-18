@@ -17,4 +17,5 @@ urlpatterns = [
     path('prediction/', include('prediction.urls')),
     path('basecalc/', include('basecalc.urls')),
     path('macro/', include('macro.urls')),
+    path('explanation/', include('explanation.urls')),
 ]

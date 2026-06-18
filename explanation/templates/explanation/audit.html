@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explanation Audit</title>
+  <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+</head>
+<body>
+  <div class="app-container">
+    {% include "common/app_header.html" with page_title="Explanation Audit" page_slug="explanation" %}
+
+    <main class="common-page">
+      <section class="common-section">
+        <h1 class="common-title">監査詳細</h1>
+        <p class="common-muted">判断バージョン：{{ snapshot.version }}</p>
+        <p class="common-muted">更新：{{ as_of_display }}</p>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">信頼度計算</h2>
+        <div class="common-list">
+          {% for key, value in score_breakdown.items %}
+            <div class="common-row">
+              <span>{{ key }}</span>
+              <strong>{{ value }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">監査項目</h2>
+        <ul class="common-bullet-list">
+          {% for item in snapshot.audit_items %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">元データ</h2>
+        <div class="common-list">
+          <div class="common-row common-row--stack">
+            <span>macro</span>
+            <strong>{{ source_snapshots.macro.summary }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>basecalc</span>
+            <strong>{{ source_snapshots.basecalc.summary }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <nav class="common-link-row" aria-label="詳細確認">
+        <a href="/explanation/">Explanation</a>
+        <a href="/macro/">Macro</a>
+        <a href="/basecalc/">Basecalc</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>
