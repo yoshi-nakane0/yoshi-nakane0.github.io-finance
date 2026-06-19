@@ -128,6 +128,8 @@ def can_show_prediction(world_model, performance=None):
 
 def prediction_stop_reasons(world_model, performance=None):
     world_model = world_model or {}
+    if can_show_prediction(world_model, performance):
+        return []
     similar = world_model.get("similar_summary") or {}
     data_quality = world_model.get("data_quality") or {}
     reasons = []
@@ -334,8 +336,7 @@ def _has_baseline_validation(performance):
     comparison = performance.get("baseline_comparison")
     if isinstance(comparison, dict):
         if int(comparison.get("sample_count") or 0) >= 30:
-            best = comparison.get("best_baseline") or {}
-            if best.get("key") == "model":
+            if _model_beats_atr_baseline(comparison):
                 return True
     required = {
         "model_directional_accuracy",
@@ -357,6 +358,30 @@ def _has_baseline_validation(performance):
     if model_accuracy < continuation_accuracy:
         return False
     return zero_mae > 0 and model_mae <= zero_mae
+
+
+def _model_beats_atr_baseline(comparison):
+    rows = comparison.get("rows") or []
+    model = _baseline_row(rows, "model")
+    atr_range = _baseline_row(rows, "atr_range")
+    if not model or not atr_range:
+        return False
+    return _baseline_rank_tuple(model) >= _baseline_rank_tuple(atr_range)
+
+
+def _baseline_row(rows, key):
+    for row in rows:
+        if isinstance(row, dict) and row.get("key") == key:
+            return row
+    return None
+
+
+def _baseline_rank_tuple(row):
+    return (
+        float(row.get("risk_adjusted_return_pct") or 0),
+        float(row.get("balanced_accuracy") or 0),
+        float(row.get("directional_accuracy") or 0),
+    )
 
 
 def _has_baseline_metrics(performance):

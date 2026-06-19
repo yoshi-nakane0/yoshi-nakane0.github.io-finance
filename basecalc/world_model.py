@@ -32,6 +32,7 @@ from .model_version import BASECALC_MODEL_VERSION
 from .outcomes import (
     apply_sentiment_score_adjustment,
     confidence_adjustment_for_state,
+    performance_summary,
 )
 from .baselines import learned_transition_stats
 from .similarity import find_similar_cases
@@ -191,6 +192,7 @@ def build_world_model(price, market_snapshot=None, intermarket_context=None, as_
         features,
         similar_summary=similar_summary,
     )
+    features["performance_total_predictions"] = _backtest_total_predictions()
     dual_scenario = build_dual_scenario(
         direction,
         continuation_score,
@@ -1035,6 +1037,13 @@ def _quality_evidence(quality):
     for warning in quality.get("warnings") or []:
         evidence.append(warning)
     return evidence[:3]
+
+
+def _backtest_total_predictions():
+    try:
+        return int((performance_summary("1d", is_backtest=True) or {}).get("total_predictions") or 0)
+    except Exception:
+        return 0
 
 
 def _intermarket_evidence(intermarket_context):

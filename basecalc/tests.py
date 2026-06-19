@@ -56,6 +56,7 @@ from .similarity import find_similar_cases
 from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
 from .scenario_engine import build_scenarios
+from .services.decision_context import can_show_prediction
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -1935,6 +1936,42 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertEqual(result['label'], 'Low')
         self.assertLess(result['score'], 45)
 
+    def test_confidence_score_uses_full_100_point_scale_for_complete_evidence(self):
+        result = calculate_confidence_score(
+            features={
+                'readiness_level': 'ready',
+                'directional_allowed': True,
+                'bar_counts': {'1d': 120},
+                'indicator_validity': {
+                    'ema20': True,
+                    'ema60': True,
+                    'rsi14': True,
+                    'atr14': True,
+                },
+                'performance_total_predictions': 120,
+            },
+            sentiment_score=100,
+            continuation_score=100,
+            shock_score=20,
+            similar_summary={
+                'case_count': 30,
+                'used_case_count': 30,
+                'is_statistically_valid': True,
+                'directional_accuracy': 1.0,
+            },
+            performance_adjustment=None,
+            data_quality={
+                'score': 100,
+                'level': 'good',
+                'is_stale': False,
+                'fallback_used': False,
+                'instrument_type': 'futures',
+            },
+        )
+
+        self.assertEqual(result['score'], 100)
+        self.assertEqual(result['label'], 'High')
+
     def test_state_machine_definitions_and_probabilities(self):
         required = {'label', 'phase_label', 'base_bias', 'next_states'}
         for definition in STATE_DEFINITIONS.values():
@@ -2422,6 +2459,50 @@ class BasecalcReliabilitySpecTests(TestCase):
 
         self.assertFalse(result['similar_summary']['is_statistically_valid'])
         self.assertEqual(result['components']['similar'], 0)
+
+    def test_similar_cases_expand_similarity_when_primary_sample_is_short(self):
+        primary = {
+            'case_count': 24,
+            'used_case_count': 24,
+            'searched_case_count': 3000,
+            'is_statistically_valid': False,
+            'min_similarity': 0.35,
+        }
+        expanded = {
+            'case_count': 30,
+            'used_case_count': 30,
+            'searched_case_count': 3000,
+            'is_statistically_valid': True,
+            'min_similarity': 0.28,
+        }
+
+        with patch(
+            'basecalc.similarity._find_similar_cases_from_ohlcv',
+            side_effect=[primary, expanded],
+        ) as finder:
+            result = find_similar_cases(
+                {'sentiment_score': 60, 'instrument_key': 'missing_futures'},
+                {'opens': [1] * 80, 'highs': [2] * 80, 'lows': [1] * 80, 'closes': [1] * 80, 'volumes': [1] * 80},
+            )
+
+        self.assertEqual(result['case_count'], 30)
+        self.assertTrue(result['is_statistically_valid'])
+        self.assertEqual(result['min_similarity'], 0.28)
+        self.assertTrue(result['similarity_expanded'])
+        self.assertEqual(finder.call_count, 2)
+
+    def test_world_model_passes_backtest_sample_count_to_confidence_gate(self):
+        snapshot = _ready_snapshot(120)
+
+        with patch(
+            'basecalc.world_model.performance_summary',
+            return_value={'total_predictions': 600},
+            create=True,
+        ) as performance:
+            result = build_world_model(snapshot['price'], snapshot)
+
+        performance.assert_called_once_with('1d', is_backtest=True)
+        self.assertEqual(result['features']['performance_total_predictions'], 600)
 
     def test_similar_cases_normalize_current_macd_histogram_by_atr(self):
         closes = [40000 for _ in range(120)]
@@ -3329,6 +3410,168 @@ class BasecalcWorldModelTests(TestCase):
         self.assertTrue({'always_up', 'always_neutral', 'continuation', 'ema_cross', 'vwap_side', 'model'}.issubset(keys))
         self.assertEqual(result['sample_count'], 2)
         self.assertGreaterEqual(result['best_baseline']['directional_accuracy'], 0)
+
+    def test_atr_range_baseline_does_not_use_realized_return_direction(self):
+        rows = []
+        for realized in (2.0, -2.0):
+            prediction = WorldModelPrediction.objects.create(
+                model_version='wm_v2.0.0',
+                price=41000,
+                state_key='range_neutral',
+                state_label='レンジ中立',
+                direction='neutral',
+                sentiment_score=0,
+                continuation_score=20,
+                shock_score=20,
+                confidence='Middle',
+                confidence_score=65,
+                data_quality_score=90,
+                main_scenario='test',
+                evidence=[],
+                expected_returns={'1d': {'value': 0.0}},
+                features={
+                    'symbol': 'NIY=F',
+                    'previous_close': 41000,
+                    'close': 41000,
+                    'ema5': 41000,
+                    'ema20': 41000,
+                    'vwap': 41000,
+                    'atr14': 400,
+                },
+                instrument_key='cme_nikkei_futures',
+                readiness_level='ready',
+            )
+            rows.append(
+                PredictionOutcome.objects.create(
+                    prediction=prediction,
+                    horizon='1d',
+                    evaluated_at=timezone.now(),
+                    price_at_evaluation=41000,
+                    realized_return_pct=realized,
+                    direction_hit=False,
+                )
+            )
+
+        result = baseline_comparison_summary(rows, '1d')
+        atr_row = next(row for row in result['rows'] if row['key'] == 'atr_range')
+
+        self.assertEqual(atr_row['directional_accuracy'], 0.0)
+        self.assertLessEqual(atr_row['avg_strategy_return_pct'], 0.0)
+
+    def test_model_baseline_treats_small_expected_return_as_neutral(self):
+        prediction = WorldModelPrediction.objects.create(
+            model_version='wm_v2.0.0',
+            price=41000,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='up',
+            sentiment_score=40,
+            continuation_score=20,
+            shock_score=20,
+            confidence='Middle',
+            confidence_score=65,
+            data_quality_score=90,
+            main_scenario='test',
+            evidence=[],
+            expected_returns={'1d': {'value': 0.2}},
+            features={'symbol': 'NIY=F'},
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+        )
+        outcome = PredictionOutcome.objects.create(
+            prediction=prediction,
+            horizon='1d',
+            evaluated_at=timezone.now(),
+            price_at_evaluation=41400,
+            realized_return_pct=1.0,
+            direction_hit=True,
+        )
+
+        result = baseline_comparison_summary([outcome], '1d')
+        model_row = next(row for row in result['rows'] if row['key'] == 'model')
+
+        self.assertEqual(model_row['directional_accuracy'], 0.0)
+        self.assertLessEqual(model_row['avg_strategy_return_pct'], 0.0)
+
+    def test_prediction_gate_accepts_model_when_it_beats_atr_baseline(self):
+        world_model = {
+            'readiness_level': 'ready',
+            'confidence_score': 60,
+            'similar_summary': {
+                'case_count': 30,
+                'is_statistically_valid': True,
+            },
+            'data_quality': {
+                'level': 'good',
+                'fallback_used': False,
+            },
+        }
+        performance = {
+            'baseline_comparison': {
+                'sample_count': 30,
+                'best_baseline': {'key': 'always_up'},
+                'rows': [
+                    {'key': 'model', 'risk_adjusted_return_pct': 0.12, 'balanced_accuracy': 0.55, 'directional_accuracy': 0.56},
+                    {'key': 'atr_range', 'risk_adjusted_return_pct': 0.02, 'balanced_accuracy': 0.48, 'directional_accuracy': 0.50},
+                    {'key': 'always_up', 'risk_adjusted_return_pct': 0.20, 'balanced_accuracy': 0.40, 'directional_accuracy': 0.45},
+                ],
+            },
+        }
+
+        self.assertTrue(can_show_prediction(world_model, performance))
+
+    def test_prediction_stop_reasons_are_empty_when_prediction_can_show(self):
+        from .services.decision_context import prediction_stop_reasons
+
+        world_model = {
+            'readiness_level': 'ready',
+            'confidence_score': 60,
+            'similar_summary': {
+                'case_count': 30,
+                'is_statistically_valid': True,
+            },
+            'data_quality': {
+                'level': 'good',
+                'fallback_used': False,
+            },
+        }
+        performance = {
+            'baseline_comparison': {
+                'sample_count': 30,
+                'rows': [
+                    {'key': 'model', 'risk_adjusted_return_pct': 0.12, 'balanced_accuracy': 0.55, 'directional_accuracy': 0.56},
+                    {'key': 'atr_range', 'risk_adjusted_return_pct': 0.02, 'balanced_accuracy': 0.48, 'directional_accuracy': 0.50},
+                ],
+            },
+        }
+
+        self.assertEqual(prediction_stop_reasons(world_model, performance), [])
+
+    def test_prediction_gate_blocks_when_atr_baseline_beats_model(self):
+        world_model = {
+            'readiness_level': 'ready',
+            'confidence_score': 60,
+            'similar_summary': {
+                'case_count': 30,
+                'is_statistically_valid': True,
+            },
+            'data_quality': {
+                'level': 'good',
+                'fallback_used': False,
+            },
+        }
+        performance = {
+            'baseline_comparison': {
+                'sample_count': 30,
+                'best_baseline': {'key': 'atr_range'},
+                'rows': [
+                    {'key': 'model', 'risk_adjusted_return_pct': 0.01, 'balanced_accuracy': 0.45, 'directional_accuracy': 0.48},
+                    {'key': 'atr_range', 'risk_adjusted_return_pct': 0.08, 'balanced_accuracy': 0.55, 'directional_accuracy': 0.58},
+                ],
+            },
+        }
+
+        self.assertFalse(can_show_prediction(world_model, performance))
 
     def test_calibration_summary_compares_expected_and_realized_returns(self):
         prediction = WorldModelPrediction.objects.create(

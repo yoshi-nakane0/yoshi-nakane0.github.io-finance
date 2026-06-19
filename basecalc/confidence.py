@@ -1,3 +1,6 @@
+BASE_CONFIDENCE_COMPONENT_MAX = 83
+
+
 def calculate_confidence_score(
     features: dict,
     sentiment_score: int,
@@ -26,7 +29,7 @@ def calculate_confidence_score(
         "shock_penalty": -round(min(max(shock_score - 40, 0), 40) / 40 * 10, 1),
         "stale_penalty": _stale_penalty(data_quality),
     }
-    score = int(round(sum(components.values())))
+    score = _normalize_base_confidence(sum(components.values()))
     caps = []
     warnings = []
     if data_quality.get("level") == "bad":
@@ -104,6 +107,12 @@ def confidence_label_from_score(score: int) -> str:
     if score >= 45:
         return "Middle"
     return "Low"
+
+
+def _normalize_base_confidence(raw_score):
+    if BASE_CONFIDENCE_COMPONENT_MAX <= 0:
+        return int(round(raw_score))
+    return int(round((raw_score / BASE_CONFIDENCE_COMPONENT_MAX) * 100))
 
 
 def _state_performance_component(performance_adjustment):

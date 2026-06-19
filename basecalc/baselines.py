@@ -17,6 +17,8 @@ BASELINE_LABELS = {
     "model": "現行モデル",
 }
 
+MODEL_ACTION_THRESHOLD_PCT = 0.5
+
 
 def baseline_comparison_summary(outcomes, horizon="1d"):
     if hasattr(outcomes, "select_related"):
@@ -32,6 +34,9 @@ def baseline_comparison_summary(outcomes, horizon="1d"):
             continue
         prediction = outcome.prediction
         actual_direction = _direction_from_return(realized)
+        model_expected = _expected_return_value(
+            (getattr(prediction, "expected_returns", None) or {}).get(horizon)
+        )
         predicted = {
             "always_up": "up",
             "always_down": "down",
@@ -39,13 +44,10 @@ def baseline_comparison_summary(outcomes, horizon="1d"):
             "continuation": _continuation_direction(prediction),
             "ema_cross": _ema_cross_direction(prediction),
             "vwap_side": _vwap_direction(prediction),
-            "atr_range": _atr_range_direction(prediction, realized),
+            "atr_range": _atr_range_direction(prediction),
             "random": "up" if index % 2 == 0 else "down",
-            "model": getattr(prediction, "direction", None),
+            "model": _model_direction(prediction, model_expected),
         }
-        model_expected = _expected_return_value(
-            (getattr(prediction, "expected_returns", None) or {}).get(horizon)
-        )
         for key, direction in predicted.items():
             _accumulate(
                 buckets[key],
@@ -213,16 +215,20 @@ def _vwap_direction(prediction):
     return "neutral"
 
 
-def _atr_range_direction(prediction, realized):
-    features = getattr(prediction, "features", None) or {}
-    atr = _to_float(features.get("atr14"))
-    price = _to_float(getattr(prediction, "price", None))
-    if not atr or not price:
-        return "neutral"
-    threshold_pct = max(0.3, min(1.2, atr / price * 100))
-    if realized > threshold_pct:
+def _atr_range_direction(_prediction):
+    return "neutral"
+
+
+def _model_direction(prediction, expected_return):
+    if expected_return is None:
+        return getattr(prediction, "direction", None)
+    return _direction_from_expected_return(expected_return)
+
+
+def _direction_from_expected_return(value):
+    if value > MODEL_ACTION_THRESHOLD_PCT:
         return "up"
-    if realized < -threshold_pct:
+    if value < -MODEL_ACTION_THRESHOLD_PCT:
         return "down"
     return "neutral"
 

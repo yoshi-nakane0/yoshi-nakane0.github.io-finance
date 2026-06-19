@@ -11,6 +11,11 @@ from .indicators import (
 )
 
 
+DEFAULT_MIN_SIMILARITY = 0.35
+EXPANDED_MIN_SIMILARITY = 0.28
+MIN_STATISTICAL_CASES = 30
+
+
 def find_similar_cases(
     features,
     ohlcv,
@@ -18,7 +23,7 @@ def find_similar_cases(
     instrument_key="cme_nikkei_futures",
     as_of=None,
     timeframe="1d",
-    min_similarity=0.35,
+    min_similarity=DEFAULT_MIN_SIMILARITY,
     limit=30,
 ):
     source_ohlcv = _market_bar_ohlcv(
@@ -28,11 +33,33 @@ def find_similar_cases(
     )
     if not source_ohlcv:
         source_ohlcv = ohlcv
-    return _find_similar_cases_from_ohlcv(
+    summary = _find_similar_cases_from_ohlcv(
         features,
         source_ohlcv,
         limit=limit,
         min_similarity=min_similarity,
+    )
+    if _should_expand_similarity(summary, min_similarity, limit):
+        expanded = _find_similar_cases_from_ohlcv(
+            features,
+            source_ohlcv,
+            limit=limit,
+            min_similarity=EXPANDED_MIN_SIMILARITY,
+        )
+        if int(expanded.get("case_count") or 0) > int(summary.get("case_count") or 0):
+            expanded["similarity_expanded"] = True
+            expanded["primary_min_similarity"] = min_similarity
+            return expanded
+    return summary
+
+
+def _should_expand_similarity(summary, min_similarity, limit):
+    if min_similarity <= EXPANDED_MIN_SIMILARITY:
+        return False
+    required = min(limit, MIN_STATISTICAL_CASES)
+    return (
+        int(summary.get("searched_case_count") or 0) >= 100
+        and int(summary.get("case_count") or 0) < required
     )
 
 
