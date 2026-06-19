@@ -140,7 +140,7 @@
             </section>
 
             <section class="macro-section">
-                <h2 class="macro-section-title macro-section-title--shield">運用状態・ビンテージ・Raw archive</h2>
+                <h2 class="macro-section-title macro-section-title--shield">運用状態・ビンテージ</h2>
                 <div class="macro-operations-grid">
                     {% if world_model_operations %}
                         {% for row in world_model_operations.rows %}
@@ -156,13 +156,6 @@
                             <span>ビンテージ管理</span>
                             <strong>{{ vintage_status.status_label }}</strong>
                             <small>{{ vintage_status.total_count }}件</small>
-                        </div>
-                    {% endif %}
-                    {% if raw_archive_status %}
-                        <div class="macro-operation-status">
-                            <span>Raw archive</span>
-                            <strong>{{ raw_archive_status.status_label|default:"—" }}</strong>
-                            <small>{{ raw_archive_status.latest_path|default:"—" }}</small>
                         </div>
                     {% endif %}
                 </div>

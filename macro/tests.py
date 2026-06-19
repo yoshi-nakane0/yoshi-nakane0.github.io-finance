@@ -1916,6 +1916,34 @@ class DashboardFormatTest(TestCase):
                 value=100,
                 yoy_change=yoy_change,
             )
+        dgs10, _ = Indicator.objects.update_or_create(
+            fred_series_id='DGS10',
+            defaults={
+                'name_ja': '米10年金利',
+                'category': Indicator.Category.RATES,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.DAILY,
+            },
+        )
+        Observation.objects.create(
+            indicator=dgs10,
+            observation_date=date(2026, 6, 17),
+            value=4.32,
+        )
+        hy_spread, _ = Indicator.objects.update_or_create(
+            fred_series_id='BAMLH0A0HYM2',
+            defaults={
+                'name_ja': '信用スプレッド',
+                'category': Indicator.Category.MARKET,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.DAILY,
+            },
+        )
+        Observation.objects.create(
+            indicator=hy_spread,
+            observation_date=date(2026, 6, 17),
+            value=3.45,
+        )
 
         with mock.patch('macro.services.house_view.build_data_quality_report', return_value={
             'as_of': '2026-06-17',
@@ -1936,6 +1964,14 @@ class DashboardFormatTest(TestCase):
                 {
                     'label': 'Core PCE',
                     'detail': '直近2/2か月連続で再加速（2026-04-01: 3.10%、前月比 +0.20pt）',
+                },
+                {
+                    'label': '米10年金利',
+                    'detail': '現状 4.32%（2026-06-17）。判断変更目安 4.50%以上、あと +0.18pt',
+                },
+                {
+                    'label': '信用スプレッド',
+                    'detail': '現状 3.45%（2026-06-17）。判断変更目安 5.00%以上、あと +1.55pt',
                 },
             ],
         )
@@ -2834,6 +2870,10 @@ class MacroUrlsTest(TestCase):
                 'warnings': [],
             },
             'indicator_cards': [],
+            'raw_archive_status': {
+                'status_label': '—',
+                'latest_path': '—',
+            },
             'audit_indicator_cards': [
                 {
                     'series_id': 'CPIAUCSL',
@@ -2896,6 +2936,7 @@ class MacroUrlsTest(TestCase):
         self.assertContains(response, '0件 / 0件')
         self.assertNotContains(response, '記録なし')
         self.assertNotContains(response, '未取得: CPI（CPIAUCSL）')
+        self.assertNotContains(response, 'Raw archive')
 
     @mock.patch('macro.views.load_static_macro_payload')
     def test_index_shows_house_view_invalidation_status_notes(self, static_payload_mock):
@@ -2918,6 +2959,8 @@ class MacroUrlsTest(TestCase):
                 'invalidation_triggers': [
                     '失業率が3か月連続で上昇',
                     'Core PCEが2か月連続で再加速',
+                    '米10年金利が急上昇',
+                    '信用スプレッドが急拡大',
                 ],
                 'invalidation_status_notes': [
                     {
@@ -2928,6 +2971,14 @@ class MacroUrlsTest(TestCase):
                         'label': 'Core PCE',
                         'detail': '直近2/2か月連続で再加速（2026-04-01: 3.10%、前月比 +0.20pt）',
                     },
+                    {
+                        'label': '米10年金利',
+                        'detail': '現状 4.32%（2026-06-17）。判断変更目安 4.50%以上、あと +0.18pt',
+                    },
+                    {
+                        'label': '信用スプレッド',
+                        'detail': '現状 3.45%（2026-06-17）。判断変更目安 5.00%以上、あと +1.55pt',
+                    },
                 ],
             },
         }
@@ -2937,6 +2988,8 @@ class MacroUrlsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '失業率: 直近1/3か月連続で上昇')
         self.assertContains(response, 'Core PCE: 直近2/2か月連続で再加速')
+        self.assertContains(response, '米10年金利: 現状 4.32%')
+        self.assertContains(response, '信用スプレッド: 現状 3.45%')
 
     @mock.patch('macro.views.load_static_macro_payload')
     def test_index_crash_alert_copy_uses_market_stress_wording(

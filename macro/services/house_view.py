@@ -20,6 +20,8 @@ from .model_validation import model_display_grade
 
 
 GRADE_ORDER = {'A': 4, 'B': 3, 'C': 2, 'D': 1}
+TEN_YEAR_RATE_CHANGE_THRESHOLD = 4.5
+HY_SPREAD_CHANGE_THRESHOLD = 5.0
 
 
 def _latest_world_state() -> Optional[WorldStateSnapshot]:
@@ -144,8 +146,19 @@ def _recent_observations(series_id: str, limit: int) -> list[Observation]:
     )
 
 
+def _latest_observation(series_id: str) -> Optional[Observation]:
+    rows = _recent_observations(series_id, 1)
+    return rows[0] if rows else None
+
+
 def _signed_points(value: float) -> str:
     return f'{value:+.2f}pt'
+
+
+def _distance_to_threshold(value: float, threshold: float) -> str:
+    if value >= threshold:
+        return f'超過 {_signed_points(value - threshold)}'
+    return f'あと {_signed_points(threshold - value)}'
 
 
 def _consecutive_value_increases(series_id: str, target_months: int) -> dict:
@@ -221,6 +234,8 @@ def _consecutive_yoy_reaccelerations(series_id: str, target_months: int) -> dict
 def _invalidation_status_notes() -> list[dict]:
     unrate = _consecutive_value_increases('UNRATE', 3)
     core_pce = _consecutive_yoy_reaccelerations('PCEPILFE', 2)
+    dgs10 = _latest_observation('DGS10')
+    hy_spread = _latest_observation('BAMLH0A0HYM2')
     notes = []
 
     if unrate['has_enough_data']:
@@ -253,6 +268,36 @@ def _invalidation_status_notes() -> list[dict]:
         notes.append({
             'label': 'Core PCE',
             'detail': '直近2か月の再加速を判定できる前年比データが不足しています。',
+        })
+
+    if dgs10:
+        notes.append({
+            'label': '米10年金利',
+            'detail': (
+                f'現状 {dgs10.value:.2f}%（{dgs10.observation_date.isoformat()}）。'
+                f'判断変更目安 {TEN_YEAR_RATE_CHANGE_THRESHOLD:.2f}%以上、'
+                f'{_distance_to_threshold(dgs10.value, TEN_YEAR_RATE_CHANGE_THRESHOLD)}'
+            ),
+        })
+    else:
+        notes.append({
+            'label': '米10年金利',
+            'detail': f'判断変更目安は{TEN_YEAR_RATE_CHANGE_THRESHOLD:.2f}%以上です。現状値は未取得です。',
+        })
+
+    if hy_spread:
+        notes.append({
+            'label': '信用スプレッド',
+            'detail': (
+                f'現状 {hy_spread.value:.2f}%（{hy_spread.observation_date.isoformat()}）。'
+                f'判断変更目安 {HY_SPREAD_CHANGE_THRESHOLD:.2f}%以上、'
+                f'{_distance_to_threshold(hy_spread.value, HY_SPREAD_CHANGE_THRESHOLD)}'
+            ),
+        })
+    else:
+        notes.append({
+            'label': '信用スプレッド',
+            'detail': f'判断変更目安は{HY_SPREAD_CHANGE_THRESHOLD:.2f}%以上です。現状値は未取得です。',
         })
 
     return notes

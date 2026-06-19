@@ -193,3 +193,5 @@ cython_debug/
 .vercel
 .superpowers/
 static/macro/raw_archive/*.csv.gz
+static/macro/raw_archive/*.gz
+staticfiles/macro/raw_archive/*.gz
