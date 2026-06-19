@@ -446,12 +446,12 @@
       "decision_label": "停止",
       "decision_level": "blocked",
       "fallback_used": false,
-      "last_failed_at": "2026-06-19T15:44:11.785884+00:00",
+      "last_failed_at": "2026-06-19T20:04:54.596747+00:00",
       "last_success_at": null,
       "source": "NQ=F / ES=F / YM=F"
     },
     "price_data": {
-      "age_minutes": 2384,
+      "age_minutes": 2644,
       "decision_label": "判定可能",
       "decision_level": "ready",
       "fallback_used": false,
@@ -479,7 +479,7 @@
       "fallback_display": "なし",
       "key": "intermarket",
       "label": "米国3指数確認",
-      "last_failed_at": "2026-06-19T15:44:11.785884+00:00",
+      "last_failed_at": "2026-06-19T20:04:54.596747+00:00",
       "last_success_at": "",
       "source": "NQ=F / ES=F / YM=F"
     }
@@ -1204,7 +1204,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-19T15:44:11.451490+00:00",
+        "fetched_at": "2026-06-19T20:04:54.206941+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1668,7 +1668,7 @@
         "source": "225navi",
         "symbol": "NIY=F"
       },
-      "stale_minutes": 2384,
+      "stale_minutes": 2644,
       "state_key": "bull_trend_continuation",
       "state_label": "上昇継続",
       "strength_label": "強い",
@@ -1819,7 +1819,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-19T15:44:11.451490+00:00",
+        "fetched_at": "2026-06-19T20:04:54.206941+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1897,7 +1897,7 @@
     }
   },
   "detail_mode": false,
-  "generated_at": "2026-06-19T15:44:13.971804+00:00",
+  "generated_at": "2026-06-19T20:04:57.067376+00:00",
   "intermarket_technicals": {
     "components": {},
     "confirmation_label": "mixed",
@@ -1906,7 +1906,7 @@
     "evidence": [
       "米国3指数データなし"
     ],
-    "fetched_at": "2026-06-19T15:44:11.451490+00:00",
+    "fetched_at": "2026-06-19T20:04:54.206941+00:00",
     "readiness": {
       "level": "blocked",
       "missing": [
@@ -1919,7 +1919,7 @@
     },
     "risk_label": "technical_confirm"
   },
-  "job_duration_sec": 2.652,
+  "job_duration_sec": 3.049,
   "market_shock": {
     "as_of": "2026-06-19",
     "has_data": false,
@@ -3302,7 +3302,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-19T15:44:11.451490+00:00",
+      "fetched_at": "2026-06-19T20:04:54.206941+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
@@ -3766,7 +3766,7 @@
       "source": "225navi",
       "symbol": "NIY=F"
     },
-    "stale_minutes": 2384,
+    "stale_minutes": 2644,
     "state_key": "bull_trend_continuation",
     "state_label": "上昇継続",
     "strength_label": "強い",
@@ -3917,7 +3917,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-19T15:44:11.451490+00:00",
+      "fetched_at": "2026-06-19T20:04:54.206941+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
