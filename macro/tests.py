@@ -305,15 +305,20 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('name = "yoshi-nakane-finance"', python_project)
         self.assertIn('"Django==5.2.14"', python_project)
 
-    def test_macro_index_template_displays_backtest_and_live_accuracy(self):
-        template = (
+    def test_macro_audit_template_displays_backtest_and_live_accuracy(self):
+        index_template = (
             Path(settings.BASE_DIR) / 'macro' / 'templates' / 'macro' / 'index.html'
         ).read_text(encoding='utf-8')
+        audit_template = (
+            Path(settings.BASE_DIR) / 'macro' / 'templates' / 'macro' / 'audit.html'
+        ).read_text(encoding='utf-8')
 
-        self.assertIn('house_view_validation.accuracy_sections.backtest', template)
-        self.assertIn('house_view_validation.accuracy_sections.live', template)
-        self.assertIn('Backtest精度', template)
-        self.assertIn('Live精度', template)
+        self.assertNotIn('House View 検証', index_template)
+        self.assertNotIn('Backtest精度', index_template)
+        self.assertIn('house_view_validation.accuracy_sections.backtest', audit_template)
+        self.assertIn('house_view_validation.accuracy_sections.live', audit_template)
+        self.assertIn('Backtest精度', audit_template)
+        self.assertIn('Live精度', audit_template)
 
     def test_macro_world_model_workflows_include_new_jobs(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -2481,6 +2486,90 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['market_stress']['abnormal_items'][0], 'MOVE')
         self.assertIn(context['confidence']['grade'], ['A', 'B', 'C', 'D'])
 
+    def test_top_decision_context_unifies_macro_top_sections(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'generated_payload_meta': {'generated_at': '2026-06-19T06:00:00+09:00'},
+            'house_view': {
+                'house_view': '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
+                'confidence_grade': 'A',
+                'confidence_score': 92,
+                'invalidation_triggers': [
+                    '失業率：3か月連続上昇で悪化判定',
+                    'Core PCE：2か月連続再加速でインフレ警戒継続',
+                    '米10年金利：4.50%以上で株価逆風',
+                    'HYスプレッド：5.00%以上で信用ストレス警戒',
+                ],
+            },
+            'macro_forecast_report': {
+                'headline': '景気は改善基調',
+                'nikkei_implication': '日経先物へのmacroバイアスは上昇支援。',
+                'axes': [
+                    {'key': 'growth_momentum', 'label': '改善', 'score_display': '61%'},
+                    {'key': 'inflation_pressure', 'label': '粘着', 'score_display': '74%'},
+                    {'key': 'financial_conditions', 'label': '追い風', 'score_display': '70%'},
+                    {'key': 'nikkei_macro_bias', 'label': '上昇支援', 'score_display': '68%'},
+                    {'key': 'credit_stress', 'label': '低い', 'score_display': '20%'},
+                ],
+                'scenarios': [
+                    {
+                        'name': '基本',
+                        'name_key': 'baseline',
+                        'probability_display': '59%',
+                        'nikkei_bias': '上昇支援',
+                        'key_drivers': ['成長が底堅い'],
+                    },
+                    {
+                        'name': '下振れ',
+                        'name_key': 'downside',
+                        'probability_display': '14%',
+                        'nikkei_bias': '下落圧力',
+                        'key_drivers': ['物価と金利が重い'],
+                    },
+                    {
+                        'name': '上振れ',
+                        'name_key': 'upside',
+                        'probability_display': '28%',
+                        'nikkei_bias': '上昇支援',
+                        'key_drivers': ['金融環境が緩む'],
+                    },
+                ],
+            },
+            'macro_decision': {
+                'headline': '景気は弱含みで物価も重い',
+                'detail': 'マクロ環境は株価を支えるが、金利上昇時は上値を抑えやすい',
+                'good_points': ['雇用がまだ強い', '信用スプレッドが低い', '鉱工業生産が前年比で増加'],
+                'bad_points': ['Core PCEが高い', 'CPIが高い', 'PCEが再加速', '米金利が上昇'],
+                'policy_pressure': {
+                    'label': '中立〜やや逆風',
+                    'summary': '米2年金利上昇、利下げ織り込み後退に注意',
+                },
+                'market_stress': {
+                    'level_label': '平常',
+                    'score_display': '17/100',
+                    'summary': 'ただしSKEWなどテール警戒あり',
+                },
+                'confidence': {
+                    'grade': 'A',
+                    'score_display': '92%',
+                    'data_freshness_pct': 82,
+                },
+            },
+        })
+
+        self.assertEqual(context['final_judgment']['direction'], '中立〜改善')
+        self.assertEqual(context['final_judgment']['nikkei_impact'], '上昇支援')
+        self.assertEqual(context['final_judgment']['confidence'], 'A / 92%')
+        self.assertEqual(len(context['invalidation_triggers']), 4)
+        self.assertEqual(
+            [item['name_key'] for item in context['scenarios']],
+            ['baseline', 'upside', 'downside'],
+        )
+        self.assertEqual(len(context['axis_summary']), 4)
+        self.assertEqual(context['bad_points'][0], 'インフレ再加速リスクが高い')
+        self.assertLessEqual(len(context['bad_points']), 3)
+        self.assertEqual(context['freshness']['data_freshness'], '82%')
+
     def test_macro_decision_confidence_uses_data_quality_gate_cap(self):
         snapshot = RegimeSnapshot.objects.create(
             snapshot_date=date(2026, 5, 17),
@@ -3172,11 +3261,11 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '前回からの変化')
         self.assertNotContains(r, '今後3カ月のベースシナリオ')
         self.assertNotContains(r, 'モデルの信頼度')
-        self.assertContains(r, 'Macro 現在判断')
-        self.assertContains(r, '総合判断')
+        self.assertContains(r, '最終マクロ判断')
+        self.assertContains(r, '景気の向き')
         self.assertContains(r, '良い材料')
         self.assertContains(r, '悪い材料')
-        self.assertContains(r, '政策・金利')
+        self.assertContains(r, '政策・金利圧力')
         self.assertContains(r, '市場ストレス')
         self.assertContains(r, '信頼度')
         self.assertNotContains(r, '判定強度')
@@ -3184,7 +3273,6 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, 'macro-regime-sub')
         self.assertNotContains(r, '減速 × 高止まり')
         self.assertNotContains(r, 'macro-current-state-map')
-        self.assertNotContains(r, '景気の向き')
         self.assertNotContains(r, '注意リスク')
         self.assertNotContains(r, '判断材料')
         self.assertNotContains(r, '景気分布（ルール一致度）と主要リスク')
@@ -3370,10 +3458,13 @@ class MacroUrlsTest(TestCase):
         response = self.client.get(reverse('macro:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '失業率: 直近1/3か月連続で上昇')
-        self.assertContains(response, 'Core PCE: 直近2/2か月連続で再加速')
-        self.assertContains(response, '米10年金利: 現状 4.32%')
-        self.assertContains(response, '信用スプレッド: 現状 3.45%')
+        self.assertContains(response, '判断を変える条件')
+        self.assertContains(response, '失業率が3か月連続で上昇')
+        self.assertContains(response, 'Core PCEが2か月連続で再加速')
+        self.assertContains(response, '米10年金利が急上昇')
+        self.assertContains(response, '信用スプレッドが急拡大')
+        self.assertNotContains(response, '直近1/3か月連続で上昇')
+        self.assertNotContains(response, '現状 4.32%')
 
     @mock.patch('macro.views.load_static_macro_payload')
     def test_index_crash_alert_copy_uses_market_stress_wording(
@@ -3458,7 +3549,7 @@ class MacroUrlsTest(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, '市場ストレス')
         self.assertContains(r, '急落確率ではなく、現在の市場の緊張度です。')
-        self.assertContains(r, 'データ品質')
+        self.assertContains(r, '信頼度・データ鮮度')
         self.assertNotContains(r, '検証未実施')
         self.assertNotContains(r, 'クラッシュ警戒度')
         self.assertNotContains(r, '月次検証: GSPC')

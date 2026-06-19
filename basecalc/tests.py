@@ -56,7 +56,7 @@ from .similarity import find_similar_cases
 from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
 from .scenario_engine import build_scenarios
-from .services.decision_context import can_show_prediction
+from .services.decision_context import build_basecalc_top_context, can_show_prediction
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -607,9 +607,195 @@ class BasecalcUpdateSecurityTests(TestCase):
             response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '予測表示停止')
-        top_html = response.content.decode('utf-8').split('data-field="model_detail"')[0]
-        self.assertNotIn('期待 1d', top_html)
+        self.assertContains(response, '信頼度・データ品質・検証リンク')
+        self.assertContains(response, '方向精度は限定的。レンジ・節目確認を優先。詳細は検証ページ。')
+        self.assertNotContains(response, '予測表示停止')
+        self.assertNotContains(response, '期待 1d')
+
+    def test_basecalc_top_context_focuses_on_usage_judgment(self):
+        world_model = {
+            'direction': 'up',
+            'price': 71240,
+            'last_updated_display': '2026-06-18 09:00 JST',
+            'direction_label': '上昇優勢',
+            'state_label': '上昇トレンド継続',
+            'confidence': 'High',
+            'confidence_score': 80,
+            'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+            'readiness_level': 'ready',
+            'readiness_display': {'daily_bars': 3342},
+            'evidence': ['EMA5 > EMA20 > EMA60', '現在値がVWAP上', '高値・安値切り上げ', 'MACDは減速'],
+            'reversal_risk_score': 100,
+            'action_note': '上昇方向だが追撃買いは危険。押し目確認待ち。',
+            'counter_bias': {'label': '上昇優勢だが、反落警戒', 'reasons': ['RSI過熱', 'BB上限接近']},
+            'upside_targets': [{'label': 'T1', 'price': 72990, 'reason': '上値抵抗'}],
+            'downside_targets': [{'label': 'T1', 'price': 69490, 'reason': '下値支持'}],
+            'near_levels': {
+                'upside': [{'price': 71530, 'reason': '直近上値'}],
+                'downside': [{'price': 71000, 'reason': '直近下値'}],
+            },
+            'invalidation_display': '62,350',
+            'us_index_confirmation': {
+                'confirmation_label': 'mixed',
+                'evidence': ['米国3指数データが不十分'],
+            },
+            'chase_risk': 'medium',
+        }
+        decision = {
+            'readiness_label': '判定可能',
+            'data_quality_level': 'good',
+            'data_quality_score': 96,
+            'fallback_used': False,
+            'status_summary': '要確認: 米国3指数確認',
+            'last_updated': '2026-06-18 09:00 JST',
+            'price': 71240,
+            'direction_label': '上昇優勢',
+            'state_label': '上昇トレンド継続',
+            'confidence': 'High',
+            'confidence_score': 80,
+            'main_reason': world_model['evidence'][:3],
+            'risk_reason': ['反落警戒100/100', '米国3指数確認が不十分', 'RSI過熱'],
+            'upside_target': {'price': 72990, 'label': '第1候補'},
+            'downside_target': {'price': 69490, 'label': '第1候補'},
+            'invalidation': '62,350',
+            'market_stress': {'label': '通常', 'impact': '中立', 'reasons': ['急変なし']},
+            'us_index_confirmation': {'label': 'まちまち', 'reasons': ['米国3指数データが不十分']},
+        }
+
+        result = build_basecalc_top_context(
+            world_model,
+            decision,
+            [{'label': '米国3指数確認', 'decision_level': 'limited'}],
+            {'directional_accuracy': 0.43, 'target_t1_hit_rate': 0.87},
+        )
+
+        self.assertEqual(result['status']['readiness'], '判定可能')
+        self.assertEqual(result['status']['data_quality'], 'Good 96/100')
+        self.assertEqual(result['final_judgment']['headline'], '上昇優勢だが、反落警戒')
+        self.assertEqual(result['action']['judgment'], '押し目確認待ち')
+        self.assertEqual(result['action']['prohibited'], '高値追い・追撃買い')
+        self.assertEqual(result['lines']['upside_resistance'], 72990)
+        self.assertEqual(result['lines']['downside_support'], 69490)
+        self.assertEqual(result['lines']['structural_break'], '62,350')
+        self.assertEqual(result['reasons'], ['EMA5 > EMA20 > EMA60', '現在値がVWAP上', '高値・安値切り上げ'])
+        self.assertEqual(result['risks'], ['反落警戒100/100', '米国3指数確認が不十分', 'RSI過熱'])
+        self.assertEqual([row['label'] for row in result['horizons']], ['1日', '3日', '5日'])
+        self.assertEqual(result['external']['us_indices'], 'まちまち')
+        self.assertEqual(result['confidence']['direction'], '低〜中')
+
+    def test_basecalc_index_normal_mode_hides_detail_analysis(self):
+        snapshot = {
+            'data': {'price_display': '71,240'},
+            'world_model': {
+                'direction': 'up',
+                'price': 71240,
+                'last_updated_display': '2026-06-18 09:00 JST',
+                'direction_label': '上昇優勢',
+                'state_label': '上昇トレンド継続',
+                'confidence': 'High',
+                'confidence_score': 80,
+                'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+                'data_quality_score': 96,
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 3342},
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'case_count': 60, 'is_statistically_valid': True},
+                'target_ranges': [{'label': '1日', 'low': 70400, 'high': 72000, 'basis': 'ATR'}],
+                'upside_targets': [{'label': 'T1', 'price': 72990, 'reason': '上値抵抗'}],
+                'downside_targets': [{'label': 'T1', 'price': 69490, 'reason': '下値支持'}],
+                'near_levels': {
+                    'upside': [{'price': 71530, 'reason': '直近上値'}],
+                    'downside': [{'price': 71000, 'reason': '直近下値'}],
+                },
+                'invalidation_display': '62,350',
+                'evidence': ['EMA5 > EMA20 > EMA60', '現在値がVWAP上', '高値・安値切り上げ'],
+                'reversal_risk_score': 100,
+                'counter_bias': {'label': '上昇優勢だが、反落警戒', 'reasons': ['RSI過熱']},
+                'action_note': '上昇方向だが追撃買いは危険。押し目確認待ち。',
+                'chase_risk': 'medium',
+                'us_index_confirmation': {
+                    'confirmation_label': 'mixed',
+                    'evidence': ['米国3指数データが不十分'],
+                },
+                'expected_return_1d': -0.19,
+                'expected_return_5d': -0.40,
+            },
+            'market_shock': {'has_data': True, 'tone': 'neutral', 'summary': '急変なし', 'rows': []},
+            'basecalc_status': {},
+            'basecalc_status_rows': [{'label': '米国3指数確認', 'decision_level': 'limited'}],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {'1d': {'directional_accuracy': 0.43, 'target_t1_hit_rate': 0.87}},
+            'updated': False,
+            'price_param': '71240',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '判定ステータス')
+        self.assertContains(response, '最終テクニカル判断')
+        self.assertContains(response, '行動判断')
+        self.assertContains(response, '実用ライン')
+        self.assertContains(response, '判断を変える条件')
+        self.assertContains(response, '根拠3つ / 警戒3つ')
+        self.assertContains(response, '1日・3日・5日の見通し')
+        self.assertContains(response, '米国3指数確認 / 市場ストレス')
+        self.assertContains(response, '信頼度・データ品質・検証リンク')
+        self.assertNotContains(response, '日経先物テクニカル結論')
+        self.assertNotContains(response, '現在のセットアップ')
+        self.assertNotContains(response, '予測ゲート')
+        self.assertNotContains(response, 'データ取得状態')
+        self.assertNotContains(response, 'テクニカル詳細')
+        self.assertNotContains(response, '未来予測詳細')
+        self.assertNotContains(response, '過去類似局面')
+        self.assertNotContains(response, '予測精度')
+        self.assertNotContains(response, '期待 1d')
+
+    def test_basecalc_index_detail_mode_shows_detail_analysis(self):
+        snapshot = {
+            'data': {'price_display': '71,240'},
+            'world_model': {
+                'direction': 'up',
+                'price': 71240,
+                'last_updated_display': '2026-06-18 09:00 JST',
+                'direction_label': '上昇優勢',
+                'state_label': '上昇トレンド継続',
+                'confidence': 'High',
+                'confidence_score': 80,
+                'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 3342},
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'case_count': 60, 'is_statistically_valid': True},
+                'target_ranges': [],
+                'upside_targets': [{'label': 'T1', 'price': 72990, 'reason': '上値抵抗'}],
+                'downside_targets': [{'label': 'T1', 'price': 69490, 'reason': '下値支持'}],
+                'invalidation_display': '62,350',
+                'evidence': ['EMA5 > EMA20 > EMA60'],
+                'expected_return_1d': -0.19,
+                'expected_return_5d': -0.40,
+            },
+            'market_shock': {'has_data': False},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '71240',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'), {'detail': '1'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'データ取得状態')
+        self.assertContains(response, 'テクニカル詳細')
+        self.assertContains(response, '未来予測詳細')
+        self.assertContains(response, '過去類似局面')
+        self.assertContains(response, '予測精度')
 
     def test_index_summarizes_targets_in_plain_japanese(self):
         snapshot = {
@@ -709,12 +895,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         }
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
-            response = self.client.get(reverse('basecalc:index'))
+            response = self.client.get(reverse('basecalc:index'), {'detail': '1'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '上値 第1候補')
-        self.assertContains(response, '下値 第1候補')
-        self.assertContains(response, '判定を弱める価格')
+        self.assertContains(response, '上値抵抗')
+        self.assertContains(response, '下値支持')
+        self.assertContains(response, '短期判断を弱める価格')
         self.assertContains(response, '詳細ターゲット')
         self.assertContains(response, '第2候補')
         self.assertContains(response, '到達しやすさ')
@@ -789,10 +975,10 @@ class BasecalcUpdateSecurityTests(TestCase):
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
             response = self.client.get(reverse('basecalc:index'))
 
-        self.assertContains(response, '米国3指数の確認')
-        self.assertContains(response, '追いかけリスクは低い')
-        self.assertContains(response, '1営業日後の方向')
-        self.assertContains(response, '上昇方向')
+        self.assertContains(response, '米国3指数確認 / 市場ストレス')
+        self.assertContains(response, '追いかけリスク')
+        self.assertContains(response, '1日・3日・5日の見通し')
+        self.assertContains(response, '上昇維持だが反落警戒')
         self.assertNotContains(response, '追いかけリスク: low')
         self.assertNotContains(response, '1d の方向')
         self.assertNotContains(response, '>up<', html=True)
@@ -953,7 +1139,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             for horizon in ("1d", "3d", "5d")
         }
         with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
-            response = self.client.get(reverse('basecalc:index'))
+            response = self.client.get(reverse('basecalc:index'), {'detail': '1'})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['performance_by_horizon']['1d']['total_predictions'], 1)
@@ -1810,7 +1996,7 @@ class BasecalcMarketShockTest(TestCase):
             }],
         }
         with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
-            response = self.client.get(reverse('basecalc:index'))
+            response = self.client.get(reverse('basecalc:index'), {'detail': '1'})
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '市場ストレス・急落予測')

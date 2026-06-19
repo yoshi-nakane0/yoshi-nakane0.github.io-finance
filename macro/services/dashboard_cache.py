@@ -248,6 +248,7 @@ def precompute_dashboard_payload() -> dict:
         build_world_state_context,
         build_world_model_operations_context,
         build_similar_periods,
+        build_top_decision_context,
         TOP_MACRO_SERIES,
         load_regime_probability_model,
     )
@@ -278,7 +279,7 @@ def precompute_dashboard_payload() -> dict:
     except Exception:
         logger.exception('policy expectation precompute failed')
 
-    return {
+    payload = {
         'has_observations': latest_obs_date is not None,
         'last_updated': latest_obs_date.isoformat() if latest_obs_date else '—',
         'data_quality_report': build_data_quality_report(),
@@ -308,6 +309,8 @@ def precompute_dashboard_payload() -> dict:
         'scenario_analysis': build_auto_scenarios(),
         'historical_crash_similarity': build_historical_crash_similarity(),
     }
+    payload['top_decision'] = build_top_decision_context(payload)
+    return payload
 
 
 def precompute_all_indicator_details() -> int:

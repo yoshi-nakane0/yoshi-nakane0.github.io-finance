@@ -8,7 +8,7 @@
     <title>Macro</title>
 
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260615-state-dashboard">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260619-top-decision">
 </head>
 
 <body>
@@ -39,387 +39,149 @@
                 </ul>
             {% endif %}
 
-            {% if house_view %}
-                <section class="macro-section macro-decision" id="macro-house-view">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--pulse">House View</h2>
-                        <span class="macro-regime-status-pill">信頼度 {{ house_view.confidence_grade }} / {{ house_view.confidence_score }}%</span>
+            <section class="macro-section macro-decision" id="macro-final-decision">
+                <div class="macro-section-headline">
+                    <h2 class="macro-section-title macro-section-title--pulse">最終マクロ判断</h2>
+                    <span class="macro-regime-status-pill">信頼度 {{ top_decision.final_judgment.confidence }}</span>
+                </div>
+                <div class="macro-regime-answer">
+                    <div class="macro-regime-answer-label">景気の向き</div>
+                    <div class="macro-regime-answer-main">{{ top_decision.final_judgment.direction }}</div>
+                    <p class="macro-regime-answer-detail">{{ top_decision.final_judgment.summary }}</p>
+                </div>
+                <div class="macro-decision-grid">
+                    <div class="macro-decision-card macro-decision-card--confidence">
+                        <span class="macro-decision-label">日経先物への影響</span>
+                        <strong>{{ top_decision.final_judgment.nikkei_impact }}</strong>
+                        <p>短期エントリーはbasecalcを優先</p>
                     </div>
-                    <div class="macro-regime-answer">
-                        <div class="macro-regime-answer-label">公式見解</div>
-                        <div class="macro-regime-answer-main">{{ house_view.house_view }}</div>
-                        {% if not house_view.display_allowed %}
-                            <p class="macro-regime-answer-detail">主要データに不足があるため、この見解は参考扱いです。</p>
-                        {% endif %}
+                    <div class="macro-decision-card macro-decision-card--stress">
+                        <span class="macro-decision-label">最大リスク</span>
+                        <strong>{{ top_decision.final_judgment.max_risk }}</strong>
                     </div>
-                    <div class="macro-regime-materials">
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-pos">主な根拠</span>
-                            <ul>
-                                {% for point in house_view.key_drivers %}
-                                    <li>{{ point }}</li>
-                                {% empty %}
-                                    <li>根拠データの更新待ちです。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-neg">主なリスク</span>
-                            <ul>
-                                {% for point in house_view.main_risks %}
-                                    <li>{{ point }}</li>
-                                {% empty %}
-                                    <li>大きなリスクは限定的です。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="macro-regime-material">
-                        <span class="macro-regime-material-title">判断が変わる条件</span>
-                        <ul>
-                            {% for trigger in house_view.invalidation_triggers %}
-                                <li>{{ trigger }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% if house_view.invalidation_status_notes %}
-                            <div class="macro-regime-trigger-notes">
-                                {% for note in house_view.invalidation_status_notes %}
-                                    <span class="macro-regime-trigger-note">{{ note.label }}: {{ note.detail }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="macro-regime-meta">
-                        <span class="macro-regime-updated">基準日: {{ house_view.as_of }} / {{ house_view.regime_label }}</span>
-                        <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査</a>
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if house_view_validation.accuracy_sections %}
-                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live %}
-                <section class="macro-section macro-decision" id="macro-house-view-validation">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title">House View 検証</h2>
-                        <span class="macro-regime-status-pill">Backtest / Live</span>
-                    </div>
-                    <div class="macro-decision-grid">
-                        <div class="macro-decision-card macro-decision-card--confidence">
-                            <span class="macro-decision-label">Backtest精度</span>
-                            <strong>{{ backtest.hit_rate|default:"—" }}</strong>
-                            <p>過去データで再現した検証です。</p>
-                            <span>サンプル {{ backtest.sample_count|default:0 }}件 / 的中 {{ backtest.hit_count|default:0 }}件</span>
-                            {% if backtest.status != "available" %}
-                                <p>{{ backtest.warning|default:"ローカルBacktest結果の生成待ちです。" }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="macro-decision-card macro-decision-card--stress">
-                            <span class="macro-decision-label">Live精度</span>
-                            <strong>{{ live.hit_rate|default:"—" }}</strong>
-                            <p>実際に保存した予測を後から検証します。</p>
-                            <span>サンプル {{ live.sample_count|default:0 }}件 / 的中 {{ live.hit_count|default:0 }}件</span>
-                            {% if live.status == "waiting_for_realizations" %}
-                                <p>結果が出るまで実績は増えません。</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </section>
-                {% endwith %}
-            {% endif %}
-
-            {% if macro_forecast_report %}
-                <section class="macro-section macro-decision" id="macro-forecast-report">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--pulse">経済状態推定</h2>
-                        <span class="macro-regime-status-pill">品質 {{ macro_forecast_report.data_quality_display }}</span>
-                    </div>
-                    <div class="macro-regime-answer">
-                        <div class="macro-regime-answer-label">結論</div>
-                        <div class="macro-regime-answer-main">{{ macro_forecast_report.headline }}</div>
-                        <p class="macro-regime-answer-detail">{{ macro_forecast_report.judgment }}</p>
-                        <p class="macro-regime-answer-detail">{{ macro_forecast_report.nikkei_implication }}</p>
-                    </div>
-                    {% if macro_forecast_report.axes %}
-                        <div>
-                            <div class="macro-state-section">
-                                <div class="macro-state-card-grid">
-                                    {% for axis in macro_forecast_report.axes %}
-                                        <div class="macro-state-card macro-direction-card macro-state-card--{{ axis.key }}">
-                                            <div class="macro-state-card__top">
-                                                <span class="macro-state-card__title">{{ axis.key }}</span>
-                                                <span class="macro-state-card__badge">{{ axis.label }}</span>
-                                            </div>
-                                            <strong class="macro-direction-card__value">{{ axis.score_display }}</strong>
-                                        </div>
-                                    {% endfor %}
+                </div>
+                {% if top_decision.axis_summary %}
+                    <div class="macro-state-card-grid">
+                        {% for row in top_decision.axis_summary %}
+                            <div class="macro-state-card macro-direction-card">
+                                <div class="macro-state-card__top">
+                                    <span class="macro-state-card__icon" aria-hidden="true"></span>
+                                    <span class="macro-state-card__title">{{ row.label }}</span>
+                                    <span class="macro-state-card__badge">{{ row.score_display }}</span>
                                 </div>
+                                <strong class="macro-direction-card__value">{{ row.value }}</strong>
                             </div>
-                        </div>
-                    {% endif %}
-                    {% if macro_forecast_report.scenarios %}
-                        <div class="macro-scenario-grid">
-                            {% for item in macro_forecast_report.scenarios %}
-                                <article class="macro-scenario-card">
-                                    <div class="macro-state-section-head">
-                                        <span class="macro-state-section-title">{{ item.name }} {{ item.probability_display }}</span>
-                                        <span class="macro-state-section-note">日経: {{ item.nikkei_bias }}</span>
-                                    </div>
-                                    <p>{{ item.growth_view }}</p>
-                                    <p>{{ item.inflation_view }}</p>
-                                    <p>{{ item.policy_view }}</p>
-                                    <p>{{ item.market_view }}</p>
-                                    <span class="macro-state-section-note">判断が変わる条件</span>
-                                    <ul>
-                                        {% for trigger in item.invalidation_triggers %}
-                                            <li>{{ trigger }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                </article>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <div class="macro-regime-meta">
-                        <span class="macro-regime-updated">基準日: {{ macro_forecast_report.as_of }} / {{ macro_forecast_report.model_version }}</span>
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if macro_decision %}
-                <section class="macro-section macro-decision" id="macro-current-state">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--pulse">Macro 現在判断</h2>
-                        <span class="macro-regime-status-pill">信頼度 {{ macro_decision.confidence.grade }}</span>
-                    </div>
-                    <div class="macro-regime-answer">
-                        <div class="macro-regime-answer-label">総合判断</div>
-                        <div class="macro-regime-answer-main">{{ macro_decision.headline }}</div>
-                        <p class="macro-regime-answer-detail">{{ macro_decision.detail }}</p>
-                    </div>
-                    <div class="macro-regime-materials">
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-pos">良い材料</span>
-                            <ul>
-                                {% for point in macro_decision.good_points %}
-                                    <li>{{ point }}</li>
-                                {% empty %}
-                                    <li>良い材料はまだ十分に確認できていません。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-neg">悪い材料</span>
-                            <ul>
-                                {% for point in macro_decision.bad_points %}
-                                    <li>{{ point }}</li>
-                                {% empty %}
-                                    <li>大きな悪材料は限定的です。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="macro-decision-grid">
-                        <div class="macro-decision-card macro-decision-card--policy">
-                            <span class="macro-decision-label">政策・金利</span>
-                            <strong>{{ macro_decision.policy_pressure.label }}</strong>
-                            <p>{{ macro_decision.policy_pressure.summary }}</p>
-                            <span>政策圧力 {{ macro_decision.policy_pressure.score_display }} / 品質 {{ macro_decision.policy_pressure.data_quality_display }}</span>
-                            {% if macro_decision.policy_pressure.alerts %}
-                                <ul>
-                                    {% for alert in macro_decision.policy_pressure.alerts %}
-                                        <li>{{ alert }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </div>
-                        <div class="macro-decision-card macro-decision-card--stress">
-                            <span class="macro-decision-label">市場ストレス</span>
-                            <strong>{{ macro_decision.market_stress.level_label }} {{ macro_decision.market_stress.score_display }}</strong>
-                            <p>{{ macro_decision.market_stress.summary }}</p>
-                            <span>データ品質 {{ macro_decision.market_stress.data_quality_display }}</span>
-                            {% if macro_decision.market_stress.abnormal_items %}
-                                <ul>
-                                    {% for item in macro_decision.market_stress.abnormal_items %}
-                                        <li>{{ item }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </div>
-                        <div class="macro-decision-card macro-decision-card--confidence">
-                            <span class="macro-decision-label">信頼度</span>
-                            <strong>{{ macro_decision.confidence.grade }}：{{ macro_decision.confidence.label }}</strong>
-                            <p>{{ macro_decision.confidence.sample_note }}</p>
-                            <span>{{ macro_decision.confidence.score_display }} / データ鮮度 {{ macro_decision.confidence.data_freshness_pct }}%</span>
-                            <ul>
-                                {% for note in macro_decision.confidence.notes %}
-                                    <li>{{ note }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="macro-regime-meta">
-                        <span class="macro-regime-updated">更新: {{ last_updated }} / {{ regime_model_version }}</span>
-                        <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査</a>
-                        {% if can_refresh_macro_data %}
-                            <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
-                                {% csrf_token %}
-                                <button class="macro-refresh-button" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>取得・判定</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if not macro_decision %}
-            <section class="macro-regime-bar" id="macro-current-state">
-                <div class="macro-regime-orbit" aria-hidden="true"></div>
-                <div class="macro-regime-head">
-                    <h2 class="macro-section-title macro-section-title--pulse">現在の景気の状況</h2>
-                    <span class="macro-regime-status-pill">{{ regime_tone_label }}</span>
-                </div>
-                <div class="macro-regime-label">
-                    <span class="macro-regime-main">
-                        {% for line in regime_summary_lines %}
-                            <span>{{ line }}</span>
-                        {% empty %}
-                            <span>{{ regime_summary_label }}</span>
                         {% endfor %}
-                    </span>
-                </div>
-                <details class="macro-regime-details">
-                    <summary>結論・良い点・悪い点・先行き</summary>
-                    <div class="macro-regime-answer">
-                        <div class="macro-regime-answer-label">一目で見る結論</div>
-                        <div class="macro-regime-answer-main">{{ regime_plain_judgment }}</div>
-                        <p class="macro-regime-answer-detail">{{ regime_plain_detail }}</p>
                     </div>
-                    <div class="macro-regime-materials">
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-pos">良い点</span>
-                            <ul>
-                                {% for point in regime_good_points %}
-                                    <li>{{ point }}</li>
-                                {% endfor %}
-                            </ul>
+                {% endif %}
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">判断を変える条件</h2>
+                <div class="macro-decision-grid">
+                    {% for trigger in top_decision.invalidation_triggers %}
+                        <div class="macro-decision-card">
+                            <span class="macro-decision-label">{{ trigger.label }}</span>
+                            <strong>{{ trigger.detail }}</strong>
                         </div>
-                        <div class="macro-regime-material">
-                            <span class="macro-regime-material-title macro-neg">悪い点</span>
-                            <ul>
-                                {% for point in regime_bad_points %}
-                                    <li>{{ point }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="macro-regime-outlook">
-                        <span class="macro-regime-outlook-title">これから先</span>
-                        <span>{{ regime_outlook }}</span>
-                    </div>
-                </details>
-                <div class="macro-regime-scores">
-                    <div class="macro-regime-score macro-regime-score--condition macro-regime-condition--{{ regime_condition_tone }}">
-                        <span class="macro-regime-score-name">景気評価</span>
-                        <span class="macro-regime-score-percent">{{ regime_condition_pct_display }}</span>
-                        <span class="macro-regime-score-count">{{ regime_condition_fraction_display }}</span>
-                        <div class="macro-regime-score-bar macro-regime-score-bar--condition" aria-hidden="true">
-                            <div class="macro-regime-score-fill macro-regime-score-fill--condition" style="width: {{ regime_condition_bar_pct }}%;"></div>
-                        </div>
-                        <div class="macro-regime-score-axis" aria-hidden="true">
-                            <span>{{ regime_condition_bar_left_label }}</span>
-                            <span>{{ regime_condition_bar_right_label }}</span>
-                        </div>
-                    </div>
-                    <div class="macro-regime-score">
-                        <span class="macro-regime-score-name">判定強度</span>
-                        <span class="macro-regime-score-percent">{{ rule_strength_pct }}%</span>
-                        <span class="macro-regime-score-count">{{ rule_strength_fraction_display }}</span>
-                        <div class="macro-regime-score-bar" aria-hidden="true">
-                            <div class="macro-regime-score-fill" style="width: {{ rule_strength_pct }}%;"></div>
-                        </div>
-                        <div class="macro-regime-score-axis" aria-hidden="true">
-                            <span>{{ rule_strength_bar_left_label }}</span>
-                            <span>{{ rule_strength_bar_right_label }}</span>
-                        </div>
-                    </div>
-                    <div class="macro-regime-score">
-                        <span class="macro-regime-score-name">データ鮮度</span>
-                        <span class="macro-regime-score-percent">{{ data_quality_pct }}%</span>
-                        <span class="macro-regime-score-count">{{ data_quality_fraction_display }}</span>
-                        <div class="macro-regime-score-bar macro-regime-score-bar--quality" aria-hidden="true">
-                            <div class="macro-regime-score-fill macro-regime-score-fill--quality" style="width: {{ data_quality_pct }}%;"></div>
-                        </div>
-                        <div class="macro-regime-score-axis" aria-hidden="true">
-                            <span>{{ data_quality_bar_left_label }}</span>
-                            <span>{{ data_quality_bar_right_label }}</span>
-                        </div>
-                    </div>
-                    <p class="macro-regime-condition-note">{{ regime_condition_note }}</p>
-                </div>
-                <div>
-                    {% for section in regime_state_sections %}
-                        <div class="macro-state-section macro-state-section--{{ section.key }}">
-                            <div class="macro-state-section-head">
-                                <span class="macro-state-section-title">{{ section.label }}</span>
-                                <span class="macro-state-section-note">{{ section.note }}</span>
-                            </div>
-                            <div class="macro-state-card-grid macro-state-card-grid--{{ section.key }}">
-                                {% for row in section.rows %}
-                                    {% if row.kind == 'meter' %}
-                                        {% if section.key == 'risk' %}
-                                            <div class="macro-state-card macro-risk-card macro-state-card--{{ row.tone }} macro-state-card--{{ row.key }}">
-                                                <span class="macro-state-card__icon" aria-hidden="true"></span>
-                                                <div class="macro-state-card__body">
-                                                    <span class="macro-state-card__title">{{ row.label }}</span>
-                                                    <div class="macro-risk-card__value">
-                                                        <strong>{{ row.display }}</strong>
-                                                        <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
-                                                    </div>
-                                                    <div class="macro-risk-gauge" aria-hidden="true">
-                                                        <div class="macro-risk-gauge-fill" style="width: {{ row.pct }}%;"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% else %}
-                                            <div class="macro-state-card macro-direction-card macro-state-card--{{ row.tone }} macro-state-card--{{ row.key }}">
-                                                <div class="macro-state-card__top">
-                                                    <span class="macro-state-card__icon" aria-hidden="true"></span>
-                                                    <span class="macro-state-card__title">{{ row.label }}</span>
-                                                    <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
-                                                </div>
-                                                <strong class="macro-direction-card__value">{{ row.display }}</strong>
-                                                <div class="macro-state-meter" aria-hidden="true">
-                                                    <div class="macro-state-meter-fill" style="width: {{ row.pct }}%;"></div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="macro-material-card macro-material-card--{{ row.tone }} macro-material-card--{{ row.key }}">
-                                            <span class="macro-material-icon" aria-hidden="true"></span>
-                                            <span class="macro-material-card__label">{{ row.label }}</span>
-                                            <div class="macro-material-card__main">
-                                                <strong class="macro-material-card__name">{{ row.primary_name }}</strong>
-                                                <span class="macro-material-card__metric">{{ row.metric_label }}</span>
-                                                <span class="macro-material-card__value">{{ row.value_display }}</span>
-                                            </div>
-                                            <span class="macro-state-card__badge macro-state-card__badge--{{ row.badge_tone }}">{{ row.badge_label }}</span>
-                                        </div>
-                                    {% endif %}
-                                {% empty %}
-                                    <p class="macro-state-empty">表示できる材料がまだありません。</p>
-                                {% endfor %}
-                            </div>
-                        </div>
+                    {% empty %}
+                        <p class="macro-placeholder">判断変更条件は更新データ待ちです。</p>
                     {% endfor %}
                 </div>
-                <details class="macro-regime-update-guide">
-                    <summary>更新頻度の目安</summary>
-                    <ul>
-                        {% for item in regime_update_guidance %}
-                            <li>{{ item }}</li>
-                        {% endfor %}
-                    </ul>
-                </details>
+            </section>
+
+            <section class="macro-section macro-scenarios">
+                <h2 class="macro-section-title macro-section-title--brain">基本・上振れ・下振れシナリオ</h2>
+                <div class="macro-scenario-grid">
+                    {% for item in top_decision.scenarios %}
+                        <article class="macro-scenario-card">
+                            <div class="macro-state-section-head">
+                                <span class="macro-state-section-title">{{ item.name }} {{ item.probability_display }}</span>
+                                <span class="macro-state-section-note">日経: {{ item.nikkei_bias }}</span>
+                            </div>
+                            <p>{{ item.reason }}</p>
+                        </article>
+                    {% empty %}
+                        <p class="macro-placeholder">シナリオは更新データ待ちです。</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">良い材料 / 悪い材料</h2>
+                <div class="macro-regime-materials">
+                    <div class="macro-regime-material">
+                        <span class="macro-regime-material-title macro-pos">良い材料</span>
+                        <ul>
+                            {% for point in top_decision.good_points %}
+                                <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
+                            {% empty %}
+                                <li>良い材料は更新データ待ちです。</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="macro-regime-material">
+                        <span class="macro-regime-material-title macro-neg">悪い材料</span>
+                        <ul>
+                            {% for point in top_decision.bad_points %}
+                                <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
+                            {% empty %}
+                                <li>悪い材料は更新データ待ちです。</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="macro-section">
+                <h2 class="macro-section-title">政策・金利圧力 / 市場ストレス</h2>
+                <div class="macro-decision-grid">
+                    <div class="macro-decision-card macro-decision-card--policy">
+                        <span class="macro-decision-label">政策・金利圧力</span>
+                        <strong>{{ top_decision.policy_pressure.label|default:"確認中" }}</strong>
+                        <p>{{ top_decision.policy_pressure.summary|default:"政策金利見通しと米金利を確認中です。" }}</p>
+                    </div>
+                    <div class="macro-decision-card macro-decision-card--stress">
+                        <span class="macro-decision-label">市場ストレス</span>
+                        <strong>{{ top_decision.market_stress.level_label|default:"確認中" }} {{ top_decision.market_stress.score_display|default:"—" }}</strong>
+                        <p>{{ top_decision.market_stress.summary|default:"市場ストレスを確認中です。" }}</p>
+                        <div class="macro-risk-gauge" aria-hidden="true">
+                            <div class="macro-risk-gauge-fill" style="width: {{ top_decision.market_stress.score|default:0 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="macro-section">
+                <div class="macro-section-headline">
+                    <h2 class="macro-section-title macro-section-title--shield">信頼度・データ鮮度</h2>
+                    <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査へ</a>
+                </div>
+                <div class="macro-reliability-grid">
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">信頼度</span>
+                        <span class="macro-reliability-value">{{ top_decision.freshness.confidence }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">データ鮮度</span>
+                        <span class="macro-reliability-value">{{ top_decision.freshness.data_freshness }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">更新</span>
+                        <span class="macro-reliability-value">{{ top_decision.freshness.updated_at }}</span>
+                    </div>
+                </div>
+                {% if top_decision.driver_cards %}
+                    <details class="macro-more">
+                        <summary>判断に効いた指標</summary>
+                        <div class="macro-card-list">
+                            {% for card in top_decision.driver_cards %}
+                                {% include "macro/_partials/indicator_card.html" with card=card %}
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endif %}
                 <div class="macro-regime-meta">
-                    <span class="macro-regime-updated">更新: {{ last_updated }} / {{ regime_model_version }}</span>
                     {% if can_refresh_macro_data %}
                         <form method="post" action="{% url 'macro:refresh' %}" class="macro-refresh-form">
                             {% csrf_token %}
@@ -427,773 +189,7 @@
                         </form>
                     {% endif %}
                 </div>
-                {% if can_refresh_macro_data %}
-                    <div class="macro-operation-panel">
-                        <div class="macro-operation-row">
-                            <span class="macro-operation-title">日次更新</span>
-                            <span class="macro-operation-meta">指標取得・景気判定・画面反映</span>
-                            <form method="post" action="{% url 'macro:refresh' %}" class="macro-operation-form">
-                                {% csrf_token %}
-                                <button class="macro-operation-button macro-operation-button--sync" type="submit"{% if not fred_key_present %} disabled title="FRED_API_KEY 未設定"{% endif %}>実行</button>
-                            </form>
-                        </div>
-                        <div class="macro-operation-row">
-                            <span class="macro-operation-title">月次メンテナンス</span>
-                            <span class="macro-operation-meta">ローカルで実行</span>
-                            <code class="macro-operation-command">python manage.py monthly_macro_maintenance</code>
-                        </div>
-                    </div>
-                {% endif %}
             </section>
-            {% endif %}
-
-            {% if macro_audit_mode %}
-            {% if world_state %}
-                <section class="macro-section macro-world-state">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--brain">現在地の内訳</h2>
-                        <span class="macro-model-kind-badge macro-model-kind-badge--provisional">状態ベクトル</span>
-                    </div>
-                    <p class="macro-model-note">マクロ・金融・市場データを統合した現在の状態ベクトルです。予測そのものではなく、各モデルの入力状態を示します。</p>
-                    <div class="macro-world-state-summary">
-                        <strong>{{ world_state.summary }}</strong>
-                        <span>基準日 {{ world_state.as_of_date }} / 品質 {{ world_state.data_quality_display }} / {{ world_state.model_version }}</span>
-                    </div>
-                    {% if world_state.score_rows %}
-                        <div class="macro-world-state-grid">
-                            {% for row in world_state.score_rows %}
-                                <div class="macro-world-state-score">
-                                    <span>{{ row.label }}</span>
-                                    <strong>{{ row.display }}</strong>
-                                    <div class="macro-world-state-bar" aria-hidden="true">
-                                        <div style="width: {{ row.bar_pct }}%;"></div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <div class="macro-world-state-drivers">
-                        <div>
-                            <span>支援材料</span>
-                            <ul>
-                                {% for item in world_state.positive_drivers %}
-                                    <li>{{ item }}</li>
-                                {% empty %}
-                                    <li>目立った支援材料はまだ少ないです。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div>
-                            <span>注意材料</span>
-                            <ul>
-                                {% for item in world_state.negative_drivers %}
-                                    <li>{{ item }}</li>
-                                {% empty %}
-                                    <li>大きな注意材料は限定的です。</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if macro_reliability %}
-                <section class="macro-section macro-reliability macro-reliability--{{ macro_reliability.tone }}">
-                    <h2 class="macro-section-title macro-section-title--shield">更新信頼性</h2>
-                    <div class="macro-reliability-grid">
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">最終データ日</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.last_data_date }}</span>
-                        </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">画面キャッシュ</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.dashboard_cache_computed_at }}</span>
-                        </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">データ鮮度</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.data_freshness_pct }}% / {{ macro_reliability.freshness_label }}</span>
-                        </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">欠損 / 古い</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.missing_count }}件 / {{ macro_reliability.stale_count }}件</span>
-                        </div>
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">前回更新</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.update_status_label }}</span>
-                        </div>
-                        {% if vintage_status %}
-                            <div class="macro-reliability-item">
-                                <span class="macro-reliability-label">ビンテージ履歴</span>
-                                <span class="macro-reliability-value">{{ vintage_status.status_label }} / {{ vintage_status.total_count }}件</span>
-                            </div>
-                        {% endif %}
-                        <div class="macro-reliability-item">
-                            <span class="macro-reliability-label">更新完了時刻</span>
-                            <span class="macro-reliability-value">{{ macro_reliability.last_update_finished_at }}</span>
-                        </div>
-                    </div>
-                    {% if macro_reliability.warnings %}
-                        <ul class="macro-reliability-warning-list">
-                            {% for warning in macro_reliability.warnings %}
-                                <li>{{ warning }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    <details class="macro-reliability-details">
-                        <summary>更新失敗・欠損・古い指標を確認</summary>
-                        <div class="macro-reliability-detail-grid">
-                            <div>
-                                <span class="macro-reliability-detail-title">前回更新の失敗指標</span>
-                                {% if macro_reliability.failed_items %}
-                                    <ul class="macro-reliability-detail-list">
-                                        {% for item in macro_reliability.failed_items %}
-                                            <li>{{ item.label }}</li>
-                                        {% endfor %}
-                                        {% if macro_reliability.has_more_failed_items %}
-                                            <li>ほかにも失敗があります。</li>
-                                        {% endif %}
-                                    </ul>
-                                {% else %}
-                                    <p class="macro-reliability-empty">記録された失敗はありません。</p>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <span class="macro-reliability-detail-title">未取得・古い指標</span>
-                                {% if macro_reliability.missing_items or macro_reliability.stale_items %}
-                                    <ul class="macro-reliability-detail-list">
-                                        {% for item in macro_reliability.missing_items %}
-                                            <li>未取得: {{ item.label }}</li>
-                                        {% endfor %}
-                                        {% for item in macro_reliability.stale_items %}
-                                            <li>古い: {{ item.label }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="macro-reliability-empty">未取得・古い指標はありません。</p>
-                                {% endif %}
-                            </div>
-                            {% if vintage_status %}
-                                <div>
-                                    <span class="macro-reliability-detail-title">ビンテージ管理</span>
-                                    <p class="macro-reliability-empty">{{ vintage_status.note }}</p>
-                                    <ul class="macro-reliability-detail-list">
-                                        <li>系列 {{ vintage_status.series_count }}件</li>
-                                        <li>最終保存 {{ vintage_status.latest_collected_at }}</li>
-                                    </ul>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </details>
-                </section>
-            {% endif %}
-
-            {% if scenario_analysis and scenario_analysis.scenarios %}
-                <section class="macro-section macro-scenarios">
-                    <h2 class="macro-section-title macro-section-title--brain">シナリオ分析</h2>
-                    <p class="macro-model-note">現在の状態から自動で作った基本・悪化・改善・ショック・政策金利系シナリオです。%は株価やGDPの予測ではなく、表示された景気局面に近い度合いです。</p>
-                    <div class="macro-scenario-base">
-                        <span>現在基準</span>
-                        <strong>{{ scenario_analysis.base_regime_view_display }}</strong>
-                        <span>{{ scenario_analysis.base_regime_fit_display }}</span>
-                        <span>市場ストレス {{ scenario_analysis.base_market_stress_score|default_if_none:"—" }}</span>
-                    </div>
-                    <details>
-                        <summary>手動ストレステスト</summary>
-                        <form method="get" class="macro-scenario-form">
-                            <div class="macro-scenario-form-grid">
-                                {% for field in scenario_analysis.custom_fields %}
-                                    <label class="macro-scenario-control">
-                                        <span>{{ field.label }}</span>
-                                        <input type="number" step="0.1" name="{{ field.name }}" value="{{ field.value }}" placeholder="0">
-                                        {% if field.suffix %}<em>{{ field.suffix }}</em>{% endif %}
-                                    </label>
-                                {% endfor %}
-                            </div>
-                            <div class="macro-scenario-actions">
-                                <button type="submit" class="macro-scenario-button">反映</button>
-                                {% if scenario_analysis.has_custom %}
-                                    <a href="{% url 'macro:index' %}" class="macro-scenario-reset">リセット</a>
-                                {% endif %}
-                            </div>
-                        </form>
-                    </details>
-                    <div class="macro-scenario-grid">
-                        {% for item in scenario_analysis.scenarios %}
-                            <article class="macro-scenario-card{% if item.is_custom %} macro-scenario-card--custom{% endif %}">
-                                <div class="macro-scenario-head">
-                                    <span class="macro-scenario-title">{{ item.title }}</span>
-                                    <span class="macro-scenario-regime">{{ item.regime_view_display }}</span>
-                                </div>
-                                <p class="macro-scenario-assumption">{{ item.assumption }}</p>
-                                <div class="macro-scenario-metrics">
-                                    <span>{{ item.regime_fit_display }}</span>
-                                    <span>景気後退 {{ item.recession_probability_display }}</span>
-                                    <span>物価再加速 {{ item.inflation_probability_display }}</span>
-                                    <span>金融ストレス {{ item.financial_stress_probability_display }}</span>
-                                    <span>市場ストレス {{ item.market_stress_score|default_if_none:"—" }} / {{ item.market_stress_delta_display }}</span>
-                                </div>
-                                {% if item.world_state_delta_rows %}
-                                    <div class="macro-scenario-world-delta">
-                                        {% for delta in item.world_state_delta_rows %}
-                                            <span class="{% if delta.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ delta.label }} {{ delta.delta_display }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </article>
-                        {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if world_model_operations %}
-                <section class="macro-section macro-operations macro-operations--{{ world_model_operations.tone }}">
-                    <h2 class="macro-section-title macro-section-title--shield">World Model 運用状態</h2>
-                    <div class="macro-operations-head">
-                        <span>{{ world_model_operations.status_label }}</span>
-                        <span>次回月次目安 {{ world_model_operations.next_monthly_due }}</span>
-                    </div>
-                    <div class="macro-operations-grid">
-                        {% for row in world_model_operations.rows %}
-                            <div class="macro-operation-status{% if row.is_stale %} macro-operation-status--stale{% endif %}">
-                                <span>{{ row.label }}</span>
-                                <strong>{{ row.status_label }}</strong>
-                                <small>{{ row.last_finished_at }}</small>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if policy_expectation %}
-                <section class="macro-section macro-policy-expectation macro-policy-expectation--{{ policy_expectation.tone }}">
-                    <h2 class="macro-section-title macro-section-title--shield">政策金利見通し</h2>
-                    <div class="macro-operations-head">
-                        <span>{{ policy_expectation.bias_label }}</span>
-                        <span>品質 {{ policy_expectation.data_quality_display|default:"—" }}</span>
-                    </div>
-                    <p class="macro-model-note">{{ policy_expectation.summary }}</p>
-                    {% if policy_expectation.alerts %}
-                        <ul class="macro-monthly-warning-list">
-                            {% for alert in policy_expectation.alerts %}
-                                <li>{{ alert }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    {% if policy_expectation.rows %}
-                        <div class="macro-operations-grid">
-                            {% for row in policy_expectation.rows %}
-                                <div class="macro-operation-status">
-                                    <span>{{ row.label }}</span>
-                                    <strong>{{ row.value }}</strong>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </section>
-            {% endif %}
-
-            {% if monthly_model_status %}
-                <section class="macro-section macro-monthly-status macro-monthly-status--{{ monthly_model_status.tone }}">
-                    <h2 class="macro-section-title macro-section-title--brain">月次モデル状態</h2>
-                    <div class="macro-monthly-status-grid">
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">状態</span>
-                            <span class="macro-monthly-status-value">{{ monthly_model_status.status_label }}</span>
-                        </div>
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">最終学習日</span>
-                            <span class="macro-monthly-status-value">{{ monthly_model_status.latest_training_date }}</span>
-                        </div>
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">最終バックテスト</span>
-                            <span class="macro-monthly-status-value">{{ monthly_model_status.latest_backtest_date }}</span>
-                        </div>
-                    </div>
-                    {% if monthly_model_status.warnings %}
-                        <ul class="macro-monthly-warning-list">
-                            {% for warning in monthly_model_status.warnings %}
-                                <li>{{ warning }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    {% if monthly_model_status.cards %}
-                        <details class="macro-monthly-details">
-                            <summary>月次モデルの検証情報を確認</summary>
-                            <div class="macro-monthly-card-list">
-                                {% for item in monthly_model_status.cards %}
-                                    <div class="macro-monthly-card">
-                                        <span class="macro-monthly-card-title">{{ item.label }}</span>
-                                        <span>{{ item.updated_at }}</span>
-                                        <span>{{ item.sample_label }}</span>
-                                        <span>{{ item.metric_label }}</span>
-                                        <span>{{ item.model_label }}</span>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </details>
-                    {% endif %}
-                </section>
-            {% endif %}
-
-            {% if forecast_models and forecast_models.rows %}
-                <section class="macro-section macro-forecast-models" id="macro-future-forecast">
-                    <div class="macro-section-headline">
-                        <h2 class="macro-section-title macro-section-title--brain">未来予測（後追い検証対象）</h2>
-                        <span class="macro-model-kind-badge macro-model-kind-badge--provisional">参考値</span>
-                    </div>
-                    <p class="macro-model-note">各モデルの出力は参考値です。実績が出た後に ForecastSnapshot で検証します。</p>
-                    <div class="macro-forecast-model-list">
-                        {% for row in forecast_models.rows %}
-                            <div class="macro-forecast-model-row">
-                                <span>{{ row.target }}</span>
-                                <span>{{ row.horizon }}</span>
-                                <strong>{{ row.prediction_display }}</strong>
-                                <span>MAE {{ row.mae_display }}</span>
-                                <span>{{ row.model_version }}</span>
-                                <span>{{ row.trained_at }}</span>
-                                <span>品質 {{ row.data_quality_display }}</span>
-                                <span class="macro-model-kind-badge macro-model-kind-badge--provisional">{{ row.kind_label }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if model_validation and model_validation.rows %}
-                <section class="macro-section macro-model-validation">
-                    <h2 class="macro-section-title macro-section-title--brain">最新モデル検証</h2>
-                    <div class="macro-model-validation-list">
-                        {% for row in model_validation.rows %}
-                            <div class="macro-model-validation-row">
-                                <span>{{ row.model_version }}</span>
-                                <span>{{ row.target }} {{ row.horizon }}</span>
-                                <span>件数 {{ row.sample_count }}</span>
-                                <span>イベント {{ row.event_count|default_if_none:"—" }}</span>
-                                <span>MAE {{ row.mae_display }}</span>
-                                <span>RMSE {{ row.rmse_display }}</span>
-                                <span>方向 {{ row.direction_accuracy_display }}</span>
-                                <span>ROC {{ row.roc_auc_display }} / PR {{ row.pr_auc_display }} / Brier {{ row.brier_score_display }}</span>
-                                <span>{{ row.validation_method }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
-
-            {% if macro_outcome_validation %}
-                <section class="macro-section macro-model-validation">
-                    <h2 class="macro-section-title macro-section-title--brain">Macro予測検証</h2>
-                    <div class="macro-monthly-status-grid">
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">期間</span>
-                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.period_label }}</span>
-                        </div>
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">件数</span>
-                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.total_count }}</span>
-                        </div>
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">方向的中</span>
-                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.direction_accuracy_display }}</span>
-                        </div>
-                        <div class="macro-monthly-status-item">
-                            <span class="macro-monthly-status-label">Brier Score</span>
-                            <span class="macro-monthly-status-value">{{ macro_outcome_validation.avg_brier_score_display }}</span>
-                        </div>
-                    </div>
-                    {% if macro_outcome_validation.rows %}
-                        <div class="macro-model-validation-list">
-                            {% for row in macro_outcome_validation.rows %}
-                                <div class="macro-model-validation-row">
-                                    <span>{{ row.target_date }}</span>
-                                    <span>{{ row.target_name }}</span>
-                                    <span>予測 {{ row.predicted_prob_display }}</span>
-                                    <span>実績 {{ row.actual_value_display }}</span>
-                                    <span>Brier {{ row.brier_score_display }}</span>
-                                    <span>{{ row.direction_hit_display }}</span>
-                                    <span>{{ row.model_version }}</span>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </section>
-            {% endif %}
-
-            {% if forecast_monitor %}
-                <section class="macro-section macro-forecast-monitor macro-forecast-monitor--{{ forecast_monitor.tone }}">
-                    <h2 class="macro-section-title macro-section-title--brain">予測の後追い検証</h2>
-                    <div class="macro-forecast-grid">
-                        <div>
-                            <span>予測記録</span>
-                            <strong>{{ forecast_monitor.total_count }}件</strong>
-                        </div>
-                        <div>
-                            <span>確定 / 未確定</span>
-                            <strong>{{ forecast_monitor.settled_count }}件 / {{ forecast_monitor.pending_count }}件</strong>
-                        </div>
-                        <div>
-                            <span>平均誤差</span>
-                            <strong>{{ forecast_monitor.avg_abs_error_display }}</strong>
-                        </div>
-                    </div>
-                    {% if forecast_monitor.summary_rows %}
-                        <details class="macro-forecast-details">
-                            <summary>モデル別の検証集計</summary>
-                            <div class="macro-forecast-summary-list">
-                                {% for row in forecast_monitor.summary_rows %}
-                                    <div class="macro-forecast-summary-row">
-                                        <span>{{ row.model_version }}</span>
-                                        <span>{{ row.target }} {{ row.horizon }}</span>
-                                        <span>確定 {{ row.settled_count }} / 未確定 {{ row.pending_count }}</span>
-                                        <span>平均 {{ row.avg_abs_error_display }}</span>
-                                        <span>中央値 {{ row.median_abs_error_display }}</span>
-                                        <span>方向 {{ row.direction_accuracy_display }}</span>
-                                        <span>Brier {{ row.probability_brier_score_display }}</span>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </details>
-                    {% endif %}
-                    {% if forecast_monitor.latest_rows %}
-                        <details class="macro-forecast-details">
-                            <summary>直近の検証済み予測</summary>
-                            <div class="macro-forecast-row-list">
-                                {% for row in forecast_monitor.latest_rows %}
-                                    <div class="macro-forecast-row">
-                                        <span>{{ row.target }} {{ row.horizon }}</span>
-                                        <span>予測 {{ row.prediction_display }}</span>
-                                        <span>実績 {{ row.realized_display }}</span>
-                                        <span>誤差 {{ row.error_display }}</span>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </details>
-                    {% endif %}
-                </section>
-            {% endif %}
-
-            {# 現状サマリ（自動生成コメント） #}
-            {% if overview_commentary and overview_commentary.sentences %}
-                <section class="macro-overview">
-                    <h2 class="macro-section-title macro-section-title--list">現状サマリ</h2>
-                    <ul class="macro-overview-list">
-                        {% for s in overview_commentary.sentences %}
-                            <li class="macro-overview-item">{{ s }}</li>
-                        {% endfor %}
-                    </ul>
-                </section>
-            {% endif %}
-            {% endif %}
-
-            {# クラッシュ警戒度 #}
-            {% if macro_audit_mode %}
-            {% if crash_alert and crash_alert.total_score is not None %}
-                <section class="macro-section macro-crash-alert macro-crash-alert--{{ crash_alert.level }}" id="macro-market-stress">
-                    <h2 class="macro-section-title macro-section-title--shield">市場ストレス・急落予測</h2>
-                    <div class="macro-crash-top">
-                        <div class="macro-crash-banner">
-                            <div class="macro-crash-level-main">{{ crash_alert.level_label }}</div>
-                            <div class="macro-crash-score">
-                                <span class="macro-crash-score-num">{{ crash_alert.total_score }}</span>
-                                <span class="macro-crash-score-unit">/ 100</span>
-                            </div>
-                        </div>
-                        <div class="macro-crash-visual" aria-hidden="true">
-                            <span></span>
-                        </div>
-                    </div>
-                    <div class="macro-crash-score-bar" aria-hidden="true">
-                        <div class="macro-crash-score-fill" style="width: {{ crash_alert.total_score }}%;"></div>
-                    </div>
-                    <p class="macro-crash-note">市場ストレス・急落警戒スコアは、現在の市場がどれだけ緊張しているかを、信用・流動性、ボラ・需給、価格アクション、景気・金利の4項目から0〜100点で示します。点数が高いほど市場の不安が強い状態です。将来の暴落確率ではありません。</p>
-                    <div class="macro-crash-metrics">
-                        <div class="macro-crash-metric">
-                            <span class="macro-crash-metric-label">判定強度</span>
-                            <span class="macro-crash-metric-value">{{ crash_alert.rule_agreement_pct }}%</span>
-                        </div>
-                        <div class="macro-crash-metric">
-                            <span class="macro-crash-metric-label">データ品質</span>
-                            <span class="macro-crash-metric-value">{{ crash_alert.data_quality_pct }}%</span>
-                        </div>
-                        <div class="macro-crash-metric">
-                            <span class="macro-crash-metric-label">検証状態</span>
-                            <span class="macro-crash-metric-value">{{ crash_alert.validation_status }}</span>
-                        </div>
-                    </div>
-                    {% if crash_alert.quality_warnings %}
-                        <ul class="macro-crash-warning-list">
-                            {% for warning in crash_alert.quality_warnings %}
-                                <li>{{ warning }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    {% if crash_alert.category_summary %}
-                        <ul class="macro-crash-category-list">
-                            {% for cat in crash_alert.category_summary %}
-                                <li class="macro-crash-category">
-                                    <span class="macro-crash-category-label">{{ cat.category_label }}</span>
-                                    <span class="macro-crash-category-score">{{ cat.avg_score_display }}</span>
-                                    <span class="macro-crash-category-weight">配点 {{ cat.weight_pct }}% / 品質 {{ cat.coverage_pct }}%</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                    <details class="macro-crash-details">
-                        <summary>サブスコア内訳（観測日・鮮度）</summary>
-                        <ul class="macro-crash-component-list">
-                            {% for c in crash_alert.components %}
-                                <li class="macro-crash-component{% if c.is_missing %} macro-crash-component--missing{% elif c.is_stale %} macro-crash-component--stale{% endif %}">
-                                    <span class="macro-crash-component-label">{{ c.label }}</span>
-                                    <span class="macro-crash-component-category">{{ c.category_label }}</span>
-                                    <span class="macro-crash-component-value">{{ c.value_display }}</span>
-                                    <span class="macro-crash-component-date">{{ c.observation_date }} / {{ c.age_days_display }}</span>
-                                    <span class="macro-crash-component-freshness">{{ c.freshness_label }}</span>
-                                    <span class="macro-crash-component-score">{{ c.score }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </details>
-                </section>
-            {% endif %}
-            {% endif %}
-
-            {# 指標サマリ #}
-            <section class="macro-section macro-indicator-summary">
-                <h2 class="macro-section-title">主要マクロ指標</h2>
-                {% if has_observations %}
-                    <details class="macro-more">
-                        <summary>代表指標を確認</summary>
-                        <div class="macro-card-list">
-                            {% for card in indicator_cards %}
-                                {% include "macro/_partials/indicator_card.html" with card=card %}
-                            {% endfor %}
-                        </div>
-                    </details>
-                {% else %}
-                    <p class="macro-placeholder">指標データがまだ取得されていません。「更新」ボタンを押して取得してください。</p>
-                {% endif %}
-            </section>
-
-            {% if macro_audit_mode %}
-            {# 急落確率モデル #}
-            {% if crash_probability_model %}
-                <section class="macro-section macro-crash-probability macro-crash-probability--{{ crash_probability_model.reliability_tone }}">
-                    <details class="macro-accordion">
-                        <summary class="macro-accordion-summary">
-                            <span class="macro-section-title macro-section-title--shield">急落確率モデル（検証済み参考確率）</span>
-                            <span class="macro-model-kind-badge macro-model-kind-badge--validated">検証済み参考確率</span>
-                            <span class="macro-accordion-status">表示</span>
-                        </summary>
-                        <p class="macro-model-note">過去データで検証したモデルによる参考確率です。イベント数が少ない場合は信頼性が下がります。</p>
-                        <div class="macro-probability-top">
-                            <div>
-                                <div class="macro-probability-label">{{ crash_probability_model.prediction_label }}</div>
-                                <div class="macro-probability-value">{{ crash_probability_model.current_probability_display }}</div>
-                            </div>
-                            <div class="macro-probability-badge">信頼性 {{ crash_probability_model.reliability_label }}</div>
-                        </div>
-                        {% if crash_probability_model.reliability_warnings %}
-                            <ul class="macro-probability-warning-list">
-                                {% for warning in crash_probability_model.reliability_warnings %}
-                                    <li>{{ warning }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                        <div class="macro-probability-validation">
-                            <span>学習日 {{ crash_probability_model.trained_at }}</span>
-                            <span>目的変数 {{ crash_probability_model.target_mode_label }} / 日次カバー {{ crash_probability_model.daily_price_coverage_display }}</span>
-                            <span>検証 {{ crash_probability_model.validation_samples }}件 / イベント {{ crash_probability_model.validation_event_count }}件</span>
-                            <span>ROC-AUC {{ crash_probability_model.roc_auc_display }} / PR-AUC {{ crash_probability_model.pr_auc_display }} / Brier {{ crash_probability_model.brier_score_display }}</span>
-                            <span>モデル {{ crash_probability_model.model_version }}</span>
-                        </div>
-                        <div class="macro-probability-diagnostics">
-                            <span>校正後 {{ crash_probability_model.current_probability_display }}</span>
-                            <span>raw {{ crash_probability_model.raw_probability_display }}</span>
-                            <span>乖離 {{ crash_probability_model.raw_calibration_gap_display }}</span>
-                            <span>検証イベント率 {{ crash_probability_model.validation_event_rate_display }}</span>
-                            <span>目安範囲 {{ crash_probability_model.validation_event_interval_display }}</span>
-                            <span>閾値10% 精度 {{ crash_probability_model.threshold_10_precision_display }} / 捕捉 {{ crash_probability_model.threshold_10_recall_display }}</span>
-                        </div>
-                    </details>
-                </section>
-            {% endif %}
-
-            {# LightGBM 予測 #}
-            {% if lightgbm_prediction %}
-                <section class="macro-section macro-lgbm">
-                    <details class="macro-accordion">
-                        <summary class="macro-accordion-summary">
-                            <span class="macro-section-title macro-section-title--brain">未来予測: リターン予測モデル（主要指数）</span>
-                            <span class="macro-accordion-status">表示</span>
-                        </summary>
-                        <p class="macro-lgbm-note">景気局面判定や急落確率とは独立した参考値です。売買判断ではありません。</p>
-                        <div class="macro-lgbm-grid">
-                            {% for h in lightgbm_prediction.horizons %}
-                                <div class="macro-lgbm-card macro-lgbm-card--{{ h.level }}">
-                                    <div class="macro-lgbm-horizon">{{ h.months }}ヶ月後</div>
-                                    <div class="macro-lgbm-return">{{ h.predicted_return_display }}</div>
-                                    <div class="macro-lgbm-mae">検証誤差 {{ h.validation_mae_display }}</div>
-                                    <div class="macro-lgbm-spark" aria-hidden="true"></div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <div class="macro-lgbm-meta">
-                            <span>学習日 {{ lightgbm_prediction.predicted_at }}</span>
-                            <span>サンプル {{ lightgbm_prediction.training_samples }} / 特徴量 {{ lightgbm_prediction.feature_count }}</span>
-                            <span>モデル {{ lightgbm_prediction.model_version }}</span>
-                        </div>
-                    </details>
-                </section>
-            {% endif %}
-
-            {# 過去類似局面 #}
-            <section class="macro-section macro-section--similar">
-                <details class="macro-accordion">
-                    <summary class="macro-accordion-summary">
-                        <span class="macro-section-title macro-section-title--search">参考: 過去類似局面</span>
-                        <span class="macro-accordion-status">表示</span>
-                    </summary>
-                {% if similar_commentary.aggregate %}
-                    {% with agg=similar_commentary.aggregate %}
-                    <details class="macro-similar-aggregate">
-                        <summary class="macro-similar-aggregate-summary">
-                            <div class="macro-similar-aggregate-header">
-                                <span class="macro-similar-aggregate-title">類似{{ agg.count }}件の翌月リターン集約</span>
-                                <span class="macro-similar-aggregate-confidence macro-conf-{{ agg.confidence }}">参考度 {{ agg.confidence }}</span>
-                            </div>
-                            <table class="macro-similar-aggregate-table">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>平均</th>
-                                        <th>中央値</th>
-                                        <th>上昇 / 下落</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <th>日経</th>
-                                        <td>{{ agg.nikkei_avg_display }}</td>
-                                        <td>{{ agg.nikkei_median_display }}</td>
-                                        <td>{{ agg.nikkei_up }} / {{ agg.nikkei_down }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>S&amp;P</th>
-                                        <td>{{ agg.spx_avg_display }}</td>
-                                        <td>{{ agg.spx_median_display }}</td>
-                                        <td>{{ agg.spx_up }} / {{ agg.spx_down }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>NYダウ</th>
-                                        <td>{{ agg.nydow_avg_display }}</td>
-                                        <td>{{ agg.nydow_median_display }}</td>
-                                        <td>{{ agg.nydow_up }} / {{ agg.nydow_down }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>NASDAQ</th>
-                                        <td>{{ agg.nasdaq_avg_display }}</td>
-                                        <td>{{ agg.nasdaq_median_display }}</td>
-                                        <td>{{ agg.nasdaq_up }} / {{ agg.nasdaq_down }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </summary>
-                        {% if similar_periods %}
-                            <ol class="macro-similar-list macro-similar-list--inside">
-                                {% for period in similar_periods %}
-                                    <li class="macro-similar-item">
-                                        <a href="{% url 'macro:similar_detail' month=period.month_start %}" class="macro-similar-link">
-                                            <div class="macro-similar-head">
-                                                <span class="macro-similar-rank">#{{ forloop.counter }}</span>
-                                                <span class="macro-similar-month">{{ period.month_label }}</span>
-                                                <span class="macro-similar-distance">距離 {{ period.distance_display }}</span>
-                                            </div>
-                                            <div class="macro-similar-metrics">
-                                                <span>Core PCE {{ period.core_pce_display }}</span>
-                                                <span>INDPRO {{ period.indpro_display }}</span>
-                                                <span>2-10 {{ period.spread_display }}</span>
-                                            </div>
-                                            <div class="macro-similar-returns">
-                                                <span class="macro-similar-return {% if period.nikkei_return_pos %}macro-pos{% else %}macro-neg{% endif %}">日経 {{ period.nikkei_return_display }}</span>
-                                                <span class="macro-similar-return {% if period.spx_return_pos %}macro-pos{% else %}macro-neg{% endif %}">S&P {{ period.spx_return_display }}</span>
-                                                <span class="macro-similar-return {% if period.nydow_return_pos %}macro-pos{% else %}macro-neg{% endif %}">NYダウ {{ period.nydow_return_display }}</span>
-                                                <span class="macro-similar-return {% if period.nasdaq_return_pos %}macro-pos{% else %}macro-neg{% endif %}">NASDAQ {{ period.nasdaq_return_display }}</span>
-                                            </div>
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ol>
-                        {% else %}
-                            <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
-                        {% endif %}
-                    </details>
-                    {% endwith %}
-                {% elif similar_commentary.summary %}
-                    <p class="macro-similar-empty">{% if dashboard_cache_missing %}類似局面は準備中です。{% else %}{{ similar_commentary.summary }}{% endif %}</p>
-                {% else %}
-                    <p class="macro-placeholder">{% if has_observations %}類似計算に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
-                {% endif %}
-                </details>
-            </section>
-
-            {# 歴史的クラッシュ局面との類似度 #}
-            {% if historical_crash_similarity %}
-                <section class="macro-section">
-                    <details class="macro-accordion">
-                        <summary class="macro-accordion-summary">
-                            <span class="macro-section-title">参考: 過去の急落局面との類似度</span>
-                            <span class="macro-accordion-status">表示</span>
-                        </summary>
-                        <ol class="macro-crash-history-list">
-                            {% for item in historical_crash_similarity %}
-                                <li class="macro-crash-history-item">
-                                    <span class="macro-crash-history-rank">#{{ forloop.counter }}</span>
-                                    <span class="macro-crash-history-month">{{ item.month_label }}</span>
-                                    <span class="macro-crash-history-label">{{ item.label }}</span>
-                                    <span class="macro-crash-history-distance">距離 {{ item.distance_display }}</span>
-                                </li>
-                            {% endfor %}
-                        </ol>
-                    </details>
-                </section>
-            {% endif %}
-
-            {# 連動マップ #}
-            <section class="macro-section">
-                <details class="macro-accordion">
-                    <summary class="macro-accordion-summary">
-                        <span class="macro-section-title">参考: 連動マップ トップ10</span>
-                        <span class="macro-accordion-status">表示</span>
-                    </summary>
-                    {% if linkage_commentary %}
-                        <div class="macro-help">
-                            <p class="macro-help-text">{{ linkage_commentary.help }}</p>
-                            {% if linkage_commentary.summary %}
-                                <p class="macro-help-summary">{{ linkage_commentary.summary }}</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    {% if linkages %}
-                        <ol class="macro-linkage-list">
-                            {% for link in linkages %}
-                                <li class="macro-linkage-item">
-                                    <div class="macro-linkage-row">
-                                        <span class="macro-linkage-relation">{{ link.relation_text }}</span>
-                                        <span class="macro-linkage-corr {% if link.is_negative %}macro-neg{% else %}macro-pos{% endif %}">{{ link.correlation_display }}</span>
-                                    </div>
-                                    {% if link.interpretation %}
-                                        <p class="macro-linkage-interpretation">{{ link.interpretation }}</p>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ol>
-                    {% else %}
-                        <p class="macro-placeholder">{% if dashboard_cache_missing %}連動分析は準備中です。{% elif has_observations %}連動分析に必要なデータが揃っていません。{% else %}データ取得後に表示されます。{% endif %}</p>
-                    {% endif %}
-                </details>
-            </section>
-            {% endif %}
-
         </div>
     </div>
 </body>

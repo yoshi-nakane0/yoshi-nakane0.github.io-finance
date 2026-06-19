@@ -120,6 +120,37 @@
                 {% endif %}
             </section>
 
+            {% if house_view_validation.accuracy_sections %}
+                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live %}
+                <section class="macro-section macro-decision" id="macro-house-view-validation">
+                    <div class="macro-section-headline">
+                        <h2 class="macro-section-title">House View 検証</h2>
+                        <span class="macro-regime-status-pill">Backtest / Live</span>
+                    </div>
+                    <div class="macro-decision-grid">
+                        <div class="macro-decision-card macro-decision-card--confidence">
+                            <span class="macro-decision-label">Backtest精度</span>
+                            <strong>{{ backtest.hit_rate|default:"—" }}</strong>
+                            <p>過去データで再現した検証です。</p>
+                            <span>サンプル {{ backtest.sample_count|default:0 }}件 / 的中 {{ backtest.hit_count|default:0 }}件</span>
+                            {% if backtest.status != "available" %}
+                                <p>{{ backtest.warning|default:"ローカルBacktest結果の生成待ちです。" }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="macro-decision-card macro-decision-card--stress">
+                            <span class="macro-decision-label">Live精度</span>
+                            <strong>{{ live.hit_rate|default:"—" }}</strong>
+                            <p>実際に保存した予測を後から検証します。</p>
+                            <span>サンプル {{ live.sample_count|default:0 }}件 / 的中 {{ live.hit_count|default:0 }}件</span>
+                            {% if live.status == "waiting_for_realizations" %}
+                                <p>結果が出るまで実績は増えません。</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                {% endwith %}
+            {% endif %}
+
             <section class="macro-section">
                 <h2 class="macro-section-title macro-section-title--brain">モデル内部の状態ベクトル</h2>
                 {% if world_state %}

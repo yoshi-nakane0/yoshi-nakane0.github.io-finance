@@ -25,6 +25,7 @@ from .services.dashboard import (
     build_reliability_context,
     build_regime_context,
     build_static_reliability_context,
+    build_top_decision_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
     load_regime_probability_model,
@@ -218,6 +219,7 @@ def index(request):
             'audit_indicator_cards': [],
         }
         _attach_reliability_context(context, latest_snapshot)
+        context['top_decision'] = build_top_decision_context(context)
         return render(request, 'macro/index.html', context)
 
     latest_snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
@@ -277,6 +279,7 @@ def index(request):
         static_payload=cache_payload,
         static_operations_status=load_static_macro_operations_status(),
     )
+    context['top_decision'] = build_top_decision_context(context)
     return render(request, 'macro/index.html', context)
 
 

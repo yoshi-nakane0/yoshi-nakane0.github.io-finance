@@ -6,6 +6,7 @@ views.py を薄く保つために集約。
 
 import json
 import logging
+import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -1500,6 +1501,184 @@ def build_macro_decision_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
             crash,
             quality_report,
         ),
+    }
+
+
+AXIS_SUMMARY_LABELS = {
+    'growth_momentum': '成長',
+    'inflation_pressure': '物価',
+    'financial_conditions': '金融環境',
+    'nikkei_macro_bias': '日経影響',
+}
+SCENARIO_ORDER = {
+    'baseline': 0,
+    'upside': 1,
+    'downside': 2,
+}
+
+
+def _extract_nikkei_impact(text: str, scenarios: List[Dict]) -> str:
+    match = re.search(r'macroバイアス[は:：]\s*([^。]+)', text or '')
+    if match:
+        return match.group(1).strip()
+    baseline = next(
+        (item for item in scenarios if item.get('name_key') == 'baseline'),
+        {},
+    )
+    return baseline.get('nikkei_bias') or '中立'
+
+
+def _compact_direction(house_view: Dict, forecast: Dict, decision: Dict) -> str:
+    texts = ' '.join(
+        str(value or '')
+        for value in (
+            forecast.get('headline'),
+            house_view.get('house_view'),
+            decision.get('headline'),
+        )
+    )
+    if '改善' in texts and ('中立' in texts or '弱' not in texts):
+        return '中立〜改善'
+    if '弱' in texts or '悪化' in texts:
+        return '弱含み'
+    if '改善' in texts or '拡大' in texts:
+        return '改善'
+    if '中立' in texts:
+        return '中立'
+    return decision.get('headline') or forecast.get('headline') or 'データ確認中'
+
+
+def _format_confidence(decision: Dict, house_view: Dict) -> str:
+    confidence = decision.get('confidence') or {}
+    grade = confidence.get('grade') or house_view.get('confidence_grade') or '—'
+    score = confidence.get('score_display')
+    if not score and house_view.get('confidence_score') is not None:
+        score = f"{house_view.get('confidence_score')}%"
+    return f'{grade} / {score or "—"}'
+
+
+def _top_invalidation_triggers(house_view: Dict) -> List[Dict]:
+    rows = []
+    for trigger in house_view.get('invalidation_triggers') or []:
+        parts = re.split(r'[:：]', str(trigger), maxsplit=1)
+        if len(parts) == 2:
+            rows.append({'label': parts[0].strip(), 'detail': parts[1].strip()})
+        else:
+            rows.append({'label': '条件', 'detail': str(trigger)})
+    return rows[:4]
+
+
+def _scenario_reason(item: Dict) -> str:
+    drivers = item.get('key_drivers') or []
+    if drivers:
+        return drivers[0]
+    for key in ('growth_view', 'inflation_view', 'policy_view', 'market_view'):
+        if item.get(key):
+            return item[key]
+    return '詳細は監査ページで確認してください。'
+
+
+def _top_scenarios(forecast: Dict) -> List[Dict]:
+    scenarios = []
+    for item in forecast.get('scenarios') or []:
+        scenarios.append({
+            'name': item.get('name') or 'シナリオ',
+            'name_key': item.get('name_key') or '',
+            'probability_display': item.get('probability_display') or '—',
+            'nikkei_bias': item.get('nikkei_bias') or '中立',
+            'reason': _scenario_reason(item),
+        })
+    scenarios.sort(key=lambda item: SCENARIO_ORDER.get(item['name_key'], 99))
+    return scenarios[:3]
+
+
+def _compact_material_points(points: List[str], *, negative: bool) -> List[str]:
+    compacted = []
+    text = ' '.join(points)
+    if negative and re.search(r'PCE|CPI|インフレ|物価', text, re.IGNORECASE):
+        compacted.append('インフレ再加速リスクが高い')
+    if negative and re.search(r'金利|利回り|10年|2年', text):
+        compacted.append('米金利上昇が株価バリュエーションを圧迫')
+    if negative and re.search(r'日経|日本|外部|逆風|景気サイクル', text):
+        compacted.append('日本側の景気サイクルが弱い、または日経への追い風が限定的')
+
+    for point in points:
+        if point and point not in compacted:
+            compacted.append(point)
+        if len(compacted) >= 3:
+            break
+    return compacted[:3]
+
+
+def _top_axis_summary(forecast: Dict) -> List[Dict]:
+    rows = []
+    seen = set()
+    for axis in forecast.get('axes') or []:
+        key = axis.get('key')
+        if key not in AXIS_SUMMARY_LABELS or key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            'label': AXIS_SUMMARY_LABELS[key],
+            'value': axis.get('label') or axis.get('score_display') or '—',
+            'score_display': axis.get('score_display') or '—',
+        })
+    return rows
+
+
+def build_top_decision_context(context: Dict) -> Dict:
+    """macroトップで使う、1つに統合した最終判断コンテキストを作る。"""
+    house_view = context.get('house_view') or {}
+    forecast = context.get('macro_forecast_report') or {}
+    decision = context.get('macro_decision') or {}
+    confidence = decision.get('confidence') or {}
+    scenarios = _top_scenarios(forecast)
+    nikkei_impact = _extract_nikkei_impact(
+        forecast.get('nikkei_implication') or '',
+        scenarios,
+    )
+    risk_candidates = _compact_material_points(
+        decision.get('bad_points') or house_view.get('main_risks') or [],
+        negative=True,
+    )
+
+    return {
+        'final_judgment': {
+            'direction': _compact_direction(house_view, forecast, decision),
+            'nikkei_impact': nikkei_impact,
+            'max_risk': '・'.join(risk_candidates[:2]) if risk_candidates else '主要リスクを確認中',
+            'summary': (
+                decision.get('detail')
+                or house_view.get('house_view')
+                or forecast.get('judgment')
+                or '主要データの更新後に最終判断を表示します。'
+            ),
+            'confidence': _format_confidence(decision, house_view),
+        },
+        'nikkei': {
+            'bias': nikkei_impact,
+            'role_note': '短期エントリーはbasecalcを優先',
+        },
+        'invalidation_triggers': _top_invalidation_triggers(house_view),
+        'scenarios': scenarios,
+        'axis_summary': _top_axis_summary(forecast),
+        'good_points': _compact_material_points(
+            decision.get('good_points') or house_view.get('key_drivers') or [],
+            negative=False,
+        ),
+        'bad_points': risk_candidates,
+        'policy_pressure': decision.get('policy_pressure') or {},
+        'market_stress': decision.get('market_stress') or {},
+        'freshness': {
+            'confidence': _format_confidence(decision, house_view),
+            'data_freshness': (
+                f"{confidence.get('data_freshness_pct')}%"
+                if confidence.get('data_freshness_pct') is not None
+                else '—'
+            ),
+            'updated_at': context.get('last_updated') or context.get('generated_at') or '—',
+        },
+        'driver_cards': (context.get('top_driver_cards') or context.get('indicator_cards') or [])[:5],
     }
 
 

@@ -21,6 +21,7 @@ from .outcomes import (
 from .serializers import serialize_snapshot
 from .services.decision_context import (
     build_basecalc_decision_context,
+    build_basecalc_top_context,
     enrich_basecalc_context,
     ensure_plain_summary_card_display,
 )
@@ -87,6 +88,7 @@ def index(request):
             context["can_update_basecalc_data"] = can_update_basecalc_data
             if can_update_basecalc_data:
                 context["refresh_workflow_state"] = get_refresh_workflow_state()
+            context["detail_mode"] = request.GET.get("detail") == "1"
             hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
             return render(request, "basecalc/index.html", context)
@@ -322,10 +324,17 @@ def build_context(request, force_update=False, persist_price_override=None):
         basecalc_status_rows,
         backtest_performance_by_horizon.get("1d"),
     )
+    basecalc_top = build_basecalc_top_context(
+        world_model,
+        decision,
+        basecalc_status_rows,
+        backtest_performance_by_horizon.get("1d"),
+    )
 
     return {
         "data": data,
         "decision": decision,
+        "basecalc_top": basecalc_top,
         "world_model": world_model,
         "market_shock": market_shock_context,
         "intermarket_technicals": world_model.get("intermarket_technicals") or {},

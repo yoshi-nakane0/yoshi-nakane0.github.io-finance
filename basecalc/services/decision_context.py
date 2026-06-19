@@ -56,8 +56,224 @@ def enrich_basecalc_context(context):
         context.get("backtest_performance_by_horizon", {}).get("1d")
         or context.get("performance"),
     )
+    context["basecalc_top"] = build_basecalc_top_context(
+        world_model,
+        context["decision"],
+        status_rows,
+        context.get("backtest_performance_by_horizon", {}).get("1d")
+        or context.get("performance"),
+    )
     context.setdefault("detail_mode", False)
     return context
+
+
+def build_basecalc_top_context(world_model, decision, status_rows=None, performance=None):
+    world_model = world_model or {}
+    decision = decision or {}
+    return {
+        "status": _top_status(decision, status_rows),
+        "final_judgment": _top_final_judgment(world_model, decision),
+        "action": _top_action(world_model),
+        "lines": _top_lines(world_model, decision),
+        "change_conditions": _top_change_conditions(world_model),
+        "reasons": (decision.get("main_reason") or _top_evidence(world_model))[:3],
+        "risks": _top_risks(world_model, decision),
+        "horizons": _top_horizons(world_model, performance),
+        "external": _top_external(world_model, decision),
+        "confidence": _top_confidence(decision, performance),
+    }
+
+
+def _top_status(decision, status_rows):
+    attention = decision.get("status_summary") or _status_summary(status_rows or [])
+    return {
+        "readiness": decision.get("readiness_label") or "判定不可",
+        "data_quality": (
+            f"{str(decision.get('data_quality_level') or 'unknown').title()} "
+            f"{decision.get('data_quality_score') or 0}/100"
+        ),
+        "fallback": "あり" if decision.get("fallback_used") else "なし",
+        "attention": attention,
+        "updated_at": decision.get("last_updated") or "—",
+    }
+
+
+def _top_final_judgment(world_model, decision):
+    headline = (
+        (world_model.get("counter_bias") or {}).get("label")
+        or _judgment_with_reversal(
+            decision.get("direction_label") or "判定不可",
+            world_model.get("reversal_risk_score"),
+        )
+    )
+    return {
+        "headline": headline,
+        "setup": world_model.get("primary_setup_label") or decision.get("state_label") or "局面確認中",
+        "supplement": _action_summary(world_model),
+    }
+
+
+def _judgment_with_reversal(direction_label, reversal_score):
+    try:
+        score = int(reversal_score or 0)
+    except (TypeError, ValueError):
+        score = 0
+    if score >= 70 and "反落" not in direction_label:
+        return f"{direction_label}だが、反落警戒"
+    return direction_label
+
+
+def _top_action(world_model):
+    note = str(world_model.get("action_note") or "")
+    if "押し目" in note or "追撃" in note:
+        judgment = "押し目確認待ち"
+    elif "禁止" in note:
+        judgment = "待ち"
+    else:
+        judgment = "節目確認を優先"
+    return {
+        "judgment": judgment,
+        "prohibited": "高値追い・追撃買い",
+        "allowed": "押し目形成後の再上昇確認",
+        "caution": "前日安値・EMA20・VWAP割れで上昇判断を弱める",
+        "note": note or "方向だけで追いかけず、節目と外部確認を優先します。",
+    }
+
+
+def _action_summary(world_model):
+    note = str(world_model.get("action_note") or "")
+    if note:
+        return note
+    return "追撃ではなく、節目確認を優先します。"
+
+
+def _top_lines(world_model, decision):
+    near_levels = world_model.get("near_levels") or {}
+    return {
+        "current_price": decision.get("price") or world_model.get("price"),
+        "upside_resistance": _target_price(decision.get("upside_target")),
+        "downside_support": _target_price(decision.get("downside_target")),
+        "near_upside": _first_level_price(near_levels.get("upside")),
+        "near_downside": _first_level_price(near_levels.get("downside")),
+        "short_term_weakening": "前日安値・EMA20・VWAP割れ",
+        "structural_break": decision.get("invalidation") or world_model.get("invalidation_display") or "—",
+    }
+
+
+def _target_price(target):
+    return target.get("price") if isinstance(target, dict) else None
+
+
+def _first_level_price(levels):
+    first = (levels or [None])[0]
+    return first.get("price") if isinstance(first, dict) else None
+
+
+def _top_change_conditions(world_model):
+    return [
+        {
+            "label": "高値終値突破＋米国3指数確認",
+            "detail": "上値目標を拡張",
+        },
+        {
+            "label": "EMA20・前日安値割れ",
+            "detail": "上昇失敗として扱う",
+        },
+        {
+            "label": "VWAP割れ",
+            "detail": "短期需給悪化",
+        },
+        {
+            "label": "米国3指数が同時失速",
+            "detail": "追撃買い禁止を強化",
+        },
+    ]
+
+
+def _top_risks(world_model, decision):
+    risks = list(decision.get("risk_reason") or [])
+    counter_reasons = (world_model.get("counter_bias") or {}).get("reasons") or []
+    for reason in counter_reasons:
+        if reason not in risks:
+            risks.append(reason)
+    if int(world_model.get("reversal_risk_score") or 0) >= 70:
+        label = f"反落警戒{int(world_model.get('reversal_risk_score') or 0)}/100"
+        if label not in risks:
+            risks.insert(0, label)
+    intermarket = world_model.get("us_index_confirmation") or {}
+    if intermarket.get("confirmation_label") in {"mixed", "divergent", "confirm_down"}:
+        label = "米国3指数確認が不十分"
+        if label not in risks:
+            risks.append(label)
+    return risks[:3] or ["目立つ警戒点は限定的です"]
+
+
+def _top_horizons(world_model, performance):
+    direction = world_model.get("direction")
+    if direction == "down":
+        rows = [
+            ("1日", "下落継続だが自律反発に注意"),
+            ("3日", "戻り売りと下げ止まりを確認"),
+            ("5日", "下落継続と反発の分岐"),
+        ]
+    else:
+        rows = [
+            ("1日", "上昇維持だが反落警戒"),
+            ("3日", "押し目形成後の再上昇確認"),
+            ("5日", "上昇継続と反落の分岐"),
+        ]
+    note = _direction_precision_note(performance)
+    return [{"label": label, "summary": summary, "note": note} for label, summary in rows]
+
+
+def _direction_precision_note(performance):
+    accuracy = _performance_float(performance, "directional_accuracy")
+    if accuracy is not None and accuracy < 0.55:
+        return "方向精度は低いため、節目確認を優先"
+    return "方向だけでなく、節目とレンジ確認を優先"
+
+
+def _top_external(world_model, decision):
+    us = decision.get("us_index_confirmation") or {}
+    market = decision.get("market_stress") or {}
+    return {
+        "us_indices": us.get("label") or "データ待ち",
+        "chase_risk": _chase_risk_label(world_model.get("chase_risk")),
+        "us_reason": (us.get("reasons") or ["米国3指数データ待ち"])[0],
+        "market_stress": market.get("label") or "通常",
+        "market_impact": market.get("impact") or "中立",
+    }
+
+
+def _top_confidence(decision, performance):
+    data_quality_score = int(decision.get("data_quality_score") or 0)
+    t1_rate = _performance_float(performance, "target_t1_hit_rate")
+    return {
+        "data_quality": "高" if data_quality_score >= 80 else "中" if data_quality_score >= 60 else "低",
+        "direction": _direction_confidence(performance),
+        "range": "中" if t1_rate is None or t1_rate < 0.75 else "中〜高",
+        "validation_note": "方向精度は限定的。レンジ・節目確認を優先。詳細は検証ページ。",
+    }
+
+
+def _direction_confidence(performance):
+    accuracy = _performance_float(performance, "directional_accuracy")
+    if accuracy is None:
+        return "低〜中"
+    if accuracy >= 0.6:
+        return "中"
+    if accuracy >= 0.45:
+        return "低〜中"
+    return "低〜中"
+
+
+def _performance_float(performance, key):
+    if not isinstance(performance, dict) or performance.get(key) is None:
+        return None
+    try:
+        return float(performance.get(key))
+    except (TypeError, ValueError):
+        return None
 
 
 def ensure_plain_summary_card_display(world_model):
