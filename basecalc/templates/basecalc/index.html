@@ -859,7 +859,6 @@
                     });
                 }
                 updateSentimentMeter();
-                updateScoreBars();
             };
 
             const buildUrlFromForm = (form) => {
@@ -945,19 +944,7 @@
                 });
             }
 
-            function updateScoreBars() {
-                document.querySelectorAll(".wm-score-track i").forEach((bar) => {
-                    const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
-                    bar.style.transform = `scaleX(${value / 100})`;
-                });
-                document.querySelectorAll(".stress-meter__track i, .wm-forecast-meter__bar i").forEach((bar) => {
-                    const value = Math.max(0, Math.min(100, Number(bar.getAttribute("data-value") || 0)));
-                    bar.style.transform = `scaleX(${value / 100})`;
-                });
-            }
-
             updateSentimentMeter();
-            updateScoreBars();
         });
     </script>
 </body>
