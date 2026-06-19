@@ -317,6 +317,148 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rendered_context['decision']['direction_label'], '上目線')
         build_context.assert_not_called()
 
+    def test_get_updates_saved_snapshot_current_price_from_newer_market_snapshot(self):
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00 JST',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'is_statistically_valid': False},
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {
+                'price_data': {
+                    'last_success_at': '2026-06-17T00:00:00+00:00',
+                    'source': '225navi:NIY=F',
+                }
+            },
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '41000',
+        }
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=timezone.make_aware(datetime(2026, 6, 18, 0, 0)),
+            price=42500,
+            open=42000,
+            high=42600,
+            low=41900,
+            close=42500,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='ready',
+        )
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.build_context') as build_context, \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 42500)
+        self.assertEqual(rendered_context['data']['price_display'], '42,500')
+        self.assertEqual(rendered_context['data']['world_model']['price'], 42500)
+        self.assertEqual(rendered_context['decision']['price'], 42500)
+        self.assertEqual(rendered_context['price_param'], '42500')
+        build_context.assert_not_called()
+
+    def test_get_updates_saved_snapshot_current_price_when_saved_timestamp_is_newer_but_price_differs(self):
+        snapshot = {
+            'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
+            'world_model': {
+                'direction': 'up',
+                'price': 66670,
+                'last_updated_display': '2026-06-19 11:39 JST',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'is_statistically_valid': False},
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {
+                'price_data': {
+                    'last_success_at': '2026-06-19T02:39:39+00:00',
+                    'source': '225navi:NIY=F',
+                }
+            },
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '66670',
+            'generated_at': '2026-06-19T02:39:39+00:00',
+        }
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=timezone.make_aware(datetime(2026, 6, 18, 0, 0)),
+            price=71240,
+            open=70590,
+            high=71530,
+            low=70330,
+            close=71240,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='ready',
+        )
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 71240)
+        self.assertEqual(rendered_context['data']['price_display'], '71,240')
+        self.assertEqual(rendered_context['decision']['price'], 71240)
+        self.assertEqual(rendered_context['price_param'], '71240')
+
     def test_basecalc_top_stops_prediction_when_gate_is_not_met(self):
         snapshot = {
             'data': {'price_display': '41,000'},

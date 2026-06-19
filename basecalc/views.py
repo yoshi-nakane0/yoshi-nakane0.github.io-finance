@@ -11,7 +11,7 @@ from .intermarket_technicals import build_us_index_technical_context
 from .market_bars import attach_saved_daily_bars
 from .market_shock import build_market_shock_context
 from .market_context import _price_action_fallback_assets
-from .nikkei_bias import calculate_bias, get_jgb10y_yield_percent, get_nikkei_per_values
+from .nikkei_bias import get_jgb10y_yield_percent, get_nikkei_per_values
 from .models import MarketSnapshot, WorldModelPrediction
 from .outcomes import (
     evaluate_due_predictions,
@@ -333,6 +333,7 @@ def hydrate_saved_snapshot_context(context):
     world_model = context.get("world_model") or {}
     if not isinstance(world_model, dict):
         return context
+    hydrate_saved_snapshot_current_price(context, world_model)
     intermarket = world_model.get("us_index_confirmation") or {}
     components = intermarket.get("components") if isinstance(intermarket, dict) else {}
     if not components:
@@ -348,6 +349,89 @@ def hydrate_saved_snapshot_context(context):
             world_model.get("us_index_confirmation") or world_model.get("intermarket_technicals"),
         )
     return context
+
+
+def hydrate_saved_snapshot_current_price(context, world_model):
+    latest_snapshot = get_stale_futures_snapshot()
+    latest_price = price_from_futures_snapshot(latest_snapshot)
+    if latest_price is None:
+        return context
+    if not should_update_saved_snapshot_price(context, latest_snapshot):
+        return context
+
+    world_model["price"] = latest_price
+    data = context.setdefault("data", {})
+    data["price_display"] = format_price(latest_price, decimals=0)
+    data_world_model = data.get("world_model")
+    if isinstance(data_world_model, dict):
+        data_world_model["price"] = latest_price
+    context["price_param"] = format_price_param(latest_price)
+
+    basecalc_status = dict(context.get("basecalc_status") or {})
+    basecalc_status["price_data"] = price_status_entry(
+        latest_snapshot,
+        world_model.get("readiness_level"),
+    )
+    context["basecalc_status"] = basecalc_status
+    context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    return context
+
+
+def should_update_saved_snapshot_price(context, latest_snapshot):
+    latest_price = price_from_futures_snapshot(latest_snapshot)
+    saved_price = normalize_price((context.get("world_model") or {}).get("price"))
+    if latest_price is not None and saved_price is not None and latest_price != saved_price:
+        return True
+    latest_time = _snapshot_fetched_at(latest_snapshot)
+    saved_time = _saved_snapshot_price_time(context)
+    if latest_time and saved_time:
+        return latest_time >= saved_time
+    return True
+
+
+def _snapshot_fetched_at(snapshot):
+    if not isinstance(snapshot, dict):
+        return None
+    return _parse_saved_snapshot_time(snapshot.get("fetched_at"))
+
+
+def _saved_snapshot_price_time(context):
+    status = context.get("basecalc_status") or {}
+    price_data = status.get("price_data") if isinstance(status, dict) else {}
+    if isinstance(price_data, dict):
+        parsed = _parse_saved_snapshot_time(price_data.get("last_success_at"))
+        if parsed:
+            return parsed
+    world_model = context.get("world_model") or {}
+    if isinstance(world_model, dict):
+        parsed = _parse_saved_snapshot_time(world_model.get("last_updated_display"))
+        if parsed:
+            return parsed
+    return _parse_saved_snapshot_time(context.get("generated_at"))
+
+
+def _parse_saved_snapshot_time(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value).strip()
+        if text.endswith(" JST"):
+            text = text[:-4]
+            try:
+                parsed = datetime.strptime(text, "%Y-%m-%d %H:%M")
+            except ValueError:
+                return None
+            parsed = timezone.make_aware(parsed, timezone=timezone.get_fixed_timezone(540))
+        else:
+            try:
+                parsed = datetime.fromisoformat(text)
+            except ValueError:
+                return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone=dt_timezone.utc)
+    return parsed
 
 
 def _snapshot_from_world_model(world_model):
