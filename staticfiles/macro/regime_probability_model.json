@@ -1,6 +1,6 @@
 {
   "model_version": "regime_probability_v2_validated",
-  "evaluated_at": "2026-05-24",
+  "evaluated_at": "2026-06-19",
   "truth_source": "USREC",
   "target": "US recession probability",
   "horizon_months": 3,
@@ -13,14 +13,14 @@
   "metrics": {
     "roc_auc": 0.8952488687782806,
     "pr_auc": 0.5871836303074595,
-    "brier_score": 0.10132794109836059,
+    "brier_score": 0.1013295524856339,
     "calibration_bins": [
       {
         "lower": 0.0,
         "upper": 0.2,
         "count": 145,
         "event_count": 2,
-        "avg_probability": 0.07250583952485674,
+        "avg_probability": 0.07251061386125797,
         "event_rate": 0.013793103448275862,
         "smoothed_event_rate": 0.02040816326530612
       },
@@ -64,14 +64,6 @@
   },
   "rows": [
     {
-      "month": "2006-05-01",
-      "probability": 0.06368126947609166,
-      "event": false,
-      "regime_label": "slowdown",
-      "rule_strength": 64,
-      "data_quality": 67
-    },
-    {
       "month": "2006-06-01",
       "probability": 0.056418776887612994,
       "event": false,
@@ -89,7 +81,7 @@
     },
     {
       "month": "2006-08-01",
-      "probability": 0.02690894703189912,
+      "probability": 0.026908947031899114,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 72,
@@ -97,7 +89,7 @@
     },
     {
       "month": "2006-09-01",
-      "probability": 0.029045388378083552,
+      "probability": 0.029045388378083556,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 71,
@@ -129,7 +121,7 @@
     },
     {
       "month": "2007-01-01",
-      "probability": 0.0920781067389253,
+      "probability": 0.09207810673892529,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 62,
@@ -153,7 +145,7 @@
     },
     {
       "month": "2007-04-01",
-      "probability": 0.09583535030477844,
+      "probability": 0.09583535030477842,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -185,7 +177,7 @@
     },
     {
       "month": "2007-08-01",
-      "probability": 0.14023904263621312,
+      "probability": 0.14023904263621315,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -201,7 +193,7 @@
     },
     {
       "month": "2007-10-01",
-      "probability": 0.13407491281978023,
+      "probability": 0.13407491281978026,
       "event": true,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -241,7 +233,7 @@
     },
     {
       "month": "2008-03-01",
-      "probability": 0.6264354829565446,
+      "probability": 0.6264354829565447,
       "event": true,
       "regime_label": "slowdown",
       "rule_strength": 72,
@@ -249,7 +241,7 @@
     },
     {
       "month": "2008-04-01",
-      "probability": 0.7694623824928398,
+      "probability": 0.7694623824928397,
       "event": true,
       "regime_label": "slowdown",
       "rule_strength": 76,
@@ -265,7 +257,7 @@
     },
     {
       "month": "2008-06-01",
-      "probability": 0.9266391746555837,
+      "probability": 0.9266391746555834,
       "event": true,
       "regime_label": "slowdown",
       "rule_strength": 72,
@@ -273,7 +265,7 @@
     },
     {
       "month": "2008-07-01",
-      "probability": 0.944053939247517,
+      "probability": 0.9440539392475168,
       "event": true,
       "regime_label": "slowdown",
       "rule_strength": 74,
@@ -353,7 +345,7 @@
     },
     {
       "month": "2009-05-01",
-      "probability": 0.9895003150044456,
+      "probability": 0.9895003150044454,
       "event": false,
       "regime_label": "contraction",
       "rule_strength": 85,
@@ -361,7 +353,7 @@
     },
     {
       "month": "2009-06-01",
-      "probability": 0.9895003150044456,
+      "probability": 0.9895003150044454,
       "event": false,
       "regime_label": "contraction",
       "rule_strength": 85,
@@ -409,7 +401,7 @@
     },
     {
       "month": "2009-12-01",
-      "probability": 0.8412086460279333,
+      "probability": 0.8412086460279332,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 76,
@@ -417,7 +409,7 @@
     },
     {
       "month": "2010-01-01",
-      "probability": 0.2714824529207582,
+      "probability": 0.2714824529207581,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 64,
@@ -489,7 +481,7 @@
     },
     {
       "month": "2010-10-01",
-      "probability": 0.052877535260328234,
+      "probability": 0.05287753526032823,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 72,
@@ -497,7 +489,7 @@
     },
     {
       "month": "2010-11-01",
-      "probability": 0.16806434813360613,
+      "probability": 0.16806434813360616,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -505,7 +497,7 @@
     },
     {
       "month": "2010-12-01",
-      "probability": 0.0599707710066375,
+      "probability": 0.059970771006637495,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -513,7 +505,7 @@
     },
     {
       "month": "2011-01-01",
-      "probability": 0.057712915203629346,
+      "probability": 0.05771291520362935,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 71,
@@ -545,11 +537,11 @@
     },
     {
       "month": "2011-05-01",
-      "probability": 0.058889645190098705,
+      "probability": 0.061123802320592946,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
-      "data_quality": 89
+      "data_quality": 67
     },
     {
       "month": "2011-06-01",
@@ -641,7 +633,7 @@
     },
     {
       "month": "2012-05-01",
-      "probability": 0.07564592313957619,
+      "probability": 0.0756459231395762,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -705,7 +697,7 @@
     },
     {
       "month": "2013-01-01",
-      "probability": 0.11336806012843689,
+      "probability": 0.11336806012843692,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 74,
@@ -713,7 +705,7 @@
     },
     {
       "month": "2013-02-01",
-      "probability": 0.09504348954104919,
+      "probability": 0.0950434895410492,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -721,7 +713,7 @@
     },
     {
       "month": "2013-03-01",
-      "probability": 0.07236637022792723,
+      "probability": 0.07236637022792725,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -777,7 +769,7 @@
     },
     {
       "month": "2013-10-01",
-      "probability": 0.04563914807346102,
+      "probability": 0.04563914807346103,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 71,
@@ -785,7 +777,7 @@
     },
     {
       "month": "2013-11-01",
-      "probability": 0.049959205902688306,
+      "probability": 0.0499592059026883,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 72,
@@ -809,7 +801,7 @@
     },
     {
       "month": "2014-02-01",
-      "probability": 0.08626723897450078,
+      "probability": 0.08626723897450075,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 69,
@@ -881,7 +873,7 @@
     },
     {
       "month": "2014-11-01",
-      "probability": 0.017511705507756346,
+      "probability": 0.01751170550775635,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 79,
@@ -913,7 +905,7 @@
     },
     {
       "month": "2015-03-01",
-      "probability": 0.23437657881773194,
+      "probability": 0.23437657881773188,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -921,7 +913,7 @@
     },
     {
       "month": "2015-04-01",
-      "probability": 0.22742854502754337,
+      "probability": 0.2274285450275434,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -929,7 +921,7 @@
     },
     {
       "month": "2015-05-01",
-      "probability": 0.33635350366785477,
+      "probability": 0.33635350366785466,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 66,
@@ -1009,7 +1001,7 @@
     },
     {
       "month": "2016-03-01",
-      "probability": 0.41898524432261913,
+      "probability": 0.4189852443226191,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 66,
@@ -1017,7 +1009,7 @@
     },
     {
       "month": "2016-04-01",
-      "probability": 0.44279961804841056,
+      "probability": 0.4427996180484105,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 66,
@@ -1025,7 +1017,7 @@
     },
     {
       "month": "2016-05-01",
-      "probability": 0.37227855007856586,
+      "probability": 0.3722785500785659,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 65,
@@ -1049,7 +1041,7 @@
     },
     {
       "month": "2016-08-01",
-      "probability": 0.31908123079579265,
+      "probability": 0.3190812307957927,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 66,
@@ -1065,7 +1057,7 @@
     },
     {
       "month": "2016-10-01",
-      "probability": 0.3198759286964189,
+      "probability": 0.3198759286964188,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -1113,7 +1105,7 @@
     },
     {
       "month": "2017-04-01",
-      "probability": 0.027691599294580475,
+      "probability": 0.02769159929458047,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 78,
@@ -1129,7 +1121,7 @@
     },
     {
       "month": "2017-06-01",
-      "probability": 0.028291776739937418,
+      "probability": 0.028291776739937415,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 78,
@@ -1137,7 +1129,7 @@
     },
     {
       "month": "2017-07-01",
-      "probability": 0.06728256175293074,
+      "probability": 0.06728256175293072,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -1177,7 +1169,7 @@
     },
     {
       "month": "2017-12-01",
-      "probability": 0.017456048046801793,
+      "probability": 0.01745604804680179,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 80,
@@ -1273,7 +1265,7 @@
     },
     {
       "month": "2018-12-01",
-      "probability": 0.14464265376701965,
+      "probability": 0.14464265376701962,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 70,
@@ -1297,7 +1289,7 @@
     },
     {
       "month": "2019-03-01",
-      "probability": 0.18094412722856124,
+      "probability": 0.1809441272285613,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -1353,7 +1345,7 @@
     },
     {
       "month": "2019-10-01",
-      "probability": 0.3346282409392481,
+      "probability": 0.33462824093924814,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -1385,7 +1377,7 @@
     },
     {
       "month": "2020-02-01",
-      "probability": 0.46392891160278815,
+      "probability": 0.4639289116027882,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 68,
@@ -1409,7 +1401,7 @@
     },
     {
       "month": "2020-05-01",
-      "probability": 0.9646533887706682,
+      "probability": 0.9646533887706684,
       "event": false,
       "regime_label": "contraction",
       "rule_strength": 81,
@@ -1481,7 +1473,7 @@
     },
     {
       "month": "2021-02-01",
-      "probability": 0.13537135209878515,
+      "probability": 0.13537135209878517,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 67,
@@ -1505,7 +1497,7 @@
     },
     {
       "month": "2021-05-01",
-      "probability": 0.009461968532702298,
+      "probability": 0.009461968532702297,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 83,
@@ -1553,7 +1545,7 @@
     },
     {
       "month": "2021-11-01",
-      "probability": 0.014427855161940284,
+      "probability": 0.014427855161940282,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 83,
@@ -1585,7 +1577,7 @@
     },
     {
       "month": "2022-03-01",
-      "probability": 0.017522717659866884,
+      "probability": 0.01752271765986689,
       "event": false,
       "regime_label": "expansion",
       "rule_strength": 82,
@@ -1625,7 +1617,7 @@
     },
     {
       "month": "2022-08-01",
-      "probability": 0.17989681624295367,
+      "probability": 0.1798968162429537,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 76,
@@ -1697,7 +1689,7 @@
     },
     {
       "month": "2023-05-01",
-      "probability": 0.3256237087194713,
+      "probability": 0.32562370871947144,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 73,
@@ -1913,7 +1905,7 @@
     },
     {
       "month": "2025-08-01",
-      "probability": 0.13858289042160604,
+      "probability": 0.13858289042160601,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 61,
@@ -1945,7 +1937,7 @@
     },
     {
       "month": "2025-12-01",
-      "probability": 0.42568308414558337,
+      "probability": 0.4256830841455833,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 60,
@@ -1961,7 +1953,7 @@
     },
     {
       "month": "2026-02-01",
-      "probability": 0.17047166734703223,
+      "probability": 0.17512384414360022,
       "event": false,
       "regime_label": "slowdown",
       "rule_strength": 74,
@@ -1969,27 +1961,35 @@
     },
     {
       "month": "2026-03-01",
-      "probability": 0.10122405433263434,
+      "probability": 0.08804470718859919,
       "event": false,
       "regime_label": "slowdown",
-      "rule_strength": 75,
+      "rule_strength": 76,
       "data_quality": 100
     },
     {
       "month": "2026-04-01",
-      "probability": 0.060009517417970636,
+      "probability": 0.05517882291910953,
       "event": false,
       "regime_label": "recovery",
       "rule_strength": 80,
-      "data_quality": 99
+      "data_quality": 100
     },
     {
       "month": "2026-05-01",
-      "probability": 0.060432140563962414,
+      "probability": 0.06394787853118786,
       "event": false,
-      "regime_label": "recovery",
-      "rule_strength": 80,
-      "data_quality": 90
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 98
+    },
+    {
+      "month": "2026-06-01",
+      "probability": 0.07198151800287787,
+      "event": false,
+      "regime_label": "slowdown",
+      "rule_strength": 76,
+      "data_quality": 86
     }
   ],
   "limitations": [

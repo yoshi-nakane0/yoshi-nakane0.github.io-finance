@@ -1,71 +1,71 @@
 {
   "model_version": "crash_probability_logistic_v1",
-  "trained_at": "2026-05-24",
+  "trained_at": "2026-06-19",
   "target": "GSPC",
   "horizon_days": 63,
   "drawdown_threshold_pct": -10.0,
-  "target_mode": "monthly_fallback",
-  "daily_price_coverage_pct": null,
+  "target_mode": "daily_max_drawdown",
+  "daily_price_coverage_pct": 96.39,
   "prediction_label": "今後63日相当でGSPCが-10%以上下落する推定確率",
-  "current_probability": 0.037037,
-  "current_raw_probability": 0.485484,
+  "current_probability": 0.104651,
+  "current_raw_probability": 0.146763,
   "current_features": {
-    "market_stress_score": 16,
-    "forward_risk_score": 19,
-    "volatility_sentiment_score": 25,
+    "market_stress_score": 17,
+    "forward_risk_score": 21,
+    "volatility_sentiment_score": 29,
     "credit_liquidity_score": 6,
     "macro_cycle_score": 38,
-    "price_action_score": 1,
+    "price_action_score": 2,
     "data_quality_pct": 100,
     "rule_agreement_pct": 83
   },
   "sample_count": 240,
-  "event_count": 19,
-  "training_samples": 156,
-  "training_event_count": 14,
-  "validation_samples": 84,
-  "validation_event_count": 5,
+  "event_count": 28,
+  "training_samples": 120,
+  "training_event_count": 16,
+  "validation_samples": 120,
+  "validation_event_count": 12,
   "validation_event_rate_interval": [
-    0.025690182263433017,
-    0.13188436100535988
+    0.058133016993107606,
+    0.16668319985163604
   ],
   "validation": {
-    "roc_auc": 0.84557,
-    "pr_auc": 0.356588,
-    "brier_score": 0.051155,
+    "roc_auc": 0.513889,
+    "pr_auc": 0.099646,
+    "brier_score": 0.091769,
     "thresholds": [
       {
         "threshold": 0.1,
-        "precision": 0.142857,
+        "precision": 0.1,
         "recall": 1.0,
-        "f1": 0.25,
-        "false_positive_rate": 0.379747,
-        "tp": 5,
-        "fp": 30,
-        "tn": 49,
+        "f1": 0.181818,
+        "false_positive_rate": 1.0,
+        "tp": 12,
+        "fp": 108,
+        "tn": 0,
         "fn": 0
       },
       {
         "threshold": 0.2,
-        "precision": 0.333333,
-        "recall": 0.2,
-        "f1": 0.25,
-        "false_positive_rate": 0.025316,
-        "tp": 1,
-        "fp": 2,
-        "tn": 77,
-        "fn": 4
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": null,
+        "false_positive_rate": 0.027778,
+        "tp": 0,
+        "fp": 3,
+        "tn": 105,
+        "fn": 12
       },
       {
         "threshold": 0.3,
-        "precision": 0.333333,
-        "recall": 0.2,
-        "f1": 0.25,
-        "false_positive_rate": 0.025316,
-        "tp": 1,
-        "fp": 2,
-        "tn": 77,
-        "fn": 4
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": null,
+        "false_positive_rate": 0.009259,
+        "tp": 0,
+        "fp": 1,
+        "tn": 107,
+        "fn": 12
       },
       {
         "threshold": 0.5,
@@ -75,37 +75,37 @@
         "false_positive_rate": 0.0,
         "tp": 0,
         "fp": 0,
-        "tn": 79,
-        "fn": 5
+        "tn": 108,
+        "fn": 12
       }
     ],
     "calibration_bins": [
       {
         "lower": 0.0,
         "upper": 0.2,
-        "count": 81,
-        "event_count": 4,
-        "avg_probability": 0.088568,
-        "event_rate": 0.049383,
-        "smoothed_event_rate": 0.060241
+        "count": 117,
+        "event_count": 12,
+        "avg_probability": 0.115427,
+        "event_rate": 0.102564,
+        "smoothed_event_rate": 0.109244
       },
       {
         "lower": 0.2,
         "upper": 0.4,
+        "count": 3,
+        "event_count": 0,
+        "avg_probability": 0.277778,
+        "event_rate": 0.0,
+        "smoothed_event_rate": 0.2
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.6,
         "count": 0,
         "event_count": 0,
         "avg_probability": null,
         "event_rate": null,
         "smoothed_event_rate": null
-      },
-      {
-        "lower": 0.4,
-        "upper": 0.6,
-        "count": 3,
-        "event_count": 1,
-        "avg_probability": 0.4,
-        "event_rate": 0.333333,
-        "smoothed_event_rate": 0.4
       },
       {
         "lower": 0.6,
@@ -126,97 +126,97 @@
         "smoothed_event_rate": null
       }
     ],
-    "raw_roc_auc": 0.313924,
-    "raw_pr_auc": 0.238651,
-    "raw_brier_score": 0.276911,
+    "raw_roc_auc": 0.503858,
+    "raw_pr_auc": 0.112758,
+    "raw_brier_score": 0.11187,
     "raw_calibration_bins": [
       {
         "lower": 0.0,
         "upper": 0.2,
-        "count": 14,
-        "event_count": 2,
-        "avg_probability": 0.123805,
-        "event_rate": 0.142857,
-        "smoothed_event_rate": 0.1875
+        "count": 84,
+        "event_count": 8,
+        "avg_probability": 0.117733,
+        "event_rate": 0.095238,
+        "smoothed_event_rate": 0.104651
       },
       {
         "lower": 0.2,
         "upper": 0.4,
-        "count": 18,
-        "event_count": 2,
-        "avg_probability": 0.301892,
-        "event_rate": 0.111111,
-        "smoothed_event_rate": 0.15
+        "count": 33,
+        "event_count": 4,
+        "avg_probability": 0.29091,
+        "event_rate": 0.121212,
+        "smoothed_event_rate": 0.142857
       },
       {
         "lower": 0.4,
         "upper": 0.6,
-        "count": 25,
+        "count": 1,
         "event_count": 0,
-        "avg_probability": 0.495392,
+        "avg_probability": 0.409784,
         "event_rate": 0.0,
-        "smoothed_event_rate": 0.037037
+        "smoothed_event_rate": 0.333333
       },
       {
         "lower": 0.6,
         "upper": 0.8,
-        "count": 24,
+        "count": 2,
         "event_count": 0,
-        "avg_probability": 0.681072,
+        "avg_probability": 0.711169,
         "event_rate": 0.0,
-        "smoothed_event_rate": 0.038462
+        "smoothed_event_rate": 0.25
       },
       {
         "lower": 0.8,
         "upper": 1.0,
-        "count": 3,
-        "event_count": 1,
-        "avg_probability": 0.872806,
-        "event_rate": 0.333333,
-        "smoothed_event_rate": 0.4
+        "count": 0,
+        "event_count": 0,
+        "avg_probability": null,
+        "event_rate": null,
+        "smoothed_event_rate": null
       }
     ]
   },
   "coefficients": [
     {
-      "feature": "rule_agreement_pct",
-      "coefficient": 0.810493,
-      "direction": "raises_risk"
-    },
-    {
       "feature": "credit_liquidity_score",
-      "coefficient": 0.584662,
+      "coefficient": 0.593116,
       "direction": "raises_risk"
     },
     {
       "feature": "forward_risk_score",
-      "coefficient": 0.565985,
+      "coefficient": 0.512709,
       "direction": "raises_risk"
     },
     {
       "feature": "market_stress_score",
-      "coefficient": 0.414911,
+      "coefficient": 0.453436,
+      "direction": "raises_risk"
+    },
+    {
+      "feature": "data_quality_pct",
+      "coefficient": 0.452183,
+      "direction": "raises_risk"
+    },
+    {
+      "feature": "rule_agreement_pct",
+      "coefficient": 0.431923,
       "direction": "raises_risk"
     },
     {
       "feature": "price_action_score",
-      "coefficient": -0.399371,
+      "coefficient": -0.29499,
+      "direction": "lowers_risk"
+    },
+    {
+      "feature": "macro_cycle_score",
+      "coefficient": -0.223967,
       "direction": "lowers_risk"
     },
     {
       "feature": "volatility_sentiment_score",
-      "coefficient": 0.387418,
-      "direction": "raises_risk"
-    },
-    {
-      "feature": "macro_cycle_score",
-      "coefficient": -0.09066,
+      "coefficient": -0.205818,
       "direction": "lowers_risk"
-    },
-    {
-      "feature": "data_quality_pct",
-      "coefficient": 0.064587,
-      "direction": "raises_risk"
     }
   ],
   "model": {
@@ -231,47 +231,712 @@
       "rule_agreement_pct"
     ],
     "weights": [
-      -0.651389,
-      0.414911,
-      0.565985,
-      0.387418,
-      0.584662,
-      -0.09066,
-      -0.399371,
-      0.064587,
-      0.810493
+      -0.453225,
+      0.453436,
+      0.512709,
+      -0.205818,
+      0.593116,
+      -0.223967,
+      -0.29499,
+      0.452183,
+      0.431923
     ],
     "means": [
-      0.266154,
-      0.273718,
-      0.271346,
-      0.318205,
-      0.168269,
-      0.238526,
-      0.778718,
-      0.78
+      0.217167,
+      0.2825,
+      0.2305,
+      0.355,
+      0.027333,
+      0.097167,
+      0.499583,
+      0.69525
     ],
     "scales": [
-      0.147611,
-      0.137725,
-      0.117239,
-      0.268654,
-      0.217666,
-      0.221391,
-      0.01125,
-      0.148043
+      0.095465,
+      0.144875,
+      0.188992,
+      0.29025,
+      0.060135,
+      0.152032,
+      0.280453,
+      0.293734
     ],
-    "positive_weight": 10.142857,
-    "training_samples": 156,
-    "training_event_count": 14
+    "positive_weight": 6.5,
+    "training_samples": 120,
+    "training_event_count": 16
   },
   "rows": [
     {
+      "month": "2016-06-01",
+      "event": false,
+      "max_drawdown_pct": -0.491222,
+      "lead_time_days": 5,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 33,
+        "forward_risk_score": 32,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 25,
+        "price_action_score": 37,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 69
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.32663
+    },
+    {
+      "month": "2016-07-01",
+      "event": false,
+      "max_drawdown_pct": -2.2005,
+      "lead_time_days": 45,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 26,
+        "forward_risk_score": 30,
+        "volatility_sentiment_score": 23,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 25,
+        "price_action_score": 10,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 80
+      },
+      "probability": 0.333333,
+      "raw_probability": 0.409784
+    },
+    {
+      "month": "2016-08-01",
+      "event": false,
+      "max_drawdown_pct": -3.363044,
+      "lead_time_days": 63,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 26,
+        "forward_risk_score": 29,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 25,
+        "price_action_score": 13,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 80
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.395133
+    },
+    {
+      "month": "2016-09-01",
+      "event": false,
+      "max_drawdown_pct": -3.832091,
+      "lead_time_days": 35,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 25,
+        "forward_risk_score": 27,
+        "volatility_sentiment_score": 15,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 25,
+        "price_action_score": 20,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 80
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.348546
+    },
+    {
+      "month": "2016-10-01",
+      "event": false,
+      "max_drawdown_pct": -1.926956,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 28,
+        "forward_risk_score": 30,
+        "volatility_sentiment_score": 25,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 25,
+        "price_action_score": 19,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 80
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.385498
+    },
+    {
+      "month": "2016-11-01",
+      "event": false,
+      "max_drawdown_pct": -0.351553,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 20,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 28,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 12,
+        "price_action_score": 6,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.397801
+    },
+    {
+      "month": "2016-12-01",
+      "event": false,
+      "max_drawdown_pct": 0.848658,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 22,
+        "volatility_sentiment_score": 23,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 12,
+        "price_action_score": 7,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.378043
+    },
+    {
+      "month": "2017-01-01",
+      "event": false,
+      "max_drawdown_pct": 0.029836,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 20,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 28,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 12,
+        "price_action_score": 4,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.382545
+    },
+    {
+      "month": "2017-02-01",
+      "event": false,
+      "max_drawdown_pct": -1.467649,
+      "lead_time_days": 44,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 28,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 12,
+        "price_action_score": 1,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.385078
+    },
+    {
+      "month": "2017-03-01",
+      "event": false,
+      "max_drawdown_pct": -1.429286,
+      "lead_time_days": 13,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 21,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 12,
+        "price_action_score": 10,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.363827
+    },
+    {
+      "month": "2017-04-01",
+      "event": false,
+      "max_drawdown_pct": -1.139582,
+      "lead_time_days": 17,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 17,
+        "forward_risk_score": 21,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 1,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.191419
+    },
+    {
+      "month": "2017-05-01",
+      "event": false,
+      "max_drawdown_pct": -0.085001,
+      "lead_time_days": 36,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 15,
+        "forward_risk_score": 19,
+        "volatility_sentiment_score": 23,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 1,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.1935
+    },
+    {
+      "month": "2017-06-01",
+      "event": false,
+      "max_drawdown_pct": -0.563665,
+      "lead_time_days": 6,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 17,
+        "forward_risk_score": 19,
+        "volatility_sentiment_score": 23,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 9,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.184273
+    },
+    {
+      "month": "2017-07-01",
+      "event": false,
+      "max_drawdown_pct": -1.811521,
+      "lead_time_days": 18,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 18,
+        "forward_risk_score": 21,
+        "volatility_sentiment_score": 28,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 6,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.187162
+    },
+    {
+      "month": "2017-08-01",
+      "event": false,
+      "max_drawdown_pct": -0.558324,
+      "lead_time_days": 5,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 16,
+        "forward_risk_score": 18,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 11,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.157147
+    },
+    {
+      "month": "2017-09-01",
+      "event": false,
+      "max_drawdown_pct": 0.3874,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 17,
+        "forward_risk_score": 21,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 2,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.188434
+    },
+    {
+      "month": "2017-10-01",
+      "event": false,
+      "max_drawdown_pct": -0.413158,
+      "lead_time_days": 15,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 16,
+        "forward_risk_score": 20,
+        "volatility_sentiment_score": 25,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 0.0,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.190025
+    },
+    {
+      "month": "2017-11-01",
+      "event": false,
+      "max_drawdown_pct": -0.691577,
+      "lead_time_days": 6,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 15,
+        "forward_risk_score": 19,
+        "volatility_sentiment_score": 23,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 0.0,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.196546
+    },
+    {
+      "month": "2017-12-01",
+      "event": false,
+      "max_drawdown_pct": -3.46386,
+      "lead_time_days": 39,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 17,
+        "forward_risk_score": 21,
+        "volatility_sentiment_score": 28,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 3,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 87
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.188797
+    },
+    {
+      "month": "2018-01-01",
+      "event": false,
+      "max_drawdown_pct": -8.598668,
+      "lead_time_days": 8,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 15,
+        "forward_risk_score": 18,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 5,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 94
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.181271
+    },
+    {
+      "month": "2018-02-01",
+      "event": false,
+      "max_drawdown_pct": -4.862139,
+      "lead_time_days": 33,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 24,
+        "forward_risk_score": 23,
+        "volatility_sentiment_score": 35,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 25,
+        "price_action_score": 27,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 78
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.150737
+    },
+    {
+      "month": "2018-03-01",
+      "event": false,
+      "max_drawdown_pct": -2.233742,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 29,
+        "forward_risk_score": 29,
+        "volatility_sentiment_score": 15,
+        "credit_liquidity_score": 38,
+        "macro_cycle_score": 38,
+        "price_action_score": 30,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 70
+      },
+      "probability": 0.142857,
+      "raw_probability": 0.233274
+    },
+    {
+      "month": "2018-04-01",
+      "event": false,
+      "max_drawdown_pct": -0.691832,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 22,
+        "forward_risk_score": 22,
+        "volatility_sentiment_score": 25,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 20,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 84
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.118111
+    },
+    {
+      "month": "2018-05-01",
+      "event": false,
+      "max_drawdown_pct": -0.208487,
+      "lead_time_days": 27,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 24,
+        "forward_risk_score": 26,
+        "volatility_sentiment_score": 35,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 18,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 77
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.124891
+    },
+    {
+      "month": "2018-06-01",
+      "event": false,
+      "max_drawdown_pct": -0.189457,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 27,
+        "forward_risk_score": 28,
+        "volatility_sentiment_score": 40,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 23,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 77
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.131803
+    },
+    {
+      "month": "2018-07-01",
+      "event": false,
+      "max_drawdown_pct": -0.104035,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 20,
+        "forward_risk_score": 22,
+        "volatility_sentiment_score": 25,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 12,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 77
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.113736
+    },
+    {
+      "month": "2018-08-01",
+      "event": false,
+      "max_drawdown_pct": -8.970127,
+      "lead_time_days": 59,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 21,
+        "forward_risk_score": 25,
+        "volatility_sentiment_score": 33,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 8,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 77
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.129095
+    },
+    {
+      "month": "2018-09-01",
+      "event": false,
+      "max_drawdown_pct": -9.657579,
+      "lead_time_days": 54,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 20,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 3,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 77
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.134449
+    },
+    {
+      "month": "2018-10-01",
+      "event": true,
+      "max_drawdown_pct": -13.299206,
+      "lead_time_days": 54,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 29,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 38,
+        "price_action_score": 48,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 69
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.08125
+    },
+    {
+      "month": "2018-11-01",
+      "event": true,
+      "max_drawdown_pct": -14.820458,
+      "lead_time_days": 24,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 25,
+        "forward_risk_score": 25,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 25,
+        "macro_cycle_score": 38,
+        "price_action_score": 23,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 84
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.182443
+    },
+    {
+      "month": "2018-12-01",
+      "event": false,
+      "max_drawdown_pct": -2.351964,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 49,
+        "forward_risk_score": 42,
+        "volatility_sentiment_score": 30,
+        "credit_liquidity_score": 50,
+        "macro_cycle_score": 50,
+        "price_action_score": 73,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 31
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.174685
+    },
+    {
+      "month": "2019-01-01",
+      "event": false,
+      "max_drawdown_pct": 0.072111,
+      "lead_time_days": 7,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 26,
+        "forward_risk_score": 24,
+        "volatility_sentiment_score": 25,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 50,
+        "price_action_score": 31,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 68
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.066279
+    },
+    {
+      "month": "2019-02-01",
+      "event": false,
+      "max_drawdown_pct": -1.487523,
+      "lead_time_days": 8,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 22,
+        "forward_risk_score": 22,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 50,
+        "price_action_score": 20,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 72
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.070478
+    },
+    {
+      "month": "2019-03-01",
+      "event": false,
+      "max_drawdown_pct": -2.905019,
+      "lead_time_days": 61,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 19,
+        "volatility_sentiment_score": 10,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 50,
+        "price_action_score": 21,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 78
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.06597
+    },
+    {
+      "month": "2019-04-01",
+      "event": false,
+      "max_drawdown_pct": -6.836108,
+      "lead_time_days": 34,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 22,
+        "volatility_sentiment_score": 20,
+        "credit_liquidity_score": 12,
+        "macro_cycle_score": 50,
+        "price_action_score": 7,
+        "data_quality_pct": 78,
+        "rule_agreement_pct": 74
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.080157
+    },
+    {
       "month": "2019-05-01",
       "event": false,
-      "max_drawdown_pct": 6.337067,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.276524,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 31,
         "forward_risk_score": 25,
@@ -282,15 +947,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 61
       },
-      "probability": 0.1875,
-      "raw_probability": 0.049829
+      "probability": 0.104651,
+      "raw_probability": 0.03509
     },
     {
       "month": "2019-06-01",
       "event": false,
-      "max_drawdown_pct": -0.520098,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -3.438755,
+      "lead_time_days": 45,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 22,
         "forward_risk_score": 25,
@@ -301,15 +966,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 72
       },
-      "probability": 0.1875,
-      "raw_probability": 0.136914
+      "probability": 0.104651,
+      "raw_probability": 0.05925
     },
     {
       "month": "2019-07-01",
       "event": false,
-      "max_drawdown_pct": -1.809163,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -4.689999,
+      "lead_time_days": 14,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 27,
         "forward_risk_score": 30,
@@ -320,15 +985,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 66
       },
-      "probability": 0.15,
-      "raw_probability": 0.209499
+      "probability": 0.104651,
+      "raw_probability": 0.069007
     },
     {
       "month": "2019-08-01",
       "event": false,
-      "max_drawdown_pct": 1.718118,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.327538,
+      "lead_time_days": 32,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 28,
         "forward_risk_score": 29,
@@ -339,15 +1004,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 72
       },
-      "probability": 0.1875,
-      "raw_probability": 0.161163
+      "probability": 0.104651,
+      "raw_probability": 0.041145
     },
     {
       "month": "2019-09-01",
       "event": false,
-      "max_drawdown_pct": 2.043177,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.994211,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 25,
         "forward_risk_score": 28,
@@ -358,15 +1023,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 67
       },
-      "probability": 0.1875,
-      "raw_probability": 0.138754
+      "probability": 0.104651,
+      "raw_probability": 0.090424
     },
     {
       "month": "2019-10-01",
       "event": false,
-      "max_drawdown_pct": 3.404704,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.966231,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 20,
         "forward_risk_score": 24,
@@ -377,15 +1042,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 68
       },
-      "probability": 0.1875,
-      "raw_probability": 0.144315
+      "probability": 0.104651,
+      "raw_probability": 0.084169
     },
     {
       "month": "2019-11-01",
       "event": false,
-      "max_drawdown_pct": -5.945915,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.521182,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 16,
         "forward_risk_score": 20,
@@ -396,15 +1061,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 74
       },
-      "probability": 0.1875,
-      "raw_probability": 0.118724
+      "probability": 0.104651,
+      "raw_probability": 0.078478
     },
     {
       "month": "2019-12-01",
-      "event": true,
-      "max_drawdown_pct": -20.00105,
-      "lead_time_days": 90,
-      "target_mode": "monthly_fallback",
+      "event": false,
+      "max_drawdown_pct": -8.560164,
+      "lead_time_days": 59,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 25,
@@ -415,15 +1080,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 68
       },
-      "probability": 0.1875,
-      "raw_probability": 0.171436
+      "probability": 0.104651,
+      "raw_probability": 0.091291
     },
     {
       "month": "2020-01-01",
       "event": true,
-      "max_drawdown_pct": -19.870592,
-      "lead_time_days": 60,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -30.634444,
+      "lead_time_days": 52,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 29,
         "forward_risk_score": 32,
@@ -434,15 +1099,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 61
       },
-      "probability": 0.15,
-      "raw_probability": 0.205516
+      "probability": 0.104651,
+      "raw_probability": 0.067707
     },
     {
       "month": "2020-02-01",
       "event": true,
-      "max_drawdown_pct": -12.511928,
-      "lead_time_days": 30,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -24.264275,
+      "lead_time_days": 23,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 58,
         "forward_risk_score": 58,
@@ -453,15 +1118,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 76
       },
-      "probability": 0.4,
-      "raw_probability": 0.89971
+      "probability": 0.142857,
+      "raw_probability": 0.383856
     },
     {
       "month": "2020-03-01",
       "event": false,
-      "max_drawdown_pct": 12.684404,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -4.414243,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 64,
         "forward_risk_score": 58,
@@ -472,15 +1137,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 71
       },
-      "probability": 0.4,
-      "raw_probability": 0.843449
+      "probability": 0.25,
+      "raw_probability": 0.690877
     },
     {
       "month": "2020-04-01",
       "event": false,
-      "max_drawdown_pct": 4.528182,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -3.173636,
+      "lead_time_days": 13,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 52,
         "forward_risk_score": 56,
@@ -491,15 +1156,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 69
       },
-      "probability": 0.4,
-      "raw_probability": 0.875259
+      "probability": 0.25,
+      "raw_probability": 0.731462
     },
     {
       "month": "2020-05-01",
       "event": false,
-      "max_drawdown_pct": 1.83884,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.38652,
+      "lead_time_days": 11,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 38,
@@ -510,15 +1175,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 55
       },
-      "probability": 0.15,
-      "raw_probability": 0.326092
+      "probability": 0.142857,
+      "raw_probability": 0.284139
     },
     {
       "month": "2020-06-01",
       "event": false,
-      "max_drawdown_pct": 5.510132,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.502213,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 43,
         "forward_risk_score": 49,
@@ -529,15 +1194,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 48
       },
-      "probability": 0.037037,
-      "raw_probability": 0.519834
+      "probability": 0.142857,
+      "raw_probability": 0.375729
     },
     {
       "month": "2020-07-01",
       "event": false,
-      "max_drawdown_pct": -0.035467,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.045519,
+      "lead_time_days": 54,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 32,
         "forward_risk_score": 36,
@@ -548,15 +1213,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 59
       },
-      "probability": 0.15,
-      "raw_probability": 0.3064
+      "probability": 0.104651,
+      "raw_probability": 0.151009
     },
     {
       "month": "2020-08-01",
       "event": false,
-      "max_drawdown_pct": -6.580848,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -7.524766,
+      "lead_time_days": 23,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 24,
         "forward_risk_score": 29,
@@ -567,15 +1232,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 81
       },
-      "probability": 0.037037,
-      "raw_probability": 0.549343
+      "probability": 0.142857,
+      "raw_probability": 0.24037
     },
     {
       "month": "2020-09-01",
       "event": false,
       "max_drawdown_pct": -2.766579,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "lead_time_days": 30,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 29,
         "forward_risk_score": 30,
@@ -586,15 +1251,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 80
       },
-      "probability": 0.037037,
-      "raw_probability": 0.422085
+      "probability": 0.142857,
+      "raw_probability": 0.37839
     },
     {
       "month": "2020-10-01",
       "event": false,
-      "max_drawdown_pct": 10.754564,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 1.23182,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 34,
@@ -605,15 +1270,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 67
       },
-      "probability": 0.037037,
-      "raw_probability": 0.41043
+      "probability": 0.142857,
+      "raw_probability": 0.275051
     },
     {
       "month": "2020-11-01",
       "event": false,
-      "max_drawdown_pct": 2.557139,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.714046,
+      "lead_time_days": 14,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 20,
         "forward_risk_score": 25,
@@ -624,15 +1289,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 81
       },
-      "probability": 0.037037,
-      "raw_probability": 0.403426
+      "probability": 0.142857,
+      "raw_probability": 0.205234
     },
     {
       "month": "2020-12-01",
       "event": false,
-      "max_drawdown_pct": -1.113666,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.475483,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 19,
         "forward_risk_score": 23,
@@ -643,15 +1308,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 81
       },
-      "probability": 0.15,
-      "raw_probability": 0.343283
+      "probability": 0.104651,
+      "raw_probability": 0.198083
     },
     {
       "month": "2021-01-01",
       "event": false,
-      "max_drawdown_pct": 2.609145,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 1.460056,
+      "lead_time_days": 32,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 24,
         "forward_risk_score": 28,
@@ -662,15 +1327,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 74
       },
-      "probability": 0.037037,
-      "raw_probability": 0.40116
+      "probability": 0.142857,
+      "raw_probability": 0.200429
     },
     {
       "month": "2021-02-01",
       "event": false,
-      "max_drawdown_pct": 4.243863,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.11987,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 22,
         "forward_risk_score": 25,
@@ -681,15 +1346,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 81
       },
-      "probability": 0.15,
-      "raw_probability": 0.382416
+      "probability": 0.104651,
+      "raw_probability": 0.195584
     },
     {
       "month": "2021-03-01",
       "event": false,
-      "max_drawdown_pct": 5.242532,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 1.18252,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 13,
         "forward_risk_score": 15,
@@ -700,15 +1365,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 94
       },
-      "probability": 0.15,
-      "raw_probability": 0.316705
+      "probability": 0.142857,
+      "raw_probability": 0.299081
     },
     {
       "month": "2021-04-01",
       "event": false,
-      "max_drawdown_pct": 0.548649,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.825283,
+      "lead_time_days": 12,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 19,
         "forward_risk_score": 22,
@@ -719,15 +1384,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 87
       },
-      "probability": 0.037037,
-      "raw_probability": 0.421587
+      "probability": 0.142857,
+      "raw_probability": 0.266902
     },
     {
       "month": "2021-05-01",
       "event": false,
-      "max_drawdown_pct": 2.221401,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.895782,
+      "lead_time_days": 18,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 16,
         "forward_risk_score": 18,
@@ -738,15 +1403,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 94
       },
-      "probability": 0.15,
-      "raw_probability": 0.366266
+      "probability": 0.142857,
+      "raw_probability": 0.245748
     },
     {
       "month": "2021-06-01",
       "event": false,
-      "max_drawdown_pct": 0.233625,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.907732,
+      "lead_time_days": 19,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 25,
@@ -757,15 +1422,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 87
       },
-      "probability": 0.037037,
-      "raw_probability": 0.464347
+      "probability": 0.142857,
+      "raw_probability": 0.208401
     },
     {
       "month": "2021-07-01",
       "event": false,
       "max_drawdown_pct": -1.99578,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "lead_time_days": 61,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 23,
@@ -776,15 +1441,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 83
       },
-      "probability": 0.15,
-      "raw_probability": 0.305835
+      "probability": 0.104651,
+      "raw_probability": 0.176073
     },
     {
       "month": "2021-08-01",
       "event": false,
-      "max_drawdown_pct": -4.756917,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -4.913463,
+      "lead_time_days": 34,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 24,
@@ -795,15 +1460,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 87
       },
-      "probability": 0.037037,
-      "raw_probability": 0.437814
+      "probability": 0.142857,
+      "raw_probability": 0.206165
     },
     {
       "month": "2021-09-01",
       "event": false,
-      "max_drawdown_pct": 6.023391,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.164365,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 25,
         "forward_risk_score": 23,
@@ -814,15 +1479,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 78
       },
-      "probability": 0.15,
-      "raw_probability": 0.234071
+      "probability": 0.104651,
+      "raw_probability": 0.149371
     },
     {
       "month": "2021-10-01",
       "event": false,
-      "max_drawdown_pct": -1.950547,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.005043,
+      "lead_time_days": 31,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 24,
@@ -833,15 +1498,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 87
       },
-      "probability": 0.037037,
-      "raw_probability": 0.446713
+      "probability": 0.142857,
+      "raw_probability": 0.212588
     },
     {
       "month": "2021-11-01",
       "event": false,
-      "max_drawdown_pct": -4.227284,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -5.265825,
+      "lead_time_days": 58,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 35,
@@ -852,15 +1517,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.609734
+      "probability": 0.142857,
+      "raw_probability": 0.228838
     },
     {
       "month": "2021-12-01",
-      "event": false,
-      "max_drawdown_pct": -8.229656,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -11.344099,
+      "lead_time_days": 54,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 21,
         "forward_risk_score": 24,
@@ -871,15 +1536,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 87
       },
-      "probability": 0.037037,
-      "raw_probability": 0.424541
+      "probability": 0.104651,
+      "raw_probability": 0.196801
     },
     {
       "month": "2022-01-01",
       "event": false,
-      "max_drawdown_pct": -8.495524,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -7.636935,
+      "lead_time_days": 36,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 26,
         "forward_risk_score": 21,
@@ -890,15 +1555,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 74
       },
-      "probability": 0.1875,
-      "raw_probability": 0.153027
+      "probability": 0.104651,
+      "raw_probability": 0.158781
     },
     {
       "month": "2022-02-01",
       "event": false,
       "max_drawdown_pct": -5.532992,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "lead_time_days": 60,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 39,
         "forward_risk_score": 38,
@@ -909,15 +1574,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 56
       },
-      "probability": 0.15,
-      "raw_probability": 0.315864
+      "probability": 0.104651,
+      "raw_probability": 0.180255
     },
     {
       "month": "2022-03-01",
       "event": true,
-      "max_drawdown_pct": -16.445095,
-      "lead_time_days": 90,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -13.897641,
+      "lead_time_days": 49,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 31,
         "forward_risk_score": 32,
@@ -928,15 +1593,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 62
       },
-      "probability": 0.15,
-      "raw_probability": 0.298295
+      "probability": 0.142857,
+      "raw_probability": 0.239328
     },
     {
       "month": "2022-04-01",
-      "event": false,
-      "max_drawdown_pct": -8.387128,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -11.257696,
+      "lead_time_days": 47,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 46,
         "forward_risk_score": 41,
@@ -947,15 +1612,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 34
       },
-      "probability": 0.1875,
-      "raw_probability": 0.149939
+      "probability": 0.142857,
+      "raw_probability": 0.250506
     },
     {
       "month": "2022-05-01",
-      "event": false,
-      "max_drawdown_pct": -8.392,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -11.262415,
+      "lead_time_days": 16,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 36,
         "forward_risk_score": 32,
@@ -966,15 +1631,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 53
       },
-      "probability": 0.1875,
-      "raw_probability": 0.137611
+      "probability": 0.142857,
+      "raw_probability": 0.255691
     },
     {
       "month": "2022-06-01",
       "event": false,
-      "max_drawdown_pct": -5.277139,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.132087,
+      "lead_time_days": 14,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 46,
         "forward_risk_score": 38,
@@ -985,15 +1650,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 36
       },
-      "probability": 0.1875,
-      "raw_probability": 0.082187
+      "probability": 0.104651,
+      "raw_probability": 0.153253
     },
     {
       "month": "2022-07-01",
       "event": true,
       "max_drawdown_pct": -13.187208,
-      "lead_time_days": 60,
-      "target_mode": "monthly_fallback",
+      "lead_time_days": 61,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 32,
@@ -1004,15 +1669,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 59
       },
-      "probability": 0.1875,
-      "raw_probability": 0.127552
+      "probability": 0.104651,
+      "raw_probability": 0.08159
     },
     {
       "month": "2022-08-01",
       "event": false,
-      "max_drawdown_pct": -9.339567,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -9.556763,
+      "lead_time_days": 42,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 40,
         "forward_risk_score": 36,
@@ -1023,15 +1688,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 46
       },
-      "probability": 0.1875,
-      "raw_probability": 0.08934
+      "probability": 0.104651,
+      "raw_probability": 0.065717
     },
     {
       "month": "2022-09-01",
       "event": false,
-      "max_drawdown_pct": 7.080501,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.23957,
+      "lead_time_days": 12,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 57,
         "forward_risk_score": 52,
@@ -1042,15 +1707,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 76
       },
-      "probability": 0.038462,
-      "raw_probability": 0.730423
+      "probability": 0.142857,
+      "raw_probability": 0.281713
     },
     {
       "month": "2022-10-01",
       "event": false,
-      "max_drawdown_pct": -0.838847,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -3.927967,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 42,
         "forward_risk_score": 42,
@@ -1061,15 +1726,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 51
       },
-      "probability": 0.15,
-      "raw_probability": 0.235004
+      "probability": 0.104651,
+      "raw_probability": 0.072012
     },
     {
       "month": "2022-11-01",
       "event": false,
-      "max_drawdown_pct": -5.897147,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -7.276523,
+      "lead_time_days": 28,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 37,
         "forward_risk_score": 39,
@@ -1080,15 +1745,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 63
       },
-      "probability": 0.15,
-      "raw_probability": 0.21121
+      "probability": 0.104651,
+      "raw_probability": 0.039755
     },
     {
       "month": "2022-12-01",
       "event": false,
-      "max_drawdown_pct": 3.402784,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.817812,
+      "lead_time_days": 5,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 42,
         "forward_risk_score": 37,
@@ -1099,15 +1764,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 53
       },
-      "probability": 0.1875,
-      "raw_probability": 0.072477
+      "probability": 0.104651,
+      "raw_probability": 0.023402
     },
     {
       "month": "2023-01-01",
       "event": false,
-      "max_drawdown_pct": -2.611249,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -5.417262,
+      "lead_time_days": 41,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 37,
         "forward_risk_score": 41,
@@ -1118,15 +1783,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 70
       },
-      "probability": 0.15,
-      "raw_probability": 0.355075
+      "probability": 0.104651,
+      "raw_probability": 0.048885
     },
     {
       "month": "2023-02-01",
       "event": false,
-      "max_drawdown_pct": 3.505161,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.881249,
+      "lead_time_days": 13,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 42,
         "forward_risk_score": 45,
@@ -1137,15 +1802,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 57
       },
-      "probability": 0.15,
-      "raw_probability": 0.302484
+      "probability": 0.104651,
+      "raw_probability": 0.044625
     },
     {
       "month": "2023-03-01",
       "event": false,
-      "max_drawdown_pct": 1.464234,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.297543,
+      "lead_time_days": 26,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 38,
         "forward_risk_score": 41,
@@ -1156,15 +1821,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 70
       },
-      "probability": 0.15,
-      "raw_probability": 0.353252
+      "probability": 0.104651,
+      "raw_probability": 0.04929
     },
     {
       "month": "2023-04-01",
       "event": false,
-      "max_drawdown_pct": 0.248235,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.596487,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 41,
@@ -1175,15 +1840,15 @@
         "data_quality_pct": 78,
         "rule_agreement_pct": 68
       },
-      "probability": 0.15,
-      "raw_probability": 0.366782
+      "probability": 0.104651,
+      "raw_probability": 0.05418
     },
     {
       "month": "2023-05-01",
       "event": false,
-      "max_drawdown_pct": 6.472746,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.985445,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 43,
         "forward_risk_score": 51,
@@ -1194,15 +1859,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 55
       },
-      "probability": 0.038462,
-      "raw_probability": 0.743939
+      "probability": 0.104651,
+      "raw_probability": 0.12799
     },
     {
       "month": "2023-06-01",
       "event": false,
-      "max_drawdown_pct": -3.647556,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.812652,
+      "lead_time_days": 49,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 37,
         "forward_risk_score": 46,
@@ -1213,15 +1878,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 59
       },
-      "probability": 0.038462,
-      "raw_probability": 0.650442
+      "probability": 0.104651,
+      "raw_probability": 0.096036
     },
     {
       "month": "2023-07-01",
       "event": false,
-      "max_drawdown_pct": -8.611105,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -6.873675,
+      "lead_time_days": 57,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 37,
         "forward_risk_score": 46,
@@ -1232,15 +1897,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.776865
+      "probability": 0.104651,
+      "raw_probability": 0.089525
     },
     {
       "month": "2023-08-01",
       "event": false,
-      "max_drawdown_pct": -6.962822,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -8.658373,
+      "lead_time_days": 57,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 41,
@@ -1251,15 +1916,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.681011
+      "probability": 0.104651,
+      "raw_probability": 0.07604
     },
     {
       "month": "2023-09-01",
       "event": false,
-      "max_drawdown_pct": -2.197969,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -3.980357,
+      "lead_time_days": 27,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 40,
         "forward_risk_score": 41,
@@ -1270,15 +1935,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 63
       },
-      "probability": 0.037037,
-      "raw_probability": 0.511088
+      "probability": 0.104651,
+      "raw_probability": 0.089658
     },
     {
       "month": "2023-10-01",
       "event": false,
-      "max_drawdown_pct": 8.917927,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 1.0506,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 40,
         "forward_risk_score": 42,
@@ -1289,15 +1954,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 59
       },
-      "probability": 0.037037,
-      "raw_probability": 0.472442
+      "probability": 0.104651,
+      "raw_probability": 0.108617
     },
     {
       "month": "2023-11-01",
       "event": false,
-      "max_drawdown_pct": 4.422923,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.404132,
+      "lead_time_days": 6,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 32,
         "forward_risk_score": 40,
@@ -1308,15 +1973,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.668214
+      "probability": 0.104651,
+      "raw_probability": 0.101834
     },
     {
       "month": "2023-12-01",
       "event": false,
-      "max_drawdown_pct": 1.589571,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.701316,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 42,
@@ -1327,15 +1992,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.712908
+      "probability": 0.104651,
+      "raw_probability": 0.109935
     },
     {
       "month": "2024-01-01",
       "event": false,
-      "max_drawdown_pct": 3.921869,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 1.249369,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 43,
@@ -1346,15 +2011,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.756946
+      "probability": 0.104651,
+      "raw_probability": 0.11362
     },
     {
       "month": "2024-02-01",
       "event": false,
-      "max_drawdown_pct": -1.188714,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.532049,
+      "lead_time_days": 50,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 32,
         "forward_risk_score": 40,
@@ -1365,15 +2030,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.67585
+      "probability": 0.104651,
+      "raw_probability": 0.086742
     },
     {
       "month": "2024-03-01",
       "event": false,
-      "max_drawdown_pct": -4.161507,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -5.464427,
+      "lead_time_days": 19,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 32,
         "forward_risk_score": 40,
@@ -1384,15 +2049,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.746164
+      "probability": 0.104651,
+      "raw_probability": 0.091443
     },
     {
       "month": "2024-04-01",
       "event": false,
-      "max_drawdown_pct": 4.802119,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.343544,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 38,
@@ -1403,15 +2068,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.614725
+      "probability": 0.104651,
+      "raw_probability": 0.068794
     },
     {
       "month": "2024-05-01",
       "event": false,
-      "max_drawdown_pct": 3.46698,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.111608,
+      "lead_time_days": 3,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 31,
         "forward_risk_score": 38,
@@ -1422,15 +2087,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.663625
+      "probability": 0.104651,
+      "raw_probability": 0.079725
     },
     {
       "month": "2024-06-01",
       "event": false,
-      "max_drawdown_pct": 1.132132,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -5.020619,
+      "lead_time_days": 36,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 31,
         "forward_risk_score": 38,
@@ -1441,15 +2106,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.679537
+      "probability": 0.104651,
+      "raw_probability": 0.085608
     },
     {
       "month": "2024-07-01",
       "event": false,
-      "max_drawdown_pct": 2.283471,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -6.083873,
+      "lead_time_days": 5,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 35,
         "forward_risk_score": 40,
@@ -1460,15 +2125,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.633788
+      "probability": 0.104651,
+      "raw_probability": 0.075674
     },
     {
       "month": "2024-08-01",
       "event": false,
-      "max_drawdown_pct": 1.010026,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -4.248637,
+      "lead_time_days": 6,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 39,
@@ -1479,15 +2144,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 68
       },
-      "probability": 0.038462,
-      "raw_probability": 0.625129
+      "probability": 0.104651,
+      "raw_probability": 0.0776
     },
     {
       "month": "2024-09-01",
       "event": false,
-      "max_drawdown_pct": -0.989674,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.154712,
+      "lead_time_days": 7,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 33,
         "forward_risk_score": 38,
@@ -1498,15 +2163,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 72
       },
-      "probability": 0.038462,
-      "raw_probability": 0.705279
+      "probability": 0.104651,
+      "raw_probability": 0.112939
     },
     {
       "month": "2024-10-01",
       "event": false,
-      "max_drawdown_pct": 3.087919,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.126892,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 37,
         "forward_risk_score": 43,
@@ -1517,15 +2182,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 58
       },
-      "probability": 0.038462,
-      "raw_probability": 0.753222
+      "probability": 0.104651,
+      "raw_probability": 0.13355
     },
     {
       "month": "2024-11-01",
       "event": false,
-      "max_drawdown_pct": -2.499014,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -3.403961,
+      "lead_time_days": 41,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 29,
         "forward_risk_score": 33,
@@ -1536,15 +2201,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.637829
+      "probability": 0.104651,
+      "raw_probability": 0.1133
     },
     {
       "month": "2024-12-01",
       "event": false,
-      "max_drawdown_pct": -4.58682,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.759376,
+      "lead_time_days": 63,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 30,
         "forward_risk_score": 32,
@@ -1555,15 +2220,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.038462,
-      "raw_probability": 0.615528
+      "probability": 0.104651,
+      "raw_probability": 0.137804
     },
     {
       "month": "2025-01-01",
-      "event": false,
-      "max_drawdown_pct": -7.805106,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -15.99942,
+      "lead_time_days": 63,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 22,
         "forward_risk_score": 24,
@@ -1574,15 +2239,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 79
       },
-      "probability": 0.037037,
-      "raw_probability": 0.465562
+      "probability": 0.104651,
+      "raw_probability": 0.099597
     },
     {
       "month": "2025-02-01",
-      "event": false,
-      "max_drawdown_pct": -6.473087,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -16.319254,
+      "lead_time_days": 39,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 38,
         "forward_risk_score": 39,
@@ -1593,15 +2258,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 60
       },
-      "probability": 0.037037,
-      "raw_probability": 0.593829
+      "probability": 0.104651,
+      "raw_probability": 0.096813
     },
     {
       "month": "2025-03-01",
-      "event": false,
-      "max_drawdown_pct": -0.762494,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "event": true,
+      "max_drawdown_pct": -11.209852,
+      "lead_time_days": 8,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 43,
         "forward_risk_score": 41,
@@ -1612,15 +2277,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 54
       },
-      "probability": 0.037037,
-      "raw_probability": 0.496131
+      "probability": 0.104651,
+      "raw_probability": 0.099208
     },
     {
       "month": "2025-04-01",
       "event": false,
-      "max_drawdown_pct": 6.152383,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.62991,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 38,
         "forward_risk_score": 37,
@@ -1631,15 +2296,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 66
       },
-      "probability": 0.037037,
-      "raw_probability": 0.599443
+      "probability": 0.104651,
+      "raw_probability": 0.182819
     },
     {
       "month": "2025-05-01",
       "event": false,
-      "max_drawdown_pct": 4.960684,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.410204,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 27,
         "forward_risk_score": 28,
@@ -1650,15 +2315,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 80
       },
-      "probability": 0.037037,
-      "raw_probability": 0.5997
+      "probability": 0.142857,
+      "raw_probability": 0.20587
     },
     {
       "month": "2025-06-01",
       "event": false,
-      "max_drawdown_pct": 2.166656,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.111853,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 22,
         "forward_risk_score": 26,
@@ -1669,15 +2334,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.037037,
-      "raw_probability": 0.561718
+      "probability": 0.104651,
+      "raw_probability": 0.14002
     },
     {
       "month": "2025-07-01",
       "event": false,
-      "max_drawdown_pct": 1.906644,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.599213,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 23,
         "forward_risk_score": 27,
@@ -1688,15 +2353,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 74
       },
-      "probability": 0.037037,
-      "raw_probability": 0.440745
+      "probability": 0.104651,
+      "raw_probability": 0.0765
     },
     {
       "month": "2025-08-01",
       "event": false,
-      "max_drawdown_pct": 3.532369,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.692228,
+      "lead_time_days": 2,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 22,
         "forward_risk_score": 26,
@@ -1707,15 +2372,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.038462,
-      "raw_probability": 0.603005
+      "probability": 0.104651,
+      "raw_probability": 0.120676
     },
     {
       "month": "2025-09-01",
       "event": false,
-      "max_drawdown_pct": 2.268687,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -2.238186,
+      "lead_time_days": 51,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 19,
         "forward_risk_score": 23,
@@ -1726,15 +2391,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.037037,
-      "raw_probability": 0.544699
+      "probability": 0.104651,
+      "raw_probability": 0.14986
     },
     {
       "month": "2025-10-01",
       "event": false,
-      "max_drawdown_pct": 0.07748,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -4.406895,
+      "lead_time_days": 20,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 19,
         "forward_risk_score": 24,
@@ -1745,15 +2410,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.037037,
-      "raw_probability": 0.583594
+      "probability": 0.104651,
+      "raw_probability": 0.1527
     },
     {
       "month": "2025-11-01",
       "event": false,
-      "max_drawdown_pct": -0.052413,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -1.863892,
+      "lead_time_days": 17,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 20,
         "forward_risk_score": 23,
@@ -1764,15 +2429,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.037037,
-      "raw_probability": 0.515762
+      "probability": 0.104651,
+      "raw_probability": 0.136646
     },
     {
       "month": "2025-12-01",
       "event": false,
-      "max_drawdown_pct": -4.630487,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.710542,
+      "lead_time_days": 20,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 16,
         "forward_risk_score": 19,
@@ -1783,15 +2448,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 89
       },
-      "probability": 0.037037,
-      "raw_probability": 0.523603
+      "probability": 0.104651,
+      "raw_probability": 0.18323
     },
     {
       "month": "2026-01-01",
       "event": false,
-      "max_drawdown_pct": -5.915953,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -8.579147,
+      "lead_time_days": 58,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 17,
         "forward_risk_score": 21,
@@ -1802,15 +2467,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 89
       },
-      "probability": 0.038462,
-      "raw_probability": 0.60447
+      "probability": 0.142857,
+      "raw_probability": 0.202203
     },
     {
       "month": "2026-02-01",
       "event": false,
-      "max_drawdown_pct": -5.093269,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -7.77975,
+      "lead_time_days": 30,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 24,
         "forward_risk_score": 26,
@@ -1821,15 +2486,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 82
       },
-      "probability": 0.037037,
-      "raw_probability": 0.575198
+      "probability": 0.104651,
+      "raw_probability": 0.173577
     },
     {
       "month": "2026-03-01",
       "event": false,
-      "max_drawdown_pct": 10.423339,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": 0.716852,
+      "lead_time_days": 1,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 34,
         "forward_risk_score": 32,
@@ -1840,15 +2505,15 @@
         "data_quality_pct": 95,
         "rule_agreement_pct": 81
       },
-      "probability": 0.038462,
-      "raw_probability": 0.732852
+      "probability": 0.142857,
+      "raw_probability": 0.283229
     },
     {
       "month": "2026-04-01",
       "event": false,
-      "max_drawdown_pct": 3.668471,
-      "lead_time_days": null,
-      "target_mode": "monthly_fallback",
+      "max_drawdown_pct": -0.114576,
+      "lead_time_days": 4,
+      "target_mode": "daily_max_drawdown",
       "features": {
         "market_stress_score": 20,
         "forward_risk_score": 24,
@@ -1859,12 +2524,30 @@
         "data_quality_pct": 100,
         "rule_agreement_pct": 85
       },
-      "probability": 0.038462,
-      "raw_probability": 0.72424
+      "probability": 0.142857,
+      "raw_probability": 0.274208
+    },
+    {
+      "month": "2026-05-01",
+      "event": false,
+      "max_drawdown_pct": -4.130176,
+      "lead_time_days": 10,
+      "target_mode": "daily_max_drawdown",
+      "features": {
+        "market_stress_score": 19,
+        "forward_risk_score": 23,
+        "volatility_sentiment_score": 36,
+        "credit_liquidity_score": 6,
+        "macro_cycle_score": 38,
+        "price_action_score": 0.0,
+        "data_quality_pct": 100,
+        "rule_agreement_pct": 83
+      },
+      "probability": 0.104651,
+      "raw_probability": 0.163575
     }
   ],
   "limitations": [
-    "日次価格が不足した期間は月次終値ベースの検証に戻しています。",
     "急落は発生回数が少ないため、確率は参考値です。",
     "投資助言や売買推奨ではありません。"
   ]

@@ -2,7 +2,7 @@
   "as_of": "2026-06-19",
   "blocking_issues": [],
   "confidence_grade": "A",
-  "confidence_score": 92,
+  "confidence_score": 97,
   "data_quality_report": {
     "as_of": "2026-06-19",
     "blocking_issues": [],
@@ -17,12 +17,6 @@
   },
   "display_allowed": true,
   "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
-  "invalidation_triggers": [
-    "失業率が3か月連続で上昇",
-    "Core PCEが2か月連続で再加速",
-    "米10年金利が急上昇",
-    "信用スプレッドが急拡大"
-  ],
   "invalidation_status_notes": [
     {
       "detail": "直近0/3か月連続で上昇（2026-05-01: 4.30%、前月比 +0.00pt）",
@@ -31,7 +25,21 @@
     {
       "detail": "直近2/2か月連続で再加速（2026-04-01: 3.29%、前月比 +0.05pt）",
       "label": "Core PCE"
+    },
+    {
+      "detail": "現状 4.49%（2026-06-17）。判断変更目安 4.50%以上、あと +0.01pt",
+      "label": "米10年金利"
+    },
+    {
+      "detail": "現状 2.63%（2026-06-17）。判断変更目安 5.00%以上、あと +2.37pt",
+      "label": "信用スプレッド"
     }
+  ],
+  "invalidation_triggers": [
+    "失業率が3か月連続で上昇",
+    "Core PCEが2か月連続で再加速",
+    "米10年金利が急上昇",
+    "信用スプレッドが急拡大"
   ],
   "key_drivers": [
     "失業率が低い",
@@ -41,6 +49,8 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
+    "N225 1m: 検証サンプル不足",
+    "IXIC 1m: 検証サンプル不足",
     "金利再上昇時に株価先物へ逆風"
   ],
   "probabilities": {
