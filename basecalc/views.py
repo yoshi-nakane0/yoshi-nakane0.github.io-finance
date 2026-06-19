@@ -12,7 +12,7 @@ from .market_bars import attach_saved_daily_bars
 from .market_shock import build_market_shock_context
 from .market_context import _price_action_fallback_assets
 from .nikkei_bias import get_jgb10y_yield_percent, get_nikkei_per_values
-from .models import MarketSnapshot, WorldModelPrediction
+from .models import MarketBar, MarketSnapshot, WorldModelPrediction
 from .outcomes import (
     evaluate_due_predictions,
     performance_summary,
@@ -604,6 +604,17 @@ def get_stale_futures_snapshot():
         snapshot["is_stale"] = True
         snapshot["fallback_reason"] = "last_good_cache"
         return snapshot
+    latest_bar = (
+        MarketBar.objects.filter(
+            symbol="NIY=F",
+            timeframe="1d",
+            source="225navi",
+        )
+        .order_by("-timestamp", "-created_at")
+        .first()
+    )
+    if latest_bar is not None:
+        return _snapshot_from_market_bar(latest_bar)
     latest_snapshot = (
         MarketSnapshot.objects.filter(source="225navi")
         .order_by("-fetched_at", "-created_at")
@@ -637,6 +648,43 @@ def get_stale_futures_snapshot():
         "fetched_at": fetched_at,
         "is_stale": is_stale,
         "fallback_reason": "saved_snapshot",
+    })
+
+
+def _snapshot_from_market_bar(latest_bar):
+    previous_bar = (
+        MarketBar.objects.filter(
+            symbol=latest_bar.symbol,
+            timeframe=latest_bar.timeframe,
+            timestamp__lt=latest_bar.timestamp,
+        )
+        .order_by("-timestamp", "-created_at")
+        .first()
+    )
+    fetched_at = latest_bar.timestamp
+    close = latest_bar.close
+    snapshot = {
+        "source": latest_bar.source or "saved_market_bar",
+        "fetched_at": fetched_at,
+    }
+    return attach_saved_daily_bars({
+        "symbol": latest_bar.symbol,
+        "name": latest_bar.symbol,
+        "source": latest_bar.source or "saved_market_bar",
+        "instrument_key": latest_bar.instrument_key,
+        "instrument_type": latest_bar.instrument_type,
+        "price": close,
+        "previous_close": previous_bar.close if previous_bar else latest_bar.open or close,
+        "change_pct": None,
+        "opens": [latest_bar.open or close],
+        "highs": [latest_bar.high or close],
+        "lows": [latest_bar.low or close],
+        "closes": [close],
+        "volumes": [latest_bar.volume or 0],
+        "timestamps": [int(latest_bar.timestamp.timestamp())],
+        "fetched_at": fetched_at,
+        "is_stale": is_snapshot_stale(snapshot),
+        "fallback_reason": "saved_market_bar",
     })
 
 
