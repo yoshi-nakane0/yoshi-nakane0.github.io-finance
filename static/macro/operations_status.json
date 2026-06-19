@@ -2,164 +2,22 @@
   "latest_update_status": {
     "failed": [],
     "failed_count": 0,
-    "finished_at": "2026-06-18T06:52:22.279841+00:00",
+    "finished_at": "2026-06-19T01:38:34.302191+00:00",
     "message": "日次更新を実行しました。",
-    "recorded_at": "2026-06-18T06:52:23.758817+00:00",
+    "recorded_at": "2026-06-19T01:38:35.086928+00:00",
     "source": "refresh_macro_data",
-    "started_at": "2026-06-18T06:50:30.910315+00:00",
+    "started_at": "2026-06-19T01:35:55.629074+00:00",
     "status": "success",
-    "status_cache_computed_at": "2026-06-18T06:52:23.759958+00:00",
+    "status_cache_computed_at": "2026-06-19T01:38:35.087813+00:00",
     "success_count": 66
   },
   "operations_status": [
     {
       "cadence": "daily",
       "error": "",
-      "finished_at": "2026-06-18T06:52:23.761518+00:00",
-      "name": "refresh_macro_data",
-      "started_at": "2026-06-18T06:50:30.905759+00:00",
-      "status": "success",
-      "steps": [
-        {
-          "command": "sync_all_indicators",
-          "label": "指標取得"
-        },
-        {
-          "command": "compute_current_regime",
-          "label": "景気判定"
-        },
-        {
-          "command": "compute_world_state",
-          "label": "World State 計算"
-        },
-        {
-          "command": "sync_all_price_histories",
-          "label": "価格取得"
-        },
-        {
-          "command": "sync_daily_prices",
-          "label": "直近日次価格取得"
-        }
-      ],
-      "summary": {
-        "indicator_failed_count": 0,
-        "indicator_success_count": 66,
-        "message": "日次更新を実行しました。",
-        "price_failed_count": 0,
-        "price_success_count": 4
-      }
-    },
-    {
-      "cadence": "daily",
-      "error": "",
-      "finished_at": "2026-06-17T07:12:28.711661+00:00",
-      "name": "refresh_macro_data",
-      "started_at": "2026-06-17T07:10:36.191135+00:00",
-      "status": "success",
-      "steps": [
-        {
-          "command": "sync_all_indicators",
-          "label": "指標取得"
-        },
-        {
-          "command": "compute_current_regime",
-          "label": "景気判定"
-        },
-        {
-          "command": "compute_world_state",
-          "label": "World State 計算"
-        },
-        {
-          "command": "sync_all_price_histories",
-          "label": "価格取得"
-        },
-        {
-          "command": "sync_daily_prices",
-          "label": "直近日次価格取得"
-        }
-      ],
-      "summary": {
-        "indicator_failed_count": 0,
-        "indicator_success_count": 66,
-        "message": "日次更新を実行しました。",
-        "price_failed_count": 0,
-        "price_success_count": 4
-      }
-    },
-    {
-      "cadence": "daily",
-      "error": "",
-      "finished_at": "2026-06-07T08:57:52.481897+00:00",
-      "name": "refresh_macro_data",
-      "started_at": "2026-06-07T08:55:54.538976+00:00",
-      "status": "success",
-      "steps": [
-        {
-          "command": "sync_all_indicators",
-          "label": "指標取得"
-        },
-        {
-          "command": "compute_current_regime",
-          "label": "景気判定"
-        },
-        {
-          "command": "compute_world_state",
-          "label": "World State 計算"
-        },
-        {
-          "command": "sync_all_price_histories",
-          "label": "価格取得"
-        },
-        {
-          "command": "sync_daily_prices",
-          "label": "直近日次価格取得"
-        }
-      ],
-      "summary": {
-        "indicator_failed_count": 0,
-        "indicator_success_count": 66,
-        "message": "日次更新を実行しました。",
-        "price_failed_count": 0,
-        "price_success_count": 4
-      }
-    },
-    {
-      "cadence": "weekly",
-      "error": "",
-      "finished_at": "2026-05-24T05:24:16.341501+00:00",
-      "name": "weekly_macro_validation",
-      "started_at": "2026-05-24T05:23:28.586559+00:00",
-      "status": "success",
-      "steps": [
-        {
-          "command": "compute_world_state",
-          "label": "World State 計算"
-        },
-        {
-          "command": "settle_forecast_snapshots",
-          "label": "予測実績反映"
-        },
-        {
-          "command": "precompute_dashboard",
-          "label": "表示キャッシュ更新"
-        }
-      ],
-      "summary": {
-        "completed_steps": [
-          "compute_world_state",
-          "settle_forecast_snapshots",
-          "precompute_dashboard"
-        ],
-        "failures": [],
-        "message": "週次検証が完了しました。"
-      }
-    },
-    {
-      "cadence": "daily",
-      "error": "",
-      "finished_at": "2026-05-24T05:23:01.733107+00:00",
+      "finished_at": "2026-06-19T01:38:35.758834+00:00",
       "name": "compute_world_state",
-      "started_at": "2026-05-24T05:23:01.664682+00:00",
+      "started_at": "2026-06-19T01:38:35.647363+00:00",
       "status": "success",
       "steps": [
         {
@@ -168,9 +26,46 @@
         }
       ],
       "summary": {
-        "as_of_date": "2026-05-24",
-        "data_quality": 97.67,
+        "as_of_date": "2026-06-19",
+        "data_quality": 98.0,
         "message": "World State を更新しました。"
+      }
+    },
+    {
+      "cadence": "daily",
+      "error": "",
+      "finished_at": "2026-06-19T01:38:35.089204+00:00",
+      "name": "refresh_macro_data",
+      "started_at": "2026-06-19T01:35:55.624475+00:00",
+      "status": "success",
+      "steps": [
+        {
+          "command": "sync_all_indicators",
+          "label": "指標取得"
+        },
+        {
+          "command": "compute_current_regime",
+          "label": "景気判定"
+        },
+        {
+          "command": "compute_world_state",
+          "label": "World State 計算"
+        },
+        {
+          "command": "sync_all_price_histories",
+          "label": "価格取得"
+        },
+        {
+          "command": "sync_daily_prices",
+          "label": "直近日次価格取得"
+        }
+      ],
+      "summary": {
+        "indicator_failed_count": 0,
+        "indicator_success_count": 66,
+        "message": "日次更新を実行しました。",
+        "price_failed_count": 0,
+        "price_success_count": 4
       }
     }
   ]

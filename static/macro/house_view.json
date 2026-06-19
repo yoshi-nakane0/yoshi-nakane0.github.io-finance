@@ -1,10 +1,10 @@
 {
-  "as_of": "2026-06-18",
+  "as_of": "2026-06-19",
   "blocking_issues": [],
   "confidence_grade": "A",
-  "confidence_score": 98,
+  "confidence_score": 92,
   "data_quality_report": {
-    "as_of": "2026-06-18",
+    "as_of": "2026-06-19",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -31,14 +31,12 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
-    "N225 1m: 検証サンプル不足",
-    "IXIC 1m: 検証サンプル不足",
     "金利再上昇時に株価先物へ逆風"
   ],
   "probabilities": {
     "contraction": 0.02018798202221658,
     "expansion": 0.6568708855634098,
-    "financial_stress": 0.192833942731104,
+    "financial_stress": 0.21193515864758772,
     "inflation_reacceleration": 0.8233758532469887,
     "recovery": 0.17495960104105565,
     "slowdown": 0.147981531373318
