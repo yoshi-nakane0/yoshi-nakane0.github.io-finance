@@ -345,6 +345,9 @@
                             <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
                             <button type="submit" class="btn-base btn-primary">適用</button>
                         </form>
+                        <div class="notice-text text-blue" data-field="manual_price_notice" {% if not manual_price_override.active %}hidden{% endif %}>
+                            手入力価格を判定に使用中{% if manual_price_override.price_display %}: {{ manual_price_override.price_display }}{% endif %}
+                        </div>
                         <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
                             {{ world_model.data_warning }}
                         </div>
@@ -378,7 +381,11 @@
                             <span class="label-main">{{ row.label }}</span>
                             <span class="label-sub">{{ row.source }}</span>
                         </div>
+                        {% if row.key == "manual_price" %}
+                        <span class="data-value">{{ row.age_display }} / {{ row.source }} / {{ row.decision_label }}</span>
+                        {% else %}
                         <span class="data-value">{{ row.age_display }} / {{ row.decision_label }} / fallback {{ row.fallback_display }}</span>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -848,9 +855,7 @@
                     if (next.hasAttribute("data-score")) {
                         field.setAttribute("data-score", next.getAttribute("data-score"));
                     }
-                    if (key === "data_warning") {
-                        field.hidden = next.hidden;
-                    }
+                    field.hidden = next.hidden;
                 });
                 const nextPrice = doc.querySelector('[data-field="price_param"]');
                 if (nextPrice instanceof HTMLInputElement) {

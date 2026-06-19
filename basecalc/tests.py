@@ -139,7 +139,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_refresh_button_is_hidden_for_anonymous_users(self):
-        response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+        response = self.client.get(reverse('basecalc:index'))
 
         self.assertNotContains(response, 'id="price-refresh"')
 
@@ -220,7 +220,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             timeout=300,
         )
 
-        response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+        response = self.client.get(reverse('basecalc:index'))
 
         self.assertContains(response, 'GitHub Actions 実行中')
         self.assertContains(response, 'id="basecalc-workflow-dispatch"')
@@ -761,16 +761,53 @@ class BasecalcUpdateSecurityTests(TestCase):
         confidence.assert_not_called()
         validation_design.assert_not_called()
 
-    def test_manual_price_get_does_not_mutate_snapshot_view(self):
-        response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
+    def test_manual_price_get_recalculates_world_model_without_mutating_price_cache(self):
+        cached_snapshot = _ready_snapshot(source='225navi')
+
+        with (
+            patch('basecalc.views.get_cached_futures_snapshot', return_value=cached_snapshot),
+            patch('basecalc.views.get_cached_intermarket_technical_context', return_value={}),
+            patch('basecalc.views.load_basecalc_snapshot') as saved_snapshot,
+        ):
+            response = self.client.get(reverse('basecalc:index'), {'price': '42000'})
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['world_model']['price'], 42000)
+        self.assertEqual(response.context['world_model']['features']['price'], 42000)
+        self.assertEqual(response.context['world_model']['features']['close'], 42000)
+        self.assertEqual(response.context['decision']['price'], 42000)
+        self.assertEqual(response.context['data']['price_display'], '42,000')
+        self.assertEqual(response.context['price_param'], '42000')
         self.assertIsNone(cache.get('nikkei_price'))
+        self.assertNotEqual(cached_snapshot['closes'][-1], 42000)
+        saved_snapshot.assert_not_called()
 
-        response = self.client.get(reverse('basecalc:index'))
+    def test_manual_price_get_adds_separate_status_row(self):
+        cached_snapshot = _ready_snapshot(source='225navi')
+
+        with (
+            patch('basecalc.views.get_cached_futures_snapshot', return_value=cached_snapshot),
+            patch('basecalc.views.get_cached_intermarket_technical_context', return_value={}),
+        ):
+            response = self.client.get(reverse('basecalc:index'), {'price': '71800'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotEqual(response.context['world_model']['price'], 42000)
+        override = response.context['manual_price_override']
+        self.assertTrue(override['active'])
+        self.assertEqual(override['price'], 71800)
+        self.assertEqual(override['price_display'], '71,800')
+        rows = response.context['basecalc_status_rows']
+        manual_row = next(row for row in rows if row['key'] == 'manual_price')
+        price_row = next(row for row in rows if row['key'] == 'price_data')
+
+        self.assertEqual(manual_row['label'], '手入力価格')
+        self.assertEqual(manual_row['age_display'], '適用中')
+        self.assertEqual(manual_row['source'], '71,800')
+        self.assertEqual(manual_row['decision_label'], '一時判定')
+        self.assertEqual(price_row['label'], '価格データ')
+        self.assertIn('225navi', price_row['source'])
+        self.assertNotEqual(price_row['source'], manual_row['source'])
+        self.assertContains(response, '手入力価格を判定に使用中')
 
     def test_index_shows_backtest_performance_separately_from_live_performance(self):
         def fake_performance_summary(horizon='1d', *args, **kwargs):
@@ -804,7 +841,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             for horizon in ("1d", "3d", "5d")
         }
         with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
-            response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+            response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['performance_by_horizon']['1d']['total_predictions'], 1)
@@ -1661,7 +1698,7 @@ class BasecalcMarketShockTest(TestCase):
             }],
         }
         with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
-            response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+            response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '市場ストレス・急落予測')

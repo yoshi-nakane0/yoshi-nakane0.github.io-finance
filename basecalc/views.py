@@ -62,6 +62,23 @@ def index(request):
             return HttpResponseForbidden("Forbidden")
 
     force_update = request.method == "POST"
+    manual_price = normalize_price(parse_float_param(request.GET.get("price"))) if not force_update else None
+    if not force_update and manual_price is not None:
+        try:
+            context = build_context(
+                request,
+                force_update=False,
+                persist_price_override=False,
+            )
+        except Exception as exc:
+            context = {
+                "error": str(exc),
+                "can_update_basecalc_data": can_update_basecalc_data,
+            }
+        if can_update_basecalc_data:
+            context["refresh_workflow_state"] = get_refresh_workflow_state()
+        return render(request, "basecalc/index.html", context)
+
     if not force_update:
         snapshot = load_basecalc_snapshot()
         if snapshot:
@@ -227,8 +244,10 @@ def validation(request):
     return render(request, "basecalc/validation.html", context)
 
 
-def build_context(request, force_update=False):
+def build_context(request, force_update=False, persist_price_override=None):
     params = request.POST if force_update else request.GET
+    if persist_price_override is None:
+        persist_price_override = force_update
     can_update_basecalc_data = request.user.is_authenticated and request.user.is_staff
     price_override = normalize_price(parse_float_param(params.get("price")))
     futures_snapshot = get_cached_futures_snapshot()
@@ -251,7 +270,8 @@ def build_context(request, force_update=False):
 
     if price_override is not None:
         price = price_override
-        cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
+        if persist_price_override:
+            cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
     elif force_update and price is not None:
         cache.set(CACHE_KEY_PRICE, price, timeout=CACHE_TTL_PRICE)
 
@@ -259,10 +279,16 @@ def build_context(request, force_update=False):
         price = 0.0
 
     futures_snapshot = attach_saved_daily_bars(futures_snapshot)
-    world_model = build_world_model(price, futures_snapshot, intermarket_context)
+    status_snapshot = futures_snapshot
+    manual_price_override = _manual_price_override_context(price_override)
+    model_snapshot = _snapshot_with_manual_price_override(
+        futures_snapshot,
+        price_override,
+    )
+    world_model = build_world_model(price, model_snapshot, intermarket_context)
     basecalc_status = _status_with_current_values(
         load_basecalc_status(),
-        futures_snapshot=futures_snapshot,
+        futures_snapshot=status_snapshot,
         world_model=world_model,
         intermarket_context=intermarket_context,
     )
@@ -286,6 +312,8 @@ def build_context(request, force_update=False):
         intermarket_context,
     )
     basecalc_status_rows = status_display_rows(basecalc_status, world_model)
+    if manual_price_override["active"]:
+        basecalc_status_rows.append(_manual_price_status_row(manual_price_override))
     decision = build_basecalc_decision_context(
         world_model,
         market_shock_context,
@@ -301,6 +329,7 @@ def build_context(request, force_update=False):
         "intermarket_technicals": world_model.get("intermarket_technicals") or {},
         "basecalc_status": basecalc_status,
         "basecalc_status_rows": basecalc_status_rows,
+        "manual_price_override": manual_price_override,
         "performance": performance,
         "performance_by_horizon": performance_by_horizon,
         "backtest_performance_by_horizon": backtest_performance_by_horizon,
@@ -312,6 +341,88 @@ def build_context(request, force_update=False):
         if can_update_basecalc_data
         else None,
     }
+
+
+def _manual_price_override_context(price):
+    if price is None:
+        return {"active": False}
+    return {
+        "active": True,
+        "price": int(price),
+        "price_display": format_price(price, decimals=0),
+        "label": "手入力価格を判定に使用中",
+        "decision_label": "一時判定",
+    }
+
+
+def _manual_price_status_row(manual_price):
+    return {
+        "key": "manual_price",
+        "label": "手入力価格",
+        "age_display": "適用中",
+        "source": manual_price["price_display"],
+        "fallback_display": "対象外",
+        "decision_label": manual_price["decision_label"],
+        "decision_level": "limited",
+        "last_success_at": "",
+        "last_failed_at": "",
+    }
+
+
+def _snapshot_with_manual_price_override(snapshot, price):
+    if price is None or not isinstance(snapshot, dict):
+        return snapshot
+    root = dict(snapshot)
+    _apply_manual_price_to_snapshot_frame(root, price)
+    timeframes = {}
+    for key, frame in (snapshot.get("timeframes") or {}).items():
+        if isinstance(frame, dict):
+            next_frame = dict(frame)
+            _apply_manual_price_to_snapshot_frame(next_frame, price)
+            timeframes[key] = next_frame
+        else:
+            timeframes[key] = frame
+    if timeframes:
+        root["timeframes"] = timeframes
+    root["manual_price_override"] = True
+    root["manual_price"] = int(price)
+    return root
+
+
+def _apply_manual_price_to_snapshot_frame(frame, price):
+    frame["price"] = price
+    frame["close"] = price
+    for key in ("closes", "highs", "lows"):
+        values = list(frame.get(key) or [])
+        if not values:
+            continue
+        if key == "highs":
+            values[-1] = max(_float_or_none(values[-1]) or price, price)
+        elif key == "lows":
+            values[-1] = min(_float_or_none(values[-1]) or price, price)
+        else:
+            values[-1] = price
+        frame[key] = values
+    previous_close = _manual_previous_close(frame)
+    if previous_close:
+        frame["change_pct"] = round(((price - previous_close) / previous_close) * 100, 4)
+
+
+def _manual_previous_close(frame):
+    previous_close = _float_or_none(frame.get("previous_close"))
+    if previous_close:
+        return previous_close
+    closes = frame.get("closes") or []
+    if len(closes) >= 2:
+        return _float_or_none(closes[-2])
+    return None
+
+
+def _float_or_none(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _safe_market_shock_context(futures_snapshot=None, intermarket_context=None):
