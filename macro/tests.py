@@ -2566,7 +2566,7 @@ class DashboardCacheTest(TestCase):
         self.assertContains(response, '信頼度上限 C')
         self.assertContains(response, '主要指標が3件未取得です。')
         content = response.content.decode('utf-8')
-        self.assertLess(content.index('基準日'), content.index('判断用データ品質'))
+        self.assertNotContains(response, '基準日')
         self.assertLess(content.index('最終データ日'), content.index('判断用データ品質'))
         self.assertNotContains(response, '前回更新の失敗')
         self.assertNotContains(response, '記録された失敗はありません。')

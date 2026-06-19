@@ -26,20 +26,12 @@
                     <h2 class="macro-section-title macro-section-title--shield">更新信頼性の詳細</h2>
                     <a href="{% url 'macro:index' %}" class="macro-scenario-reset">トップへ戻る</a>
                 </div>
-                {% if data_quality_report or macro_reliability %}
+                {% if macro_reliability %}
                     <div class="macro-reliability-grid">
-                        {% if data_quality_report %}
-                            <div class="macro-reliability-item">
-                                <span class="macro-reliability-label">基準日</span>
-                                <span class="macro-reliability-value">{{ data_quality_report.as_of }}</span>
-                            </div>
-                        {% endif %}
-                        {% if macro_reliability %}
-                            <div class="macro-reliability-item">
-                                <span class="macro-reliability-label">最終データ日</span>
-                                <span class="macro-reliability-value">{{ macro_reliability.last_data_date }}</span>
-                            </div>
-                        {% endif %}
+                        <div class="macro-reliability-item">
+                            <span class="macro-reliability-label">最終データ日</span>
+                            <span class="macro-reliability-value">{{ macro_reliability.last_data_date }}</span>
+                        </div>
                     </div>
                 {% endif %}
                 {% if data_quality_report %}
