@@ -40,7 +40,7 @@ jobs:
       TZ: Asia/Tokyo
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -119,7 +119,7 @@ jobs:
 
       - name: Checkout
         if: ${{ env.DATABASE_URL != '' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
         if: ${{ env.DATABASE_URL != '' }}
