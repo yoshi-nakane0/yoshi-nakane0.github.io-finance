@@ -8,9 +8,9 @@ from .macro_adapter import load_macro_signal
 from .scenario_builder import build_scenarios
 
 
-def build_explanation_snapshot(*, save=True):
+def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
     macro = load_macro_signal()
-    basecalc = load_basecalc_signal()
+    basecalc = load_basecalc_signal(price_override=basecalc_price_override)
     audit = evaluate_audit(macro, basecalc)
     fusion = build_final_decision(macro, basecalc, audit)
     scenario = build_scenarios(macro, basecalc)

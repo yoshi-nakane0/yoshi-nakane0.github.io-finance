@@ -1,3 +1,4 @@
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 
@@ -10,10 +11,14 @@ def snapshot_to_view(snapshot):
     basecalc = source.get('basecalc') or {}
     world_model = _world_model_from_basecalc(basecalc)
     scenario = snapshot.scenario or {}
+    manual_price = _manual_price_from_basecalc(basecalc)
     return {
         'snapshot': snapshot,
         'as_of_display': snapshot.as_of.astimezone(JST).strftime('%Y-%m-%d %H:%M JST'),
-        'status_label': _status_label(snapshot.audit_level),
+        'status_label': manual_price.get('status_label') if manual_price.get('active') else _status_label(snapshot.audit_level),
+        'confidence_display': _confidence_display(snapshot, manual_price),
+        'manual_price': manual_price,
+        'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
         'long_judgment': _trade_judgment('long', snapshot, world_model),
         'short_judgment': _trade_judgment('short', snapshot, world_model),
         'world_model_predictions': _world_model_predictions(world_model),
@@ -90,6 +95,114 @@ def _api_status(level):
 def _world_model_from_basecalc(basecalc):
     raw = basecalc.get('raw') or {}
     return raw.get('world_model') or (raw.get('data') or {}).get('world_model') or {}
+
+
+def _manual_price_from_basecalc(basecalc):
+    raw = basecalc.get('raw') or {}
+    manual = raw.get('manual_price_override') or {}
+    if not manual.get('active'):
+        return {
+            'active': False,
+            'price': None,
+            'price_display': '',
+            'status_label': '',
+            'summary': '',
+            'source_rows': [],
+        }
+    price = manual.get('price')
+    price_display = manual.get('price_display') or _format_price(price)
+    mode = raw.get('manual_price_mode') or {}
+    return {
+        'active': True,
+        'price': price,
+        'price_display': price_display,
+        'status_label': '手入力価格による一時総合判定。',
+        'summary': f'{price_display}円を現在値として、MacroとBasecalcを総合しています。',
+        'source_rows': [
+            {'label': '判定対象価格', 'value': f'{price_display}円（手入力）'},
+            {'label': 'Macro', 'value': mode.get('macro_source') or '保存済み最新判断'},
+            {'label': 'Basecalc', 'value': mode.get('basecalc_source') or '保存済みチャート判断に手入力価格を反映'},
+        ],
+    }
+
+
+def _decision_inputs(snapshot, macro, basecalc, world_model, manual_price):
+    macro_raw = macro.get('raw') or {}
+    basecalc_raw = basecalc.get('raw') or {}
+    return {
+        'rows': [
+            {
+                'label': 'Macroデータ更新時刻',
+                'value': _format_datetime(macro_raw.get('generated_at') or macro.get('as_of')),
+            },
+            {
+                'label': 'Basecalcデータ更新時刻',
+                'value': _basecalc_updated_display(basecalc_raw, world_model),
+            },
+            {
+                'label': '手入力価格',
+                'value': f"{manual_price.get('price_display')}円" if manual_price.get('active') else '未入力',
+            },
+            {
+                'label': '米国3指数',
+                'value': _us_index_availability(basecalc_raw, world_model),
+            },
+        ],
+        'materials': list(snapshot.evidence or [])[:6],
+    }
+
+
+def _basecalc_updated_display(basecalc_raw, world_model):
+    value = (
+        basecalc_raw.get('generated_at')
+        or world_model.get('generated_at')
+        or world_model.get('as_of')
+    )
+    formatted = _format_datetime(value)
+    if formatted != 'N/A':
+        return formatted
+    display = world_model.get('last_updated_display')
+    return display or 'N/A'
+
+
+def _us_index_availability(basecalc_raw, world_model):
+    intermarket = (
+        world_model.get('us_index_confirmation')
+        or world_model.get('intermarket_technicals')
+        or basecalc_raw.get('intermarket_technicals')
+        or {}
+    )
+    readiness = intermarket.get('readiness') if isinstance(intermarket, dict) else {}
+    components = intermarket.get('components') if isinstance(intermarket, dict) else {}
+    readiness = readiness if isinstance(readiness, dict) else {}
+    components = components if isinstance(components, dict) else {}
+    if readiness.get('usable') is False:
+        return 'なし'
+    return 'あり' if components else 'なし'
+
+
+def _format_datetime(value):
+    if not value:
+        return 'N/A'
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value).strip()
+        if text.endswith(' JST'):
+            return text
+        try:
+            parsed = datetime.fromisoformat(text.replace('Z', '+00:00'))
+        except ValueError:
+            return text or 'N/A'
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=JST)
+    return parsed.astimezone(JST).strftime('%Y-%m-%d %H:%M JST')
+
+
+def _confidence_display(snapshot, manual_price):
+    if manual_price.get('active'):
+        return '参考判定（価格は手入力）'
+    return f'{snapshot.confidence_grade} / {snapshot.confidence_score}%'
 
 
 def _trade_judgment(side, snapshot, world_model):

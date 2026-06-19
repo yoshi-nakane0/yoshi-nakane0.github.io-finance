@@ -278,10 +278,6 @@
             </section>
 
             <div class="action-row top-actions">
-                <form method="get" action="" id="recalc-form" class="inline-form">
-                    <input type="hidden" name="price" value="{{ price_param|default:'' }}" data-field="price_param">
-                    <button type="submit" class="btn-base btn-primary">再計算</button>
-                </form>
                 {% if can_update_basecalc_data %}
                 <form method="post" action="{% url 'basecalc:workflow_dispatch' %}" class="inline-form">
                     {% csrf_token %}
@@ -298,7 +294,6 @@
                 <form method="post" action="" id="price-refresh-form" class="inline-form">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update">
-                    <input type="hidden" name="price" value="{{ price_param|default:'' }}">
                     <button type="submit" class="btn-base btn-outline" id="price-refresh">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M23 4v6h-6"></path>
@@ -320,46 +315,6 @@
                 {% if refresh_workflow_state.detail %} / {{ refresh_workflow_state.detail }}{% endif %}
             </div>
             {% endif %}
-
-            <details class="card">
-                <summary class="card-header compact-header">
-                    <div class="card-icon text-blue">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3v18"></path>
-                            <path d="M5 10h14"></path>
-                            <path d="M7 16h10"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="card-title">手動価格入力</div>
-                        <div class="quality-summary">{{ data.price_display|default:"N/A" }}</div>
-                    </div>
-                    <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-                </summary>
-                <div class="accordion-content">
-                    <div class="price-display compact-price-display">
-                        <div class="price-display__head">
-                            <div>
-                                <span class="price-label">日経先物 最新取得値</span>
-                                <div class="price-value" id="current-price" data-field="price_display">{{ data.price_display|default:"" }}</div>
-                            </div>
-                            <div class="last-updated" data-field="last_updated_display">Last Updated: {{ world_model.last_updated_display }}</div>
-                        </div>
-                        <form method="get" action="" class="manual-price-form">
-                            <input type="number" name="price" class="erp-input price-input" value="{{ price_param|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物 最新取得値" data-field="price_param">
-                            <button type="submit" class="btn-base btn-primary">適用</button>
-                        </form>
-                        <div class="notice-text text-blue" data-field="manual_price_notice" {% if not manual_price_override.active %}hidden{% endif %}>
-                            手入力価格を判定に使用中{% if manual_price_override.price_display %}: {{ manual_price_override.price_display }}{% endif %}
-                        </div>
-                        <div id="price-warning" class="notice-text text-red" {% if not world_model.data_warning %}hidden{% endif %} data-field="data_warning">
-                            {{ world_model.data_warning }}
-                        </div>
-                    </div>
-                </div>
-            </details>
 
             <details class="card quality-card quality-{{ world_model.data_quality.level }}" data-field="data_quality">
                 <summary class="card-header compact-header">
@@ -894,12 +849,6 @@
                     }
                     field.hidden = next.hidden;
                 });
-                const nextPrice = doc.querySelector('[data-field="price_param"]');
-                if (nextPrice instanceof HTMLInputElement) {
-                    document.querySelectorAll('input[name="price"]').forEach((input) => {
-                        input.value = nextPrice.value;
-                    });
-                }
                 updateSentimentMeter();
             };
 

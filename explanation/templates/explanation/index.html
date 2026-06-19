@@ -19,7 +19,9 @@
       {% endif %}
 
       {% if is_preview %}
-        <p class="common-notice">保存済み判断がないため、保存済みデータから一時表示しています。</p>
+        {% if not manual_price.active %}
+          <p class="common-notice">保存済み判断がないため、保存済みデータから一時表示しています。</p>
+        {% endif %}
       {% endif %}
 
       {% if refresh_status.needs_refresh %}
@@ -33,6 +35,41 @@
           {% endif %}
         </section>
       {% endif %}
+
+      <section class="common-section">
+        <h2 class="common-section-title">日経先物価格</h2>
+        <form method="get" action="" class="common-action-form">
+          <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
+          <button type="submit" class="common-button">この価格で判定</button>
+        </form>
+        {% if manual_price.active %}
+          <div class="common-list">
+            {% for row in manual_price.source_rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.value }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">最終判定に使った材料一覧</h2>
+        <div class="common-list">
+          {% for row in decision_inputs.rows %}
+            <div class="common-row">
+              <span>{{ row.label }}</span>
+              <strong>{{ row.value }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+        <ol class="common-ordered-list">
+          {% for item in decision_inputs.materials %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ol>
+      </section>
 
       <section class="common-section">
         <p class="common-kicker">Entry</p>
@@ -106,7 +143,7 @@
           </div>
           <div class="common-row">
             <span>信頼度</span>
-            <strong>{{ snapshot.confidence_grade }} / {{ snapshot.confidence_score }}%</strong>
+            <strong>{{ confidence_display }}</strong>
           </div>
           <div class="common-row">
             <span>判定状態</span>

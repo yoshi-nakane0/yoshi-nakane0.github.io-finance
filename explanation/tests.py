@@ -223,6 +223,87 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('/explanation/precompute/', html)
         self.assertIn('Explanationを再作成', html)
 
+    def test_template_renders_manual_price_form(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = True
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['manual_price'] = {
+            'active': True,
+            'price': 42000,
+            'price_display': '42,000',
+        }
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('name="price"', html)
+        self.assertIn('value="42000"', html)
+        self.assertNotIn('手入力価格を使用中: 42,000', html)
+        self.assertIn('判定に使った材料', html)
+        self.assertIn('Macroデータ更新時刻', html)
+        self.assertIn('Basecalcデータ更新時刻', html)
+        self.assertIn('米国3指数', html)
+        self.assertNotIn('手入力価格による一時総合判定です。', html)
+        self.assertNotIn('保存済み判断がないため', html)
+
+    def test_manual_price_context_explains_source_inputs(self):
+        snapshot = self._snapshot()
+        snapshot.confidence_grade = 'D'
+        snapshot.confidence_score = 38
+        snapshot.source_snapshots['basecalc']['raw']['manual_price_override'] = {
+            'active': True,
+            'price': 42000,
+            'price_display': '42,000',
+        }
+        snapshot.source_snapshots['basecalc']['raw']['manual_price_mode'] = {
+            'basis': 'saved_basecalc_with_manual_price',
+            'macro_source': '保存済み最新判断',
+            'basecalc_source': '保存済みチャート判断に手入力価格を反映',
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertTrue(context['manual_price']['active'])
+        self.assertEqual(context['confidence_display'], '参考判定（価格は手入力）')
+        self.assertEqual(context['manual_price']['status_label'], '手入力価格による一時総合判定。')
+        self.assertIn('42,000円', context['manual_price']['summary'])
+        self.assertEqual(
+            context['manual_price']['source_rows'][0],
+            {'label': '判定対象価格', 'value': '42,000円（手入力）'},
+        )
+
+    def test_decision_inputs_show_update_times_manual_price_us_indices_and_materials(self):
+        snapshot = self._snapshot()
+        snapshot.source_snapshots['macro']['raw'] = {
+            'generated_at': '2026-06-19T08:30:00+00:00',
+        }
+        snapshot.source_snapshots['basecalc']['raw']['generated_at'] = '2026-06-19T09:40:00+00:00'
+        snapshot.source_snapshots['basecalc']['raw']['manual_price_override'] = {
+            'active': True,
+            'price': 42000,
+            'price_display': '42,000',
+        }
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['us_index_confirmation'] = {
+            'readiness': {'usable': True},
+            'components': {'nasdaq100_futures': {}, 'sp500_futures': {}, 'dow_futures': {}},
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(
+            context['decision_inputs']['rows'],
+            [
+                {'label': 'Macroデータ更新時刻', 'value': '2026-06-19 17:30 JST'},
+                {'label': 'Basecalcデータ更新時刻', 'value': '2026-06-19 18:40 JST'},
+                {'label': '手入力価格', 'value': '42,000円'},
+                {'label': '米国3指数', 'value': 'あり'},
+            ],
+        )
+        self.assertEqual(
+            context['decision_inputs']['materials'],
+            ['Basecalcは上方向。', 'Macroは支援的。'],
+        )
+
 
 class ExplanationFreshnessTests(SimpleTestCase):
     def _snapshot(self):
@@ -326,3 +407,137 @@ class ExplanationPrecomputeViewTests(TestCase):
             response = self.client.post('/explanation/precompute/')
 
         self.assertEqual(response.status_code, 403)
+
+
+class ExplanationManualPriceViewTests(TestCase):
+    def _saved_basecalc_snapshot(self):
+        return {
+            'generated_at': timezone.now().isoformat(),
+            'data': {'price_display': '66,670'},
+            'world_model': {
+                'direction': 'up',
+                'direction_label': '上昇優勢',
+                'price': 66670,
+                'confidence': 'Middle',
+                'confidence_score': 68,
+                'data_quality_score': 96,
+                'readiness_level': 'ready',
+                'features': {
+                    'price': 66670,
+                    'close': 66670,
+                    'source_symbol': 'NIY=F',
+                    'source_name': '225navi',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                },
+                'horizons': {
+                    '1d': {'main_bias': 'up', 'setup_label': '上昇トレンド継続'},
+                    '3d': {'main_bias': 'up', 'setup_label': '上昇トレンド継続'},
+                    '5d': {'main_bias': 'up', 'setup_label': '上昇トレンド継続'},
+                },
+                'upside_targets': [{'label': 'T1', 'price': 71180, 'probability_display': '5%'}],
+                'downside_targets': [{'label': 'T1', 'price': 67620, 'probability_display': '8%'}],
+                'invalidation_price': 62350,
+                'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+            },
+            'decision': {
+                'direction': 'up',
+                'direction_label': '上昇優勢',
+                'confidence': 'Middle',
+                'confidence_score': 68,
+                'readiness_level': 'ready',
+                'can_show_prediction': True,
+                'upside_target': {'label': 'T1', 'price': 71180, 'probability_display': '5%'},
+                'downside_target': {'label': 'T1', 'price': 67620, 'probability_display': '8%'},
+            },
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'market_shock': {},
+            'intermarket_technicals': {
+                'readiness': {'usable': True},
+                'evidence': [],
+            },
+            'backtest_performance_by_horizon': {'1d': {'total_predictions': 80}},
+        }
+
+    def test_manual_price_rebuilds_preview_without_saving_explanation_snapshot(self):
+        macro = MacroSignal(
+            bias='positive',
+            summary='Macroは支援的。',
+            confidence_score=75,
+            confidence_grade='B',
+            data_quality_score=80,
+        )
+        base_snapshot = {
+            'symbol': 'NIY=F',
+            'source': '225navi',
+            'price': 41000,
+            'previous_close': 40900,
+            'change_pct': 0.2,
+            'fetched_at': timezone.now(),
+            'fallback_used': False,
+            'opens': [40000 + index * 10 for index in range(80)],
+            'highs': [40080 + index * 10 for index in range(80)],
+            'lows': [39920 + index * 10 for index in range(80)],
+            'closes': [40000 + index * 10 for index in range(80)],
+            'volumes': [1000 for _ in range(80)],
+            'timestamps': [1700000000 + index * 86400 for index in range(80)],
+        }
+
+        with (
+            mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
+            mock.patch(
+                'explanation.services.basecalc_adapter.load_basecalc_snapshot',
+                return_value={'generated_at': timezone.now().isoformat()},
+            ),
+            mock.patch(
+                'explanation.services.basecalc_adapter.get_stale_futures_snapshot',
+                return_value=base_snapshot,
+                create=True,
+            ),
+            mock.patch(
+                'explanation.services.basecalc_adapter.performance_summary',
+                return_value={'total_predictions': 0},
+                create=True,
+            ),
+        ):
+            response = self.client.get('/explanation/', {'price': '42000'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ExplanationSnapshot.objects.count(), 0)
+        self.assertIn('manual_price', response.context)
+        self.assertTrue(response.context['manual_price']['active'])
+        self.assertEqual(response.context['manual_price']['price'], 42000)
+        self.assertEqual(response.context['manual_price']['price_display'], '42,000')
+        raw = response.context['snapshot'].source_snapshots['basecalc']['raw']
+        self.assertEqual(raw['world_model']['price'], 42000)
+
+    def test_manual_price_uses_saved_basecalc_when_recalc_data_is_unavailable(self):
+        macro = MacroSignal(
+            bias='positive',
+            summary='Macroは支援的。',
+            confidence_score=75,
+            confidence_grade='B',
+            data_quality_score=80,
+        )
+
+        with (
+            mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
+            mock.patch(
+                'explanation.services.basecalc_adapter.load_basecalc_snapshot',
+                return_value=self._saved_basecalc_snapshot(),
+            ),
+            mock.patch(
+                'explanation.services.basecalc_adapter.get_stale_futures_snapshot',
+                return_value=None,
+                create=True,
+            ),
+        ):
+            response = self.client.get('/explanation/', {'price': '42000'})
+
+        self.assertEqual(response.status_code, 200)
+        raw = response.context['snapshot'].source_snapshots['basecalc']['raw']
+        self.assertEqual(raw['world_model']['price'], 42000)
+        self.assertEqual(raw['world_model']['confidence_score'], 68)
+        self.assertEqual(raw['manual_price_mode']['basis'], 'saved_basecalc_with_manual_price')
+        self.assertNotEqual(response.context['snapshot'].confidence_grade, 'D')

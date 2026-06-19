@@ -16,7 +16,12 @@ from .services.serializer import snapshot_to_api, snapshot_to_view
 logger = logging.getLogger(__name__)
 
 
-def _latest_or_preview():
+def _latest_or_preview(price_override=None):
+    if price_override is not None:
+        return build_explanation_snapshot(
+            save=False,
+            basecalc_price_override=price_override,
+        ), True
     try:
         snapshot = ExplanationSnapshot.objects.order_by('-as_of', '-created_at').first()
     except (OperationalError, ProgrammingError):
@@ -30,7 +35,8 @@ def _latest_or_preview():
 
 
 def index(request):
-    snapshot, is_preview = _latest_or_preview()
+    price_override = _manual_price_from_request(request)
+    snapshot, is_preview = _latest_or_preview(price_override)
     context = snapshot_to_view(snapshot)
     context['is_preview'] = is_preview
     context['refresh_status'] = build_explanation_refresh_status(snapshot)
@@ -82,3 +88,15 @@ def _is_local_request(request):
         '127.0.0.1',
         '::1',
     }
+
+
+def _manual_price_from_request(request):
+    value = request.GET.get('price')
+    if not value:
+        return None
+    cleaned = str(value).replace(',', '').strip()
+    try:
+        price = int(float(cleaned))
+    except (TypeError, ValueError):
+        return None
+    return price if price > 0 else None

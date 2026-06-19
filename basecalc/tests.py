@@ -878,32 +878,48 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertNotEqual(cached_snapshot['closes'][-1], 42000)
         saved_snapshot.assert_not_called()
 
-    def test_manual_price_get_adds_separate_status_row(self):
-        cached_snapshot = _ready_snapshot(source='225navi')
+    def test_index_no_longer_renders_manual_price_input(self):
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'price': 41000,
+                'direction': 'neutral',
+                'direction_label': '中立',
+                'confidence_score': 50,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 80},
+                'horizons': {},
+                'source_status': {'source': '225navi', 'symbol': 'NIY=F'},
+            },
+            'decision': {
+                'direction': 'neutral',
+                'direction_label': '中立',
+                'price': 41000,
+                'confidence': 'Middle',
+                'confidence_score': 50,
+                'readiness_level': 'ready',
+                'readiness_label': '判定可能',
+                'fallback_used': False,
+                'daily_bars': 80,
+                'status_summary': '判定可能',
+                'upside_target': None,
+                'downside_target': None,
+            },
+            'basecalc_status_rows': [],
+            'basecalc_status': {},
+            'market_shock': {},
+            'intermarket_technicals': {},
+            'price_param': '41000',
+        }
 
-        with (
-            patch('basecalc.views.get_cached_futures_snapshot', return_value=cached_snapshot),
-            patch('basecalc.views.get_cached_intermarket_technical_context', return_value={}),
-        ):
-            response = self.client.get(reverse('basecalc:index'), {'price': '71800'})
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        override = response.context['manual_price_override']
-        self.assertTrue(override['active'])
-        self.assertEqual(override['price'], 71800)
-        self.assertEqual(override['price_display'], '71,800')
-        rows = response.context['basecalc_status_rows']
-        manual_row = next(row for row in rows if row['key'] == 'manual_price')
-        price_row = next(row for row in rows if row['key'] == 'price_data')
-
-        self.assertEqual(manual_row['label'], '手入力価格')
-        self.assertEqual(manual_row['age_display'], '適用中')
-        self.assertEqual(manual_row['source'], '71,800')
-        self.assertEqual(manual_row['decision_label'], '一時判定')
-        self.assertEqual(price_row['label'], '価格データ')
-        self.assertIn('225navi', price_row['source'])
-        self.assertNotEqual(price_row['source'], manual_row['source'])
-        self.assertContains(response, '手入力価格を判定に使用中')
+        self.assertNotContains(response, '手動価格入力')
+        self.assertNotContains(response, 'manual-price-form')
+        self.assertNotContains(response, '<input type="number" name="price"')
 
     def test_index_shows_backtest_performance_separately_from_live_performance(self):
         def fake_performance_summary(horizon='1d', *args, **kwargs):

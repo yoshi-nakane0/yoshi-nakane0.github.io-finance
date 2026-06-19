@@ -213,6 +213,18 @@ body.bg-dark {
   gap: 8px;
 }
 
+.common-input {
+  min-height: 42px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.7);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
 .common-button {
   display: inline-flex;
   align-items: center;

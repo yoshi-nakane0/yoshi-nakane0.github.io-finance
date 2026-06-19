@@ -140,7 +140,7 @@
                         <p class="macro-regime-answer-detail">{{ macro_forecast_report.nikkei_implication }}</p>
                     </div>
                     {% if macro_forecast_report.axes %}
-                        <div class="macro-current-state-map">
+                        <div>
                             <div class="macro-state-section">
                                 <div class="macro-state-card-grid">
                                     {% for axis in macro_forecast_report.axes %}
@@ -354,7 +354,7 @@
                     </div>
                     <p class="macro-regime-condition-note">{{ regime_condition_note }}</p>
                 </div>
-                <div class="macro-current-state-map">
+                <div>
                     {% for section in regime_state_sections %}
                         <div class="macro-state-section macro-state-section--{{ section.key }}">
                             <div class="macro-state-section-head">
