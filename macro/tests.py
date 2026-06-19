@@ -1875,6 +1875,71 @@ class DashboardFormatTest(TestCase):
         self.assertIn('雇用はまだ強い', result['key_drivers'])
         self.assertIn('主要系列の欠損があります。', result['blocking_issues'])
 
+    def test_house_view_shows_current_invalidation_trigger_status(self):
+        unrate, _ = Indicator.objects.update_or_create(
+            fred_series_id='UNRATE',
+            defaults={
+                'name_ja': '失業率',
+                'category': Indicator.Category.EMPLOYMENT,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.MONTHLY,
+            },
+        )
+        for observation_date, value in [
+            (date(2026, 2, 1), 4.0),
+            (date(2026, 3, 1), 4.1),
+            (date(2026, 4, 1), 4.1),
+            (date(2026, 5, 1), 4.2),
+        ]:
+            Observation.objects.create(
+                indicator=unrate,
+                observation_date=observation_date,
+                value=value,
+            )
+        core_pce, _ = Indicator.objects.update_or_create(
+            fred_series_id='PCEPILFE',
+            defaults={
+                'name_ja': 'Core PCE',
+                'category': Indicator.Category.INFLATION,
+                'importance': Indicator.Importance.A,
+                'frequency': Indicator.Frequency.MONTHLY,
+            },
+        )
+        for observation_date, yoy_change in [
+            (date(2026, 2, 1), 2.8),
+            (date(2026, 3, 1), 2.9),
+            (date(2026, 4, 1), 3.1),
+        ]:
+            Observation.objects.create(
+                indicator=core_pce,
+                observation_date=observation_date,
+                value=100,
+                yoy_change=yoy_change,
+            )
+
+        with mock.patch('macro.services.house_view.build_data_quality_report', return_value={
+            'as_of': '2026-06-17',
+            'display_allowed': True,
+            'confidence_cap': 'A',
+            'freshness_score': 90,
+        }):
+            result = house_view.build_house_view_context()
+
+        self.assertIn('invalidation_status_notes', result)
+        self.assertEqual(
+            result['invalidation_status_notes'],
+            [
+                {
+                    'label': '失業率',
+                    'detail': '直近1/3か月連続で上昇（2026-05-01: 4.20%、前月比 +0.10pt）',
+                },
+                {
+                    'label': 'Core PCE',
+                    'detail': '直近2/2か月連続で再加速（2026-04-01: 3.10%、前月比 +0.20pt）',
+                },
+            ],
+        )
+
     def test_regime_context_uses_rule_strength_not_confidence_pct(self):
         snapshot = RegimeSnapshot.objects.create(
             snapshot_date=date(2026, 5, 17),
@@ -2500,6 +2565,11 @@ class DashboardCacheTest(TestCase):
         self.assertContains(response, '3件 / 2件')
         self.assertContains(response, '信頼度上限 C')
         self.assertContains(response, '主要指標が3件未取得です。')
+        content = response.content.decode('utf-8')
+        self.assertLess(content.index('基準日'), content.index('判断用データ品質'))
+        self.assertLess(content.index('最終データ日'), content.index('判断用データ品質'))
+        self.assertNotContains(response, '前回更新の失敗')
+        self.assertNotContains(response, '記録された失敗はありません。')
 
     def test_precompute_dashboard_payload_includes_world_model_sections(self):
         with mock.patch('macro.services.data_sync.get_latest_observation_date', return_value=None), \
@@ -2714,7 +2784,8 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '確度')
         self.assertNotContains(r, '主要指標の観測日が古い可能性があります。')
 
-    def test_index_shows_reliability_status_from_cache(self):
+    @mock.patch('macro.views.load_static_macro_payload', return_value=None)
+    def test_index_shows_reliability_status_from_cache(self, static_payload_mock):
         DashboardCache.objects.create(
             cache_key='macro_update_status_v1',
             payload={
@@ -2738,7 +2809,134 @@ class MacroUrlsTest(TestCase):
         self.assertContains(audit_response, '前回更新')
         self.assertContains(audit_response, '一部失敗')
         self.assertContains(audit_response, 'VIXCLS: timeout')
-        self.assertContains(audit_response, '欠損 / 古い')
+
+    @mock.patch('macro.views.load_static_macro_operations_status')
+    @mock.patch('macro.views.load_static_macro_payload')
+    def test_audit_reliability_uses_static_payload_instead_of_empty_runtime_db(
+        self,
+        static_payload_mock,
+        static_operations_mock,
+    ):
+        static_payload_mock.return_value = {
+            'has_observations': True,
+            'last_updated': '2026-06-19',
+            'generated_at': '2026-06-19T01:39:54+00:00',
+            'data_quality_report': {
+                'as_of': '2026-06-19',
+                'freshness_score': 100.0,
+                'missing_required_count': 0,
+                'stale_required_count': 0,
+                'required_count': 8,
+                'usable_for_decision': True,
+                'confidence_cap': 'A',
+                'display_allowed': True,
+                'blocking_issues': [],
+                'warnings': [],
+            },
+            'indicator_cards': [],
+            'audit_indicator_cards': [
+                {
+                    'series_id': 'CPIAUCSL',
+                    'name_ja': 'CPI',
+                    'has_data': True,
+                    'latest_date': '2026-05-01',
+                },
+                {
+                    'series_id': 'CPILFESL',
+                    'name_ja': 'Core CPI',
+                    'has_data': True,
+                    'latest_date': '2026-05-01',
+                },
+                {
+                    'series_id': 'PCEPI',
+                    'name_ja': 'PCE',
+                    'has_data': True,
+                    'latest_date': '2026-04-01',
+                },
+                {
+                    'series_id': 'PCEPILFE',
+                    'name_ja': 'Core PCE',
+                    'has_data': True,
+                    'latest_date': '2026-04-01',
+                },
+                {
+                    'series_id': 'T5YIE',
+                    'name_ja': '5年期待インフレ率',
+                    'has_data': True,
+                    'latest_date': '2026-06-18',
+                },
+                {
+                    'series_id': 'T10YIE',
+                    'name_ja': '10年期待インフレ率',
+                    'has_data': True,
+                    'latest_date': '2026-06-18',
+                },
+            ],
+            'similar_periods': [],
+            'linkages': [],
+        }
+        static_operations_mock.return_value = {
+            'latest_update_status': {
+                'source': 'refresh_macro_data',
+                'status': 'success',
+                'message': '日次更新を実行しました。',
+                'failed': [],
+                'finished_at': '2026-06-19T01:38:34+00:00',
+            },
+        }
+
+        response = self.client.get(reverse('macro:audit'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Observation.objects.count(), 0)
+        self.assertContains(response, '前回更新')
+        self.assertContains(response, '成功')
+        self.assertContains(response, '2026-06-19 01:38')
+        self.assertContains(response, '欠損 / 古い')
+        self.assertContains(response, '0件 / 0件')
+        self.assertNotContains(response, '記録なし')
+        self.assertNotContains(response, '未取得: CPI（CPIAUCSL）')
+
+    @mock.patch('macro.views.load_static_macro_payload')
+    def test_index_shows_house_view_invalidation_status_notes(self, static_payload_mock):
+        static_payload_mock.return_value = {
+            'has_observations': True,
+            'last_updated': '2026-06-17',
+            'similar_periods': [],
+            'linkages': [],
+            'indicator_cards': [],
+            'historical_crash_similarity': [],
+            'house_view': {
+                'house_view': '景気判断は中立',
+                'confidence_grade': 'B',
+                'confidence_score': 72,
+                'display_allowed': True,
+                'as_of': '2026-06-17',
+                'regime_label': 'inflation_risk',
+                'key_drivers': [],
+                'main_risks': [],
+                'invalidation_triggers': [
+                    '失業率が3か月連続で上昇',
+                    'Core PCEが2か月連続で再加速',
+                ],
+                'invalidation_status_notes': [
+                    {
+                        'label': '失業率',
+                        'detail': '直近1/3か月連続で上昇（2026-05-01: 4.20%、前月比 +0.10pt）',
+                    },
+                    {
+                        'label': 'Core PCE',
+                        'detail': '直近2/2か月連続で再加速（2026-04-01: 3.10%、前月比 +0.20pt）',
+                    },
+                ],
+            },
+        }
+
+        response = self.client.get(reverse('macro:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '失業率: 直近1/3か月連続で上昇')
+        self.assertContains(response, 'Core PCE: 直近2/2か月連続で再加速')
 
     @mock.patch('macro.views.load_static_macro_payload')
     def test_index_crash_alert_copy_uses_market_stress_wording(

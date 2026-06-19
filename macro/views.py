@@ -24,6 +24,7 @@ from .services.dashboard import (
     build_macro_decision_context,
     build_reliability_context,
     build_regime_context,
+    build_static_reliability_context,
     load_crash_probability_model,
     load_lightgbm_prediction,
     load_regime_probability_model,
@@ -36,6 +37,7 @@ from .services.dashboard_cache import (
     load_macro_update_status,
     load_indicator_detail_payload,
     load_similar_detail_payload,
+    load_static_macro_operations_status,
     load_static_macro_payload,
     precompute_dashboard_payload,
     save_dashboard_payload,
@@ -113,11 +115,20 @@ def _attach_reliability_context(
     latest_snapshot,
     *,
     dashboard_cache_meta=None,
+    static_payload=None,
+    static_operations_status=None,
 ):
     context.update(build_regime_context(latest_snapshot))
     if 'macro_decision' not in context:
         context['macro_decision'] = build_macro_decision_context(latest_snapshot)
-    context['macro_reliability'] = build_reliability_context(
+    static_reliability = None
+    if static_payload is not None:
+        static_reliability = build_static_reliability_context(
+            static_payload,
+            operations_status=static_operations_status,
+            regime_model_version=context.get('regime_model_version'),
+        )
+    context['macro_reliability'] = static_reliability or build_reliability_context(
         last_updated=context.get('last_updated'),
         dashboard_cache_meta=dashboard_cache_meta,
         update_status=load_macro_update_status(),
@@ -260,7 +271,12 @@ def index(request):
     )
     context['similar_commentary'] = build_similar_explanation(similar_periods)
     context['linkage_commentary'] = build_linkage_explanation(linkages)
-    _attach_reliability_context(context, latest_snapshot)
+    _attach_reliability_context(
+        context,
+        latest_snapshot,
+        static_payload=cache_payload,
+        static_operations_status=load_static_macro_operations_status(),
+    )
     return render(request, 'macro/index.html', context)
 
 
@@ -308,7 +324,12 @@ def audit(request):
     context['linkage_commentary'] = build_linkage_explanation(
         context.get('linkages', [])
     )
-    _attach_reliability_context(context, latest_snapshot)
+    _attach_reliability_context(
+        context,
+        latest_snapshot,
+        static_payload=cache_payload or None,
+        static_operations_status=load_static_macro_operations_status(),
+    )
     return render(request, 'macro/audit.html', context)
 
 

@@ -31,6 +31,7 @@ INDICATOR_DETAIL_CACHE_PREFIX = 'macro_indicator_detail_v1:'
 SIMILAR_DETAIL_CACHE_PREFIX = 'macro_similar_detail_v1:'
 UPDATE_STATUS_CACHE_KEY = 'macro_update_status_v1'
 STATIC_MACRO_PAYLOAD_PATH = Path('static/macro/latest_dashboard.json')
+STATIC_MACRO_OPERATIONS_STATUS_PATH = Path('static/macro/operations_status.json')
 
 
 def indicator_detail_cache_key(series_id: str) -> str:
@@ -92,6 +93,10 @@ def load_static_macro_payload(path: str | Path | None = None) -> Optional[dict]:
     if not isinstance(payload, dict):
         return None
     return payload
+
+
+def load_static_macro_operations_status() -> Optional[dict]:
+    return load_static_macro_payload(STATIC_MACRO_OPERATIONS_STATUS_PATH)
 
 
 def write_static_macro_payload(payload: dict, path: str | Path | None = None) -> None:

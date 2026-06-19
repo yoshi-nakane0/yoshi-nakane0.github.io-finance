@@ -166,6 +166,7 @@ def build_indicator_cards() -> List[Dict]:
                 'name_ja': ind.name_ja,
                 'category': ind.get_category_display(),
                 'importance': ind.importance,
+                'frequency': ind.frequency,
                 'has_data': False,
                 'yoy_display': '—',
                 'direction_arrow': '—',
@@ -190,6 +191,7 @@ def build_indicator_cards() -> List[Dict]:
             'name_ja': ind.name_ja,
             'category': ind.get_category_display(),
             'importance': ind.importance,
+            'frequency': ind.frequency,
             'has_data': True,
             'latest_date': ind.latest_obs_date,
             'yoy_display': format_pct(ind.latest_yoy),
@@ -386,14 +388,74 @@ def _active_indicator_freshness() -> Dict:
     }
 
 
-def build_reliability_context(
+def _coerce_date(value) -> Optional[date]:
+    if value in (None, ''):
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+    return None
+
+
+def _static_indicator_freshness(cards: List[Dict]) -> Optional[Dict]:
+    if not cards:
+        return None
+
+    today = timezone.localdate()
+    missing = []
+    stale = []
+    for card in cards:
+        series_id = card.get('series_id') or ''
+        name = card.get('name_ja') or card.get('name') or series_id or '指標'
+        latest_date = _coerce_date(card.get('latest_date'))
+        if not card.get('has_data') or latest_date is None:
+            missing.append({
+                'series_id': series_id,
+                'name': name,
+                'label': f'{name}（{series_id}）' if series_id else name,
+            })
+            continue
+
+        frequency = card.get('frequency')
+        limit_days = FRESHNESS_LIMIT_DAYS.get(frequency)
+        age_days = max((today - latest_date).days, 0)
+        if limit_days is not None and age_days > limit_days:
+            stale.append({
+                'series_id': series_id,
+                'name': name,
+                'label': (
+                    f'{name}（{latest_date.isoformat()} / '
+                    f'{age_days}日経過）'
+                ),
+                'age_days': age_days,
+            })
+
+    total = len(cards)
+    fresh_count = max(total - len(missing) - len(stale), 0)
+    freshness_pct = round(fresh_count / total * 100) if total else 0
+    return {
+        'total_count': total,
+        'fresh_count': fresh_count,
+        'missing': missing,
+        'stale': stale,
+        'freshness_pct': freshness_pct,
+    }
+
+
+def _reliability_context_from_freshness(
     *,
+    freshness: Dict,
     last_updated=None,
     dashboard_cache_meta: Optional[Dict] = None,
     update_status: Optional[Dict] = None,
     regime_model_version: Optional[str] = None,
 ) -> Dict:
-    freshness = _active_indicator_freshness()
     failures = _normalize_update_failures(update_status)
     outcome = (update_status or {}).get('status') or 'unknown'
     outcome_label_map = {
@@ -449,6 +511,42 @@ def build_reliability_context(
         ),
         'regime_model_version': regime_model_version or '—',
     }
+
+
+def build_reliability_context(
+    *,
+    last_updated=None,
+    dashboard_cache_meta: Optional[Dict] = None,
+    update_status: Optional[Dict] = None,
+    regime_model_version: Optional[str] = None,
+) -> Dict:
+    freshness = _active_indicator_freshness()
+    return _reliability_context_from_freshness(
+        freshness=freshness,
+        last_updated=last_updated,
+        dashboard_cache_meta=dashboard_cache_meta,
+        update_status=update_status,
+        regime_model_version=regime_model_version,
+    )
+
+
+def build_static_reliability_context(
+    payload: Dict,
+    *,
+    operations_status: Optional[Dict] = None,
+    regime_model_version: Optional[str] = None,
+) -> Optional[Dict]:
+    cards = payload.get('audit_indicator_cards') or payload.get('indicator_cards') or []
+    freshness = _static_indicator_freshness(cards)
+    if freshness is None:
+        return None
+    return _reliability_context_from_freshness(
+        freshness=freshness,
+        last_updated=payload.get('last_updated'),
+        dashboard_cache_meta={'computed_at': payload.get('generated_at')},
+        update_status=(operations_status or {}).get('latest_update_status'),
+        regime_model_version=regime_model_version or payload.get('regime_model_version'),
+    )
 
 
 def build_raw_archive_context() -> Dict:

@@ -1542,6 +1542,19 @@ body {
     opacity: 0.75;
 }
 
+.macro-regime-trigger-notes {
+    display: grid;
+    gap: 0.18rem;
+    margin-top: 0.1rem;
+}
+
+.macro-regime-trigger-note {
+    color: var(--macro-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
 .macro-decision {
     display: grid;
     gap: 0.72rem;

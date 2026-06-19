@@ -81,6 +81,13 @@
                                 <li>{{ trigger }}</li>
                             {% endfor %}
                         </ul>
+                        {% if house_view.invalidation_status_notes %}
+                            <div class="macro-regime-trigger-notes">
+                                {% for note in house_view.invalidation_status_notes %}
+                                    <span class="macro-regime-trigger-note">{{ note.label }}: {{ note.detail }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="macro-regime-meta">
                         <span class="macro-regime-updated">基準日: {{ house_view.as_of }} / {{ house_view.regime_label }}</span>
