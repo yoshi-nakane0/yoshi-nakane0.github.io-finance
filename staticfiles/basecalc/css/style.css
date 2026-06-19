@@ -328,6 +328,11 @@ body {
 .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
 .btn-outline { background: rgba(4, 18, 38, 0.72); color: #e8f2ff; border: 1px solid rgba(62, 130, 204, 0.5); }
 .btn-outline:hover { background: rgba(46, 239, 253, 0.11); border-color: rgba(46, 239, 253, 0.62); color: var(--color-accent-blue); }
+.btn-base:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
 .btn-base svg { margin-right: 6px; }
 
 /* Card Styles */

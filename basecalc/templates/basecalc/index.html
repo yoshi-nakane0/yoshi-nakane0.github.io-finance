@@ -277,6 +277,18 @@
                     <button type="submit" class="btn-base btn-primary">再計算</button>
                 </form>
                 {% if can_update_basecalc_data %}
+                <form method="post" action="{% url 'basecalc:workflow_dispatch' %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-base btn-outline" id="basecalc-workflow-dispatch"{% if refresh_workflow_state.status == "running" %} disabled{% endif %}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Actions更新
+                    </button>
+                </form>
                 <form method="post" action="" id="price-refresh-form" class="inline-form">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update">
@@ -295,6 +307,13 @@
                 <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
                 <a href="{% url 'basecalc:validation' %}" class="btn-base btn-outline">検証</a>
             </div>
+            {% if can_update_basecalc_data and refresh_workflow_state %}
+            <div class="notice-text">
+                {{ refresh_workflow_state.message }}
+                {% if refresh_workflow_state.updated_at %} / {{ refresh_workflow_state.updated_at }}{% endif %}
+                {% if refresh_workflow_state.detail %} / {{ refresh_workflow_state.detail }}{% endif %}
+            </div>
+            {% endif %}
 
             <details class="card">
                 <summary class="card-header compact-header">

@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import yaml
 from datetime import date, timedelta
 from io import StringIO
 from pathlib import Path
@@ -63,6 +64,13 @@ from .services import feature_store, world_state
 
 
 class MacroRuntimeConfigTest(SimpleTestCase):
+    def test_github_workflow_files_are_valid_yaml(self):
+        workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
+
+        for workflow_path in workflows_dir.glob('*.yml'):
+            with self.subTest(workflow=workflow_path.name):
+                yaml.safe_load(workflow_path.read_text(encoding='utf-8'))
+
     def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
         workflow = (

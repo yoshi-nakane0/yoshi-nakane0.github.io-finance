@@ -36,14 +36,13 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
         cache.set("nikkei_price", snapshot["price"], timeout=300)
         cache.set("nikkei_futures_snapshot", snapshot, timeout=300)
         cache.set("nikkei_futures_snapshot_last_good", snapshot, timeout=None)
-    write_basecalc_status(
-        {
-            "price_data": price_status_entry(
-                snapshot,
-                world_model.get("readiness_level"),
-            )
-        }
-    )
+    basecalc_status = {
+        "price_data": price_status_entry(
+            snapshot,
+            world_model.get("readiness_level"),
+        )
+    }
+    write_basecalc_status(basecalc_status)
     sync_status = _sync_status(source, snapshot)
     return {
         "sync_status": sync_status,
@@ -57,6 +56,9 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
         "snapshot_fetched_at": snapshot_bar.timestamp.isoformat() if snapshot_bar else "",
         "price": world_model.get("price"),
         "readiness_level": world_model.get("readiness_level"),
+        "_snapshot": snapshot,
+        "_world_model": world_model,
+        "_basecalc_status": basecalc_status,
     }
 
 

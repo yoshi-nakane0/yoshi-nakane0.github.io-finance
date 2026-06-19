@@ -27,7 +27,7 @@ jobs:
       ${{
         (github.event_name == 'schedule' && github.event.schedule == '30 5 * * *') ||
         (github.event_name == 'workflow_dispatch' && (inputs.operation == 'daily' || inputs.operation == 'all'))
-    }}
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:

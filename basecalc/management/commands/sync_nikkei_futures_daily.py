@@ -1,8 +1,10 @@
+import time
 from datetime import datetime
 
 from django.core.management.base import BaseCommand, CommandError
 
 from basecalc.daily_sync import sync_nikkei_futures_daily
+from basecalc.operations import export_basecalc_snapshot
 from basecalc.persistence import export_basecalc_history
 
 
@@ -27,8 +29,13 @@ class Command(BaseCommand):
             default="basecalc/data/basecalc_history.json",
             help="Path for exported basecalc history JSON.",
         )
+        parser.add_argument(
+            "--export-snapshot-path",
+            help="Path for exported basecalc display snapshot JSON.",
+        )
 
     def handle(self, *args, **options):
+        started = time.monotonic()
         start = _parse_date_option(options.get("start"), "start")
         end = _parse_date_option(options.get("end"), "end")
         result = sync_nikkei_futures_daily(
@@ -40,6 +47,18 @@ class Command(BaseCommand):
         if options["export_history"]:
             export_basecalc_history(options["export_path"])
             exported = True
+        snapshot_exported = False
+        export_snapshot_path = options.get("export_snapshot_path")
+        if export_snapshot_path and result.get("_snapshot"):
+            export_basecalc_snapshot(
+                world_model=result.get("_world_model") or {},
+                basecalc_status=result.get("_basecalc_status") or {},
+                futures_snapshot=result.get("_snapshot"),
+                intermarket_context={},
+                export_snapshot_path=export_snapshot_path,
+                job_duration_sec=round(time.monotonic() - started, 3),
+            )
+            snapshot_exported = True
         self.stdout.write(
             self.style.SUCCESS(
                 "nikkei futures daily sync complete: "
@@ -53,7 +72,8 @@ class Command(BaseCommand):
                 f"snapshot_fetched_at={result.get('snapshot_fetched_at') or 'none'}, "
                 f"price={result.get('price')}, "
                 f"readiness={result.get('readiness_level')}, "
-                f"exported={exported}"
+                f"exported={exported}, "
+                f"snapshot_exported={snapshot_exported}"
             )
         )
 

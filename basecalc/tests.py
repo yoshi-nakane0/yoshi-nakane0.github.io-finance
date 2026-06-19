@@ -9,7 +9,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -141,6 +141,108 @@ class BasecalcUpdateSecurityTests(TestCase):
         response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
 
         self.assertNotContains(response, 'id="price-refresh"')
+
+    @override_settings(
+        BASECALC_REFRESH_WORKFLOW_REPOSITORY='owner/repo',
+        BASECALC_REFRESH_WORKFLOW_FILE='refresh-basecalc.yml',
+        BASECALC_REFRESH_WORKFLOW_TOKEN='test-token',
+    )
+    def test_staff_can_dispatch_refresh_workflow(self):
+        user = User.objects.create_user(
+            username='basecalc-workflow-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        with patch(
+            'basecalc.github_actions.requests.post',
+            return_value=mock.Mock(status_code=204, text='', json=mock.Mock(return_value={})),
+        ) as post:
+            response = self.client.post(reverse('basecalc:workflow_dispatch'))
+
+        self.assertEqual(response.status_code, 302)
+        post.assert_called_once()
+        self.assertEqual(
+            post.call_args.args[0],
+            'https://api.github.com/repos/owner/repo/actions/workflows/refresh-basecalc.yml/dispatches',
+        )
+        self.assertEqual(
+            post.call_args.kwargs['json'],
+            {'ref': 'main'},
+        )
+        self.assertEqual(cache.get('basecalc_refresh_workflow_state')['status'], 'running')
+
+    def test_anonymous_refresh_workflow_dispatch_is_forbidden(self):
+        response = self.client.post(reverse('basecalc:workflow_dispatch'))
+
+        self.assertEqual(response.status_code, 403)
+
+    @override_settings(
+        BASECALC_REFRESH_WORKFLOW_REPOSITORY='owner/repo',
+        BASECALC_REFRESH_WORKFLOW_FILE='refresh-basecalc.yml',
+        BASECALC_REFRESH_WORKFLOW_TOKEN='test-token',
+    )
+    def test_running_refresh_workflow_blocks_duplicate_dispatch(self):
+        cache.set(
+            'basecalc_refresh_workflow_state',
+            {'status': 'running', 'message': '実行中', 'updated_at': '2026-06-19 10:00'},
+            timeout=300,
+        )
+        user = User.objects.create_user(
+            username='basecalc-workflow-running-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        with patch('basecalc.github_actions.requests.post') as post:
+            response = self.client.post(reverse('basecalc:workflow_dispatch'))
+
+        self.assertEqual(response.status_code, 302)
+        post.assert_not_called()
+
+    @override_settings(
+        BASECALC_REFRESH_WORKFLOW_REPOSITORY='owner/repo',
+        BASECALC_REFRESH_WORKFLOW_FILE='refresh-basecalc.yml',
+    )
+    def test_staff_index_shows_workflow_status(self):
+        user = User.objects.create_user(
+            username='basecalc-workflow-status-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+        cache.set(
+            'basecalc_refresh_workflow_state',
+            {'status': 'running', 'message': 'GitHub Actions 実行中', 'updated_at': '2026-06-19 10:00'},
+            timeout=300,
+        )
+
+        response = self.client.get(reverse('basecalc:index'), {'price': '41000'})
+
+        self.assertContains(response, 'GitHub Actions 実行中')
+        self.assertContains(response, 'id="basecalc-workflow-dispatch"')
+        self.assertContains(response, 'disabled')
+
+    def test_refresh_workflow_run_state_maps_success_and_failure(self):
+        from .github_actions import state_from_workflow_run
+
+        success = state_from_workflow_run({
+            'status': 'completed',
+            'conclusion': 'success',
+            'updated_at': '2026-06-19T10:00:00Z',
+        })
+        failure = state_from_workflow_run({
+            'status': 'completed',
+            'conclusion': 'failure',
+            'updated_at': '2026-06-19T10:05:00Z',
+        })
+
+        self.assertEqual(success['status'], 'success')
+        self.assertEqual(success['message'], 'GitHub Actions 成功')
+        self.assertEqual(failure['status'], 'failure')
+        self.assertEqual(failure['message'], 'GitHub Actions 失敗')
 
     def test_get_without_price_uses_snapshot_without_external_fetch(self):
         cache.set('nikkei_price', 41000, timeout=300)
@@ -741,6 +843,44 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertIn('status=fallback', text)
         self.assertIn('attempts=225navi:fetched=1', text)
         self.assertIn('snapshot_source=225navi', text)
+        cache.clear()
+
+    def test_sync_command_exports_latest_snapshot_json(self):
+        _create_market_bar_series(
+            count=80,
+            start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        rows = [
+            {
+                'date': date(2026, 6, 5),
+                'open': 67350,
+                'high': 67410,
+                'low': 65890,
+                'close': 66670,
+                'volume': None,
+                'source': '225navi',
+            },
+        ]
+
+        with TemporaryDirectory() as tmpdir:
+            snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
+            with (
+                patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+                patch('basecalc.daily_sync.write_basecalc_status'),
+            ):
+                call_command(
+                    'sync_nikkei_futures_daily',
+                    '--export-snapshot-path',
+                    str(snapshot_path),
+                    stdout=StringIO(),
+                )
+
+            payload = json.loads(snapshot_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(payload['source'], 'github_actions')
+        self.assertEqual(payload['world_model']['price'], 66670)
+        self.assertEqual(payload['data']['price_display'], '66,670')
+        self.assertIn('generated_at', payload)
         cache.clear()
 
     def test_225navi_parser_reads_day_session_ohlc_rows(self):

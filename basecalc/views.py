@@ -2,7 +2,7 @@ from datetime import datetime, timezone as dt_timezone
 
 from django.core.cache import cache
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -32,6 +32,7 @@ from .status import (
 from .validation_report import load_validation_report
 from .world_model import build_world_model
 from .data_quality import is_snapshot_stale
+from .github_actions import dispatch_refresh_workflow, get_refresh_workflow_state
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -66,6 +67,8 @@ def index(request):
         if snapshot:
             context = dict(snapshot)
             context["can_update_basecalc_data"] = can_update_basecalc_data
+            if can_update_basecalc_data:
+                context["refresh_workflow_state"] = get_refresh_workflow_state()
             hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
             return render(request, "basecalc/index.html", context)
@@ -75,6 +78,9 @@ def index(request):
             {
                 "error": "事前計算データがありません。更新ジョブを確認してください。",
                 "can_update_basecalc_data": can_update_basecalc_data,
+                "refresh_workflow_state": get_refresh_workflow_state()
+                if can_update_basecalc_data
+                else None,
             },
         )
 
@@ -85,7 +91,18 @@ def index(request):
             "error": str(exc),
             "can_update_basecalc_data": can_update_basecalc_data,
         }
+    if can_update_basecalc_data:
+        context["refresh_workflow_state"] = get_refresh_workflow_state()
     return render(request, "basecalc/index.html", context)
+
+
+def dispatch_basecalc_refresh_workflow(request):
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid method")
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return HttpResponseForbidden("Forbidden")
+    dispatch_refresh_workflow()
+    return redirect("basecalc:index")
 
 
 def snapshot_api(request):
@@ -291,6 +308,9 @@ def build_context(request, force_update=False):
         "updated": force_update,
         "price_param": format_price_param(price),
         "can_update_basecalc_data": can_update_basecalc_data,
+        "refresh_workflow_state": get_refresh_workflow_state()
+        if can_update_basecalc_data
+        else None,
     }
 
 

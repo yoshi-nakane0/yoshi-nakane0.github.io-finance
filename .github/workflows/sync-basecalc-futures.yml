@@ -37,20 +37,24 @@ jobs:
         id: sync_futures
         run: |
           set -o pipefail
-          python manage.py sync_nikkei_futures_daily --export-history --export-path basecalc/data/basecalc_history.json | tee /tmp/sync_nikkei_futures_daily.log
+          python manage.py sync_nikkei_futures_daily \
+            --export-history \
+            --export-path basecalc/data/basecalc_history.json \
+            --export-snapshot-path basecalc/data/latest_snapshot.json \
+            | tee /tmp/sync_nikkei_futures_daily.log
           status="$(sed -n 's/.*status=\([^,]*\),.*/\1/p' /tmp/sync_nikkei_futures_daily.log | tail -1)"
           echo "status=${status:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Check basecalc data integrity
         run: python manage.py check_basecalc_data_integrity
       - name: Commit basecalc data
         run: |
-          if git diff --quiet -- basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json; then
+          if git diff --quiet -- basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json; then
             echo "No basecalc futures data changes"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json
+          git add basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json
           if [ "${{ steps.sync_futures.outputs.status }}" = "failed" ]; then
             git commit -m "Record failed basecalc futures sync"
           else
