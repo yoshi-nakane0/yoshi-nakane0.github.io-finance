@@ -50,6 +50,11 @@ class Command(BaseCommand):
             help='月次の全履歴アーカイブ作成を省略する。',
         )
         parser.add_argument(
+            '--skip-purge',
+            action='store_true',
+            help='古いデータ削除とDB再圧縮を省略する。使い捨てCI DBでは有効。',
+        )
+        parser.add_argument(
             '--skip-regime-probability',
             action='store_true',
             help='景気確率モデルの履歴検証を省略する。',
@@ -63,6 +68,7 @@ class Command(BaseCommand):
         parser.add_argument('--horizon-days', type=int, default=63)
         parser.add_argument('--drawdown-threshold', type=float, default=-10.0)
         parser.add_argument('--validation-months', type=int, default=120)
+        parser.add_argument('--price-history-years', type=int, default=25)
         parser.add_argument('--world-state-years', type=int, default=3)
 
     def handle(self, *args, **options):
@@ -114,6 +120,7 @@ class Command(BaseCommand):
         horizon_days = options['horizon_days']
         drawdown_threshold = options['drawdown_threshold']
         validation_months = options['validation_months']
+        price_history_years = options['price_history_years']
         world_state_years = options['world_state_years']
 
         steps = []
@@ -127,9 +134,16 @@ class Command(BaseCommand):
         if not options['skip_refresh']:
             steps.append(('最新データ取得・景気判定', 'refresh_macro_data', (), {}))
 
+        steps.append((
+            '日次価格履歴同期',
+            'sync_daily_prices',
+            (),
+            {'years': price_history_years},
+        ))
+        if not options['skip_purge']:
+            steps.append(('古いデータ削除', 'purge_old_data', (), {}))
+
         steps.extend([
-            ('日次価格履歴同期', 'sync_daily_prices', (), {'years': 25}),
-            ('古いデータ削除', 'purge_old_data', (), {}),
             ('期限到来予測の実績反映', 'settle_forecast_snapshots', (), {}),
             (
                 'World State 月次バックフィル',

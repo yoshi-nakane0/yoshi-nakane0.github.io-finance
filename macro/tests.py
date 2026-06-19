@@ -148,28 +148,15 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"', workflow)
         self.assertIn('timeout-minutes: 20', workflow)
         self.assertIn('concurrency:', workflow)
+        self.assertNotIn('- monthly', workflow)
+        self.assertNotIn('monthly-maintenance:', workflow)
+        self.assertNotIn('monthly_macro_maintenance', workflow)
+        self.assertNotIn('requirements-train.txt', workflow)
         self.assertNotIn('requirements-prod.txt', workflow)
         self.assertNotIn('SQLITE_DB_PATH: /tmp/macro-data.sqlite3', workflow)
         self.assertNotIn('git add db.sqlite3', workflow)
         self.assertNotIn('DATA_BRANCH', workflow)
         self.assertFalse((workflows_dir / 'refresh-macro-data.yml').exists())
-        monthly_block = workflow.split('monthly-maintenance:', 1)[1]
-        self.assertIn(
-            'python manage.py export_macro_model_validation --output static/macro/model_validation_report.json',
-            monthly_block,
-        )
-        self.assertIn(
-            'python manage.py export_macro_model_cards --output static/macro/model_cards.json',
-            monthly_block,
-        )
-        self.assertIn(
-            'python manage.py export_macro_operations_status --output static/macro/operations_status.json',
-            monthly_block,
-        )
-        self.assertIn('static/macro/model_validation_report.json', monthly_block)
-        self.assertIn('static/macro/model_cards.json', monthly_block)
-        self.assertIn('static/macro/operations_status.json', monthly_block)
-        self.assertIn('static/macro/validation_weights.json', monthly_block)
 
     def test_local_macro_pipeline_exports_static_json_outputs(self):
         script = (Path(settings.BASE_DIR) / 'scripts' / 'run_macro_local_pipeline.sh').read_text(
@@ -229,6 +216,26 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertNotIn('python manage.py run_house_view_backtest', script)
         self.assertIn('git add static/macro/*.json', script)
         self.assertNotIn('runtime/db.sqlite3', script)
+
+        monthly_script = (
+            Path(settings.BASE_DIR) / 'scripts' / 'run_macro_monthly_local_pipeline.sh'
+        ).read_text(encoding='utf-8')
+        self.assertIn('set -euo pipefail', monthly_script)
+        self.assertIn('python manage.py monthly_macro_maintenance', monthly_script)
+        self.assertIn(
+            'python manage.py export_macro_payload --output static/macro/latest_dashboard.json',
+            monthly_script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_model_validation --output static/macro/model_validation_report.json',
+            monthly_script,
+        )
+        self.assertIn(
+            'python manage.py export_macro_validation_weights --output static/macro/validation_weights.json',
+            monthly_script,
+        )
+        self.assertIn('git add static/macro/*.json static/macro/*.csv', monthly_script)
+        self.assertIn('python manage.py test macro', monthly_script)
 
         backtest_script = (
             Path(settings.BASE_DIR) / 'scripts' / 'run_macro_house_view_backtest.sh'
@@ -298,10 +305,13 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             encoding='utf-8',
         )
 
-        self.assertIn('monthly-maintenance:', workflow)
-        self.assertIn('monthly_macro_maintenance', workflow)
-        self.assertIn('return_forecast_model.json', workflow)
-        self.assertIn('macro_forecast_model.json', workflow)
+        self.assertNotIn('monthly-maintenance:', workflow)
+        self.assertNotIn('monthly_macro_maintenance', workflow)
+        monthly_script = (
+            workflows_dir.parent.parent / 'scripts' / 'run_macro_monthly_local_pipeline.sh'
+        ).read_text(encoding='utf-8')
+        self.assertIn('return_forecast_model.json', monthly_script)
+        self.assertIn('macro_forecast_model.json', monthly_script)
         self.assertIn('weekly-validation:', workflow)
         self.assertIn('python manage.py weekly_macro_validation', workflow)
         self.assertIn(
@@ -314,6 +324,17 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertFalse(
             (workflows_dir / 'weekly-macro-validation.yml').exists(),
         )
+
+    def test_macro_operations_does_not_run_monthly_model_training_in_actions(self):
+        workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
+        workflow = (workflows_dir / 'macro-operations.yml').read_text(
+            encoding='utf-8',
+        )
+
+        self.assertNotIn('cron: "20 6 3 * *"', workflow)
+        self.assertNotIn('operation == \'monthly\'', workflow)
+        self.assertNotIn('requirements-train.txt', workflow)
+        self.assertNotIn('monthly_macro_maintenance', workflow)
 
     def test_wsgi_runtime_migration_check_not_based_on_one_old_table(self):
         wsgi_source = (
@@ -409,6 +430,44 @@ class MonthlyMacroMaintenanceCommandTest(SimpleTestCase):
                 'run_model_validation',
                 'precompute_dashboard',
             ],
+        )
+
+    def test_monthly_command_can_skip_archive_and_purge_and_limit_price_history(self):
+        with mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.call_command',
+        ) as call_command_mock, mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.start_run',
+            return_value=mock.Mock(),
+        ), mock.patch(
+            'macro.management.commands.monthly_macro_maintenance.finish_run',
+        ):
+            call_command(
+                'monthly_macro_maintenance',
+                skip_archive=True,
+                skip_purge=True,
+                price_history_years=10,
+                stdout=StringIO(),
+            )
+
+        self.assertEqual(
+            [call.args[0] for call in call_command_mock.call_args_list],
+            [
+                'refresh_macro_data',
+                'sync_daily_prices',
+                'settle_forecast_snapshots',
+                'backfill_world_state',
+                'backtest_crash_alert',
+                'train_crash_probability_model',
+                'train_regime_probability_model',
+                'train_return_model',
+                'train_macro_forecast_model',
+                'run_model_validation',
+                'precompute_dashboard',
+            ],
+        )
+        self.assertEqual(
+            call_command_mock.call_args_list[1],
+            mock.call('sync_daily_prices', years=10),
         )
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})

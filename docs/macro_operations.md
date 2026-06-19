@@ -4,8 +4,8 @@
 
 1. GitHub Actions `macro-operations.yml` の日次ジョブが Vercel deploy hook を叩きます。
 2. Vercel build で `build_files.sh` が動きます。
-3. `refresh_macro_data` が指標、景気判定、World State、価格データを更新します。
-4. `purge_old_data`、`settle_forecast_snapshots`、`precompute_dashboard` を実行します。
+3. 本番はリポジトリに保存済みの `static/macro/*.json` を読みます。
+4. build 中のデータ更新は標準では実行しません。
 
 実行例:
 
@@ -31,10 +31,15 @@ python manage.py weekly_macro_validation
 ## 月次メンテナンス
 
 月次メンテナンスは重い検証とモデル更新を含むため、Web画面からは実行しません。
-ローカルまたはCIの管理コマンドとして実行し、Web画面は保存済み結果だけを表示します。
+GitHub Actions でも実行しません。
+ローカルで生成した `static/macro/*.json` と `static/macro/*.csv` を commit / push し、
+本番は保存済み結果だけを表示します。
 
 ```bash
-python manage.py monthly_macro_maintenance
+scripts/run_macro_monthly_local_pipeline.sh
+git diff
+git commit -m "Update monthly macro model outputs"
+git push
 ```
 
 主な処理:
@@ -54,6 +59,9 @@ python manage.py monthly_macro_maintenance
 python manage.py monthly_macro_maintenance --skip-lightgbm --skip-macro-forecast
 ```
 
+GitHub Actions の `macro-operations.yml` は日次・週次の軽い処理だけを担当します。
+月次のモデル学習、長い検証、全履歴バックテストはローカル実行に固定します。
+
 ## 必要な secrets
 
 - `FRED_API_KEY`
@@ -67,6 +75,7 @@ python manage.py monthly_macro_maintenance --skip-lightgbm --skip-macro-forecast
 - `DATABASE_URL` がない: 週次 workflow は skip します。
 - `requirements-train.txt` が未導入: 学習コマンドは依存不足の `CommandError` を出します。
 - Yahoo Finance 取得失敗: 価格同期の失敗として記録し、既存データは消しません。
+- 月次成果物が古い: ローカルで `scripts/run_macro_monthly_local_pipeline.sh` を実行して、生成済みファイルを push します。
 
 ## 復旧手順
 
