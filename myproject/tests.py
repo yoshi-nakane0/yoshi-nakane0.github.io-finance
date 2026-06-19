@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import tempfile
 from pathlib import Path
@@ -71,6 +72,16 @@ class RuntimeAdminProvisioningTests(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
         self.assertTrue(user.check_password('runtime-password'))
+
+
+class VercelFunctionPackagingTests(SimpleTestCase):
+    def test_basecalc_snapshot_is_bundled_with_runtime_function(self):
+        config = json.loads((BASE_DIR / 'vercel.json').read_text(encoding='utf-8'))
+        include_files = config['functions']['api/index.py']['includeFiles']
+
+        self.assertIn('runtime/db.sqlite3', include_files)
+        self.assertIn('basecalc/data/latest_snapshot.json', include_files)
+        self.assertIn('basecalc/data/basecalc_status.json', include_files)
 
 
 class ExplanationRoutingTests(TestCase):

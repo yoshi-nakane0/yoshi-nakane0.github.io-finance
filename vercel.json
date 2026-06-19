@@ -19,7 +19,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
-      "includeFiles": "runtime/db.sqlite3",
+      "includeFiles": "{runtime/db.sqlite3,basecalc/data/latest_snapshot.json,basecalc/data/basecalc_status.json,basecalc/data/basecalc_history.json}",
       "excludeFiles": "{.actions-runner-chart/**,.chart-profile-ci/**,.claude/**,.git/**,.github/**,.toolcache/**,.vercel/**,chrome_profile/**,node_modules/**,**/__pycache__/**,*.pyc,.DS_Store,.env,db.sqlite3,.venv/**,env/**,venv/**}"
     }
   },
