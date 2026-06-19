@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from datetime import date
+from datetime import date, timedelta
 from statistics import mean
 from typing import Dict, Iterable, Optional
 
@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from ..models import (
     ForecastSnapshot,
+    DailyPriceObservation,
     Indicator,
     Observation,
     PriceObservation,
@@ -27,6 +28,10 @@ MACRO_TARGETS = ('DGS10', 'T10Y2Y', 'PCEPILFE', 'UNRATE', 'INDPRO', 'DEXJPUS')
 HORIZONS = ('1m', '3m', '6m')
 RETURN_MODEL_VERSION = 'return_lightgbm_v2'
 MACRO_MODEL_VERSION = 'macro_forecast_lightgbm_v1'
+SHORT_RETURN_MODEL_VERSION = 'short_horizon_return_v1'
+SHORT_RETURN_TARGETS = ('N225', 'IXIC')
+SHORT_RETURN_DAILY_TICKERS = ('N225', 'IXIC', 'GSPC', 'DJI')
+SHORT_RETURN_MACRO_SERIES = ('VIXCLS', 'DGS10')
 
 
 def parse_horizon_months(horizon: str) -> int:
@@ -81,6 +86,18 @@ def _target_value(base: float, future: float, target: str) -> float:
     if target in RETURN_TARGETS:
         return math.log(future / base) * 100.0
     return future - base
+
+
+def is_deprecated_monthly_short_return_model(
+    model_version: str,
+    target: str,
+    horizon: str,
+) -> bool:
+    return (
+        model_version == RETURN_MODEL_VERSION
+        and target in SHORT_RETURN_TARGETS
+        and horizon == '1m'
+    )
 
 
 def _world_feature_row(as_of: date) -> dict:
@@ -181,6 +198,249 @@ def _matrix_from_feature_maps(feature_maps: Iterable[dict]) -> tuple[list[str], 
         for item in maps
     ]
     return names, matrix
+
+
+def _month_end(month: date) -> date:
+    return month.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
+
+
+def _daily_prices(ticker: str, as_of: date, lookback_rows: int = 90) -> list[float]:
+    rows = (
+        DailyPriceObservation.objects
+        .filter(ticker=ticker, observation_date__lte=as_of)
+        .order_by('-observation_date')
+        .values_list('close_price', flat=True)[:lookback_rows + 1]
+    )
+    return [float(value) for value in reversed(list(rows))]
+
+
+def _return_pct(prices: list[float], periods: int) -> Optional[float]:
+    if len(prices) <= periods or prices[-periods - 1] in (None, 0):
+        return None
+    return math.log(prices[-1] / prices[-periods - 1]) * 100.0
+
+
+def _volatility_pct(prices: list[float], periods: int) -> Optional[float]:
+    if len(prices) <= periods:
+        return None
+    returns = []
+    recent = prices[-periods - 1:]
+    for previous, current in zip(recent, recent[1:]):
+        if previous in (None, 0):
+            continue
+        returns.append(math.log(current / previous))
+    if len(returns) < 2:
+        return None
+    avg = mean(returns)
+    variance = mean([(value - avg) ** 2 for value in returns])
+    return math.sqrt(variance) * math.sqrt(252) * 100.0
+
+
+def _drawdown_pct(prices: list[float], periods: int) -> Optional[float]:
+    if len(prices) <= 1:
+        return None
+    recent = prices[-min(len(prices), periods):]
+    high = max(recent)
+    if high in (None, 0):
+        return None
+    return (prices[-1] / high - 1.0) * 100.0
+
+
+def _daily_market_feature_row(target: str, as_of: date) -> dict:
+    features = {}
+    target_prices = _daily_prices(target, as_of)
+    for periods in (5, 20, 60):
+        value = _return_pct(target_prices, periods)
+        if value is not None:
+            features[f'target_return_{periods}d'] = value
+    for periods in (20, 60):
+        value = _volatility_pct(target_prices, periods)
+        if value is not None:
+            features[f'target_volatility_{periods}d'] = value
+    drawdown = _drawdown_pct(target_prices, 60)
+    if drawdown is not None:
+        features['target_drawdown_60d'] = drawdown
+
+    for ticker in SHORT_RETURN_DAILY_TICKERS:
+        if ticker == target:
+            continue
+        prices = _daily_prices(ticker, as_of)
+        value = _return_pct(prices, 20)
+        if value is not None:
+            features[f'{ticker}_return_20d'] = value
+    return features
+
+
+def _macro_daily_change_feature_row(as_of: date, window_days: int = 20) -> dict:
+    features = {}
+    cutoff = as_of - timedelta(days=window_days)
+    for series_id in SHORT_RETURN_MACRO_SERIES:
+        latest = (
+            Observation.objects
+            .filter(indicator__fred_series_id=series_id, observation_date__lte=as_of)
+            .order_by('-observation_date')
+            .values_list('value', flat=True)
+            .first()
+        )
+        previous = (
+            Observation.objects
+            .filter(indicator__fred_series_id=series_id, observation_date__lte=cutoff)
+            .order_by('-observation_date')
+            .values_list('value', flat=True)
+            .first()
+        )
+        if latest is None or previous is None:
+            continue
+        features[f'{series_id}_{window_days}d_change'] = float(latest) - float(previous)
+    return features
+
+
+def _direction_score(direction: str) -> float:
+    value = (direction or '').lower()
+    if value in {'bullish', 'long', 'up', 'buy'} or '上' in value or '買' in value:
+        return 1.0
+    if value in {'bearish', 'short', 'down', 'sell'} or '下' in value or '売' in value:
+        return -1.0
+    return 0.0
+
+
+def _basecalc_feature_row(as_of: date) -> dict:
+    try:
+        from basecalc.models import WorldModelPrediction
+    except ImportError:
+        return {}
+
+    prediction = (
+        WorldModelPrediction.objects
+        .filter(prediction_timestamp__date__lte=as_of)
+        .order_by('-prediction_timestamp', '-created_at')
+        .first()
+    )
+    if prediction is None:
+        prediction = (
+            WorldModelPrediction.objects
+            .filter(prediction_timestamp__isnull=True, created_at__date__lte=as_of)
+            .order_by('-created_at')
+            .first()
+        )
+    if prediction is None:
+        return {}
+
+    features = {
+        'basecalc_direction_score': _direction_score(prediction.direction),
+        'basecalc_sentiment_score': prediction.sentiment_score,
+        'basecalc_continuation_score': prediction.continuation_score,
+        'basecalc_shock_score': prediction.shock_score,
+        'basecalc_confidence_score': prediction.confidence_score,
+        'basecalc_directional_allowed': 1.0 if prediction.directional_allowed else 0.0,
+    }
+    for key in (
+        'nikkei_technical_score',
+        'us_index_confirmation_score',
+        'yen_carry_score',
+        'futures_trend_score',
+    ):
+        value = (prediction.features or {}).get(key)
+        if value is not None:
+            features[f'basecalc_{key}'] = value
+    return features
+
+
+def _short_horizon_feature_row(target: str, as_of: date) -> tuple[dict, list[str]]:
+    daily_features = _daily_market_feature_row(target, as_of)
+    if not daily_features:
+        return {}, []
+    macro_features = _macro_daily_change_feature_row(as_of)
+    basecalc_features = _basecalc_feature_row(as_of)
+    source_modes = ['daily_market']
+    if macro_features:
+        source_modes.append('daily_macro')
+    if basecalc_features:
+        source_modes.append('basecalc_optional')
+    return {
+        **daily_features,
+        **macro_features,
+        **basecalc_features,
+    }, source_modes
+
+
+def build_short_horizon_feature_matrix(target: str, horizon: str = '1m'):
+    horizon_months = parse_horizon_months(horizon)
+    if horizon_months != 1 or target not in SHORT_RETURN_TARGETS:
+        return {
+            'feature_names': [],
+            'rows': [],
+            'latest': None,
+            'warning': 'unsupported short horizon target',
+        }
+
+    series = load_monthly_target_series(target)
+    if len(series) < horizon_months + 2:
+        return {
+            'feature_names': [],
+            'rows': [],
+            'latest': None,
+            'warning': 'target series has too few rows',
+        }
+
+    rows = []
+    source_modes = set()
+    latest_feature_map = None
+    for month in sorted(series):
+        base = series.get(month)
+        future = series.get(month + relativedelta(months=horizon_months))
+        as_of = _month_end(month)
+        features, row_source_modes = _short_horizon_feature_row(target, as_of)
+        if features:
+            latest_feature_map = features
+            source_modes.update(row_source_modes)
+        if base in (None, 0) or future is None or not features:
+            continue
+        rows.append({
+            'as_of_date': as_of,
+            'feature_map': features,
+            'target_value': _target_value(base, future, target),
+            'base_value': base,
+            'future_value': future,
+            'feature_source_modes': row_source_modes,
+        })
+
+    if not rows:
+        return {
+            'feature_names': [],
+            'rows': [],
+            'latest': None,
+            'warning': 'feature matrix is empty',
+        }
+
+    feature_names, matrix = _matrix_from_feature_maps(row['feature_map'] for row in rows)
+    for row, values in zip(rows, matrix):
+        row['x'] = values
+        row.pop('feature_map', None)
+
+    latest_month = max(series)
+    latest_as_of = _month_end(latest_month)
+    latest_feature_map = latest_feature_map or _short_horizon_feature_row(target, latest_as_of)[0]
+    latest_values = [
+        feature_store.normalize_feature_value(latest_feature_map.get(name)) or 0.0
+        for name in feature_names
+    ]
+    return {
+        'feature_names': feature_names,
+        'rows': rows,
+        'latest': {
+            'as_of_date': latest_as_of,
+            'x': latest_values,
+            'feature_vector': dict(zip(feature_names, latest_values)),
+        },
+        'metadata': {
+            'prediction_kind': 'return_pct',
+            'unit': '%',
+            'horizon_months': horizon_months,
+            'model_version': SHORT_RETURN_MODEL_VERSION,
+            'feature_source_modes': sorted(source_modes),
+        },
+    }
 
 
 def build_monthly_feature_matrix(namespace: str, target: str, horizon: str):

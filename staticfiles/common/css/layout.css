@@ -208,6 +208,34 @@ body.bg-dark {
   font-size: 0.86rem;
 }
 
+.common-action-form {
+  display: grid;
+  gap: 8px;
+}
+
+.common-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid rgba(96, 165, 250, 0.36);
+  border-radius: 8px;
+  color: #dbeafe;
+  background: rgba(37, 99, 235, 0.22);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.common-button:hover,
+.common-button:focus-visible {
+  background: rgba(37, 99, 235, 0.34);
+  border-color: rgba(147, 197, 253, 0.54);
+}
+
 .common-list,
 .common-card-grid {
   display: grid;

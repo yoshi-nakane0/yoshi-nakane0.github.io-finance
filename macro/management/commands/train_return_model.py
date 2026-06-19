@@ -16,6 +16,24 @@ RECENT_VALIDATION_MONTHS = 24
 MIN_TRAINING_SAMPLES = 60
 
 
+def return_model_config(target: str, horizon: str) -> dict:
+    if target in forecast_models.SHORT_RETURN_TARGETS and horizon == '1m':
+        return {
+            'namespace': 'short_horizon_return',
+            'model_version': forecast_models.SHORT_RETURN_MODEL_VERSION,
+            'matrix_builder': forecast_models.build_short_horizon_feature_matrix,
+        }
+    return {
+        'namespace': 'return_forecast',
+        'model_version': forecast_models.RETURN_MODEL_VERSION,
+        'matrix_builder': lambda target, horizon: forecast_models.build_monthly_feature_matrix(
+            'return_forecast',
+            target,
+            horizon,
+        ),
+    }
+
+
 class Command(BaseCommand):
     help = 'マクロ特徴量で主要指数の将来リターンを学習・予測する'
 
@@ -54,11 +72,8 @@ class Command(BaseCommand):
 
         for target in targets:
             for horizon in horizons:
-                matrix = forecast_models.build_monthly_feature_matrix(
-                    'return_forecast',
-                    target,
-                    horizon,
-                )
+                config = return_model_config(target, horizon)
+                matrix = config['matrix_builder'](target, horizon)
                 rows = matrix.get('rows') or []
                 if len(rows) < MIN_TRAINING_SAMPLES:
                     skipped.append({
@@ -93,8 +108,8 @@ class Command(BaseCommand):
                     'feature_count': len(matrix.get('feature_names') or []),
                 }
                 forecast_models.save_forecast_snapshot(
-                    namespace='return_forecast',
-                    model_version=forecast_models.RETURN_MODEL_VERSION,
+                    namespace=config['namespace'],
+                    model_version=config['model_version'],
                     target=target,
                     horizon=horizon,
                     prediction_value=prediction,
@@ -110,6 +125,7 @@ class Command(BaseCommand):
                 results.append({
                     'target': target,
                     'horizon': horizon,
+                    'model_version': config['model_version'],
                     'horizon_months': horizon_months,
                     'predicted_return_pct': round(prediction, 4),
                     'validation_mae_pct': (
@@ -131,6 +147,7 @@ class Command(BaseCommand):
 
         payload = {
             'model_version': forecast_models.RETURN_MODEL_VERSION,
+            'short_horizon_model_version': forecast_models.SHORT_RETURN_MODEL_VERSION,
             'predicted_at': timezone.localdate().isoformat(),
             'results': results,
             'skipped': skipped,

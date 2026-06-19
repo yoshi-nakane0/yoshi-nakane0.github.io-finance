@@ -22,6 +22,7 @@ from .serializers import serialize_snapshot
 from .services.decision_context import (
     build_basecalc_decision_context,
     enrich_basecalc_context,
+    ensure_plain_summary_card_display,
 )
 from .snapshot import load_basecalc_snapshot
 from .status import load_basecalc_status, status_display_rows
@@ -286,6 +287,7 @@ def build_context(request, force_update=False, persist_price_override=None):
         price_override,
     )
     world_model = build_world_model(price, model_snapshot, intermarket_context)
+    ensure_plain_summary_card_display(world_model)
     basecalc_status = _status_with_current_values(
         load_basecalc_status(),
         futures_snapshot=status_snapshot,

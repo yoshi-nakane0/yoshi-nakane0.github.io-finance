@@ -11,6 +11,9 @@ from django.db.models import Count
 from ..models import ForecastSnapshot, ModelValidationReport
 from . import crash_probability, forecast_models
 
+SHORT_RETURN_MIN_DIRECTION_ACCURACY = 0.56
+SHORT_RETURN_MIN_SKILL_SCORE = 0.02
+
 
 def _mean(values):
     values = [value for value in values if value is not None]
@@ -81,10 +84,13 @@ def model_display_grade(report: ModelValidationReport) -> tuple[str, str]:
         return "reference", "イベント数不足のため参考"
 
     direction = metrics.get("direction_accuracy")
+    skill_score = metrics.get("skill_score")
+    if _is_weak_short_return_forecast(report, direction, skill_score):
+        return "hidden", "1か月先の株価判断はbasecalcを優先"
+
     if direction is not None and direction < 0.52:
         return "reference", "方向一致率が低いため参考"
 
-    skill_score = metrics.get("skill_score")
     if skill_score is not None and skill_score <= 0:
         return "reference", "単純予測を上回っていないため参考"
 
@@ -93,6 +99,44 @@ def model_display_grade(report: ModelValidationReport) -> tuple[str, str]:
         return "reference", "識別力が弱いため参考"
 
     return "show", "トップ表示可"
+
+
+def _is_weak_short_return_forecast(
+    report: ModelValidationReport,
+    direction: Optional[float],
+    skill_score: Optional[float],
+) -> bool:
+    if not (
+        str(report.model_version or '').startswith('return_lightgbm')
+        or report.model_version == forecast_models.SHORT_RETURN_MODEL_VERSION
+    ):
+        return False
+    if report.target not in forecast_models.RETURN_TARGETS:
+        return False
+    if report.horizon != '1m':
+        return False
+    return (
+        direction is None
+        or direction < SHORT_RETURN_MIN_DIRECTION_ACCURACY
+        or skill_score is None
+        or skill_score <= SHORT_RETURN_MIN_SKILL_SCORE
+    )
+
+
+def latest_validation_reports(limit: Optional[int] = None) -> list[ModelValidationReport]:
+    reports = []
+    seen = set()
+    for report in ModelValidationReport.objects.order_by('-evaluated_at', '-id'):
+        key = (report.model_version, report.target, report.horizon)
+        if forecast_models.is_deprecated_monthly_short_return_model(*key):
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        reports.append(report)
+        if limit is not None and len(reports) >= limit:
+            break
+    return reports
 
 
 def _snapshot_rows(model_version: str, target: str, horizon: str) -> list[dict]:
@@ -118,6 +162,40 @@ def _snapshot_rows(model_version: str, target: str, horizon: str) -> list[dict]:
     ]
 
 
+def _walk_forward_validation(model_version: str, target: str, horizon: str) -> Optional[dict]:
+    if model_version == forecast_models.SHORT_RETURN_MODEL_VERSION:
+        matrix = forecast_models.build_short_horizon_feature_matrix(target, horizon)
+        validation = forecast_models.walk_forward_validate(matrix.get('rows', []))
+        metrics = dict(validation.get('metrics') or {})
+        metrics['validation_source'] = 'short_horizon_walk_forward'
+        return {
+            'sample_count': validation['sample_count'],
+            'metrics': metrics,
+            'rows': validation['rows'],
+            'warnings': list(validation.get('warnings') or []),
+            'event_count': None,
+        }
+
+    if not model_version.startswith(('return_lightgbm', 'macro_forecast')):
+        return None
+    namespace = (
+        'return_forecast'
+        if model_version.startswith('return_lightgbm')
+        else 'macro_forecast'
+    )
+    matrix = forecast_models.build_monthly_feature_matrix(namespace, target, horizon)
+    validation = forecast_models.walk_forward_validate(matrix.get('rows', []))
+    metrics = dict(validation.get('metrics') or {})
+    metrics['validation_source'] = 'historical_walk_forward'
+    return {
+        'sample_count': validation['sample_count'],
+        'metrics': metrics,
+        'rows': validation['rows'],
+        'warnings': list(validation.get('warnings') or []),
+        'event_count': None,
+    }
+
+
 def validate_model(
     *,
     model_version: str,
@@ -127,7 +205,15 @@ def validate_model(
 ) -> ModelValidationReport:
     rows = _snapshot_rows(model_version, target, horizon)
     warnings = []
-    if rows:
+    historical_validation = _walk_forward_validation(model_version, target, horizon)
+    if historical_validation and (historical_validation['sample_count'] > 0 or not rows):
+        sample_count = historical_validation['sample_count']
+        metrics = historical_validation['metrics']
+        metrics['live_settled_sample_count'] = len(rows)
+        rows = historical_validation['rows']
+        warnings.extend(historical_validation['warnings'])
+        event_count = historical_validation['event_count']
+    elif rows:
         sample_count = len(rows)
         prediction_kind = (
             ForecastSnapshot.objects
@@ -143,18 +229,6 @@ def validate_model(
         else:
             metrics = _regression_metrics(rows)
             event_count = None
-    elif model_version.startswith(('return_lightgbm', 'macro_forecast')):
-        matrix = forecast_models.build_monthly_feature_matrix(
-            'return_forecast' if model_version.startswith('return') else 'macro_forecast',
-            target,
-            horizon,
-        )
-        validation = forecast_models.walk_forward_validate(matrix.get('rows', []))
-        sample_count = validation['sample_count']
-        metrics = validation['metrics']
-        rows = validation['rows']
-        warnings.extend(validation['warnings'])
-        event_count = None
     else:
         sample_count = 0
         metrics = {}
@@ -182,7 +256,16 @@ def _default_validation_targets() -> set[tuple[str, str, str]]:
         (forecast_models.RETURN_MODEL_VERSION, target, horizon)
         for target in forecast_models.RETURN_TARGETS
         for horizon in forecast_models.HORIZONS
+        if not forecast_models.is_deprecated_monthly_short_return_model(
+            forecast_models.RETURN_MODEL_VERSION,
+            target,
+            horizon,
+        )
     }
+    targets.update({
+        (forecast_models.SHORT_RETURN_MODEL_VERSION, target, '1m')
+        for target in forecast_models.SHORT_RETURN_TARGETS
+    })
     targets.update({
         (forecast_models.MACRO_MODEL_VERSION, target, horizon)
         for target in forecast_models.MACRO_TARGETS
@@ -202,6 +285,11 @@ def run_all_model_validations() -> list[ModelValidationReport]:
     groups.update(
         (row['model_version'], row['target'], row['horizon'])
         for row in snapshot_groups
+        if not forecast_models.is_deprecated_monthly_short_return_model(
+            row['model_version'],
+            row['target'],
+            row['horizon'],
+        )
     )
     reports = []
     for model_version, target, horizon in sorted(groups):

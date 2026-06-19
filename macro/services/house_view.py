@@ -10,13 +10,12 @@ from django.utils import timezone
 
 from ..models import (
     MacroForecastRun,
-    ModelValidationReport,
     Observation,
     RegimeSnapshot,
     WorldStateSnapshot,
 )
 from .data_quality import build_data_quality_report
-from .model_validation import model_display_grade
+from .model_validation import latest_validation_reports, model_display_grade
 
 
 GRADE_ORDER = {'A': 4, 'B': 3, 'C': 2, 'D': 1}
@@ -131,10 +130,12 @@ def _driver_list(world: Optional[WorldStateSnapshot], probabilities: dict) -> li
 
 def _model_risks() -> list[str]:
     risks = []
-    for report in ModelValidationReport.objects.order_by('-evaluated_at')[:6]:
+    for report in latest_validation_reports(limit=6):
         grade, reason = model_display_grade(report)
-        if grade != 'show':
+        if grade == 'reference':
             risks.append(f'{report.target} {report.horizon}: {reason}')
+        if len(risks) >= 3:
+            break
     return risks[:3]
 
 

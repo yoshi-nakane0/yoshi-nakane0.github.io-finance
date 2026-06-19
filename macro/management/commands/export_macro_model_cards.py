@@ -1,8 +1,7 @@
 from django.core.management.base import BaseCommand
 
-from macro.models import ModelValidationReport
 from macro.services.dashboard_cache import write_static_macro_payload
-from macro.services.model_validation import model_display_grade
+from macro.services.model_validation import latest_validation_reports, model_display_grade
 
 
 POLICY_LABELS = {
@@ -15,7 +14,7 @@ POLICY_LABELS = {
 
 def build_model_cards(limit=100):
     cards = []
-    for report in ModelValidationReport.objects.order_by('-evaluated_at')[:limit]:
+    for report in latest_validation_reports(limit=limit):
         display_policy, reason = model_display_grade(report)
         metrics = report.metrics or {}
         cards.append({

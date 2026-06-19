@@ -3,7 +3,7 @@
 import gzip
 import json
 import yaml
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -70,6 +70,21 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         for workflow_path in workflows_dir.glob('*.yml'):
             with self.subTest(workflow=workflow_path.name):
                 yaml.safe_load(workflow_path.read_text(encoding='utf-8'))
+
+    def test_basecalc_futures_sync_does_not_export_display_snapshot(self):
+        workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'sync-basecalc-futures.yml'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('python manage.py sync_nikkei_futures_daily', workflow)
+        self.assertIn('--export-history', workflow)
+        self.assertIn('basecalc/data/basecalc_history.json', workflow)
+        self.assertIn('basecalc/data/basecalc_status.json', workflow)
+        self.assertNotIn('--export-snapshot-path', workflow)
+        self.assertNotIn('basecalc/data/latest_snapshot.json', workflow)
 
     def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -1009,6 +1024,33 @@ class MacroReliabilityEnhancementTest(TestCase):
             weights['macro_forecast_lightgbm_v1:PAYEMS:3m']['report_id'],
             weak.id,
         )
+
+    def test_validation_weights_omit_deprecated_monthly_short_return_model(self):
+        from macro.services.validation_weights import build_validation_weight_report
+
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.5, 'skill_score': -0.1},
+        )
+        ModelValidationReport.objects.create(
+            model_version='short_horizon_return_v1',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.5, 'skill_score': -0.1},
+        )
+
+        report = build_validation_weight_report()
+        model_keys = {
+            row['model_key']
+            for row in report['validation_weights']
+        }
+
+        self.assertNotIn('return_lightgbm_v2:N225:1m', model_keys)
+        self.assertIn('short_horizon_return_v1:N225:1m', model_keys)
 
     def test_validation_weights_include_house_view_backtest_result(self):
         from macro.services.validation_weights import build_validation_weight_report
@@ -2508,6 +2550,241 @@ class DashboardFormatTest(TestCase):
             ('show', 'トップ表示可'),
         )
 
+    def test_weak_one_month_return_forecast_is_hidden_for_short_term_basecalc_scope(self):
+        from .services import model_validation
+
+        weak_n225_1m = ModelValidationReport(
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={
+                'direction_accuracy': 0.49,
+                'skill_score': -0.14,
+            },
+        )
+        weak_ixic_1m = ModelValidationReport(
+            model_version='return_lightgbm_v2',
+            target='IXIC',
+            horizon='1m',
+            sample_count=205,
+            metrics={
+                'direction_accuracy': 0.53,
+                'skill_score': -0.01,
+            },
+        )
+        usable_n225_3m = ModelValidationReport(
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='3m',
+            sample_count=204,
+            metrics={
+                'direction_accuracy': 0.69,
+                'skill_score': 0.15,
+            },
+        )
+
+        self.assertEqual(
+            model_validation.model_display_grade(weak_n225_1m),
+            ('hidden', '1か月先の株価判断はbasecalcを優先'),
+        )
+        self.assertEqual(
+            model_validation.model_display_grade(weak_ixic_1m),
+            ('hidden', '1か月先の株価判断はbasecalcを優先'),
+        )
+        self.assertEqual(
+            model_validation.model_display_grade(usable_n225_3m),
+            ('show', 'トップ表示可'),
+        )
+
+    def test_short_horizon_feature_matrix_uses_daily_market_and_basecalc_features(self):
+        from basecalc.models import WorldModelPrediction
+
+        for month, close_price in (
+            (date(2026, 1, 1), 1000),
+            (date(2026, 2, 1), 1030),
+            (date(2026, 3, 1), 1010),
+        ):
+            PriceObservation.objects.create(
+                ticker='N225',
+                observation_month=month,
+                close_price=close_price,
+            )
+        daily_rows = []
+        for day in range(100):
+            observation_date = date(2025, 11, 1) + timedelta(days=day)
+            for ticker, offset in (
+                ('N225', 1000),
+                ('IXIC', 1500),
+                ('GSPC', 500),
+                ('DJI', 3000),
+            ):
+                daily_rows.append(
+                    DailyPriceObservation(
+                        ticker=ticker,
+                        observation_date=observation_date,
+                        close_price=offset + day * 2,
+                    )
+                )
+        DailyPriceObservation.objects.bulk_create(daily_rows)
+        for series_id, values in (
+            ('VIXCLS', (18.0, 16.5)),
+            ('DGS10', (4.1, 4.3)),
+        ):
+            indicator, _ = Indicator.objects.get_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': series_id,
+                    'category': Indicator.Category.MARKET,
+                    'frequency': Indicator.Frequency.DAILY,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=date(2026, 1, 10),
+                value=values[0],
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=date(2026, 1, 31),
+                value=values[1],
+            )
+        WorldModelPrediction.objects.create(
+            prediction_timestamp=timezone.make_aware(datetime(2026, 1, 31, 12, 0)),
+            price=1000,
+            state_key='bullish',
+            state_label='上昇',
+            direction='bullish',
+            sentiment_score=62,
+            continuation_score=57,
+            shock_score=8,
+            confidence='high',
+            confidence_score=73,
+            main_scenario='上昇継続',
+            instrument_key='cme_nikkei_futures',
+            readiness_level='ready',
+            directional_allowed=True,
+            features={
+                'nikkei_technical_score': 64,
+                'us_index_confirmation_score': 58,
+            },
+        )
+
+        matrix = forecast_models.build_short_horizon_feature_matrix('N225', '1m')
+
+        self.assertTrue(matrix['rows'])
+        self.assertIn('daily_market', matrix['metadata']['feature_source_modes'])
+        self.assertIn('basecalc_optional', matrix['metadata']['feature_source_modes'])
+        for feature_name in (
+            'target_return_20d',
+            'target_volatility_20d',
+            'basecalc_direction_score',
+            'basecalc_confidence_score',
+            'VIXCLS_20d_change',
+            'DGS10_20d_change',
+        ):
+            self.assertIn(feature_name, matrix['feature_names'])
+
+    def test_default_validation_targets_use_short_model_for_n225_ixic_1m(self):
+        from .services import model_validation
+
+        targets = model_validation._default_validation_targets()
+
+        self.assertIn(
+            (forecast_models.SHORT_RETURN_MODEL_VERSION, 'N225', '1m'),
+            targets,
+        )
+        self.assertIn(
+            (forecast_models.SHORT_RETURN_MODEL_VERSION, 'IXIC', '1m'),
+            targets,
+        )
+        self.assertNotIn(
+            (forecast_models.RETURN_MODEL_VERSION, 'N225', '1m'),
+            targets,
+        )
+        self.assertNotIn(
+            (forecast_models.RETURN_MODEL_VERSION, 'IXIC', '1m'),
+            targets,
+        )
+
+    def test_train_return_model_config_routes_n225_ixic_1m_to_short_model(self):
+        from macro.management.commands.train_return_model import return_model_config
+
+        n225_config = return_model_config('N225', '1m')
+        ixic_config = return_model_config('IXIC', '1m')
+        gspc_config = return_model_config('GSPC', '1m')
+
+        self.assertEqual(
+            n225_config['model_version'],
+            forecast_models.SHORT_RETURN_MODEL_VERSION,
+        )
+        self.assertEqual(
+            ixic_config['namespace'],
+            'short_horizon_return',
+        )
+        self.assertEqual(
+            gspc_config['model_version'],
+            forecast_models.RETURN_MODEL_VERSION,
+        )
+
+    def test_forecast_model_context_omits_deprecated_monthly_short_return_snapshots(self):
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 1),
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='1m',
+            prediction_value=1.0,
+            metadata={'prediction_kind': 'return_pct'},
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 1),
+            model_version='short_horizon_return_v1',
+            target='N225',
+            horizon='1m',
+            prediction_value=1.2,
+            metadata={'prediction_kind': 'return_pct'},
+        )
+        ModelValidationReport.objects.create(
+            model_version='short_horizon_return_v1',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.5, 'skill_score': -0.1},
+        )
+
+        context = dashboard.build_forecast_model_context()
+        model_keys = {
+            f"{row['model_version']}:{row['target']}:{row['horizon']}"
+            for row in context['rows'] + context['hidden_rows']
+        }
+
+        self.assertNotIn('return_lightgbm_v2:N225:1m', model_keys)
+        self.assertIn('short_horizon_return_v1:N225:1m', model_keys)
+
+    def test_house_view_model_risks_omit_hidden_short_term_return_forecasts(self):
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={
+                'direction_accuracy': 0.49,
+                'skill_score': -0.14,
+            },
+        )
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='IXIC',
+            horizon='1m',
+            sample_count=205,
+            metrics={
+                'direction_accuracy': 0.53,
+                'skill_score': -0.01,
+            },
+        )
+
+        self.assertEqual(house_view._model_risks(), [])
+
     def test_walk_forward_validation_adds_zero_prediction_baseline(self):
         rows = []
         for idx in range(40):
@@ -2521,6 +2798,113 @@ class DashboardFormatTest(TestCase):
 
         self.assertIn('baseline_mae', result['metrics'])
         self.assertIn('skill_score', result['metrics'])
+
+    def test_lightgbm_model_validation_prefers_historical_walk_forward_samples(self):
+        from .services import model_validation
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 5, 1),
+            model_version='return_lightgbm_v2',
+            target='N225',
+            horizon='1m',
+            prediction_value=2.0,
+            realized_value=1.5,
+            error=-0.5,
+            realized_at=date(2026, 6, 1),
+            metadata={'prediction_kind': 'return_pct'},
+        )
+        historical_rows = [
+            {'as_of_date': date(2020, 1, 1), 'x': [0.0], 'target_value': 1.0}
+        ]
+
+        with mock.patch(
+            'macro.services.model_validation.forecast_models.build_monthly_feature_matrix',
+            return_value={'rows': historical_rows},
+        ) as matrix_mock, mock.patch(
+            'macro.services.model_validation.forecast_models.walk_forward_validate',
+            return_value={
+                'sample_count': 42,
+                'metrics': {
+                    'mae': 1.1,
+                    'baseline_mae': 1.8,
+                    'skill_score': 0.38,
+                    'direction_accuracy': 0.62,
+                },
+                'rows': [{'as_of_date': '2020-01-01'}],
+                'warnings': [],
+            },
+        ) as validate_mock:
+            report = model_validation.validate_model(
+                model_version='return_lightgbm_v2',
+                target='N225',
+                horizon='1m',
+            )
+
+        matrix_mock.assert_called_once_with('return_forecast', 'N225', '1m')
+        validate_mock.assert_called_once_with(historical_rows)
+        self.assertEqual(report.sample_count, 42)
+        self.assertEqual(report.metrics['live_settled_sample_count'], 1)
+        self.assertEqual(report.metrics['validation_source'], 'historical_walk_forward')
+        self.assertEqual(
+            model_validation.model_display_grade(report),
+            ('show', 'トップ表示可'),
+        )
+
+    def test_house_view_model_risks_ignore_stale_duplicate_validation_reports(self):
+        old_report = ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=1,
+            metrics={'direction_accuracy': 1.0},
+        )
+        ModelValidationReport.objects.filter(id=old_report.id).update(
+            evaluated_at=timezone.now() - timedelta(days=1),
+        )
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.62, 'skill_score': 0.1},
+        )
+
+        self.assertNotIn(
+            'N225 1m: 検証サンプル不足',
+            house_view._model_risks(),
+        )
+
+    def test_model_validation_exports_keep_only_latest_report_per_model_target_horizon(self):
+        from macro.management.commands.export_macro_model_cards import build_model_cards
+        from macro.management.commands.export_macro_model_validation import (
+            build_model_validation_report,
+        )
+
+        old_report = ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=1,
+            metrics={'direction_accuracy': 1.0},
+        )
+        ModelValidationReport.objects.filter(id=old_report.id).update(
+            evaluated_at=timezone.now() - timedelta(days=1),
+        )
+        ModelValidationReport.objects.create(
+            model_version='return_lightgbm_v2',
+            target='GSPC',
+            horizon='3m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.62, 'skill_score': 0.1},
+        )
+
+        validation_rows = build_model_validation_report()['model_validation_report']
+        card_rows = build_model_cards()['model_cards']
+
+        self.assertEqual(len(validation_rows), 1)
+        self.assertEqual(validation_rows[0]['sample_count'], 206)
+        self.assertEqual(len(card_rows), 1)
+        self.assertEqual(card_rows[0]['sample_count'], 206)
 
 
 class DashboardCacheTest(TestCase):

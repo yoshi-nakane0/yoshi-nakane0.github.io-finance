@@ -64,7 +64,7 @@ from .views import (
     get_jgb10y_yield_for_update,
     get_nikkei_per_values_for_update,
 )
-from .world_model import build_world_model
+from .world_model import build_dual_scenario, build_world_model
 from macro.models import Indicator, Observation
 
 
@@ -113,6 +113,15 @@ def _create_market_bar_series(count=80, symbol='NIY=F', instrument_key='cme_nikk
 class BasecalcUpdateSecurityTests(TestCase):
     def setUp(self):
         cache.clear()
+
+    def test_basecalc_css_does_not_hide_common_header(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static/basecalc/css/style.css'
+        css = css_path.read_text(encoding='utf-8')
+        header_index = css.find('common-app-header')
+        header_block = css[max(0, header_index - 80):header_index + 160]
+
+        self.assertNotIn('.app-container > .common-app-header', css)
+        self.assertNotIn('display: none', header_block)
 
     def test_get_update_true_does_not_fetch_external_data(self):
         with (
@@ -668,6 +677,18 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'invalidation_display': '40,200',
                 'market_context': {'risk_label': 'neutral', 'risk_score': 0, 'components': {}},
                 'evidence': ['EMA20を上回る', '20日勢いが強い'],
+                'counter_bias': {
+                    'direction': 'down',
+                    'score': 74,
+                    'label': '上昇優勢だが反落警戒',
+                    'reasons': ['RSI過熱', 'BB上限接近'],
+                },
+                'scenario_probabilities': {
+                    'up_continuation': 48,
+                    'range': 24,
+                    'down_reversal': 28,
+                },
+                'action_note': '上昇方向だが追撃買いは危険。押し目確認待ち。',
                 'expected_return_1d': 0.4,
                 'expected_return_5d': 1.2,
                 'expected_return_label': '過去類似',
@@ -698,8 +719,83 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '第2候補')
         self.assertContains(response, '到達しやすさ')
         self.assertContains(response, '根拠:')
+        self.assertContains(response, '3シナリオ確率')
+        self.assertContains(response, '上方向')
+        self.assertContains(response, '48%')
+        self.assertContains(response, 'レンジ')
+        self.assertContains(response, '24%')
+        self.assertContains(response, '下方向')
+        self.assertContains(response, '28%')
+        self.assertContains(response, '逆方向警戒')
+        self.assertContains(response, '上昇優勢だが反落警戒')
+        self.assertContains(response, 'RSI過熱')
+        self.assertContains(response, '上昇方向だが追撃買いは危険。押し目確認待ち。')
         self.assertNotContains(response, 'ターゲット全件')
         self.assertNotContains(response, 'targetではなく節目')
+
+    def test_index_uses_plain_japanese_for_summary_cards(self):
+        snapshot = {
+            'data': {'price_display': '41,000'},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 80, 'valid_major_indicators': 6},
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'case_count': 60, 'is_statistically_valid': True},
+                'target_ranges': [],
+                'upside_targets': [{'label': 'T1', 'price': 41800, 'reason': '前日高値'}],
+                'downside_targets': [{'label': 'T1', 'price': 40400, 'reason': '前日安値'}],
+                'invalidation_display': '40,200',
+                'market_context': {'risk_label': 'neutral', 'risk_score': 0, 'components': {}},
+                'evidence': ['EMA20を上回る'],
+                'primary_setup_label': '上昇トレンド継続',
+                'technical_regime': '上昇基調',
+                'chase_risk': 'low',
+                'horizons': {
+                    '1d': {
+                        'main_bias': 'up',
+                        'setup_label': '上昇トレンド継続',
+                        'expected_return_pct': 0.4,
+                    },
+                },
+                'us_index_confirmation': {
+                    'label': '上昇確認',
+                    'reasons': ['米国3指数の価格テクニカルは上昇確認'],
+                },
+            },
+            'market_shock': {'has_data': False},
+            'market_context': {},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'erp_method': 'fixed',
+            'erp_growth_input': '',
+            'price_param': '41000',
+            'growth_core_ratio_input': '0.6',
+            'growth_wide_ratio_input': '0.7',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertContains(response, '米国3指数の確認')
+        self.assertContains(response, '追いかけリスクは低い')
+        self.assertContains(response, '1営業日後の方向')
+        self.assertContains(response, '上昇方向')
+        self.assertNotContains(response, '追いかけリスク: low')
+        self.assertNotContains(response, '1d の方向')
+        self.assertNotContains(response, '>up<', html=True)
 
     def test_validation_page_reads_saved_report_without_live_aggregation(self):
         report = {
@@ -1927,6 +2023,105 @@ class BasecalcFuturesSentimentTests(TestCase):
 
 
 class BasecalcWorldModelV2SupportTests(TestCase):
+    def _counter_bias_base_features(self):
+        return {
+            'price': 42000,
+            'ema5': 41900,
+            'ema20': 41000,
+            'ema60': 40000,
+            'vwap': 41000,
+            'macd': 20,
+            'macd_signal': 10,
+            'macd_histogram': -50,
+            'rsi14': 78,
+            'bb_upper': 42100,
+            'bb_lower': 39000,
+            'change_5d_pct': 2.5,
+            'daily_change_pct': 0.5,
+            'atr14': 300,
+            'atr_ratio': 1.4,
+            'structure_bias': 1,
+            'distance_recent_high_pct': -0.1,
+            'distance_recent_low_pct': 6.0,
+            'ema20_gap_pct': 2.4,
+            'ema60_gap_pct': 5.0,
+            'vwap_gap_pct': 2.4,
+            'gap_key': 'gap_up',
+            'gap_pct': 0.7,
+            'us_index_confirmation_score': 0,
+            'indicator_validity': {
+                'ema20': True,
+                'ema60': True,
+                'vwap': True,
+                'macd': True,
+                'rsi14': True,
+                'atr14': True,
+                'bollinger': True,
+            },
+            'data_quality': {'level': 'good', 'score': 90},
+        }
+
+    def test_sentiment_score_reduces_bullish_score_when_reversal_risk_is_high(self):
+        result = calculate_sentiment_score(self._counter_bias_base_features())
+
+        self.assertGreaterEqual(result['reversal_risk_score'], 70)
+        self.assertLess(result['sentiment_score'], 35)
+        self.assertLess(result['components']['counter_bias_adjustment'], 0)
+        self.assertIn('上昇優勢ですが反落警戒を主判定に反映しています', result['warnings'])
+
+    def test_sentiment_score_reduces_bearish_score_when_rebound_risk_is_high(self):
+        features = {
+            **self._counter_bias_base_features(),
+            'price': 39000,
+            'ema5': 39100,
+            'ema20': 40000,
+            'ema60': 41000,
+            'vwap': 40000,
+            'macd': -20,
+            'macd_signal': -10,
+            'macd_histogram': 50,
+            'rsi14': 22,
+            'bb_upper': 42100,
+            'bb_lower': 38900,
+            'change_5d_pct': -2.5,
+            'daily_change_pct': -0.5,
+            'structure_bias': -1,
+            'distance_recent_high_pct': -6.0,
+            'distance_recent_low_pct': 0.1,
+            'ema20_gap_pct': -2.5,
+            'ema60_gap_pct': -4.9,
+            'vwap_gap_pct': -2.5,
+            'gap_key': 'gap_down',
+            'gap_pct': -0.7,
+        }
+
+        result = calculate_sentiment_score(features)
+
+        self.assertGreaterEqual(result['rebound_improvement_score'], 70)
+        self.assertGreater(result['sentiment_score'], -35)
+        self.assertGreater(result['components']['counter_bias_adjustment'], 0)
+        self.assertIn('下落優勢ですが買い戻し警戒を主判定に反映しています', result['warnings'])
+
+    def test_dual_scenario_exposes_counter_bias_and_probability_layer(self):
+        result = build_dual_scenario(
+            direction='up',
+            continuation_score=68,
+            reversal_risk_score=74,
+            rebound_improvement_score=12,
+            shock_score=20,
+        )
+
+        self.assertEqual(result['counter_bias']['direction'], 'down')
+        self.assertEqual(result['counter_bias']['score'], 74)
+        self.assertEqual(result['counter_bias']['label'], '上昇優勢だが反落警戒')
+        self.assertIn('RSI過熱', result['counter_bias']['reasons'])
+        self.assertEqual(set(result['scenario_probabilities']), {'up_continuation', 'range', 'down_reversal'})
+        self.assertEqual(sum(result['scenario_probabilities'].values()), 100)
+        self.assertLess(
+            result['scenario_probabilities']['up_continuation'],
+            result['scenario_probabilities']['down_reversal'] + result['scenario_probabilities']['range'],
+        )
+
     def test_data_quality_scores_good_yahoo_snapshot(self):
         result = evaluate_snapshot_quality(
             {

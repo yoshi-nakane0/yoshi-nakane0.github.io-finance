@@ -28,15 +28,20 @@
             {% else %}
 
             <section class="wm-dashboard wm-{{ decision.direction }}" data-field="wm_hero">
-                <div class="wm-dashboard__header">
-                    <div>
-                        <div class="wm-dashboard__kicker">日経先物 判断</div>
+                <article class="wm-purpose-card wm-purpose-card--technical wm-purpose-card--lead">
+                    <div class="wm-purpose-card__head">
+                        <span class="wm-purpose-card__number">01</span>
+                        <span class="wm-purpose-card__label">日経先物テクニカル結論</span>
+                    </div>
+                    <div class="wm-purpose-card__main">
                         <h1 class="wm-dashboard__title">{{ decision.direction_label }}</h1>
+                        <div class="wm-purpose-card__badge">{{ world_model.scenarios.baseline.text }}</div>
                     </div>
-                    <div class="wm-dashboard__meta">
-                        <span data-field="last_updated_display">Last Updated: {{ decision.last_updated }}</span>
-                        <span>{{ decision.data_quality_level|title }} / {{ decision.data_quality_score }}/100</span>
-                    </div>
+                </article>
+
+                <div class="wm-dashboard__meta">
+                    <span data-field="last_updated_display">Last Updated: {{ decision.last_updated }}</span>
+                    <span>{{ decision.data_quality_level|title }} / {{ decision.data_quality_score }}/100</span>
                 </div>
 
                 <div class="wm-purpose-nav" aria-label="このページの確認項目">
@@ -73,17 +78,6 @@
                 {% endif %}
 
                 <div class="wm-purpose-grid">
-                    <article class="wm-purpose-card wm-purpose-card--technical">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">01</span>
-                            <span class="wm-purpose-card__label">日経先物テクニカル結論</span>
-                        </div>
-                        <div class="wm-purpose-card__main">
-                            <h2>{{ decision.direction_label }}</h2>
-                            <div class="wm-purpose-card__badge">{{ world_model.scenarios.baseline.text }}</div>
-                        </div>
-                    </article>
-
                     <article class="wm-purpose-card wm-purpose-card--forecast">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">02</span>
@@ -102,7 +96,19 @@
                         </div>
                         <div class="wm-purpose-card__main">
                             <h2>{{ decision.us_index_confirmation.label }}</h2>
-                            <div class="wm-purpose-card__badge">追いかけリスク: {{ world_model.chase_risk }}</div>
+                            <div class="wm-purpose-card__badge">
+                                {% if world_model.chase_risk_sentence %}
+                                {{ world_model.chase_risk_sentence }}
+                                {% elif world_model.chase_risk == "low" %}
+                                追いかけリスクは低い（米国3指数が同じ方向を確認）
+                                {% elif world_model.chase_risk == "medium" %}
+                                追いかけリスクは中程度（米国3指数の確認が不十分）
+                                {% elif world_model.chase_risk == "high" %}
+                                追いかけリスクは高い（米国3指数が逆方向または分裂）
+                                {% else %}
+                                追いかけリスクは判定不可（米国3指数データ不足）
+                                {% endif %}
+                            </div>
                         </div>
                     </article>
                 </div>
@@ -112,10 +118,10 @@
                     <article class="wm-purpose-card wm-purpose-card--forecast">
                         <div class="wm-purpose-card__head">
                             <span class="wm-purpose-card__number">04</span>
-                            <span class="wm-purpose-card__label">{{ horizon }} の方向</span>
+                            <span class="wm-purpose-card__label">{{ item.horizon_label|default:"方向確認" }}</span>
                         </div>
                         <div class="wm-purpose-card__main">
-                            <h2>{{ item.main_bias }}</h2>
+                            <h2>{{ item.main_bias_label|default:"方向感なし" }}</h2>
                             <div class="wm-purpose-card__badge">{{ item.setup_label }}</div>
                         </div>
                     </article>
@@ -733,6 +739,37 @@
                         {% if world_model.counter_scenario %}{{ world_model.counter_scenario }}{% elif world_model.sub_scenario %}{{ world_model.sub_scenario }}{% else %}N/A{% endif %}
                     </small>
                 </div>
+                {% if world_model.scenario_probabilities %}
+                <div class="summary-grid" data-field="scenario_probabilities">
+                    <div class="metric-box">
+                        <label>3シナリオ確率</label>
+                        <div class="value">上方向</div>
+                        <small>{{ world_model.scenario_probabilities.up_continuation }}%</small>
+                    </div>
+                    <div class="metric-box">
+                        <label>レンジ</label>
+                        <div class="value">{{ world_model.scenario_probabilities.range }}%</div>
+                        <small>方向待ち</small>
+                    </div>
+                    <div class="metric-box">
+                        <label>下方向</label>
+                        <div class="value text-amber">{{ world_model.scenario_probabilities.down_reversal }}%</div>
+                        <small>反落・下落</small>
+                    </div>
+                </div>
+                {% endif %}
+                {% if world_model.counter_bias %}
+                <div class="phase-panel" data-field="counter_bias">
+                    <span>逆方向警戒</span>
+                    <strong>{{ world_model.counter_bias.label }}</strong>
+                    {% if world_model.counter_bias.reasons %}
+                    <small>{{ world_model.counter_bias.reasons|join:" / " }}</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if world_model.action_note %}
+                <div class="notice-text text-amber" data-field="action_note">{{ world_model.action_note }}</div>
+                {% endif %}
                 <ol class="evidence-list" data-field="evidence">
                     {% for item in world_model.evidence %}
                     <li>{{ item }}</li>

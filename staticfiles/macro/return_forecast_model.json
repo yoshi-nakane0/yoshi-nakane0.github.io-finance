@@ -1,10 +1,12 @@
 {
   "model_version": "return_lightgbm_v2",
+  "short_horizon_model_version": "short_horizon_return_v1",
   "predicted_at": "2026-06-19",
   "results": [
     {
       "target": "GSPC",
       "horizon": "1m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 1,
       "predicted_return_pct": 1.5533,
       "validation_mae_pct": 2.6523,
@@ -16,6 +18,7 @@
     {
       "target": "GSPC",
       "horizon": "3m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 3,
       "predicted_return_pct": 4.4708,
       "validation_mae_pct": 4.3257,
@@ -27,6 +30,7 @@
     {
       "target": "GSPC",
       "horizon": "6m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 6,
       "predicted_return_pct": 8.9218,
       "validation_mae_pct": 4.4783,
@@ -38,17 +42,19 @@
     {
       "target": "IXIC",
       "horizon": "1m",
+      "model_version": "short_horizon_return_v1",
       "horizon_months": 1,
-      "predicted_return_pct": 1.1075,
-      "validation_mae_pct": 3.69,
-      "validation_rmse_pct": 4.9056,
+      "predicted_return_pct": 0.9249,
+      "validation_mae_pct": 3.6914,
+      "validation_rmse_pct": 4.93,
       "training_samples": 217,
       "validation_samples": 24,
-      "feature_count": 110
+      "feature_count": 17
     },
     {
       "target": "IXIC",
       "horizon": "3m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 3,
       "predicted_return_pct": 5.4428,
       "validation_mae_pct": 6.911,
@@ -60,6 +66,7 @@
     {
       "target": "IXIC",
       "horizon": "6m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 6,
       "predicted_return_pct": 10.4164,
       "validation_mae_pct": 6.3543,
@@ -71,6 +78,7 @@
     {
       "target": "DJI",
       "horizon": "1m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 1,
       "predicted_return_pct": 1.042,
       "validation_mae_pct": 2.5464,
@@ -82,6 +90,7 @@
     {
       "target": "DJI",
       "horizon": "3m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 3,
       "predicted_return_pct": 3.0242,
       "validation_mae_pct": 3.7254,
@@ -93,6 +102,7 @@
     {
       "target": "DJI",
       "horizon": "6m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 6,
       "predicted_return_pct": 6.8168,
       "validation_mae_pct": 3.9131,
@@ -104,17 +114,19 @@
     {
       "target": "N225",
       "horizon": "1m",
+      "model_version": "short_horizon_return_v1",
       "horizon_months": 1,
-      "predicted_return_pct": 0.8173,
-      "validation_mae_pct": 5.3045,
-      "validation_rmse_pct": 6.8174,
+      "predicted_return_pct": 1.6129,
+      "validation_mae_pct": 5.178,
+      "validation_rmse_pct": 6.826,
       "training_samples": 218,
       "validation_samples": 24,
-      "feature_count": 110
+      "feature_count": 17
     },
     {
       "target": "N225",
       "horizon": "3m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 3,
       "predicted_return_pct": 4.8425,
       "validation_mae_pct": 8.6212,
@@ -126,6 +138,7 @@
     {
       "target": "N225",
       "horizon": "6m",
+      "model_version": "return_lightgbm_v2",
       "horizon_months": 6,
       "predicted_return_pct": 4.0894,
       "validation_mae_pct": 13.1908,

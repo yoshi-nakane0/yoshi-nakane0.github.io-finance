@@ -33,7 +33,7 @@ def calculate_sentiment_score(features, similar_summary=None):
     structure_score = _structure_score(features)
     similar_score = _similar_case_score(similar_summary)
     context_score = calculate_us_index_confirmation_component(features)
-    raw_score = round(
+    base_score = round(
         trend_score
         + momentum_score
         + volatility_score
@@ -41,11 +41,22 @@ def calculate_sentiment_score(features, similar_summary=None):
         + similar_score
         + context_score
     )
+    counter_bias_adjustment = calculate_counter_bias_adjustment(
+        base_score,
+        reversal_risk_score,
+        rebound_improvement_score,
+    )
+    raw_score = round(base_score + counter_bias_adjustment)
     conflict = resolve_conflicting_signals(features, raw_score)
     after_conflict = _reduce_absolute(raw_score, conflict["penalty"])
     score = apply_quality_penalty(after_conflict, features.get("data_quality"))
     key, label = sentiment_label(score)
     quality_penalty = -abs(after_conflict - score)
+    warnings = list(conflict["warnings"])
+    if counter_bias_adjustment < 0:
+        warnings.append("上昇優勢ですが反落警戒を主判定に反映しています")
+    elif counter_bias_adjustment > 0:
+        warnings.append("下落優勢ですが買い戻し警戒を主判定に反映しています")
     return {
         "sentiment_score": score,
         "sentiment_key": key,
@@ -64,10 +75,11 @@ def calculate_sentiment_score(features, similar_summary=None):
             "structure": round(structure_score, 1),
             "similar": round(similar_score, 1),
             "us_index_confirmation": round(context_score, 1),
+            "counter_bias_adjustment": round(counter_bias_adjustment, 1),
             "quality_penalty": round(quality_penalty, 1),
             "conflict_penalty": -round(conflict["penalty"], 1),
         },
-        "warnings": conflict["warnings"],
+        "warnings": warnings,
     }
 
 
@@ -127,11 +139,17 @@ def calculate_shock_score(features):
 def calculate_reversal_risk_score(features):
     score = 0
     price = features.get("price")
+    open_value = features.get("open")
     rsi = features.get("rsi14")
     bb_upper = features.get("bb_upper")
     macd_histogram = features.get("macd_histogram") or 0
     change_5d = features.get("change_5d_pct") or 0
     distance_high = features.get("distance_recent_high_pct")
+    ema20_gap = features.get("ema20_gap_pct")
+    ema60_gap = features.get("ema60_gap_pct")
+    vwap_gap = features.get("vwap_gap_pct")
+    atr_ratio = features.get("atr_ratio")
+    gap_key = features.get("gap_key")
 
     if rsi is not None:
         if rsi >= 75:
@@ -151,18 +169,39 @@ def calculate_reversal_risk_score(features):
         score += 10
     if macd_histogram < 0 and _ema_alignment(features) > 0:
         score += 12
+    if ema20_gap is not None:
+        if ema20_gap >= 3:
+            score += 12
+        elif ema20_gap >= 2:
+            score += 8
+    if ema60_gap is not None and ema60_gap >= 4:
+        score += 8
+    if vwap_gap is not None:
+        if vwap_gap >= 2:
+            score += 10
+        elif vwap_gap >= 1.2:
+            score += 6
+    if atr_ratio is not None and atr_ratio >= 1.6:
+        score += 8
+    if gap_key == "gap_up":
+        score += 12 if open_value and price and price < open_value else 5
     return round(clamp(score, 0, 100))
 
 
 def calculate_rebound_improvement_score(features):
     score = 0
     price = features.get("price")
+    open_value = features.get("open")
     rsi = features.get("rsi14")
     bb_lower = features.get("bb_lower")
     macd_histogram = features.get("macd_histogram") or 0
     change_5d = features.get("change_5d_pct") or 0
     distance_low = features.get("distance_recent_low_pct")
+    ema20_gap = features.get("ema20_gap_pct")
+    ema60_gap = features.get("ema60_gap_pct")
     vwap_gap = features.get("vwap_gap_pct")
+    atr_ratio = features.get("atr_ratio")
+    gap_key = features.get("gap_key")
 
     if rsi is not None:
         if rsi <= 25:
@@ -184,7 +223,31 @@ def calculate_rebound_improvement_score(features):
         score += 12
     if vwap_gap is not None and vwap_gap >= -0.15:
         score += 7
+    if ema20_gap is not None:
+        if ema20_gap <= -3:
+            score += 12
+        elif ema20_gap <= -2:
+            score += 8
+    if ema60_gap is not None and ema60_gap <= -4:
+        score += 8
+    if vwap_gap is not None:
+        if vwap_gap <= -2:
+            score += 10
+        elif vwap_gap <= -1.2:
+            score += 6
+    if atr_ratio is not None and atr_ratio >= 1.6:
+        score += 8
+    if gap_key == "gap_down":
+        score += 12 if open_value and price and price > open_value else 5
     return round(clamp(score, 0, 100))
+
+
+def calculate_counter_bias_adjustment(base_score, reversal_risk_score, rebound_improvement_score):
+    if base_score > 0 and reversal_risk_score >= 55:
+        return -min(30, (reversal_risk_score - 45) * 0.65)
+    if base_score < 0 and rebound_improvement_score >= 55:
+        return min(30, (rebound_improvement_score - 45) * 0.65)
+    return 0
 
 
 def shock_label(score):

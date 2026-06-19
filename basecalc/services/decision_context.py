@@ -46,6 +46,7 @@ def enrich_basecalc_context(context):
     world_model = context.get("world_model") or {}
     _ensure_intermarket_display_defaults(world_model)
     _ensure_target_display_defaults(world_model)
+    ensure_plain_summary_card_display(world_model)
     market_shock = context.get("market_shock") or {}
     status_rows = context.get("basecalc_status_rows") or []
     context["decision"] = build_basecalc_decision_context(
@@ -57,6 +58,21 @@ def enrich_basecalc_context(context):
     )
     context.setdefault("detail_mode", False)
     return context
+
+
+def ensure_plain_summary_card_display(world_model):
+    if not isinstance(world_model, dict):
+        return
+    world_model["chase_risk_label"] = _chase_risk_label(world_model.get("chase_risk"))
+    world_model["chase_risk_sentence"] = _chase_risk_sentence(world_model.get("chase_risk"))
+    horizons = world_model.get("horizons")
+    if not isinstance(horizons, dict):
+        return
+    for horizon, item in horizons.items():
+        if not isinstance(item, dict):
+            continue
+        item["horizon_label"] = _horizon_label(horizon)
+        item["main_bias_label"] = _main_bias_label(item.get("main_bias"))
 
 
 def _ensure_intermarket_display_defaults(world_model):
@@ -104,6 +120,42 @@ def _ensure_intermarket_display_defaults(world_model):
             }
             for horizon in ("1d", "3d", "5d")
         }
+    ensure_plain_summary_card_display(world_model)
+
+
+def _horizon_label(horizon):
+    return {
+        "1d": "1営業日後の方向",
+        "3d": "3営業日後の方向",
+        "5d": "5営業日後の方向",
+    }.get(str(horizon or ""), f"{horizon}後の方向")
+
+
+def _main_bias_label(value):
+    return {
+        "up": "上昇方向",
+        "down": "下落方向",
+        "range": "方向感なし",
+        "neutral": "方向感なし",
+    }.get(str(value or ""), "方向感なし")
+
+
+def _chase_risk_label(value):
+    return {
+        "low": "低い",
+        "medium": "中程度",
+        "high": "高い",
+        "unknown": "判定不可",
+    }.get(str(value or ""), "判定不可")
+
+
+def _chase_risk_sentence(value):
+    return {
+        "low": "追いかけリスクは低い（米国3指数が同じ方向を確認）",
+        "medium": "追いかけリスクは中程度（米国3指数の確認が不十分）",
+        "high": "追いかけリスクは高い（米国3指数が逆方向または分裂）",
+        "unknown": "追いかけリスクは判定不可（米国3指数データ不足）",
+    }.get(str(value or ""), "追いかけリスクは判定不可（米国3指数データ不足）")
 
 
 def can_show_prediction(world_model, performance=None):

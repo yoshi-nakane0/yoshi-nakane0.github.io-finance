@@ -25,19 +25,28 @@ def load_macro_signal() -> MacroSignal:
         data_quality_score=_safe_int(data_quality.get('freshness_score'), confidence_score),
         warnings=_dedupe(warnings),
         source=context,
-        as_of=_parse_as_of(context.get('as_of')),
+        as_of=_parse_as_of(context.get('generated_at') or context.get('as_of')),
     )
 
 
 def _load_house_view_context():
+    static_payload = load_static_macro_payload() or {}
+    static_generated_at = static_payload.get('generated_at')
     context = build_house_view_context()
     if context.get('display_allowed') and _safe_int(context.get('confidence_score'), 0) > 0:
-        return context
-    static_payload = load_static_macro_payload() or {}
+        return _with_generated_at(context, static_generated_at)
     static_house_view = static_payload.get('house_view') or {}
     if static_house_view:
-        return static_house_view
-    return context
+        return _with_generated_at(static_house_view, static_generated_at)
+    return _with_generated_at(context, static_generated_at)
+
+
+def _with_generated_at(context, generated_at):
+    if not generated_at or context.get('generated_at'):
+        return context
+    enriched = dict(context)
+    enriched['generated_at'] = generated_at
+    return enriched
 
 
 def _macro_bias(context):

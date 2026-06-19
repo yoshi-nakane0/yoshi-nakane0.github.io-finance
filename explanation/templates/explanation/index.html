@@ -12,8 +12,26 @@
     {% include "common/app_header.html" with page_title="Explanation" page_slug="explanation" %}
 
     <main class="common-page">
+      {% if messages %}
+        {% for message in messages %}
+          <p class="common-notice">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+
       {% if is_preview %}
         <p class="common-notice">保存済み判断がないため、保存済みデータから一時表示しています。</p>
+      {% endif %}
+
+      {% if refresh_status.needs_refresh %}
+        <section class="common-section">
+          <p class="common-notice">{{ refresh_status.message }}</p>
+          {% if can_precompute_explanation %}
+            <form method="post" action="{% url 'explanation:precompute' %}" class="common-action-form">
+              {% csrf_token %}
+              <button type="submit" class="common-button">Explanationを再作成</button>
+            </form>
+          {% endif %}
+        </section>
       {% endif %}
 
       <section class="common-section">

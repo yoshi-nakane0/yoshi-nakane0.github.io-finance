@@ -1,11 +1,17 @@
+from datetime import timezone as dt_timezone
+from unittest import mock
+
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from .models import ExplanationSnapshot
 from .services.audit_engine import evaluate_audit
 from .services.contracts import BasecalcSignal, MacroSignal
+from .services.freshness import build_explanation_refresh_status
 from .services.fusion_engine import build_final_decision
+from .services.macro_adapter import load_macro_signal
 from .services.scenario_builder import build_scenarios
 from .services.serializer import snapshot_to_view
 
@@ -187,6 +193,8 @@ class ExplanationViewCompositionTests(SimpleTestCase):
     def test_template_renders_priority_sections_before_details(self):
         context = snapshot_to_view(self._snapshot())
         context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
 
         html = render_to_string('explanation/index.html', context)
 
@@ -198,3 +206,123 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertLess(long_index, short_index)
         self.assertLess(short_index, world_index)
         self.assertLess(world_index, final_index)
+
+    def test_template_shows_refresh_warning_and_precompute_button(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = False
+        context['refresh_status'] = {
+            'needs_refresh': True,
+            'message': 'Macro / Basecalc が更新されています。Explanation の再作成が必要です。',
+            'latest_source_label': 'Macro',
+        }
+        context['can_precompute_explanation'] = True
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('Explanation の再作成が必要です。', html)
+        self.assertIn('/explanation/precompute/', html)
+        self.assertIn('Explanationを再作成', html)
+
+
+class ExplanationFreshnessTests(SimpleTestCase):
+    def _snapshot(self):
+        return ExplanationSnapshot(
+            as_of=timezone.datetime(2026, 6, 19, 8, 0, tzinfo=timezone.utc),
+            final_label='条件付き上昇優勢',
+            final_stance='conditional_bullish',
+            action_posture='押し目待ち。',
+            confidence_score=68,
+            confidence_grade='B-',
+            macro_bias='positive',
+            basecalc_bias='bullish',
+            alignment_status='aligned',
+            data_quality_score=80,
+            audit_level='valid',
+            audit_items=[],
+            scenario={},
+            evidence=[],
+            source_snapshots={
+                'macro': {'raw': {'generated_at': '2026-06-19T08:00:00+00:00'}},
+                'basecalc': {'raw': {'generated_at': '2026-06-19T08:00:00+00:00'}},
+            },
+            score_breakdown={},
+        )
+
+    def test_refresh_needed_when_macro_payload_is_newer_than_saved_source(self):
+        status = build_explanation_refresh_status(
+            self._snapshot(),
+            macro_payload={'generated_at': '2026-06-19T08:30:00+00:00'},
+            basecalc_snapshot={'generated_at': '2026-06-19T08:00:00+00:00'},
+        )
+
+        self.assertTrue(status['needs_refresh'])
+        self.assertEqual(status['latest_source_label'], 'Macro')
+        self.assertIn('再作成が必要', status['message'])
+
+    def test_refresh_not_needed_when_sources_are_not_newer(self):
+        status = build_explanation_refresh_status(
+            self._snapshot(),
+            macro_payload={'generated_at': '2026-06-19T08:00:00+00:00'},
+            basecalc_snapshot={'generated_at': '2026-06-19T07:59:00+00:00'},
+        )
+
+        self.assertFalse(status['needs_refresh'])
+
+
+class ExplanationMacroAdapterTests(SimpleTestCase):
+    def test_macro_signal_keeps_static_payload_generated_at(self):
+        with mock.patch(
+            'explanation.services.macro_adapter.build_house_view_context',
+            return_value={
+                'display_allowed': True,
+                'confidence_score': 75,
+                'confidence_grade': 'B',
+                'house_view': 'Macro判断',
+                'regime_label': 'expansion',
+            },
+        ):
+            with mock.patch(
+                'explanation.services.macro_adapter.load_static_macro_payload',
+                return_value={'generated_at': '2026-06-19T08:30:00+00:00'},
+            ):
+                signal = load_macro_signal()
+
+        self.assertEqual(signal.source['generated_at'], '2026-06-19T08:30:00+00:00')
+        self.assertEqual(signal.as_of, timezone.datetime(2026, 6, 19, 8, 30, tzinfo=dt_timezone.utc))
+
+
+class ExplanationPrecomputeViewTests(TestCase):
+    def test_staff_user_can_precompute_explanation(self):
+        user = get_user_model().objects.create_user(
+            username='staff',
+            password='password',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        with self.settings(DEBUG=False):
+            with mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot:
+                build_snapshot.return_value = ExplanationSnapshot(
+                    as_of=timezone.now(),
+                    final_label='判定',
+                    final_stance='neutral',
+                    action_posture='様子見',
+                    confidence_score=50,
+                    confidence_grade='C',
+                    macro_bias='neutral',
+                    basecalc_bias='neutral',
+                    alignment_status='mixed',
+                    data_quality_score=50,
+                    audit_level='valid',
+                )
+                response = self.client.post('/explanation/precompute/')
+
+        build_snapshot.assert_called_once_with(save=True)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/explanation/')
+
+    def test_anonymous_user_cannot_precompute_explanation(self):
+        with self.settings(DEBUG=False):
+            response = self.client.post('/explanation/precompute/')
+
+        self.assertEqual(response.status_code, 403)

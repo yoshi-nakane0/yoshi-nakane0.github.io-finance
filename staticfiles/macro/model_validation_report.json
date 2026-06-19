@@ -2,24 +2,72 @@
   "freshness": {
     "age_days": 0,
     "is_stale": false,
-    "latest_evaluated_at": "2026-06-19T06:17:26.111120+00:00",
+    "latest_evaluated_at": "2026-06-19T09:08:41.086179+00:00",
     "stale_after_days": 30
   },
   "model_validation_report": [
     {
+      "display_grade": "hidden",
+      "display_reason": "1か月先の株価判断はbasecalcを優先",
+      "evaluated_at": "2026-06-19T09:08:41.086179+00:00",
+      "event_count": null,
+      "horizon": "1m",
+      "metrics": {
+        "baseline_mae": 4.113642394678497,
+        "direction_accuracy": 0.5560975609756098,
+        "live_settled_sample_count": 0,
+        "mae": 4.31579998833613,
+        "model_refit_count": 205,
+        "rmse": 5.814329054768263,
+        "skill_score": -0.04914321038677305,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "short_horizon_walk_forward"
+      },
+      "model_version": "short_horizon_return_v1",
+      "sample_count": 205,
+      "target": "IXIC",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "hidden",
+      "display_reason": "1か月先の株価判断はbasecalcを優先",
+      "evaluated_at": "2026-06-19T09:08:15.178975+00:00",
+      "event_count": null,
+      "horizon": "1m",
+      "metrics": {
+        "baseline_mae": 4.125370154908196,
+        "direction_accuracy": 0.5048543689320388,
+        "live_settled_sample_count": 0,
+        "mae": 4.688380928662344,
+        "model_refit_count": 206,
+        "rmse": 6.076961216126707,
+        "skill_score": -0.13647521376580007,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "short_horizon_walk_forward"
+      },
+      "model_version": "short_horizon_return_v1",
+      "sample_count": 206,
+      "target": "N225",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:17:26.111120+00:00",
+      "evaluated_at": "2026-06-19T08:37:58.058049+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
         "baseline_mae": 10.448993509315011,
         "direction_accuracy": 0.736318407960199,
+        "live_settled_sample_count": 0,
         "mae": 7.7384509378769,
         "model_refit_count": 201,
         "rmse": 10.192514731264533,
         "skill_score": 0.25940704901593936,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 201,
@@ -30,17 +78,19 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:17:09.603707+00:00",
+      "evaluated_at": "2026-06-19T08:37:40.527260+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
         "baseline_mae": 7.291995226943725,
         "direction_accuracy": 0.6911764705882353,
+        "live_settled_sample_count": 0,
         "mae": 6.163909508800605,
         "model_refit_count": 204,
         "rmse": 8.130193115226048,
         "skill_score": 0.15470192766650126,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 204,
@@ -49,41 +99,21 @@
       "warnings": []
     },
     {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:16:52.274993+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.5135983676471622,
-        "median_abs_error": 0.5135983676471622,
-        "rmse": 0.5135983676471622
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:16:52.272346+00:00",
+      "evaluated_at": "2026-06-19T08:37:05.162726+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
         "baseline_mae": 10.885709885220454,
         "direction_accuracy": 0.865,
+        "live_settled_sample_count": 0,
         "mae": 6.3305776138734,
         "model_refit_count": 200,
         "rmse": 8.325254346621104,
         "skill_score": 0.4184506402776327,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 200,
@@ -94,17 +124,19 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:16:36.755200+00:00",
+      "evaluated_at": "2026-06-19T08:36:48.205841+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
         "baseline_mae": 7.201815645349059,
         "direction_accuracy": 0.729064039408867,
+        "live_settled_sample_count": 0,
         "mae": 6.083316888264485,
         "model_refit_count": 203,
         "rmse": 7.515816743339183,
         "skill_score": 0.15530788514517202,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 203,
@@ -113,41 +145,21 @@
       "warnings": []
     },
     {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:16:21.119560+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 3.278658884403443,
-        "median_abs_error": 3.278658884403443,
-        "rmse": 3.278658884403443
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:16:21.117205+00:00",
+      "evaluated_at": "2026-06-19T08:36:13.439471+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
         "baseline_mae": 8.335762948027565,
         "direction_accuracy": 0.825,
+        "live_settled_sample_count": 0,
         "mae": 5.372076273617892,
         "model_refit_count": 200,
         "rmse": 7.083786915992268,
         "skill_score": 0.35553874227085003,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 200,
@@ -158,17 +170,19 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:16:05.742420+00:00",
+      "evaluated_at": "2026-06-19T08:35:56.358239+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
         "baseline_mae": 5.705260904351768,
         "direction_accuracy": 0.729064039408867,
+        "live_settled_sample_count": 0,
         "mae": 4.889793616652515,
         "model_refit_count": 203,
         "rmse": 6.112634177524244,
         "skill_score": 0.1429325146335102,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 203,
@@ -178,40 +192,43 @@
     },
     {
       "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:50.179840+00:00",
+      "display_reason": "1か月先の株価判断はbasecalcを優先",
+      "evaluated_at": "2026-06-19T08:35:39.356264+00:00",
       "event_count": null,
       "horizon": "1m",
       "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 2.477266068904684,
-        "median_abs_error": 2.477266068904684,
-        "rmse": 2.477266068904684
+        "baseline_mae": 3.372437481873957,
+        "direction_accuracy": 0.5951219512195122,
+        "live_settled_sample_count": 1,
+        "mae": 3.4614037200394794,
+        "model_refit_count": 205,
+        "rmse": 4.580700472687373,
+        "skill_score": -0.02638039656589486,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
+      "sample_count": 205,
       "target": "GSPC",
       "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
+      "warnings": []
     },
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:15:50.177281+00:00",
+      "evaluated_at": "2026-06-19T08:35:22.166382+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
         "baseline_mae": 7.416741316855247,
         "direction_accuracy": 0.78,
+        "live_settled_sample_count": 0,
         "mae": 5.231440198477028,
         "model_refit_count": 200,
         "rmse": 6.7779650312039434,
         "skill_score": 0.2946443761510079,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 200,
@@ -222,17 +239,19 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-19T06:15:34.672401+00:00",
+      "evaluated_at": "2026-06-19T08:35:05.389921+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
         "baseline_mae": 5.234373676030869,
         "direction_accuracy": 0.6748768472906403,
+        "live_settled_sample_count": 0,
         "mae": 4.852046520693073,
         "model_refit_count": 203,
         "rmse": 6.1745065782666275,
         "skill_score": 0.07304162427083494,
-        "validation_method": "lightgbm_refit_walk_forward"
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 203,
@@ -242,1272 +261,23 @@
     },
     {
       "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.901892+00:00",
+      "display_reason": "1か月先の株価判断はbasecalcを優先",
+      "evaluated_at": "2026-06-19T08:34:48.416105+00:00",
       "event_count": null,
       "horizon": "1m",
       "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.653463153778389,
-        "median_abs_error": 0.653463153778389,
-        "rmse": 0.653463153778389
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.900986+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.11874186979637025,
-        "median_abs_error": 0.11874186979637025,
-        "rmse": 0.11874186979637025
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.900068+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.0035342316362107972,
-        "median_abs_error": 0.0035342316362107972,
-        "rmse": 0.0035342316362107972
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.899129+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 6.218779992525581e-05,
-        "median_abs_error": 6.218779992525581e-05,
-        "rmse": 6.218779992525581e-05
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.898074+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.3212415046293197,
-        "median_abs_error": 0.3212415046293197,
-        "rmse": 0.3212415046293197
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.897000+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.2569842226506706,
-        "median_abs_error": 0.2569842226506706,
-        "rmse": 0.2569842226506706
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.895918+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.09704607136930268,
-        "median_abs_error": 0.09704607136930268,
-        "rmse": 0.09704607136930268
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.894977+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 1.1549090985928239,
-        "median_abs_error": 1.1549090985928239,
-        "rmse": 1.1549090985928239
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.894046+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.6661240446123572,
-        "median_abs_error": 0.6661240446123572,
-        "rmse": 0.6661240446123572
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.893137+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.2822989547291282,
-        "median_abs_error": 0.2822989547291282,
-        "rmse": 0.2822989547291282
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.892206+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.2679463724679188,
-        "median_abs_error": 0.2679463724679188,
-        "rmse": 0.2679463724679188
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.891285+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.21893290594955028,
-        "median_abs_error": 0.21893290594955028,
-        "rmse": 0.21893290594955028
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.890352+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.03357954313024313,
-        "median_abs_error": 0.03357954313024313,
-        "rmse": 0.03357954313024313
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.889373+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.13575110959856077,
-        "median_abs_error": 0.13575110959856077,
-        "rmse": 0.13575110959856077
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.888393+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.09780378993197195,
-        "median_abs_error": 0.09780378993197195,
-        "rmse": 0.09780378993197195
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.886985+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.08884216768012439,
-        "median_abs_error": 0.08884216768012439,
-        "rmse": 0.08884216768012439
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.886027+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.9444225411807081,
-        "median_abs_error": 0.9444225411807081,
-        "rmse": 0.9444225411807081
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.884646+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 1.1828906670498762,
-        "median_abs_error": 1.1828906670498762,
-        "rmse": 1.1828906670498762
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-19T06:15:18.883612+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 2.7645824849688676,
-        "median_abs_error": 2.7645824849688676,
-        "rmse": 2.7645824849688676
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "blocked",
-      "display_reason": "検証結果なし",
-      "evaluated_at": "2026-06-19T06:15:18.882384+00:00",
-      "event_count": null,
-      "horizon": "63d",
-      "metrics": {},
-      "model_version": "crash_probability_logistic_v1",
-      "sample_count": 0,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証できる予測実績がまだありません。",
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:55:00.945435+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "baseline_mae": 10.44276991124234,
-        "direction_accuracy": 0.7313432835820896,
-        "mae": 7.446225829536031,
-        "model_refit_count": 201,
-        "rmse": 9.537261072201872,
-        "skill_score": 0.28694916264317283,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 201,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:54:42.525272+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "baseline_mae": 7.285863152372123,
-        "direction_accuracy": 0.6666666666666666,
-        "mae": 6.27411990338251,
-        "model_refit_count": 204,
-        "rmse": 8.210226212665196,
-        "skill_score": 0.13886388308847264,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 204,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:54:24.638725+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.5135983676471622,
-        "median_abs_error": 0.5135983676471622,
-        "rmse": 0.5135983676471622
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:54:24.635349+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "baseline_mae": 10.876263974192979,
-        "direction_accuracy": 0.875,
-        "mae": 6.1618336400454,
-        "model_refit_count": 200,
-        "rmse": 7.960366858786938,
-        "skill_score": 0.43346045529364696,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 200,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:54:07.629217+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "baseline_mae": 7.192509329065833,
-        "direction_accuracy": 0.7241379310344828,
-        "mae": 5.757217725052492,
-        "model_refit_count": 203,
-        "rmse": 7.30069478789035,
-        "skill_score": 0.19955366595259705,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 203,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:53:50.748148+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 3.278658884403443,
-        "median_abs_error": 3.278658884403443,
-        "rmse": 3.278658884403443
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:53:50.745916+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "baseline_mae": 8.3303690410461,
-        "direction_accuracy": 0.815,
-        "mae": 5.265323872460584,
-        "model_refit_count": 200,
-        "rmse": 6.946641593227561,
-        "skill_score": 0.3679363007188716,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 200,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:53:33.896295+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "baseline_mae": 5.6999467102813615,
-        "direction_accuracy": 0.7438423645320197,
-        "mae": 4.634408760391043,
-        "model_refit_count": 203,
-        "rmse": 5.894603948347888,
-        "skill_score": 0.1869382301361412,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 203,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:53:16.970474+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 2.477266068904684,
-        "median_abs_error": 2.477266068904684,
-        "rmse": 2.477266068904684
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:53:16.967253+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "baseline_mae": 7.416041235596656,
-        "direction_accuracy": 0.775,
-        "mae": 5.168098705536995,
-        "model_refit_count": 200,
-        "rmse": 6.727899721629939,
-        "skill_score": 0.3031189361879004,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 200,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-18T06:53:00.033654+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "baseline_mae": 5.23368394080073,
-        "direction_accuracy": 0.6748768472906403,
-        "mae": 4.655412831300098,
-        "model_refit_count": 203,
-        "rmse": 6.038178814758174,
-        "skill_score": 0.11049026193434197,
-        "validation_method": "lightgbm_refit_walk_forward"
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 203,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.581159+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.653463153778389,
-        "median_abs_error": 0.653463153778389,
-        "rmse": 0.653463153778389
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 1,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.580137+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.11874186979637025,
-        "median_abs_error": 0.11874186979637025,
-        "rmse": 0.11874186979637025
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.579044+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.0035342316362107972,
-        "median_abs_error": 0.0035342316362107972,
-        "rmse": 0.0035342316362107972
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.577999+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 6.218779992525581e-05,
-        "median_abs_error": 6.218779992525581e-05,
-        "rmse": 6.218779992525581e-05
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.576932+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.3212415046293197,
-        "median_abs_error": 0.3212415046293197,
-        "rmse": 0.3212415046293197
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.575889+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.2569842226506706,
-        "median_abs_error": 0.2569842226506706,
-        "rmse": 0.2569842226506706
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.574848+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": 0.0,
-        "hit_rate_positive": null,
-        "mae": 0.09704607136930268,
-        "median_abs_error": 0.09704607136930268,
-        "rmse": 0.09704607136930268
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "T10Y2Y",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.573799+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 1.1549090985928239,
-        "median_abs_error": 1.1549090985928239,
-        "rmse": 1.1549090985928239
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.572764+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.6661240446123572,
-        "median_abs_error": 0.6661240446123572,
-        "rmse": 0.6661240446123572
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.571701+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.2822989547291282,
-        "median_abs_error": 0.2822989547291282,
-        "rmse": 0.2822989547291282
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.570626+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.2679463724679188,
-        "median_abs_error": 0.2679463724679188,
-        "rmse": 0.2679463724679188
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.569551+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.21893290594955028,
-        "median_abs_error": 0.21893290594955028,
-        "rmse": 0.21893290594955028
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.568438+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.03357954313024313,
-        "median_abs_error": 0.03357954313024313,
-        "rmse": 0.03357954313024313
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "INDPRO",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.567405+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.13575110959856077,
-        "median_abs_error": 0.13575110959856077,
-        "rmse": 0.13575110959856077
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.566369+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.09780378993197195,
-        "median_abs_error": 0.09780378993197195,
-        "rmse": 0.09780378993197195
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.565318+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 0.0,
-        "mae": 0.08884216768012439,
-        "median_abs_error": 0.08884216768012439,
-        "rmse": 0.08884216768012439
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.564217+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 0.9444225411807081,
-        "median_abs_error": 0.9444225411807081,
-        "rmse": 0.9444225411807081
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.563107+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 1.1828906670498762,
-        "median_abs_error": 1.1828906670498762,
-        "rmse": 1.1828906670498762
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "hidden",
-      "display_reason": "検証サンプル不足",
-      "evaluated_at": "2026-06-18T06:52:42.561908+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 1.0,
-        "hit_rate_negative": null,
-        "hit_rate_positive": 1.0,
-        "mae": 2.7645824849688676,
-        "median_abs_error": 2.7645824849688676,
-        "rmse": 2.7645824849688676
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 1,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "blocked",
-      "display_reason": "検証結果なし",
-      "evaluated_at": "2026-06-18T06:52:42.559295+00:00",
-      "event_count": null,
-      "horizon": "63d",
-      "metrics": {},
-      "model_version": "crash_probability_logistic_v1",
-      "sample_count": 0,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": [
-        "検証できる予測実績がまだありません。",
-        "検証サンプルが少ないため、結果は暫定です。"
-      ]
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:57.832479+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.66,
-        "mae": 9.576725157974083,
-        "rmse": 12.250253078138702
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 200,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:54.709148+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.625615763546798,
-        "mae": 6.810728654514424,
-        "rmse": 8.772620861411209
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 203,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:51.606324+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.5658536585365853,
-        "mae": 4.076837217238827,
-        "rmse": 5.271450181410611
+        "baseline_mae": 3.219396124298135,
+        "direction_accuracy": 0.5756097560975609,
+        "live_settled_sample_count": 1,
+        "mae": 3.4050856038255883,
+        "model_refit_count": 205,
+        "rmse": 4.5942918701021105,
+        "skill_score": -0.05767835716952541,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
       "sample_count": 205,
-      "target": "N225",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:48.501707+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.7437185929648241,
-        "mae": 8.600876353143024,
-        "rmse": 11.456135842517769
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 199,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:45.419886+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.6831683168316832,
-        "mae": 6.321687823073351,
-        "rmse": 8.21962330347962
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 202,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:42.320397+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.6176470588235294,
-        "mae": 4.0030604992294725,
-        "rmse": 5.085351081191614
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 204,
-      "target": "IXIC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:39.233239+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.7487437185929648,
-        "mae": 6.8481889020634235,
-        "rmse": 9.090852217153268
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 199,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:36.100172+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.698019801980198,
-        "mae": 5.110831351402542,
-        "rmse": 6.614593871676607
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 202,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:32.999588+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.6372549019607843,
-        "mae": 3.260939634071299,
-        "rmse": 4.25431147347767
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 204,
-      "target": "GSPC",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:29.916413+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.7035175879396985,
-        "mae": 6.567098538042107,
-        "rmse": 8.548870143380054
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 199,
       "target": "DJI",
       "validation_method": "walk_forward",
       "warnings": []
@@ -1515,101 +285,91 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:26.812462+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.6287128712871287,
-        "mae": 4.939734953637653,
-        "rmse": 6.400264224540796
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 202,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:23.722331+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.6372549019607843,
-        "mae": 3.123088001050064,
-        "rmse": 4.165165711405583
-      },
-      "model_version": "return_lightgbm_v2",
-      "sample_count": 204,
-      "target": "DJI",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:20.592521+00:00",
+      "evaluated_at": "2026-06-19T08:34:31.318684+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
-        "direction_accuracy": 0.59375,
-        "mae": 0.7215060763888889,
-        "rmse": 1.5706292387551928
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 256,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:27:16.603434+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.5135135135135135,
-        "mae": 0.4473080223080223,
-        "rmse": 1.211698445917186
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 259,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:27:12.623791+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.45977011494252873,
-        "mae": 0.2077586206896552,
-        "rmse": 0.7128511837870328
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 261,
-      "target": "UNRATE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:08.647941+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.5486381322957199,
-        "mae": 0.4078199308257674,
-        "rmse": 0.5133323861288128
+        "baseline_mae": 0.6696498054474709,
+        "direction_accuracy": 0.8599221789883269,
+        "live_settled_sample_count": 1,
+        "mae": 0.47679051929417,
+        "model_refit_count": 257,
+        "rmse": 1.453891996072059,
+        "skill_score": 0.2880002123265446,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
       "sample_count": 257,
+      "target": "UNRATE",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:34:10.573517+00:00",
+      "event_count": null,
+      "horizon": "3m",
+      "metrics": {
+        "baseline_mae": 0.40384615384615385,
+        "direction_accuracy": 0.6653846153846154,
+        "live_settled_sample_count": 1,
+        "mae": 0.3590757297967787,
+        "model_refit_count": 260,
+        "rmse": 1.1488354683886517,
+        "skill_score": 0.11086009764607174,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 260,
+      "target": "UNRATE",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "reference",
+      "display_reason": "単純予測を上回っていないため参考",
+      "evaluated_at": "2026-06-19T08:33:48.752921+00:00",
+      "event_count": null,
+      "horizon": "1m",
+      "metrics": {
+        "baseline_mae": 0.18931297709923664,
+        "direction_accuracy": 0.5534351145038168,
+        "live_settled_sample_count": 1,
+        "mae": 0.21492931253433978,
+        "model_refit_count": 262,
+        "rmse": 0.7342871956036389,
+        "skill_score": -0.1353120944354238,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 262,
+      "target": "UNRATE",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:33:27.481705+00:00",
+      "event_count": null,
+      "horizon": "6m",
+      "metrics": {
+        "baseline_mae": 0.3281751824817518,
+        "direction_accuracy": 0.8394160583941606,
+        "live_settled_sample_count": 1,
+        "mae": 0.19581202832979167,
+        "model_refit_count": 137,
+        "rmse": 0.2586682879388523,
+        "skill_score": 0.4033307855609106,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 137,
       "target": "T10Y2Y",
       "validation_method": "walk_forward",
       "warnings": []
@@ -1617,33 +377,45 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:27:04.666600+00:00",
+      "evaluated_at": "2026-06-19T08:33:14.838300+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
-        "direction_accuracy": 0.5384615384615384,
-        "mae": 0.2568974358974359,
-        "rmse": 0.3337185968025334
+        "baseline_mae": 0.20642857142857143,
+        "direction_accuracy": 0.7357142857142858,
+        "live_settled_sample_count": 1,
+        "mae": 0.17776781652169096,
+        "model_refit_count": 140,
+        "rmse": 0.23342712261142126,
+        "skill_score": 0.1388410272305628,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 260,
+      "sample_count": 140,
       "target": "T10Y2Y",
       "validation_method": "walk_forward",
       "warnings": []
     },
     {
       "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:27:00.672046+00:00",
+      "display_reason": "単純予測を上回っていないため参考",
+      "evaluated_at": "2026-06-19T08:33:02.481501+00:00",
       "event_count": null,
       "horizon": "1m",
       "metrics": {
-        "direction_accuracy": 0.48854961832061067,
-        "mae": 0.13098600508905853,
-        "rmse": 0.17236826723752402
+        "baseline_mae": 0.1106338028169014,
+        "direction_accuracy": 0.5563380281690141,
+        "live_settled_sample_count": 1,
+        "mae": 0.11865013001978543,
+        "model_refit_count": 142,
+        "rmse": 0.15017208521687908,
+        "skill_score": -0.072458208963051,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 262,
+      "sample_count": 142,
       "target": "T10Y2Y",
       "validation_method": "walk_forward",
       "warnings": []
@@ -1651,118 +423,183 @@
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:56.698046+00:00",
+      "evaluated_at": "2026-06-19T08:32:50.220627+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
-        "direction_accuracy": 0.9883268482490273,
-        "mae": 0.335297881539127,
-        "rmse": 0.5260696104930467
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 257,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:52.612759+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.9769230769230769,
-        "mae": 0.19746388888888913,
-        "rmse": 0.29916988880011336
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 260,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:48.545191+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.9694656488549618,
-        "mae": 0.08361821458863437,
-        "rmse": 0.12260832571874032
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 262,
-      "target": "PCEPILFE",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:44.484428+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.4844961240310077,
-        "mae": 1.986948654177433,
-        "rmse": 3.17548070508508
+        "baseline_mae": 1.1201666666666665,
+        "direction_accuracy": 0.9883720930232558,
+        "live_settled_sample_count": 1,
+        "mae": 0.20235555826419505,
+        "model_refit_count": 258,
+        "rmse": 0.32287887955764544,
+        "skill_score": 0.8193522765086787,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
       "sample_count": 258,
-      "target": "INDPRO",
+      "target": "PCEPILFE",
       "validation_method": "walk_forward",
       "warnings": []
     },
     {
-      "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:40.399330+00:00",
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:32:26.948492+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
-        "direction_accuracy": 0.48659003831417624,
-        "mae": 1.236667741592166,
-        "rmse": 2.2539634694273345
+        "baseline_mae": 0.5699080459770114,
+        "direction_accuracy": 0.9693486590038314,
+        "live_settled_sample_count": 1,
+        "mae": 0.15162699969917867,
+        "model_refit_count": 261,
+        "rmse": 0.2234699461477455,
+        "skill_score": 0.7339447990434322,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
       "sample_count": 261,
-      "target": "INDPRO",
+      "target": "PCEPILFE",
       "validation_method": "walk_forward",
       "warnings": []
     },
     {
-      "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:36.315280+00:00",
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:32:02.943291+00:00",
       "event_count": null,
       "horizon": "1m",
       "metrics": {
-        "direction_accuracy": 0.4828897338403042,
-        "mae": 0.6057204267004641,
-        "rmse": 1.1859319882704051
+        "baseline_mae": 0.19329277566539912,
+        "direction_accuracy": 0.9695817490494296,
+        "live_settled_sample_count": 1,
+        "mae": 0.07491517555676128,
+        "model_refit_count": 263,
+        "rmse": 0.1073702468400125,
+        "skill_score": 0.6124264070456324,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
       "sample_count": 263,
+      "target": "PCEPILFE",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:31:39.925427+00:00",
+      "event_count": null,
+      "horizon": "6m",
+      "metrics": {
+        "baseline_mae": 1.8416594594594597,
+        "direction_accuracy": 0.806949806949807,
+        "live_settled_sample_count": 1,
+        "mae": 1.2027326936184721,
+        "model_refit_count": 259,
+        "rmse": 2.334304017792292,
+        "skill_score": 0.34692991831862185,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 259,
+      "target": "INDPRO",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:31:18.864001+00:00",
+      "event_count": null,
+      "horizon": "3m",
+      "metrics": {
+        "baseline_mae": 1.1548152671755723,
+        "direction_accuracy": 0.7595419847328244,
+        "live_settled_sample_count": 1,
+        "mae": 0.921082725093975,
+        "model_refit_count": 262,
+        "rmse": 1.963114392100086,
+        "skill_score": 0.20239820924194774,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 262,
       "target": "INDPRO",
       "validation_method": "walk_forward",
       "warnings": []
     },
     {
       "display_grade": "reference",
-      "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:32.228295+00:00",
+      "display_reason": "単純予測を上回っていないため参考",
+      "evaluated_at": "2026-06-19T08:30:58.180131+00:00",
+      "event_count": null,
+      "horizon": "1m",
+      "metrics": {
+        "baseline_mae": 0.579104545454545,
+        "direction_accuracy": 0.6287878787878788,
+        "live_settled_sample_count": 1,
+        "mae": 0.5929637059003007,
+        "model_refit_count": 264,
+        "rmse": 1.1778123693062565,
+        "skill_score": -0.023932052605246668,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 264,
+      "target": "INDPRO",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:30:37.500444+00:00",
       "event_count": null,
       "horizon": "6m",
       "metrics": {
-        "direction_accuracy": 0.4826254826254826,
-        "mae": 0.5096900471900472,
-        "rmse": 0.6292292961915849
+        "baseline_mae": 0.45697841726618704,
+        "direction_accuracy": 0.7841726618705036,
+        "live_settled_sample_count": 1,
+        "mae": 0.30813380010538494,
+        "model_refit_count": 139,
+        "rmse": 0.411083337736703,
+        "skill_score": 0.32571476362329177,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 259,
+      "sample_count": 139,
+      "target": "DGS10",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:30:24.523508+00:00",
+      "event_count": null,
+      "horizon": "3m",
+      "metrics": {
+        "baseline_mae": 0.32859154929577467,
+        "direction_accuracy": 0.6619718309859155,
+        "live_settled_sample_count": 1,
+        "mae": 0.31379215186686027,
+        "model_refit_count": 142,
+        "rmse": 0.42506406320554785,
+        "skill_score": 0.045038886303168546,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 142,
       "target": "DGS10",
       "validation_method": "walk_forward",
       "warnings": []
@@ -1770,84 +607,91 @@
     {
       "display_grade": "reference",
       "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:28.145543+00:00",
+      "evaluated_at": "2026-06-19T08:30:12.019585+00:00",
+      "event_count": null,
+      "horizon": "1m",
+      "metrics": {
+        "baseline_mae": 0.1801388888888889,
+        "direction_accuracy": 0.4513888888888889,
+        "live_settled_sample_count": 1,
+        "mae": 0.20981577843323262,
+        "model_refit_count": 144,
+        "rmse": 0.2619641668451704,
+        "skill_score": -0.16474449091694288,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 144,
+      "target": "DGS10",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:29:59.575305+00:00",
+      "event_count": null,
+      "horizon": "6m",
+      "metrics": {
+        "baseline_mae": 6.353669064748202,
+        "direction_accuracy": 0.6906474820143885,
+        "live_settled_sample_count": 1,
+        "mae": 4.5257106969024035,
+        "model_refit_count": 139,
+        "rmse": 5.8570163306382605,
+        "skill_score": 0.28770122416160837,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
+      },
+      "model_version": "macro_forecast_lightgbm_v1",
+      "sample_count": 139,
+      "target": "DEXJPUS",
+      "validation_method": "walk_forward",
+      "warnings": []
+    },
+    {
+      "display_grade": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-19T08:29:47.207392+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
-        "direction_accuracy": 0.48854961832061067,
-        "mae": 0.34611217133163696,
-        "rmse": 0.4469317456687264
+        "baseline_mae": 4.65887323943662,
+        "direction_accuracy": 0.6830985915492958,
+        "live_settled_sample_count": 1,
+        "mae": 4.328374021661801,
+        "model_refit_count": 142,
+        "rmse": 6.067122343034377,
+        "skill_score": 0.07093973173109647,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 262,
-      "target": "DGS10",
+      "sample_count": 142,
+      "target": "DEXJPUS",
       "validation_method": "walk_forward",
       "warnings": []
     },
     {
       "display_grade": "reference",
       "display_reason": "方向一致率が低いため参考",
-      "evaluated_at": "2026-05-24T05:26:24.056103+00:00",
+      "evaluated_at": "2026-06-19T08:29:34.881878+00:00",
       "event_count": null,
       "horizon": "1m",
       "metrics": {
-        "direction_accuracy": 0.4772727272727273,
-        "mae": 0.19174137205387207,
-        "rmse": 0.24950786823611074
+        "baseline_mae": 2.6061111111111117,
+        "direction_accuracy": 0.5,
+        "live_settled_sample_count": 1,
+        "mae": 3.067224167678131,
+        "model_refit_count": 144,
+        "rmse": 4.0710153360563845,
+        "skill_score": -0.1769353020295532,
+        "validation_method": "lightgbm_refit_walk_forward",
+        "validation_source": "historical_walk_forward"
       },
       "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 264,
-      "target": "DGS10",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:19.978165+00:00",
-      "event_count": null,
-      "horizon": "6m",
-      "metrics": {
-        "direction_accuracy": 0.5791505791505791,
-        "mae": 6.06000429000429,
-        "rmse": 7.901201156157665
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 259,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:15.882698+00:00",
-      "event_count": null,
-      "horizon": "3m",
-      "metrics": {
-        "direction_accuracy": 0.549618320610687,
-        "mae": 4.313376802374894,
-        "rmse": 5.796681130697492
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 262,
-      "target": "DEXJPUS",
-      "validation_method": "walk_forward",
-      "warnings": []
-    },
-    {
-      "display_grade": "show",
-      "display_reason": "トップ表示可",
-      "evaluated_at": "2026-05-24T05:26:11.810729+00:00",
-      "event_count": null,
-      "horizon": "1m",
-      "metrics": {
-        "direction_accuracy": 0.5340909090909091,
-        "mae": 2.3690425084175084,
-        "rmse": 3.169950265998336
-      },
-      "model_version": "macro_forecast_lightgbm_v1",
-      "sample_count": 264,
+      "sample_count": 144,
       "target": "DEXJPUS",
       "validation_method": "walk_forward",
       "warnings": []
@@ -1855,7 +699,7 @@
     {
       "display_grade": "blocked",
       "display_reason": "検証結果なし",
-      "evaluated_at": "2026-05-24T05:26:07.631700+00:00",
+      "evaluated_at": "2026-06-19T08:29:22.035717+00:00",
       "event_count": null,
       "horizon": "63d",
       "metrics": {},

@@ -1785,15 +1785,16 @@ def _forecast_prediction_display(snapshot: ForecastSnapshot) -> str:
 
 
 def _latest_validation_reports() -> Dict[tuple, ModelValidationReport]:
-    reports = {}
-    for report in ModelValidationReport.objects.order_by('-evaluated_at'):
-        key = (report.model_version, report.target, report.horizon)
-        if key not in reports:
-            reports[key] = report
-    return reports
+    from .model_validation import latest_validation_reports
+
+    return {
+        (report.model_version, report.target, report.horizon): report
+        for report in latest_validation_reports()
+    }
 
 
 def build_forecast_model_context() -> Dict:
+    from . import forecast_models
     from .model_validation import model_display_grade
 
     reports = _latest_validation_reports()
@@ -1805,6 +1806,7 @@ def build_forecast_model_context() -> Dict:
         .filter(
             model_version__in=[
                 'return_lightgbm_v2',
+                'short_horizon_return_v1',
                 'macro_forecast_lightgbm_v1',
                 'lightgbm_return_v1',
             ],
@@ -1813,6 +1815,8 @@ def build_forecast_model_context() -> Dict:
     )
     for snapshot in snapshots:
         key = (snapshot.model_version, snapshot.target, snapshot.horizon)
+        if forecast_models.is_deprecated_monthly_short_return_model(*key):
+            continue
         if key in seen:
             continue
         seen.add(key)

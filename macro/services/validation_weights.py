@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from ..models import ModelValidationReport
+from . import forecast_models
 from .model_validation import model_display_grade
 
 HOUSE_VIEW_BACKTEST_PATH = Path('static/macro/house_view_backtest.json')
@@ -91,6 +92,8 @@ def build_validation_weight_report(
     latest_by_model = {}
     for report in ModelValidationReport.objects.order_by('-evaluated_at', '-id'):
         key = (report.model_version, report.target, report.horizon)
+        if forecast_models.is_deprecated_monthly_short_return_model(*key):
+            continue
         if key not in latest_by_model:
             latest_by_model[key] = report
 

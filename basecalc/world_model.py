@@ -260,6 +260,11 @@ def build_world_model(price, market_snapshot=None, intermarket_context=None, as_
         "primary_scenario": dual_scenario["primary_scenario"],
         "counter_scenario": dual_scenario["counter_scenario"],
         "scenario_label": dual_scenario["scenario_label"],
+        "primary_direction": dual_scenario["primary_direction"],
+        "primary_score": dual_scenario["primary_score"],
+        "counter_bias": dual_scenario["counter_bias"],
+        "scenario_probabilities": dual_scenario["scenario_probabilities"],
+        "action_note": dual_scenario["action_note"],
         "trend_score": sentiment["trend_score"],
         "momentum_score": sentiment["momentum_score"],
         "reversal_risk_score": sentiment["reversal_risk_score"],
@@ -560,29 +565,68 @@ def build_dual_scenario(
     rebound_improvement_score,
     shock_score,
 ):
+    probabilities = _scenario_probabilities(
+        direction,
+        continuation_score,
+        reversal_risk_score,
+        rebound_improvement_score,
+        shock_score,
+    )
     if direction == "up":
+        counter_bias = {
+            "direction": "down",
+            "score": reversal_risk_score,
+            "label": "上昇優勢だが反落警戒" if reversal_risk_score >= 60 else "反落警戒は限定的",
+            "reasons": _counter_bias_reasons("down", reversal_risk_score),
+        }
         if reversal_risk_score >= 60:
             return {
+                "primary_direction": "up",
+                "primary_score": continuation_score,
                 "primary_scenario": "上昇優勢",
                 "counter_scenario": f"反落警戒 {reversal_risk_score}/100",
                 "scenario_label": "上昇優勢だが反落警戒点灯",
+                "counter_bias": counter_bias,
+                "scenario_probabilities": probabilities,
+                "action_note": "上昇方向だが追撃買いは危険。押し目確認待ち。",
             }
         return {
+            "primary_direction": "up",
+            "primary_score": continuation_score,
             "primary_scenario": "上昇継続",
             "counter_scenario": "反落警戒は限定的",
             "scenario_label": "上昇継続優勢",
+            "counter_bias": counter_bias,
+            "scenario_probabilities": probabilities,
+            "action_note": "上昇継続を基本に、過熱シグナルの点灯を確認。",
         }
     if direction == "down":
+        counter_bias = {
+            "direction": "up",
+            "score": rebound_improvement_score,
+            "label": "下落優勢だが買い戻し警戒" if rebound_improvement_score >= 60 else "買い戻し警戒は限定的",
+            "reasons": _counter_bias_reasons("up", rebound_improvement_score),
+        }
         if rebound_improvement_score >= 60:
             return {
+                "primary_direction": "down",
+                "primary_score": continuation_score,
                 "primary_scenario": "下落優勢",
                 "counter_scenario": f"買い戻し警戒 {rebound_improvement_score}/100",
                 "scenario_label": "下落優勢だが買い戻し警戒点灯",
+                "counter_bias": counter_bias,
+                "scenario_probabilities": probabilities,
+                "action_note": "下落方向だが突っ込み売りは危険。戻りの強さを確認。",
             }
         return {
+            "primary_direction": "down",
+            "primary_score": continuation_score,
             "primary_scenario": "下落継続",
             "counter_scenario": "改善シグナルは限定的",
             "scenario_label": "下落継続優勢",
+            "counter_bias": counter_bias,
+            "scenario_probabilities": probabilities,
+            "action_note": "下落継続を基本に、売られすぎシグナルの点灯を確認。",
         }
     if max(reversal_risk_score, rebound_improvement_score, shock_score) >= 55:
         label = "反転候補"
@@ -591,10 +635,86 @@ def build_dual_scenario(
     else:
         label = "レンジ中立"
     return {
+        "primary_direction": "range",
+        "primary_score": continuation_score,
         "primary_scenario": label,
         "counter_scenario": "上下どちらも決め手不足",
         "scenario_label": label,
+        "counter_bias": {
+            "direction": "both",
+            "score": max(reversal_risk_score, rebound_improvement_score),
+            "label": "上下の反転材料を確認",
+            "reasons": _counter_bias_reasons("both", max(reversal_risk_score, rebound_improvement_score)),
+        },
+        "scenario_probabilities": probabilities,
+        "action_note": "方向感は限定的。重要価格帯を抜けるまで待機。",
     }
+
+
+def _scenario_probabilities(
+    direction,
+    continuation_score,
+    reversal_risk_score,
+    rebound_improvement_score,
+    shock_score,
+):
+    continuation_score = _safe_score(continuation_score)
+    reversal_risk_score = _safe_score(reversal_risk_score)
+    rebound_improvement_score = _safe_score(rebound_improvement_score)
+    shock_score = _safe_score(shock_score)
+    if direction == "up":
+        up = 42 + continuation_score * 0.38 - reversal_risk_score * 0.24 - shock_score * 0.08
+        down = 16 + reversal_risk_score * 0.28 + shock_score * 0.08
+        range_probability = 100 - up - down
+    elif direction == "down":
+        down = 42 + continuation_score * 0.38 - rebound_improvement_score * 0.24 - shock_score * 0.08
+        up = 16 + rebound_improvement_score * 0.28 + shock_score * 0.08
+        range_probability = 100 - up - down
+    else:
+        range_probability = 45 + min(shock_score, 40) * 0.2
+        up = 27.5 + rebound_improvement_score * 0.08 - reversal_risk_score * 0.05
+        down = 100 - range_probability - up
+    values = {
+        "up_continuation": up,
+        "range": range_probability,
+        "down_reversal": down,
+    }
+    return _normalize_probability_points(values)
+
+
+def _safe_score(value):
+    try:
+        return max(0, min(100, float(value or 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _normalize_probability_points(values):
+    clipped = {key: max(5, min(90, value)) for key, value in values.items()}
+    total = sum(clipped.values()) or 1
+    normalized = {
+        key: int(round(value / total * 100))
+        for key, value in clipped.items()
+    }
+    difference = 100 - sum(normalized.values())
+    if difference:
+        largest_key = max(normalized, key=normalized.get)
+        normalized[largest_key] += difference
+    return normalized
+
+
+def _counter_bias_reasons(direction, score):
+    if score < 60:
+        return []
+    if direction == "down":
+        reasons = ["RSI過熱", "BB上限接近", "MACD減速", "VWAP乖離過大"]
+    elif direction == "up":
+        reasons = ["RSI売られすぎ", "BB下限接近", "MACD改善", "VWAP乖離過大"]
+    else:
+        reasons = ["過熱または売られすぎ", "急変動", "重要価格帯接近"]
+    if score < 75:
+        return reasons[:3]
+    return reasons
 
 
 def blocked_world_model(
@@ -1100,12 +1220,32 @@ def _horizon_signals(direction, expected_returns, setup):
     for horizon in ("1d", "3d", "5d"):
         expected = (expected_returns or {}).get(horizon)
         value = expected.get("value") if isinstance(expected, dict) else expected
+        main_bias = "up" if direction == "up" else "down" if direction == "down" else "range"
         rows[horizon] = {
-            "main_bias": "up" if direction == "up" else "down" if direction == "down" else "range",
+            "horizon_label": _horizon_label(horizon),
+            "main_bias": main_bias,
+            "main_bias_label": _main_bias_label(main_bias),
             "setup_label": (setup or {}).get("primary_setup_label") or "",
             "expected_return_pct": value,
         }
     return rows
+
+
+def _horizon_label(horizon):
+    return {
+        "1d": "1営業日後の方向",
+        "3d": "3営業日後の方向",
+        "5d": "5営業日後の方向",
+    }.get(str(horizon or ""), f"{horizon}後の方向")
+
+
+def _main_bias_label(value):
+    return {
+        "up": "上昇方向",
+        "down": "下落方向",
+        "range": "方向感なし",
+        "neutral": "方向感なし",
+    }.get(str(value or ""), "方向感なし")
 
 
 def _json_safe_features(features):

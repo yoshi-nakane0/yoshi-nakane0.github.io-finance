@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from macro.models import ModelValidationReport
 from macro.services.dashboard_cache import write_static_macro_payload
-from macro.services.model_validation import model_display_grade
+from macro.services.model_validation import latest_validation_reports, model_display_grade
 
 
 STALE_MODEL_VALIDATION_DAYS = 30
@@ -30,7 +30,7 @@ def _freshness():
 
 def build_model_validation_report(limit=100):
     rows = []
-    for report in ModelValidationReport.objects.order_by('-evaluated_at')[:limit]:
+    for report in latest_validation_reports(limit=limit):
         display_grade, display_reason = model_display_grade(report)
         rows.append({
             'model_version': report.model_version,
