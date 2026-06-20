@@ -34,7 +34,7 @@
       "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
     }
   ],
-  "generated_at": "2026-06-19T10:06:36.641212+00:00",
+  "generated_at": "2026-06-20T08:37:50.345637+00:00",
   "goldman_sachs_public_outlook": {
     "as_of": "2026-01-11",
     "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -56,7 +56,7 @@
     }
   },
   "house_view_snapshot": {
-    "as_of": "2026-06-19",
+    "as_of": "2026-06-20",
     "confidence": 76.0,
     "data_quality": 94.0,
     "primary_regime": "slowdown",
