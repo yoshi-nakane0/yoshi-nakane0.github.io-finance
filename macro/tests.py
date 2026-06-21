@@ -918,6 +918,49 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertEqual(pseudo_live['period']['start'], '2026-01-01')
         self.assertEqual(pseudo_live['period']['end'], '2026-02-01')
 
+    def test_house_view_validation_adds_5d_and_10d_short_term_live(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.6,
+            metadata={'primary_regime': 'expansion', 'confidence': 72},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 6),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=70,
+            data_quality=90,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 11),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            confidence=70,
+            data_quality=90,
+        )
+
+        with mock.patch(
+            'macro.services.house_view_validation.timezone.localdate',
+            return_value=date(2026, 6, 12),
+        ):
+            report = build_house_view_validation_report()
+
+        short_term = report['accuracy_sections']['short_term_live']
+        self.assertEqual(short_term['status'], 'available')
+        self.assertEqual(short_term['sample_kind'], 'short_term_live_saved_forecasts')
+        self.assertEqual(short_term['target_days'], [5, 10])
+        self.assertEqual(short_term['sample_count'], 2)
+        self.assertEqual(short_term['hit_count'], 1)
+        self.assertEqual(short_term['hit_rate'], 0.5)
+        self.assertEqual(short_term['pending_count'], 0)
+        self.assertEqual(short_term['horizons']['5d']['hit_rate'], 1.0)
+        self.assertEqual(short_term['horizons']['10d']['hit_rate'], 0.0)
+        self.assertEqual(short_term['rows'][0]['target_days'], 5)
+        self.assertEqual(short_term['rows'][1]['target_days'], 10)
+
     def test_house_view_backtest_replays_monthly_predictions_for_3m_and_6m(self):
         from macro.services.house_view_backtest import run_house_view_backtest
 
@@ -2904,6 +2947,12 @@ class DashboardFormatTest(TestCase):
                         'hit_count': 15,
                         'hit_rate': 0.75,
                     },
+                    'short_term_live': {
+                        'sample_count': 4,
+                        'hit_count': 3,
+                        'hit_rate': 0.75,
+                        'pending_count': 2,
+                    },
                 },
                 'operation_health': {
                     'status_label': '正常',
@@ -2928,6 +2977,7 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(context['reliability']['operation_check'], '短期確認 正常 / 保存 65件')
         self.assertEqual(context['reliability']['pseudo_live'], '疑似Live 20件 / 的中 75%')
+        self.assertEqual(context['reliability']['short_term_live'], '短期Live 4件 / 的中 75% / 待ち 2件')
 
     def test_macro_decision_confidence_uses_data_quality_gate_cap(self):
         snapshot = RegimeSnapshot.objects.create(

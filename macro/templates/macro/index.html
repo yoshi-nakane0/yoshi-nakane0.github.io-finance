@@ -175,6 +175,10 @@
                         <span class="macro-reliability-value">{{ top_decision.reliability.operation_check|default:"—" }}</span>
                     </div>
                     <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">短期Live</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.short_term_live|default:"—" }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
                         <span class="macro-reliability-label">疑似Live</span>
                         <span class="macro-reliability-value">{{ top_decision.reliability.pseudo_live|default:"—" }}</span>
                     </div>

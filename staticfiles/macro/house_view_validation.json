@@ -41,13 +41,13 @@
         "too_defensive_count": 38
       },
       "live": {
-        "avg_brier_score": null,
+        "avg_brier_score": 0.4315,
         "hit_count": 0,
-        "hit_rate": null,
-        "mae": null,
-        "sample_count": 0,
+        "hit_rate": 0.0,
+        "mae": 0.6569,
+        "sample_count": 1,
         "sample_kind": "live_saved_forecasts",
-        "status": "waiting_for_realizations",
+        "status": "available",
         "too_bullish_count": 0,
         "too_defensive_count": 0
       },
@@ -366,11 +366,67 @@
         "status": "available",
         "too_bullish_count": 0,
         "too_defensive_count": 4
+      },
+      "short_term_live": {
+        "avg_brier_score": null,
+        "hit_count": 0,
+        "hit_rate": null,
+        "horizon_10d": {
+          "avg_brier_score": null,
+          "hit_count": 0,
+          "hit_rate": null,
+          "mae": null,
+          "sample_count": 0,
+          "too_bullish_count": 0,
+          "too_defensive_count": 0
+        },
+        "horizon_5d": {
+          "avg_brier_score": null,
+          "hit_count": 0,
+          "hit_rate": null,
+          "mae": null,
+          "sample_count": 0,
+          "too_bullish_count": 0,
+          "too_defensive_count": 0
+        },
+        "horizons": {
+          "10d": {
+            "avg_brier_score": null,
+            "hit_count": 0,
+            "hit_rate": null,
+            "mae": null,
+            "sample_count": 0,
+            "too_bullish_count": 0,
+            "too_defensive_count": 0
+          },
+          "5d": {
+            "avg_brier_score": null,
+            "hit_count": 0,
+            "hit_rate": null,
+            "mae": null,
+            "sample_count": 0,
+            "too_bullish_count": 0,
+            "too_defensive_count": 0
+          }
+        },
+        "mae": null,
+        "overdue_count": 0,
+        "pending_count": 2,
+        "rows": [],
+        "sample_count": 0,
+        "sample_kind": "short_term_live_saved_forecasts",
+        "status": "waiting_for_realizations",
+        "target_days": [
+          5,
+          10
+        ],
+        "too_bullish_count": 0,
+        "too_defensive_count": 0
       }
     },
-    "generated_at": "2026-06-21T07:25:52.930128+00:00",
+    "generated_at": "2026-06-21T07:46:44.209020+00:00",
     "hit_count": 0,
-    "hit_rate": null,
+    "hit_rate": 0.0,
     "model_version": "macro_hatzius_v1",
     "operation_health": {
       "latest_as_of": "2026-06-19",
@@ -387,12 +443,28 @@
     },
     "reliability": {
       "display_status": "参考",
-      "live_record": "Live実績 未評価",
-      "model_validation": "C / 検証不足",
-      "note": "実際に保存した予測の結果がまだ確定していません。"
+      "live_record": "Live実績 1件 / 的中 0件",
+      "model_validation": "C / 暫定",
+      "note": "検証件数が少ないため、予測精度としては参考扱いです。"
     },
-    "rows": [],
-    "sample_count": 0,
+    "rows": [
+      {
+        "absolute_error": 0.6569,
+        "actual_event": 0.0,
+        "actual_regime": "slowdown",
+        "actual_snapshot_date": "2026-06-21",
+        "as_of_date": "2026-06-19",
+        "brier_score": 0.4315,
+        "confidence": null,
+        "hit": false,
+        "horizon": "3m_6m",
+        "miss_type": "wrong_regime",
+        "predicted_regime": "expansion",
+        "prediction": 0.6568708855634098,
+        "target_date": "2026-09-19"
+      }
+    ],
+    "sample_count": 1,
     "target": "macro_regime",
     "warnings": [
       "検証件数が少ないため、的中率は暫定です。"

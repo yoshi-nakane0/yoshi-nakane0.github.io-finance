@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
@@ -11,13 +11,14 @@ from django.conf import settings
 from django.utils import timezone
 
 from ..models import ForecastSnapshot, RegimeSnapshot
-from .house_view_backtest import _empty_summary, _summary
+from .house_view_backtest import _empty_summary, _miss_type, _summary
 
 
 HOUSE_VIEW_MODEL_VERSION = 'macro_hatzius_v1'
 HOUSE_VIEW_TARGET = 'macro_regime'
 HOUSE_VIEW_BACKTEST_PATH = Path('static/macro/house_view_backtest.json')
 PSEUDO_LIVE_SAMPLE_LIMIT = 20
+SHORT_TERM_LIVE_TARGET_DAYS = (5, 10)
 
 
 def _target_date(as_of_date, horizon: str):
@@ -296,6 +297,77 @@ def _live_summary(rows: list[dict]) -> dict:
     return summary
 
 
+def _short_term_live_section() -> dict:
+    rows = []
+    pending_count = 0
+    overdue_count = 0
+    today = timezone.localdate()
+    snapshots = (
+        ForecastSnapshot.objects
+        .filter(model_version=HOUSE_VIEW_MODEL_VERSION, target=HOUSE_VIEW_TARGET)
+        .order_by('as_of_date')
+    )
+    for forecast in snapshots:
+        predicted_regime = (forecast.metadata or {}).get('primary_regime')
+        if not predicted_regime:
+            continue
+        for target_days in SHORT_TERM_LIVE_TARGET_DAYS:
+            target_date = forecast.as_of_date + timedelta(days=target_days)
+            if target_date > today:
+                pending_count += 1
+                continue
+            actual = (
+                RegimeSnapshot.objects
+                .filter(snapshot_date__gt=forecast.as_of_date, snapshot_date__lte=target_date)
+                .order_by('-snapshot_date')
+                .first()
+            )
+            if actual is None or actual.regime_label == RegimeSnapshot.Label.UNKNOWN:
+                overdue_count += 1
+                continue
+            hit = predicted_regime == actual.regime_label
+            prediction = forecast.prediction_value
+            actual_event = 1.0 if hit else 0.0
+            rows.append({
+                'as_of_date': forecast.as_of_date.isoformat(),
+                'target_date': target_date.isoformat(),
+                'actual_snapshot_date': actual.snapshot_date.isoformat(),
+                'horizon': f'{target_days}d',
+                'target_days': target_days,
+                'predicted_regime': predicted_regime,
+                'actual_regime': actual.regime_label,
+                'hit': hit,
+                'miss_type': _miss_type(predicted_regime, actual.regime_label),
+                'prediction': prediction,
+                'actual_event': actual_event,
+                'brier_score': round((prediction - actual_event) ** 2, 4),
+                'absolute_error': round(abs(actual_event - prediction), 4),
+                'confidence': (forecast.metadata or {}).get('confidence'),
+            })
+
+    horizons = {}
+    for target_days in SHORT_TERM_LIVE_TARGET_DAYS:
+        horizon_rows = [row for row in rows if row['target_days'] == target_days]
+        horizons[f'{target_days}d'] = _live_summary(horizon_rows)
+
+    status = 'available' if rows else 'waiting_for_realizations'
+    if not rows and not pending_count and overdue_count:
+        status = 'waiting_for_actual_snapshots'
+    section = {
+        **_live_summary(rows),
+        'sample_kind': 'short_term_live_saved_forecasts',
+        'status': status,
+        'target_days': list(SHORT_TERM_LIVE_TARGET_DAYS),
+        'pending_count': pending_count,
+        'overdue_count': overdue_count,
+        'horizons': horizons,
+        'rows': rows[-120:],
+    }
+    for target_days in SHORT_TERM_LIVE_TARGET_DAYS:
+        section[f'horizon_{target_days}d'] = horizons[f'{target_days}d']
+    return section
+
+
 def build_house_view_validation_report(backtest_path: str | Path | None = None) -> dict:
     rows = _live_rows()
 
@@ -309,6 +381,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
     }
     backtest_accuracy = _load_backtest_accuracy(backtest_path)
     pseudo_live_accuracy = _pseudo_live_summary(backtest_path)
+    short_term_live = _short_term_live_section()
     return {
         'generated_at': timezone.now().isoformat(),
         'model_version': HOUSE_VIEW_MODEL_VERSION,
@@ -316,6 +389,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
         'accuracy_sections': {
             'backtest': backtest_accuracy,
             'live': live_accuracy,
+            'short_term_live': short_term_live,
             'pseudo_live': pseudo_live_accuracy,
         },
         'operation_health': _operation_health(),

@@ -1584,6 +1584,7 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
     }
     sections = validation.get('accuracy_sections') or {}
     pseudo_live = sections.get('pseudo_live') or {}
+    short_term_live = sections.get('short_term_live') or {}
     operation_health = validation.get('operation_health') or {}
     supplemental = {}
     if operation_health:
@@ -1598,6 +1599,17 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
             supplemental['pseudo_live'] = f'疑似Live {pseudo_sample_count}件 / 的中 {pseudo_hit_rate:.0%}'
         else:
             supplemental['pseudo_live'] = '疑似Live 未生成'
+    if short_term_live:
+        short_sample_count = short_term_live.get('sample_count') or 0
+        short_hit_rate = short_term_live.get('hit_rate')
+        short_pending_count = short_term_live.get('pending_count') or 0
+        if short_sample_count and short_hit_rate is not None:
+            supplemental['short_term_live'] = (
+                f'短期Live {short_sample_count}件 / 的中 {short_hit_rate:.0%} / '
+                f'待ち {short_pending_count}件'
+            )
+        else:
+            supplemental['short_term_live'] = f'短期Live 未評価 / 待ち {short_pending_count}件'
 
     provided = validation.get('reliability') or {}
     if provided:

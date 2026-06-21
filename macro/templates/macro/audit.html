@@ -121,7 +121,7 @@
             </section>
 
             {% if house_view_validation.accuracy_sections %}
-                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live pseudo_live=house_view_validation.accuracy_sections.pseudo_live health=house_view_validation.operation_health %}
+                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live short_term_live=house_view_validation.accuracy_sections.short_term_live pseudo_live=house_view_validation.accuracy_sections.pseudo_live health=house_view_validation.operation_health %}
                 <section class="macro-section macro-decision" id="macro-house-view-validation">
                     <div class="macro-section-headline">
                         <h2 class="macro-section-title">House View 検証</h2>
@@ -169,6 +169,16 @@
                                 <p>結果が出るまで実績は増えません。</p>
                             {% endif %}
                         </div>
+                        {% if short_term_live %}
+                            <div class="macro-decision-card">
+                                <span class="macro-decision-label">短期Live確認</span>
+                                <strong>{{ short_term_live.hit_rate|default:"—" }}</strong>
+                                <p>保存済み予測を5日後・10日後に短期確認します。</p>
+                                <span>サンプル {{ short_term_live.sample_count|default:0 }}件 / 的中 {{ short_term_live.hit_count|default:0 }}件</span>
+                                <span>結果待ち {{ short_term_live.pending_count|default:0 }}件 / 未確定 {{ short_term_live.overdue_count|default:0 }}件</span>
+                                <span>5日 {{ short_term_live.horizon_5d.hit_rate|default:"—" }} / 10日 {{ short_term_live.horizon_10d.hit_rate|default:"—" }}</span>
+                            </div>
+                        {% endif %}
                         {% if pseudo_live %}
                             <div class="macro-decision-card">
                                 <span class="macro-decision-label">疑似Live検証</span>
