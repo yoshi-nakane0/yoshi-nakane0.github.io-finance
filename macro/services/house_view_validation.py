@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
@@ -16,6 +17,7 @@ from .house_view_backtest import _empty_summary, _summary
 HOUSE_VIEW_MODEL_VERSION = 'macro_hatzius_v1'
 HOUSE_VIEW_TARGET = 'macro_regime'
 HOUSE_VIEW_BACKTEST_PATH = Path('static/macro/house_view_backtest.json')
+PSEUDO_LIVE_SAMPLE_LIMIT = 20
 
 
 def _target_date(as_of_date, horizon: str):
@@ -68,23 +70,29 @@ def _live_rows() -> list[dict]:
     return rows
 
 
-def _load_backtest_accuracy(backtest_path: str | Path | None = None) -> dict:
+def _load_backtest_payload(
+    backtest_path: str | Path | None = None,
+) -> tuple[dict | None, str, str | None]:
     path = Path(backtest_path) if backtest_path else settings.BASE_DIR / HOUSE_VIEW_BACKTEST_PATH
     if not path.exists():
-        return {
-            **_empty_summary(),
-            'sample_kind': 'backtest_replay',
-            'status': 'not_generated',
-            'warning': 'ローカルBacktest結果JSONがまだありません。',
-        }
+        return None, 'not_generated', 'ローカルBacktest結果JSONがまだありません。'
     try:
         payload = json.loads(path.read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError):
+        return None, 'invalid_json', 'ローカルBacktest結果JSONを読めません。'
+    if not isinstance(payload, dict):
+        return None, 'invalid_json', 'ローカルBacktest結果JSONの形式が不正です。'
+    return payload, 'available', None
+
+
+def _load_backtest_accuracy(backtest_path: str | Path | None = None) -> dict:
+    payload, status, warning = _load_backtest_payload(backtest_path)
+    if payload is None:
         return {
             **_empty_summary(),
             'sample_kind': 'backtest_replay',
-            'status': 'invalid_json',
-            'warning': 'ローカルBacktest結果JSONを読めません。',
+            'status': status,
+            'warning': warning,
         }
     accuracy = payload.get('backtest_accuracy') or {}
     return {
@@ -95,6 +103,151 @@ def _load_backtest_accuracy(backtest_path: str | Path | None = None) -> dict:
         'period': payload.get('period'),
         'horizons': accuracy.get('horizons') or {},
         'data_modes': accuracy.get('data_modes') or {},
+    }
+
+
+def _parse_date(value) -> date | None:
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+    return None
+
+
+def _pseudo_live_summary(backtest_path: str | Path | None = None) -> dict:
+    payload, status, warning = _load_backtest_payload(backtest_path)
+    base = {
+        'sample_kind': 'recent_backtest_replay',
+        'sample_limit': PSEUDO_LIVE_SAMPLE_LIMIT,
+    }
+    if payload is None:
+        return {
+            **_empty_summary(),
+            **base,
+            'status': status,
+            'warning': warning,
+            'period': None,
+            'rows': [],
+        }
+
+    today = timezone.localdate()
+    eligible_rows = []
+    for row in payload.get('rows') or []:
+        as_of = _parse_date(row.get('as_of_date'))
+        target_date = _parse_date(row.get('target_date'))
+        if as_of is None or target_date is None or target_date > today:
+            continue
+        eligible_rows.append({
+            **row,
+            '_as_of': as_of,
+            '_target_date': target_date,
+            'miss_type': row.get('miss_type') or (
+                'hit' if row.get('hit') else 'wrong_regime'
+            ),
+        })
+
+    eligible_rows.sort(key=lambda row: (row['_as_of'], row['_target_date']))
+    selected = eligible_rows[-PSEUDO_LIVE_SAMPLE_LIMIT:]
+    rows = [
+        {key: value for key, value in row.items() if not key.startswith('_')}
+        for row in selected
+    ]
+    if not rows:
+        return {
+            **_empty_summary(),
+            **base,
+            'status': 'waiting_for_backtest_rows',
+            'period': None,
+            'rows': [],
+        }
+
+    return {
+        **_summary(rows),
+        **base,
+        'status': 'available',
+        'period': {
+            'start': rows[0].get('as_of_date'),
+            'end': rows[-1].get('as_of_date'),
+        },
+        'rows': rows,
+    }
+
+
+def _operation_health() -> dict:
+    snapshots = list(
+        ForecastSnapshot.objects
+        .filter(model_version=HOUSE_VIEW_MODEL_VERSION, target=HOUSE_VIEW_TARGET)
+        .order_by('as_of_date', 'created_at')
+    )
+    if not snapshots:
+        return {
+            'status_label': '未保存',
+            'saved_forecast_count': 0,
+            'latest_as_of': None,
+            'pending_count': 0,
+            'settled_count': 0,
+            'overdue_count': 0,
+            'missing_features_hash_count': 0,
+            'missing_prediction_interval_count': 0,
+            'notes': ['保存済みのLive予測がまだありません。'],
+        }
+
+    today = timezone.localdate()
+    pending_count = 0
+    settled_count = 0
+    overdue_count = 0
+    for forecast in snapshots:
+        target_date = _target_date(forecast.as_of_date, forecast.horizon)
+        if target_date > today:
+            pending_count += 1
+            continue
+        actual_exists = (
+            RegimeSnapshot.objects
+            .filter(snapshot_date__gt=forecast.as_of_date, snapshot_date__lte=target_date)
+            .exclude(regime_label=RegimeSnapshot.Label.UNKNOWN)
+            .exists()
+        )
+        if actual_exists:
+            settled_count += 1
+        else:
+            overdue_count += 1
+
+    missing_features_hash_count = sum(
+        1 for snapshot in snapshots if not snapshot.features_hash
+    )
+    missing_prediction_interval_count = sum(
+        1 for snapshot in snapshots if not snapshot.prediction_interval
+    )
+    notes = []
+    if pending_count:
+        notes.append(f'結果待ちの予測が{pending_count}件あります。')
+    if overdue_count:
+        notes.append(f'結果日を過ぎた未確定予測が{overdue_count}件あります。')
+    if missing_features_hash_count:
+        notes.append(f'特徴量ハッシュ未保存が{missing_features_hash_count}件あります。')
+    if missing_prediction_interval_count:
+        notes.append(f'予測幅未保存が{missing_prediction_interval_count}件あります。')
+    if not notes:
+        notes.append('保存済みLive予測は検証に必要な情報を持っています。')
+
+    status_label = '正常'
+    if overdue_count or missing_features_hash_count or missing_prediction_interval_count:
+        status_label = '注意'
+
+    latest = snapshots[-1]
+    return {
+        'status_label': status_label,
+        'saved_forecast_count': len(snapshots),
+        'latest_as_of': latest.as_of_date.isoformat(),
+        'pending_count': pending_count,
+        'settled_count': settled_count,
+        'overdue_count': overdue_count,
+        'missing_features_hash_count': missing_features_hash_count,
+        'missing_prediction_interval_count': missing_prediction_interval_count,
+        'notes': notes,
     }
 
 
@@ -155,6 +308,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
         'status': 'available' if rows else 'waiting_for_realizations',
     }
     backtest_accuracy = _load_backtest_accuracy(backtest_path)
+    pseudo_live_accuracy = _pseudo_live_summary(backtest_path)
     return {
         'generated_at': timezone.now().isoformat(),
         'model_version': HOUSE_VIEW_MODEL_VERSION,
@@ -162,7 +316,9 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
         'accuracy_sections': {
             'backtest': backtest_accuracy,
             'live': live_accuracy,
+            'pseudo_live': pseudo_live_accuracy,
         },
+        'operation_health': _operation_health(),
         'sample_count': sample_count,
         'hit_count': hit_count,
         'hit_rate': hit_rate,

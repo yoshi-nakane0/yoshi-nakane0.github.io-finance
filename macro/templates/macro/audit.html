@@ -121,7 +121,7 @@
             </section>
 
             {% if house_view_validation.accuracy_sections %}
-                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live %}
+                {% with backtest=house_view_validation.accuracy_sections.backtest live=house_view_validation.accuracy_sections.live pseudo_live=house_view_validation.accuracy_sections.pseudo_live health=house_view_validation.operation_health %}
                 <section class="macro-section macro-decision" id="macro-house-view-validation">
                     <div class="macro-section-headline">
                         <h2 class="macro-section-title">House View 検証</h2>
@@ -134,6 +134,20 @@
                                 <strong>{{ house_view_validation.reliability.display_status }}</strong>
                                 <p>{{ house_view_validation.reliability.model_validation }} / {{ house_view_validation.reliability.live_record }}</p>
                                 <span>{{ house_view_validation.reliability.note }}</span>
+                            </div>
+                        {% endif %}
+                        {% if health %}
+                            <div class="macro-decision-card">
+                                <span class="macro-decision-label">短期の動作確認</span>
+                                <strong>{{ health.status_label|default:"—" }}</strong>
+                                <p>保存済みLive予測が検証に必要な形で残っているかを確認します。</p>
+                                <span>保存 {{ health.saved_forecast_count|default:0 }}件 / 結果待ち {{ health.pending_count|default:0 }}件 / 確定 {{ health.settled_count|default:0 }}件</span>
+                                <span>特徴量未保存 {{ health.missing_features_hash_count|default:0 }}件 / 予測幅未保存 {{ health.missing_prediction_interval_count|default:0 }}件</span>
+                                {% if health.notes %}
+                                    {% for note in health.notes %}
+                                        <p>{{ note }}</p>
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         {% endif %}
                         <div class="macro-decision-card macro-decision-card--confidence">
@@ -155,6 +169,18 @@
                                 <p>結果が出るまで実績は増えません。</p>
                             {% endif %}
                         </div>
+                        {% if pseudo_live %}
+                            <div class="macro-decision-card">
+                                <span class="macro-decision-label">疑似Live検証</span>
+                                <strong>{{ pseudo_live.hit_rate|default:"—" }}</strong>
+                                <p>直近Backtestを、当時のLive予測のように並べて確認します。</p>
+                                <span>サンプル {{ pseudo_live.sample_count|default:0 }}件 / 的中 {{ pseudo_live.hit_count|default:0 }}件</span>
+                                <span>強気外れ {{ pseudo_live.too_bullish_count|default:0 }}件 / 弱気外れ {{ pseudo_live.too_defensive_count|default:0 }}件</span>
+                                {% if pseudo_live.status != "available" %}
+                                    <p>{{ pseudo_live.warning|default:"疑似Liveに使えるBacktest行がまだありません。" }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </div>
                 </section>
                 {% endwith %}

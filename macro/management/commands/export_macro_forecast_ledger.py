@@ -28,6 +28,8 @@ def build_forecast_ledger(limit=200):
             'direction': metadata.get('direction') or _direction(snapshot.prediction_value),
             'confidence': metadata.get('confidence'),
             'features_hash': snapshot.features_hash,
+            'primary_regime': metadata.get('primary_regime'),
+            'previous_regime': metadata.get('previous_regime'),
             'scenario_id': metadata.get('scenario_id'),
             'status': 'settled' if snapshot.realized_value is not None else 'open',
             'realized_value': snapshot.realized_value,

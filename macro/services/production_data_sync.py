@@ -1,6 +1,7 @@
 """本番で保存済みのデータファイルをローカルへ同期する。"""
 
 import json
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -79,6 +80,7 @@ def sync_production_data(
     updated = []
     unchanged = []
     mirrored = []
+    forecast_snapshots_imported_count = 0
     for relative_path, content in downloads:
         local_path = root / relative_path
         local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,6 +96,9 @@ def sync_production_data(
                 _write_bytes_atomic(staticfiles_path, content)
                 mirrored.append(staticfiles_path.relative_to(root).as_posix())
 
+        if relative_path == "static/macro/forecast_ledger.json":
+            forecast_snapshots_imported_count = _import_forecast_ledger(content)
+
     return {
         "updated": updated,
         "unchanged": unchanged,
@@ -101,6 +106,7 @@ def sync_production_data(
         "updated_count": len(updated),
         "unchanged_count": len(unchanged),
         "mirrored_count": len(mirrored),
+        "forecast_snapshots_imported_count": forecast_snapshots_imported_count,
     }
 
 
@@ -114,3 +120,50 @@ def _write_bytes_atomic(path, content):
     tmp_path = path.with_name(f".{path.name}.tmp")
     tmp_path.write_bytes(content)
     tmp_path.replace(path)
+
+
+def _import_forecast_ledger(content):
+    from macro.models import ForecastSnapshot
+
+    payload = json.loads(content.decode("utf-8"))
+    rows = payload.get("forecast_ledger") or []
+    imported_count = 0
+
+    for row in rows:
+        as_of = row.get("as_of")
+        model_version = row.get("model_version")
+        target = row.get("target")
+        horizon = row.get("horizon")
+        prediction = row.get("prediction")
+        if not all([as_of, model_version, target, horizon]) or prediction is None:
+            continue
+
+        metadata = {
+            "primary_regime": row.get("primary_regime"),
+            "previous_regime": row.get("previous_regime"),
+            "direction": row.get("direction"),
+            "scenario_id": row.get("scenario_id"),
+            "source": "forecast_ledger_sync",
+        }
+        metadata = {
+            key: value for key, value in metadata.items()
+            if value is not None
+        }
+        defaults = {
+            "prediction_value": prediction,
+            "prediction_interval": row.get("prediction_interval"),
+            "features_hash": row.get("features_hash") or "",
+            "metadata": metadata,
+            "realized_value": row.get("realized_value"),
+            "error": row.get("error"),
+        }
+        ForecastSnapshot.objects.update_or_create(
+            as_of_date=date.fromisoformat(as_of),
+            model_version=model_version,
+            target=target,
+            horizon=horizon,
+            defaults=defaults,
+        )
+        imported_count += 1
+
+    return imported_count

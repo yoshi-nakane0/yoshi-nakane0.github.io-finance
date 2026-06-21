@@ -60,6 +60,28 @@ def _actual_regime(as_of: date, target_date: date):
     )
 
 
+def _actual_regime_row(as_of: date, target_date: date) -> dict | None:
+    actual = _actual_regime(as_of, target_date)
+    if actual is not None and actual.regime_label != RegimeSnapshot.Label.UNKNOWN:
+        return {
+            'regime_label': actual.regime_label,
+            'snapshot_date': actual.snapshot_date,
+            'source': 'saved_snapshot',
+        }
+
+    assessment, actual_source = _build_assessment(target_date, 'revised_reference')
+    if assessment is None:
+        return None
+    regime_label = assessment.get('regime_label')
+    if not regime_label or regime_label == RegimeSnapshot.Label.UNKNOWN:
+        return None
+    return {
+        'regime_label': regime_label,
+        'snapshot_date': target_date,
+        'source': actual_source,
+    }
+
+
 def _visible_vintage(series_id: str, as_of: date, observation_date: date | None = None):
     indicator = Indicator.objects.filter(fred_series_id=series_id).first()
     if indicator is None:
@@ -219,18 +241,24 @@ def run_house_view_backtest(
             continue
         for horizon in horizon_values:
             target_date = as_of + relativedelta(months=horizon)
-            actual = _actual_regime(as_of, target_date)
-            if actual is None or actual.regime_label == RegimeSnapshot.Label.UNKNOWN:
+            if target_date > timezone.localdate():
+                warnings.append(
+                    f'{as_of.isoformat()} の{horizon}m先はまだ実績日が来ていないためスキップしました。'
+                )
                 continue
-            miss_type = _miss_type(predicted, actual.regime_label)
+            actual = _actual_regime_row(as_of, target_date)
+            if actual is None:
+                continue
+            miss_type = _miss_type(predicted, actual['regime_label'])
             rows.append({
                 'as_of_date': as_of.isoformat(),
                 'target_date': target_date.isoformat(),
-                'actual_snapshot_date': actual.snapshot_date.isoformat(),
+                'actual_snapshot_date': actual['snapshot_date'].isoformat(),
+                'actual_source': actual['source'],
                 'horizon': f'{horizon}m',
                 'validation_target': f'macro_regime_{horizon}m',
                 'predicted_regime': predicted,
-                'actual_regime': actual.regime_label,
+                'actual_regime': actual['regime_label'],
                 'hit': miss_type == 'hit',
                 'miss_type': miss_type,
                 'data_mode': row_data_mode,

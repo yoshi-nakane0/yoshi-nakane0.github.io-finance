@@ -188,7 +188,7 @@
       "market_stage": 3,
       "name_ja": "鉱工業生産指数",
       "series_id": "INDPRO",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
       "yoy_display": "+1.7%",
       "yoy_value": 1.6659155850265566
     },
@@ -204,7 +204,7 @@
       "market_stage": 1,
       "name_ja": "設備稼働率",
       "series_id": "TCU",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,13.4 10.4,8.6 15.7,18.3 20.9,24.2 26.1,28.0 31.3,15.7 36.5,20.8 41.7,8.6 47.0,11.0 52.2,11.5 57.4,15.3 62.6,10.2 67.8,6.3 73.0,11.5 78.3,12.5 83.5,20.1 88.7,24.1 93.9,19.7 99.1,25.6 104.3,16.0 109.6,21.5 114.8,11.1 120.0,10.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,13.4 10.4,8.6 15.7,18.3 20.9,24.2 26.1,28.0 31.3,15.7 36.5,20.8 41.7,8.6 47.0,11.0 52.2,11.5 57.4,15.3 62.6,10.2 67.8,6.3 73.0,11.5 78.3,12.5 83.5,20.1 88.7,24.1 93.9,19.7 99.1,25.6 104.3,16.0 109.6,21.5 114.8,11.1 120.0,10.4\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,13.4 10.4,8.6 15.7,18.3 20.9,24.2 26.1,28.0 31.3,15.7 36.5,20.8 41.7,8.6 47.0,11.0 52.2,11.5 57.4,15.3 62.6,10.2 67.8,6.3 73.0,11.5 78.3,12.5 83.5,20.1 88.7,24.1 93.9,19.3 99.1,21.0 104.3,16.0 109.6,21.5 114.8,11.1 120.0,10.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,13.4 10.4,8.6 15.7,18.3 20.9,24.2 26.1,28.0 31.3,15.7 36.5,20.8 41.7,8.6 47.0,11.0 52.2,11.5 57.4,15.3 62.6,10.2 67.8,6.3 73.0,11.5 78.3,12.5 83.5,20.1 88.7,24.1 93.9,19.3 99.1,21.0 104.3,16.0 109.6,21.5 114.8,11.1 120.0,10.4\"/></svg>",
       "yoy_display": "+0.4%",
       "yoy_value": 0.36487309163073095
     },
@@ -220,9 +220,9 @@
       "market_stage": 3,
       "name_ja": "小売売上高",
       "series_id": "RSAFS",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,25.5 10.4,26.2 15.7,23.8 20.9,21.8 26.1,20.4 31.3,18.2 36.5,20.6 41.7,20.5 47.0,15.9 52.2,16.2 57.4,19.3 62.6,16.0 67.8,14.1 73.0,12.6 78.3,12.4 83.5,12.8 88.7,11.4 93.9,11.4 99.1,11.5 104.3,8.8 109.6,3.8 114.8,2.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,25.5 10.4,26.2 15.7,23.8 20.9,21.8 26.1,20.4 31.3,18.2 36.5,20.6 41.7,20.5 47.0,15.9 52.2,16.2 57.4,19.3 62.6,16.0 67.8,14.1 73.0,12.6 78.3,12.4 83.5,12.8 88.7,11.4 93.9,11.4 99.1,11.5 104.3,8.8 109.6,3.8 114.8,2.6 120.0,0.0\"/></svg>",
-      "yoy_display": "+6.9%",
-      "yoy_value": 6.876462422050805
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,25.5 10.4,26.2 15.7,23.8 20.9,21.8 26.1,20.4 31.3,18.2 36.5,20.6 41.7,20.5 47.0,15.9 52.2,16.4 57.4,18.7 62.6,16.0 67.8,14.1 73.0,12.6 78.3,12.4 83.5,12.8 88.7,11.4 93.9,11.4 99.1,11.5 104.3,8.8 109.6,3.8 114.8,2.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,25.5 10.4,26.2 15.7,23.8 20.9,21.8 26.1,20.4 31.3,18.2 36.5,20.6 41.7,20.5 47.0,15.9 52.2,16.4 57.4,18.7 62.6,16.0 67.8,14.1 73.0,12.6 78.3,12.4 83.5,12.8 88.7,11.4 93.9,11.4 99.1,11.5 104.3,8.8 109.6,3.8 114.8,2.6 120.0,0.0\"/></svg>",
+      "yoy_display": "+6.6%",
+      "yoy_value": 6.647665622586758
     },
     {
       "category": "景気・成長",
@@ -252,9 +252,9 @@
       "market_stage": 4,
       "name_ja": "住宅着工件数",
       "series_id": "HOUST",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,16.6 5.2,20.5 10.4,10.4 15.7,13.4 20.9,12.3 26.1,18.0 31.3,2.3 36.5,13.7 41.7,2.5 47.0,14.3 52.2,9.9 57.4,18.9 62.6,11.6 67.8,7.3 73.0,18.7 78.3,16.5 83.5,20.2 88.7,16.5 93.9,11.7 99.1,11.1 104.3,14.3 109.6,0.0 114.8,10.6 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,16.6 5.2,20.5 10.4,10.4 15.7,13.4 20.9,12.3 26.1,18.0 31.3,2.3 36.5,13.7 41.7,2.5 47.0,14.3 52.2,9.9 57.4,18.9 62.6,11.6 67.8,7.3 73.0,18.7 78.3,16.5 83.5,20.2 88.7,16.5 93.9,11.7 99.1,11.1 104.3,14.3 109.6,0.0 114.8,10.6 120.0,28.0\"/></svg>",
-      "yoy_display": "-8.7%",
-      "yoy_value": -8.688906128782001
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.8 5.2,20.9 10.4,10.6 15.7,13.4 20.9,13.8 26.1,18.4 31.3,0.6 36.5,13.3 41.7,2.6 47.0,13.6 52.2,10.1 57.4,19.5 62.6,11.4 67.8,8.3 73.0,18.7 78.3,15.7 83.5,20.3 88.7,16.1 93.9,12.1 99.1,11.1 104.3,14.3 109.6,0.0 114.8,10.6 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.8 5.2,20.9 10.4,10.6 15.7,13.4 20.9,13.8 26.1,18.4 31.3,0.6 36.5,13.3 41.7,2.6 47.0,13.6 52.2,10.1 57.4,19.5 62.6,11.4 67.8,8.3 73.0,18.7 78.3,15.7 83.5,20.3 88.7,16.1 93.9,12.1 99.1,11.1 104.3,14.3 109.6,0.0 114.8,10.6 120.0,28.0\"/></svg>",
+      "yoy_display": "-8.2%",
+      "yoy_value": -8.190327613104524
     },
     {
       "category": "景気・成長",
@@ -268,9 +268,9 @@
       "market_stage": 3,
       "name_ja": "住宅建設許可",
       "series_id": "PERMIT",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.4\"/></svg>",
-      "yoy_display": "-0.2%",
-      "yoy_value": -0.211864406779661
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.5 5.2,13.9 10.4,8.5 15.7,14.1 20.9,14.9 26.1,4.3 31.3,8.0 36.5,10.7 41.7,11.5 47.0,7.9 52.2,15.7 57.4,19.5 62.6,19.6 67.8,23.7 73.0,28.0 78.3,16.7 83.5,17.2 88.7,20.3 93.9,11.3 99.1,19.6 104.3,0.0 109.6,23.6 114.8,15.6 120.0,16.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.5 5.2,13.9 10.4,8.5 15.7,14.1 20.9,14.9 26.1,4.3 31.3,8.0 36.5,10.7 41.7,11.5 47.0,7.9 52.2,15.7 57.4,19.5 62.6,19.6 67.8,23.7 73.0,28.0 78.3,16.7 83.5,17.2 88.7,20.3 93.9,11.3 99.1,19.6 104.3,0.0 109.6,23.6 114.8,15.6 120.0,16.9\"/></svg>",
+      "yoy_display": "+1.4%",
+      "yoy_value": 1.362984218077475
     },
     {
       "category": "景気・成長",
@@ -286,7 +286,7 @@
       "series_id": "TOTALSL",
       "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.3 5.5,14.6 10.9,13.3 16.4,12.9 21.8,11.1 27.3,11.9 32.7,28.0 38.2,26.8 43.6,26.6 49.1,17.8 54.5,15.6 60.0,14.3 65.5,14.9 70.9,13.2 76.4,12.8 81.8,11.0 87.3,9.9 92.7,9.4 98.2,7.3 103.6,6.8 109.1,5.9 114.5,2.8 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.3 5.5,14.6 10.9,13.3 16.4,12.9 21.8,11.1 27.3,11.9 32.7,28.0 38.2,26.8 43.6,26.6 49.1,17.8 54.5,15.6 60.0,14.3 65.5,14.9 70.9,13.2 76.4,12.8 81.8,11.0 87.3,9.9 92.7,9.4 98.2,7.3 103.6,6.8 109.1,5.9 114.5,2.8 120.0,0.0\"/></svg>",
       "yoy_display": "+2.3%",
-      "yoy_value": 2.271332715238736
+      "yoy_value": 2.271332918212563
     },
     {
       "category": "景気・成長",
@@ -300,7 +300,7 @@
       "market_stage": 1,
       "name_ja": "リボ残高",
       "series_id": "REVOLSL",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.1 5.5,7.0 10.9,5.8 16.4,4.7 21.8,0.0 27.3,4.9 32.7,26.0 38.2,23.7 43.6,22.6 49.1,28.0 54.5,25.0 60.0,24.8 65.5,23.8 70.9,19.8 76.4,20.8 81.8,18.7 87.3,16.5 92.7,16.8 98.2,13.2 103.6,12.5 109.1,12.1 114.5,7.2 120.0,1.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.1 5.5,7.0 10.9,5.8 16.4,4.7 21.8,0.0 27.3,4.9 32.7,26.0 38.2,23.7 43.6,22.6 49.1,28.0 54.5,25.0 60.0,24.8 65.5,23.8 70.9,19.8 76.4,20.8 81.8,18.7 87.3,16.5 92.7,16.8 98.2,13.2 103.6,12.5 109.1,12.1 114.5,7.2 120.0,1.8\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.1 5.5,7.0 10.9,5.8 16.4,4.7 21.8,0.0 27.3,4.9 32.7,26.0 38.2,23.7 43.6,22.6 49.1,28.0 54.5,25.0 60.0,24.8 65.5,23.8 70.9,19.8 76.4,20.8 81.8,18.7 87.3,16.6 92.7,17.0 98.2,13.2 103.6,12.5 109.1,12.1 114.5,7.2 120.0,1.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.1 5.5,7.0 10.9,5.8 16.4,4.7 21.8,0.0 27.3,4.9 32.7,26.0 38.2,23.7 43.6,22.6 49.1,28.0 54.5,25.0 60.0,24.8 65.5,23.8 70.9,19.8 76.4,20.8 81.8,18.7 87.3,16.6 92.7,17.0 98.2,13.2 103.6,12.5 109.1,12.1 114.5,7.2 120.0,1.8\"/></svg>",
       "yoy_display": "+3.8%",
       "yoy_value": 3.8147897909311217
     },
@@ -332,7 +332,7 @@
       "market_stage": 1,
       "name_ja": "商業銀行事業貸出",
       "series_id": "BUSLOANS",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.8 5.2,16.4 10.4,15.7 15.7,14.3 20.9,13.5 26.1,13.2 31.3,15.8 36.5,28.0 41.7,27.2 47.0,26.7 52.2,27.4 57.4,26.2 62.6,25.5 67.8,26.8 73.0,25.5 78.3,24.4 83.5,24.6 88.7,23.9 93.9,22.9 99.1,19.3 104.3,13.1 109.6,8.0 114.8,2.8 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.8 5.2,16.4 10.4,15.7 15.7,14.3 20.9,13.5 26.1,13.2 31.3,15.8 36.5,28.0 41.7,27.2 47.0,26.7 52.2,27.4 57.4,26.2 62.6,25.5 67.8,26.8 73.0,25.5 78.3,24.4 83.5,24.6 88.7,23.9 93.9,22.9 99.1,19.3 104.3,13.1 109.6,8.0 114.8,2.8 120.0,0.0\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.8 5.2,16.4 10.4,15.7 15.7,14.3 20.9,13.5 26.1,13.2 31.3,15.8 36.5,28.0 41.7,27.2 47.0,26.7 52.2,27.4 57.4,26.2 62.6,25.5 67.8,26.8 73.0,25.5 78.3,24.4 83.5,24.6 88.7,23.9 93.9,22.9 99.1,19.2 104.3,13.1 109.6,8.0 114.8,2.8 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.8 5.2,16.4 10.4,15.7 15.7,14.3 20.9,13.5 26.1,13.2 31.3,15.8 36.5,28.0 41.7,27.2 47.0,26.7 52.2,27.4 57.4,26.2 62.6,25.5 67.8,26.8 73.0,25.5 78.3,24.4 83.5,24.6 88.7,23.9 93.9,22.9 99.1,19.2 104.3,13.1 109.6,8.0 114.8,2.8 120.0,0.0\"/></svg>",
       "yoy_display": "+8.1%",
       "yoy_value": 8.120001525633516
     },
@@ -716,9 +716,9 @@
       "market_stage": 2,
       "name_ja": "金融ストレス指数",
       "series_id": "STLFSI4",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.2 20.9,19.7 26.1,20.0 31.3,26.2 36.5,12.2 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.2 78.3,12.7 83.5,9.6 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.5 114.8,23.0 120.0,26.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.2 20.9,19.7 26.1,20.0 31.3,26.2 36.5,12.2 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.2 78.3,12.7 83.5,9.6 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.5 114.8,23.0 120.0,26.7\"/></svg>",
-      "yoy_display": "+4.2%",
-      "yoy_value": 4.2060726729716205
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.1 20.9,19.7 26.1,19.9 31.3,26.2 36.5,12.3 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.1 78.3,12.7 83.5,9.7 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.4 114.8,22.9 120.0,26.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.1 20.9,19.7 26.1,19.9 31.3,26.2 36.5,12.3 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.1 78.3,12.7 83.5,9.7 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.4 114.8,22.9 120.0,26.6\"/></svg>",
+      "yoy_display": "+4.4%",
+      "yoy_value": 4.443892750744779
     },
     {
       "category": "市場ストレス",
@@ -732,9 +732,9 @@
       "market_stage": 1,
       "name_ja": "全米金融状況指数",
       "series_id": "NFCI",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.8 26.1,17.1 31.3,20.4 36.5,16.5 41.7,6.7 47.0,4.1 52.2,14.6 57.4,18.8 62.6,21.8 67.8,23.0 73.0,22.8 78.3,21.0 83.5,20.4 88.7,24.4 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.2 120.0,20.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.8 26.1,17.1 31.3,20.4 36.5,16.5 41.7,6.7 47.0,4.1 52.2,14.6 57.4,18.8 62.6,21.8 67.8,23.0 73.0,22.8 78.3,21.0 83.5,20.4 88.7,24.4 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.2 120.0,20.3\"/></svg>",
-      "yoy_display": "-6.8%",
-      "yoy_value": -6.765327695560259
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,4.3 10.4,9.4 15.7,11.9 20.9,16.0 26.1,17.3 31.3,20.9 36.5,16.9 41.7,6.9 47.0,4.3 52.2,14.9 57.4,19.1 62.6,22.3 67.8,23.6 73.0,23.3 78.3,21.4 83.5,20.7 88.7,24.6 93.9,28.0 99.1,20.0 104.3,12.6 109.6,17.7 114.8,20.1 120.0,20.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,4.3 10.4,9.4 15.7,11.9 20.9,16.0 26.1,17.3 31.3,20.9 36.5,16.9 41.7,6.9 47.0,4.3 52.2,14.9 57.4,19.1 62.6,22.3 67.8,23.6 73.0,23.3 78.3,21.4 83.5,20.7 88.7,24.6 93.9,28.0 99.1,20.0 104.3,12.6 109.6,17.7 114.8,20.1 120.0,20.3\"/></svg>",
+      "yoy_display": "-6.1%",
+      "yoy_value": -6.092436974789921
     },
     {
       "category": "市場ストレス",
@@ -764,9 +764,9 @@
       "market_stage": 3,
       "name_ja": "カード貸倒償却率",
       "series_id": "CORCCACBS",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 20.0,2.8 40.0,6.3 60.0,15.0 80.0,17.1 100.0,19.9 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 20.0,2.8 40.0,6.3 60.0,15.0 80.0,17.1 100.0,19.9 120.0,28.0\"/></svg>",
-      "yoy_display": "-13.9%",
-      "yoy_value": -13.901345291479823
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 20.0,3.6 40.0,8.6 60.0,16.8 80.0,17.8 100.0,20.4 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 20.0,3.6 40.0,8.6 60.0,16.8 80.0,17.8 100.0,20.4 120.0,28.0\"/></svg>",
+      "yoy_display": "-13.3%",
+      "yoy_value": -13.31828442437923
     },
     {
       "category": "市場ストレス",
@@ -812,25 +812,25 @@
       "market_stage": 1,
       "name_ja": "AAII強気%",
       "series_id": "AAII_BULLISH",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 120.0,28.0\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 60.0,18.7 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 60.0,18.7 120.0,28.0\"/></svg>",
       "yoy_display": "-4.1%",
       "yoy_value": -4.10094637223975
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↑",
-      "economic_stage": 3,
+      "direction_arrow": "↓",
+      "economic_stage": 1,
       "frequency": "weekly",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-17",
-      "market_stage": 3,
+      "latest_date": "2026-06-10",
+      "market_stage": 1,
       "name_ja": "NAAIMエクスポージャー",
       "series_id": "NAAIM_EXPOSURE",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,5.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,5.2\"/></svg>",
-      "yoy_display": "+12.3%",
-      "yoy_value": 12.30341156544883
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,13.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,13.9\"/></svg>",
+      "yoy_display": "-2.9%",
+      "yoy_value": -2.879196275422701
     },
     {
       "category": "市場ストレス",
@@ -882,7 +882,7 @@
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
@@ -892,13 +892,13 @@
       "market_stage": 1,
       "name_ja": "日経225 200日線乖離",
       "series_id": "PA_N225_DD200",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.5 5.2,20.4 10.4,22.5 15.7,21.5 20.9,23.5 26.1,20.6 31.3,21.1 36.5,25.5 41.7,28.0 47.0,26.4 52.2,22.5 57.4,18.2 62.6,17.7 67.8,15.4 73.0,12.6 78.3,1.7 83.5,7.5 88.7,9.9 93.9,8.2 99.1,3.5 104.3,17.9 109.6,9.4 114.8,3.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.5 5.2,20.4 10.4,22.5 15.7,21.5 20.9,23.5 26.1,20.6 31.3,21.1 36.5,25.5 41.7,28.0 47.0,26.4 52.2,22.5 57.4,18.2 62.6,17.7 67.8,15.4 73.0,12.6 78.3,1.7 83.5,7.5 88.7,9.9 93.9,8.2 99.1,3.5 104.3,17.9 109.6,9.4 114.8,3.2 120.0,0.0\"/></svg>",
-      "yoy_display": "+2136.5%",
-      "yoy_value": 2136.4652472898665
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.2 5.2,20.2 10.4,22.3 15.7,21.3 20.9,23.4 26.1,20.5 31.3,21.0 36.5,25.4 41.7,28.0 47.0,26.4 52.2,22.3 57.4,18.0 62.6,17.5 67.8,15.1 73.0,12.2 78.3,1.1 83.5,7.0 88.7,9.5 93.9,7.7 99.1,2.9 104.3,17.7 109.6,9.0 114.8,2.7 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.2 5.2,20.2 10.4,22.3 15.7,21.3 20.9,23.4 26.1,20.5 31.3,21.0 36.5,25.4 41.7,28.0 47.0,26.4 52.2,22.3 57.4,18.0 62.6,17.5 67.8,15.1 73.0,12.2 78.3,1.1 83.5,7.0 88.7,9.5 93.9,7.7 99.1,2.9 104.3,17.7 109.6,9.0 114.8,2.7 120.0,0.0\"/></svg>",
+      "yoy_display": "+2077.4%",
+      "yoy_value": 2077.443038641472
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "→",
+      "direction_arrow": "↓",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
@@ -908,9 +908,9 @@
       "market_stage": 1,
       "name_ja": "日経225 52週高値乖離",
       "series_id": "PA_N225_DD52W",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,0.0\"/></svg>",
-      "yoy_display": "+100.0%",
-      "yoy_value": 100.0
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,0.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,0.7\"/></svg>",
+      "yoy_display": "+95.7%",
+      "yoy_value": 95.65672955786196
     },
     {
       "category": "市場ストレス",
@@ -924,9 +924,9 @@
       "market_stage": 1,
       "name_ja": "日経225 20日リターン",
       "series_id": "PA_N225_MOM20",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,4.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,4.0\"/></svg>",
-      "yoy_display": "+207.5%",
-      "yoy_value": 207.46074484275434
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,4.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,4.8\"/></svg>",
+      "yoy_display": "+189.2%",
+      "yoy_value": 189.20967812906076
     },
     {
       "category": "市場ストレス",
@@ -1048,13 +1048,13 @@
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-12",
+      "latest_date": "2026-06-17",
       "market_stage": 1,
       "name_ja": "VIX/VIX3M比",
       "series_id": "VIX_VIX3M_RATIO",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,22.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,22.3\"/></svg>",
-      "yoy_display": "-1.2%",
-      "yoy_value": -1.2170814570359985
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,24.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,24.3\"/></svg>",
+      "yoy_display": "-10.1%",
+      "yoy_value": -10.08827816999477
     }
   ],
   "crash_alert": {
@@ -1070,7 +1070,7 @@
       "roc_auc_display": "0.68",
       "sample_count": 240,
       "target": "GSPC",
-      "updated_at": "2026-06-20 08:33"
+      "updated_at": "2026-06-19 06:13"
     },
     "category_summary": [
       {
@@ -1087,16 +1087,16 @@
         "weight_pct": 35
       },
       {
-        "avg_score": 50,
-        "avg_score_display": 50,
+        "avg_score": 35,
+        "avg_score_display": 35,
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "count": 6,
-        "coverage_pct": 67,
+        "coverage_pct": 83,
         "expected_count": 6,
-        "fresh_count": 4,
+        "fresh_count": 5,
         "missing_count": 0,
-        "stale_count": 2,
+        "stale_count": 1,
         "weight_pct": 30
       },
       {
@@ -1128,8 +1128,8 @@
     ],
     "components": [
       {
-        "age_days": 3,
-        "age_days_display": "3日",
+        "age_days": 4,
+        "age_days_display": "4日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1143,8 +1143,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1158,23 +1158,23 @@
         "warning": null
       },
       {
-        "age_days": 3,
-        "age_days_display": "3日",
+        "age_days": 11,
+        "age_days_display": "11日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
         "is_missing": false,
         "is_stale": false,
         "label": "NAAIMエクスポージャー",
-        "observation_date": "2026-06-17",
-        "score": 75,
+        "observation_date": "2026-06-10",
+        "score": 50,
         "series_id": "NAAIM_EXPOSURE",
-        "value_display": "92.83",
+        "value_display": "79.27",
         "warning": null
       },
       {
-        "age_days": 7,
-        "age_days_display": "7日",
+        "age_days": 8,
+        "age_days_display": "8日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1188,8 +1188,8 @@
         "warning": null
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 9,
+        "age_days_display": "9日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "古い",
@@ -1203,23 +1203,23 @@
         "warning": "観測日が古い（目安7日以内）"
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 4,
+        "age_days_display": "4日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
-        "freshness_label": "古い",
+        "freshness_label": "新鮮",
         "is_missing": false,
-        "is_stale": true,
+        "is_stale": false,
         "label": "VIX/VIX3M比",
-        "observation_date": "2026-06-12",
+        "observation_date": "2026-06-17",
         "score": 0,
         "series_id": "VIX_VIX3M_RATIO",
-        "value_display": "0.86",
-        "warning": "観測日が古い（目安7日以内）"
+        "value_display": "0.85",
+        "warning": null
       },
       {
-        "age_days": 3,
-        "age_days_display": "3日",
+        "age_days": 4,
+        "age_days_display": "4日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1233,8 +1233,8 @@
         "warning": null
       },
       {
-        "age_days": 3,
-        "age_days_display": "3日",
+        "age_days": 4,
+        "age_days_display": "4日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1248,8 +1248,8 @@
         "warning": null
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 9,
+        "age_days_display": "9日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1263,8 +1263,8 @@
         "warning": null
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 9,
+        "age_days_display": "9日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1278,8 +1278,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "macro_cycle",
         "category_label": "景気・金利",
         "freshness_label": "新鮮",
@@ -1293,8 +1293,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "macro_cycle",
         "category_label": "景気・金利",
         "freshness_label": "新鮮",
@@ -1308,8 +1308,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1323,8 +1323,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1338,8 +1338,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1353,8 +1353,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1364,12 +1364,12 @@
         "observation_date": "2026-06-19",
         "score": 0,
         "series_id": "PA_N225_DD200",
-        "value_display": "32.99",
+        "value_display": "32.12",
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1383,8 +1383,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1398,8 +1398,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1413,8 +1413,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1424,12 +1424,12 @@
         "observation_date": "2026-06-19",
         "score": 0,
         "series_id": "PA_N225_DD52W",
-        "value_display": "0.00",
+        "value_display": "-0.38",
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1443,8 +1443,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1458,8 +1458,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1473,8 +1473,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1484,27 +1484,27 @@
         "observation_date": "2026-06-19",
         "score": 0,
         "series_id": "PA_N225_MOM20",
-        "value_display": "12.49",
+        "value_display": "11.75",
         "warning": null
       }
     ],
-    "data_quality_pct": 90,
-    "forward_risk_score": 29,
+    "data_quality_pct": 95,
+    "forward_risk_score": 23,
     "is_provisional": false,
     "level": "calm",
     "level_label": "平常",
-    "market_stress_score": 23,
+    "market_stress_score": 19,
     "quality_warnings": [
-      "観測日が古い指標があります: MOVE指数、VIX/VIX3M比"
+      "観測日が古い指標があります: MOVE指数"
     ],
-    "rule_agreement_pct": 81,
-    "total_score": 23,
+    "rule_agreement_pct": 82,
+    "total_score": 19,
     "validation_confidence_pct": null,
     "validation_status": "月次検証あり"
   },
   "data_quality": 100.0,
   "data_quality_report": {
-    "as_of": "2026-06-20",
+    "as_of": "2026-06-21",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -1516,23 +1516,820 @@
     "warnings": []
   },
   "forecast_models": {
-    "has_rows": false,
-    "hidden_rows": [],
-    "rows": []
+    "has_rows": true,
+    "hidden_rows": [
+      {
+        "baseline_mae_display": "4.11",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "55.6%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "horizon": "1m",
+        "kind_label": "1か月先の株価判断はbasecalcを優先",
+        "kind_tone": "provisional",
+        "mae_display": "3.69",
+        "model_version": "short_horizon_return_v1",
+        "prediction_display": "+0.9%",
+        "skill_score_display": "-4.9%",
+        "target": "IXIC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "4.13",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "50.5%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "horizon": "1m",
+        "kind_label": "1か月先の株価判断はbasecalcを優先",
+        "kind_tone": "provisional",
+        "mae_display": "5.18",
+        "model_version": "short_horizon_return_v1",
+        "prediction_display": "+1.6%",
+        "skill_score_display": "-13.6%",
+        "target": "N225",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "2.61",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "50.0%",
+        "display_grade": "reference",
+        "display_reason": "方向一致率が低いため参考",
+        "horizon": "1m",
+        "kind_label": "方向一致率が低いため参考",
+        "kind_tone": "provisional",
+        "mae_display": "3.55",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.47 JPY",
+        "skill_score_display": "-17.7%",
+        "target": "DEXJPUS",
+        "trained_at": "2026-06-19",
+        "unit": "JPY"
+      },
+      {
+        "baseline_mae_display": "0.58",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "62.9%",
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "horizon": "1m",
+        "kind_label": "単純予測を上回っていないため参考",
+        "kind_tone": "provisional",
+        "mae_display": "0.39",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.03 index",
+        "skill_score_display": "-2.4%",
+        "target": "INDPRO",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "0.19",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "55.3%",
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "horizon": "1m",
+        "kind_label": "単純予測を上回っていないため参考",
+        "kind_tone": "provisional",
+        "mae_display": "0.08",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "-0.00 %pt",
+        "skill_score_display": "-13.5%",
+        "target": "UNRATE",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.11",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "55.6%",
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "horizon": "1m",
+        "kind_label": "単純予測を上回っていないため参考",
+        "kind_tone": "provisional",
+        "mae_display": "0.10",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.00 %pt",
+        "skill_score_display": "-7.2%",
+        "target": "T10Y2Y",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.18",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "45.1%",
+        "display_grade": "reference",
+        "display_reason": "方向一致率が低いため参考",
+        "horizon": "1m",
+        "kind_label": "方向一致率が低いため参考",
+        "kind_tone": "provisional",
+        "mae_display": "0.16",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.01 %pt",
+        "skill_score_display": "-16.5%",
+        "target": "DGS10",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "3.22",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "57.6%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "horizon": "1m",
+        "kind_label": "1か月先の株価判断はbasecalcを優先",
+        "kind_tone": "provisional",
+        "mae_display": "2.55",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+1.0%",
+        "skill_score_display": "-5.8%",
+        "target": "DJI",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "3.37",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "59.5%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "horizon": "1m",
+        "kind_label": "1か月先の株価判断はbasecalcを優先",
+        "kind_tone": "provisional",
+        "mae_display": "2.65",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+1.6%",
+        "skill_score_display": "-2.6%",
+        "target": "GSPC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      }
+    ],
+    "rows": [
+      {
+        "baseline_mae_display": "6.35",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "69.1%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "6.27",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+2.99 JPY",
+        "skill_score_display": "28.8%",
+        "target": "DEXJPUS",
+        "trained_at": "2026-06-19",
+        "unit": "JPY"
+      },
+      {
+        "baseline_mae_display": "4.66",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "68.3%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "5.39",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+2.40 JPY",
+        "skill_score_display": "7.1%",
+        "target": "DEXJPUS",
+        "trained_at": "2026-06-19",
+        "unit": "JPY"
+      },
+      {
+        "baseline_mae_display": "1.84",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "80.7%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.69",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.30 index",
+        "skill_score_display": "34.7%",
+        "target": "INDPRO",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "1.15",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "76.0%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.59",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.26 index",
+        "skill_score_display": "20.2%",
+        "target": "INDPRO",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "0.67",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "86.0%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.13",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.10 %pt",
+        "skill_score_display": "28.8%",
+        "target": "UNRATE",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.40",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "66.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.11",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.00 %pt",
+        "skill_score_display": "11.1%",
+        "target": "UNRATE",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "1.12",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "98.8%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.83",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.99 index",
+        "skill_score_display": "81.9%",
+        "target": "PCEPILFE",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "0.57",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "96.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.31",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.61 index",
+        "skill_score_display": "73.4%",
+        "target": "PCEPILFE",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "0.19",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "97.0%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "1m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.09",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.29 index",
+        "skill_score_display": "61.2%",
+        "target": "PCEPILFE",
+        "trained_at": "2026-06-19",
+        "unit": "index"
+      },
+      {
+        "baseline_mae_display": "0.33",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "83.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.22",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.19 %pt",
+        "skill_score_display": "40.3%",
+        "target": "T10Y2Y",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.21",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "73.6%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.15",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.12 %pt",
+        "skill_score_display": "13.9%",
+        "target": "T10Y2Y",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.46",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "78.4%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.25",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "-0.01 %pt",
+        "skill_score_display": "32.6%",
+        "target": "DGS10",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "0.33",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "66.2%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "0.26",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.03 %pt",
+        "skill_score_display": "4.5%",
+        "target": "DGS10",
+        "trained_at": "2026-06-19",
+        "unit": "%pt"
+      },
+      {
+        "baseline_mae_display": "10.45",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "73.6%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "13.19",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+4.1%",
+        "skill_score_display": "25.9%",
+        "target": "N225",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "7.29",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "69.1%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "8.62",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+4.8%",
+        "skill_score_display": "15.5%",
+        "target": "N225",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "7.42",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "78.0%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "3.91",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+6.8%",
+        "skill_score_display": "29.5%",
+        "target": "DJI",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "5.23",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "67.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "3.73",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+3.0%",
+        "skill_score_display": "7.3%",
+        "target": "DJI",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "10.89",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "86.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "6.35",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+10.4%",
+        "skill_score_display": "41.8%",
+        "target": "IXIC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "7.20",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "72.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "6.91",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+5.4%",
+        "skill_score_display": "15.5%",
+        "target": "IXIC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "8.34",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "82.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "6m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "4.48",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+8.9%",
+        "skill_score_display": "35.6%",
+        "target": "GSPC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      },
+      {
+        "baseline_mae_display": "5.71",
+        "data_quality_display": "98%",
+        "direction_accuracy_display": "72.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "horizon": "3m",
+        "kind_label": "トップ表示可",
+        "kind_tone": "validated",
+        "mae_display": "4.33",
+        "model_version": "return_lightgbm_v2",
+        "prediction_display": "+4.5%",
+        "skill_score_display": "14.3%",
+        "target": "GSPC",
+        "trained_at": "2026-06-19",
+        "unit": "%"
+      }
+    ]
   },
   "forecast_monitor": {
-    "avg_abs_error_display": "—",
+    "avg_abs_error_display": "+0.71",
     "by_model": [
+      {
+        "model_version": "crash_probability_logistic_v1",
+        "total": 2
+      },
+      {
+        "model_version": "macro_forecast_lightgbm_v1",
+        "total": 36
+      },
       {
         "model_version": "macro_hatzius_v1",
         "total": 1
+      },
+      {
+        "model_version": "return_lightgbm_v2",
+        "total": 24
+      },
+      {
+        "model_version": "short_horizon_return_v1",
+        "total": 2
       }
     ],
-    "latest_rows": [],
-    "pending_count": 1,
-    "settled_count": 0,
+    "latest_rows": [
+      {
+        "as_of_date": "2026-05-24",
+        "error_display": "-0.26",
+        "horizon": "3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.13",
+        "realized_at": "2026-06-16",
+        "realized_display": "-0.13",
+        "target": "T10Y2Y"
+      },
+      {
+        "as_of_date": "2026-05-24",
+        "error_display": "-0.32",
+        "horizon": "6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "+0.19",
+        "realized_at": "2026-06-16",
+        "realized_display": "-0.13",
+        "target": "T10Y2Y"
+      },
+      {
+        "as_of_date": "2026-05-24",
+        "error_display": "+0.10",
+        "horizon": "3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "-0.02",
+        "realized_at": "2026-06-15",
+        "realized_display": "+0.08",
+        "target": "DGS10"
+      },
+      {
+        "as_of_date": "2026-05-24",
+        "error_display": "+0.14",
+        "horizon": "6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "prediction_display": "-0.06",
+        "realized_at": "2026-06-15",
+        "realized_display": "+0.08",
+        "target": "DGS10"
+      }
+    ],
+    "pending_count": 43,
+    "settled_count": 22,
     "status_label": "検証中",
     "summary_rows": [
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "63d",
+        "median_abs_error_display": "—",
+        "model_version": "crash_probability_logistic_v1",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "GSPC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+2.76",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+2.76",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DEXJPUS",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+1.18",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+1.18",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DEXJPUS",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.94",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+0.94",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DEXJPUS",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.09",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.09",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DGS10",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.10",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+0.10",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DGS10",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.14",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+0.14",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DGS10",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.03",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.03",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.001",
+        "settled_count": 1,
+        "target": "INDPRO",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.22",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+0.22",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.048",
+        "settled_count": 1,
+        "target": "INDPRO",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.27",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+0.27",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.072",
+        "settled_count": 1,
+        "target": "INDPRO",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.28",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.28",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.080",
+        "settled_count": 1,
+        "target": "PCEPILFE",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.67",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+0.67",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.444",
+        "settled_count": 1,
+        "target": "PCEPILFE",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+1.15",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+1.15",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "1.334",
+        "settled_count": 1,
+        "target": "PCEPILFE",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.10",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.10",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "T10Y2Y",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.26",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+0.26",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "T10Y2Y",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.32",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+0.32",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "T10Y2Y",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.00",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.00",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.000",
+        "settled_count": 1,
+        "target": "UNRATE",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.00",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "3m",
+        "median_abs_error_display": "+0.00",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.000",
+        "settled_count": 1,
+        "target": "UNRATE",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.12",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "6m",
+        "median_abs_error_display": "+0.12",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "0.014",
+        "settled_count": 1,
+        "target": "UNRATE",
+        "total_count": 2
+      },
       {
         "avg_abs_error_display": "—",
         "direction_accuracy_display": "—",
@@ -1544,13 +2341,192 @@
         "settled_count": 0,
         "target": "macro_regime",
         "total_count": 1
+      },
+      {
+        "avg_abs_error_display": "+0.65",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.65",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "DJI",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "3m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "DJI",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "6m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "DJI",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+2.48",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+2.48",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "GSPC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "3m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "GSPC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "6m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "GSPC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+3.28",
+        "direction_accuracy_display": "0.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+3.28",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "IXIC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "3m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "IXIC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "6m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "IXIC",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "+0.51",
+        "direction_accuracy_display": "100.0%",
+        "horizon": "1m",
+        "median_abs_error_display": "+0.51",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 1,
+        "target": "N225",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "3m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "N225",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "6m",
+        "median_abs_error_display": "—",
+        "model_version": "return_lightgbm_v2",
+        "pending_count": 2,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "N225",
+        "total_count": 2
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "1m",
+        "median_abs_error_display": "—",
+        "model_version": "short_horizon_return_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "IXIC",
+        "total_count": 1
+      },
+      {
+        "avg_abs_error_display": "—",
+        "direction_accuracy_display": "—",
+        "horizon": "1m",
+        "median_abs_error_display": "—",
+        "model_version": "short_horizon_return_v1",
+        "pending_count": 1,
+        "probability_brier_score_display": "—",
+        "settled_count": 0,
+        "target": "N225",
+        "total_count": 1
       }
     ],
-    "tone": "warning",
-    "total_count": 1
+    "tone": "good",
+    "total_count": 65
   },
-  "generated_at": "2026-06-20T08:37:45.933822+00:00",
+  "generated_at": "2026-06-21T07:25:58.695355+00:00",
   "goldman_outlook_comparison": {
+    "audit": {
+      "comparison_mode": "public_static_outlook_vs_live_house_view",
+      "difference_reasons": [
+        "House Viewの景気後退確率はGoldman公開見通しより12.8%pt低い。",
+        "House Viewの主レジームはslowdownで、Goldman公開見通しの成長観と同じ方向かを監査対象にする。",
+        "インフレは直接比較できるHouse View数値がないため、レジーム判断で補助比較する。"
+      ],
+      "latest_public_source_date": "2026-01-15",
+      "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
+      "public_outlook_age_days": 157
+    },
     "comparison": {
       "growth_view": {
         "goldman_public_view": "above_consensus_us_growth",
@@ -1586,7 +2562,7 @@
         "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
       }
     ],
-    "generated_at": "2026-06-20T08:37:38.297381+00:00",
+    "generated_at": "2026-06-21T07:25:53.449187+00:00",
     "goldman_sachs_public_outlook": {
       "as_of": "2026-01-11",
       "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -1608,7 +2584,7 @@
       }
     },
     "house_view_snapshot": {
-      "as_of": "2026-06-20",
+      "as_of": "2026-06-19",
       "confidence": 76.0,
       "data_quality": 94.0,
       "primary_regime": "slowdown",
@@ -1634,7 +2610,15 @@
   "has_observations": true,
   "historical_crash_similarity": [
     {
-      "distance": 0.6430676066074656,
+      "distance": 0.4320847750096033,
+      "distance_display": "0.43",
+      "label": "リーマン直前",
+      "month_label": "2008年01月",
+      "month_start": "2008-01-01",
+      "period": "gfc"
+    },
+    {
+      "distance": 0.6407575666694003,
       "distance_display": "0.64",
       "label": "2022年底",
       "month_label": "2022年10月",
@@ -1642,29 +2626,21 @@
       "period": "inflation_2022"
     },
     {
-      "distance": 0.6443703324811654,
+      "distance": 0.641132895896379,
       "distance_display": "0.64",
       "label": "2022年米株急落",
       "month_label": "2022年06月",
       "month_start": "2022-06-01",
       "period": "inflation_2022"
-    },
-    {
-      "distance": 1.0093511039492018,
-      "distance_display": "1.01",
-      "label": "チャイナショック",
-      "month_label": "2015年08月",
-      "month_start": "2015-08-01",
-      "period": "china"
     }
   ],
   "house_view": {
-    "as_of": "2026-06-20",
+    "as_of": "2026-06-19",
     "blocking_issues": [],
     "confidence_grade": "A",
-    "confidence_score": 91,
+    "confidence_score": 92,
     "data_quality_report": {
-      "as_of": "2026-06-20",
+      "as_of": "2026-06-21",
       "blocking_issues": [],
       "confidence_cap": "A",
       "display_allowed": true,
@@ -1726,56 +2702,393 @@
       "backtest": {
         "data_modes": {
           "revised_reference": {
-            "hit_count": 7,
-            "hit_rate": 0.6364,
-            "sample_count": 11,
-            "too_bullish_count": 2,
-            "too_defensive_count": 2
+            "hit_count": 197,
+            "hit_rate": 0.7378,
+            "sample_count": 267,
+            "too_bullish_count": 32,
+            "too_defensive_count": 38
           }
         },
-        "generated_at": "2026-06-18T07:24:58.340034+00:00",
-        "hit_count": 7,
-        "hit_rate": 0.6364,
+        "generated_at": "2026-06-21T06:57:43.960800+00:00",
+        "hit_count": 197,
+        "hit_rate": 0.7378,
         "horizons": {
           "3m": {
-            "hit_count": 2,
-            "hit_rate": 0.5,
-            "sample_count": 4,
-            "too_bullish_count": 1,
-            "too_defensive_count": 1
+            "hit_count": 101,
+            "hit_rate": 0.7481,
+            "sample_count": 135,
+            "too_bullish_count": 16,
+            "too_defensive_count": 18
           },
           "6m": {
-            "hit_count": 5,
-            "hit_rate": 0.7143,
-            "sample_count": 7,
-            "too_bullish_count": 1,
-            "too_defensive_count": 1
+            "hit_count": 96,
+            "hit_rate": 0.7273,
+            "sample_count": 132,
+            "too_bullish_count": 16,
+            "too_defensive_count": 20
           }
         },
         "period": {
           "end": "2026-06-18",
           "start": "2015-01-01"
         },
-        "sample_count": 11,
+        "sample_count": 267,
         "sample_kind": "backtest_replay",
         "status": "available",
-        "too_bullish_count": 2,
-        "too_defensive_count": 2
+        "too_bullish_count": 32,
+        "too_defensive_count": 38
       },
       "live": {
+        "avg_brier_score": null,
         "hit_count": 0,
         "hit_rate": null,
+        "mae": null,
         "sample_count": 0,
         "sample_kind": "live_saved_forecasts",
         "status": "waiting_for_realizations",
         "too_bullish_count": 0,
         "too_defensive_count": 0
+      },
+      "pseudo_live": {
+        "hit_count": 16,
+        "hit_rate": 0.8,
+        "period": {
+          "end": "2026-03-01",
+          "start": "2025-04-01"
+        },
+        "rows": [
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-10-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-04-01",
+            "confidence": 69,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-10-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-08-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-05-01",
+            "confidence": 68,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-08-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-11-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-05-01",
+            "confidence": 68,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-11-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-09-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-06-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-09-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-12-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-06-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-12-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-10-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-07-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-10-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-01-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-07-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-01-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-11-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-08-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-11-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-02-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-08-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-02-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-12-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-09-01",
+            "confidence": 61,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-12-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-03-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-09-01",
+            "confidence": 61,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-03-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-01-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-10-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-01-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-04-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-10-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "6m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-04-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-02-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-11-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-02-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-05-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-11-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-05-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-03-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-12-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-03-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-05-23",
+            "actual_source": "saved_snapshot",
+            "as_of_date": "2025-12-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "6m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-06-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-04-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2026-01-01",
+            "confidence": 74,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "3m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-04-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-05-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2026-02-01",
+            "confidence": 74,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-05-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-05-23",
+            "actual_source": "saved_snapshot",
+            "as_of_date": "2026-03-01",
+            "confidence": 76,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "3m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-06-01",
+            "validation_target": "macro_regime_3m"
+          }
+        ],
+        "sample_count": 20,
+        "sample_kind": "recent_backtest_replay",
+        "sample_limit": 20,
+        "status": "available",
+        "too_bullish_count": 0,
+        "too_defensive_count": 4
       }
     },
-    "generated_at": "2026-06-20T08:37:38.298961+00:00",
+    "generated_at": "2026-06-21T07:25:53.452494+00:00",
     "hit_count": 0,
     "hit_rate": null,
     "model_version": "macro_hatzius_v1",
+    "operation_health": {
+      "latest_as_of": "2026-06-19",
+      "missing_features_hash_count": 0,
+      "missing_prediction_interval_count": 0,
+      "notes": [
+        "結果待ちの予測が1件あります。"
+      ],
+      "overdue_count": 0,
+      "pending_count": 1,
+      "saved_forecast_count": 1,
+      "settled_count": 0,
+      "status_label": "正常"
+    },
+    "reliability": {
+      "display_status": "参考",
+      "live_record": "Live実績 未評価",
+      "model_validation": "C / 検証不足",
+      "note": "実際に保存した予測の結果がまだ確定していません。"
+    },
     "rows": [],
     "sample_count": 0,
     "target": "macro_regime",
@@ -1844,7 +3157,7 @@
       "market_stage": 3,
       "name_ja": "鉱工業生産指数",
       "series_id": "INDPRO",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
       "yoy_display": "+1.7%",
       "yoy_value": 1.6659155850265566
     },
@@ -1961,11 +3274,11 @@
       "yoy_value": -17.034700315457414
     }
   ],
-  "job_duration_sec": 7.743,
+  "job_duration_sec": 5.361,
   "last_updated": "2026-06-19",
   "linkages": [
     {
-      "correlation": 0.9980664219519584,
+      "correlation": 0.9980699579130933,
       "correlation_display": "+1.00",
       "interpretation": "CPIとPCEは同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -1973,7 +3286,7 @@
       "relation_text": "CPI ⇔ PCE（同時連動）"
     },
     {
-      "correlation": 0.9974736955321841,
+      "correlation": 0.9974836996989076,
       "correlation_display": "+1.00",
       "interpretation": "FF金利とFF金利（月次）は同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -1981,7 +3294,7 @@
       "relation_text": "FF金利 ⇔ FF金利（月次）（同時連動）"
     },
     {
-      "correlation": 0.996214809464723,
+      "correlation": 0.9962382541412542,
       "correlation_display": "+1.00",
       "interpretation": "PCEが上がると約1ヶ月後にCore PCEも強く上がりやすい関係。",
       "is_negative": false,
@@ -1989,7 +3302,7 @@
       "relation_text": "PCE → Core PCE（約1ヶ月先行）"
     },
     {
-      "correlation": 0.9960712819065031,
+      "correlation": 0.9961075871288456,
       "correlation_display": "+1.00",
       "interpretation": "Core CPIとCore PCEは同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -1997,7 +3310,7 @@
       "relation_text": "Core CPI ⇔ Core PCE（同時連動）"
     },
     {
-      "correlation": 0.9932829653407288,
+      "correlation": 0.9933660087314505,
       "correlation_display": "+0.99",
       "interpretation": "PCEが上がると約2ヶ月後にCore CPIも強く上がりやすい関係。",
       "is_negative": false,
@@ -2005,7 +3318,7 @@
       "relation_text": "PCE → Core CPI（約2ヶ月先行）"
     },
     {
-      "correlation": 0.9909227909661059,
+      "correlation": 0.9910109685912123,
       "correlation_display": "+0.99",
       "interpretation": "CPIが上がると約2ヶ月後にCore CPIも強く上がりやすい関係。",
       "is_negative": false,
@@ -2013,7 +3326,7 @@
       "relation_text": "CPI → Core CPI（約2ヶ月先行）"
     },
     {
-      "correlation": 0.9906930103490545,
+      "correlation": 0.9907259430143858,
       "correlation_display": "+0.99",
       "interpretation": "CPIが上がると約1ヶ月後にCore PCEも強く上がりやすい関係。",
       "is_negative": false,
@@ -2021,7 +3334,7 @@
       "relation_text": "CPI → Core PCE（約1ヶ月先行）"
     },
     {
-      "correlation": 0.9807609796916864,
+      "correlation": 0.980812153732993,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利も強く上がりやすい関係。",
       "is_negative": false,
@@ -2029,7 +3342,7 @@
       "relation_text": "米2年国債利回り → FF金利（約3ヶ月先行）"
     },
     {
-      "correlation": 0.979853583693748,
+      "correlation": 0.9799027319039352,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利（月次）も強く上がりやすい関係。",
       "is_negative": false,
@@ -2037,7 +3350,7 @@
       "relation_text": "米2年国債利回り → FF金利（月次）（約3ヶ月先行）"
     },
     {
-      "correlation": 0.9772078389846675,
+      "correlation": 0.9772078389846676,
       "correlation_display": "+0.98",
       "interpretation": "10年期待インフレ率と5年期待インフレ率は同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2052,15 +3365,15 @@
       "PCEが物価高止まり（前年比 3.77 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
     ],
     "confidence": {
-      "data_freshness_pct": 76,
+      "data_freshness_pct": 77,
       "grade": "A",
       "label": "高い",
       "notes": [
         "主要データの取得状況と判定材料は確認済みです。"
       ],
       "sample_note": "モデル予測は検証条件を満たすものだけ参考表示します。",
-      "score": 87,
-      "score_display": "87%"
+      "score": 88,
+      "score_display": "88%"
     },
     "detail": "成長ペースが落ち、慎重に見る局面です。 ただし物価高が金利や消費の重しになります。",
     "good_points": [
@@ -2072,15 +3385,13 @@
     "market_stress": {
       "abnormal_items": [
         "SKEW（テール警戒）",
-        "NAAIMエクスポージャー",
-        "MOVE指数",
-        "VIX/VIX3M比"
+        "MOVE指数"
       ],
-      "data_quality_display": "90%",
+      "data_quality_display": "95%",
       "level": "calm",
       "level_label": "平常",
-      "score": 23,
-      "score_display": "23/100",
+      "score": 19,
+      "score_display": "19/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "policy_pressure": {
@@ -2117,7 +3428,7 @@
     }
   },
   "macro_forecast_report": {
-    "as_of": "2026-06-20",
+    "as_of": "2026-06-19",
     "axes": [
       {
         "key": "growth_momentum",
@@ -2142,7 +3453,7 @@
       {
         "key": "financial_conditions",
         "label": "追い風",
-        "score_display": "86%"
+        "score_display": "88%"
       },
       {
         "key": "credit_stress",
@@ -2157,21 +3468,25 @@
       {
         "key": "japan_cycle",
         "label": "後退",
-        "score_display": "20%"
+        "score_display": "19%"
       },
       {
         "key": "nikkei_macro_bias",
         "label": "上昇支援",
-        "score_display": "77%"
+        "score_display": "78%"
       }
     ],
+    "change_summary": "前回のslowdownからexpansionへ判断を変更。",
     "confidence_display": "76%",
-    "data_quality_display": "95%",
+    "data_quality_display": "98%",
     "headline": "景気は改善基調。物価は粘着、金融環境は追い風。",
     "judgment": "3〜6か月の主シナリオは expansion。 後退確率は7%、物価再加速確率は82%、金融ストレス確率は21%。",
+    "market_mispricing_watch": [
+      "金利上昇リスク"
+    ],
     "model_version": "macro_hatzius_v1",
     "nikkei_implication": "日経先物へのmacroバイアスは上昇支援。今日〜数週間の売買判断はbasecalcを優先する。",
-    "previous_regime": "",
+    "previous_regime": "slowdown",
     "primary_regime": "expansion",
     "scenarios": [
       {
@@ -2244,12 +3559,257 @@
       "GDPは四半期データのため、直近変化の反映が遅れます。",
       "観測日が古い主要指標があります: 鉱工業生産指数（2026-05-01）、実質GDP（2026-01-01）、失業率（2026-05-01）",
       "GDPは四半期データのため、直近変化の反映が遅れます。"
+    ],
+    "what_changed": [
+      "主レジームがslowdownからexpansionへ変化",
+      "物価再加速リスク"
     ]
   },
   "macro_outcome_validation": {},
   "model_validation": {
-    "has_rows": false,
-    "rows": []
+    "has_rows": true,
+    "rows": [
+      {
+        "baseline_mae_display": "4.11",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "55.6%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19 09:08",
+        "event_count": null,
+        "horizon": "1m",
+        "mae_display": "4.32",
+        "model_version": "short_horizon_return_v1",
+        "pr_auc_display": "—",
+        "rmse_display": "5.81",
+        "roc_auc_display": "—",
+        "sample_count": 205,
+        "skill_score_display": "-4.9%",
+        "target": "IXIC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "4.13",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "50.5%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19 09:08",
+        "event_count": null,
+        "horizon": "1m",
+        "mae_display": "4.69",
+        "model_version": "short_horizon_return_v1",
+        "pr_auc_display": "—",
+        "rmse_display": "6.08",
+        "roc_auc_display": "—",
+        "sample_count": 206,
+        "skill_score_display": "-13.6%",
+        "target": "N225",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "10.45",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "73.6%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:37",
+        "event_count": null,
+        "horizon": "6m",
+        "mae_display": "7.74",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "10.19",
+        "roc_auc_display": "—",
+        "sample_count": 201,
+        "skill_score_display": "25.9%",
+        "target": "N225",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "7.29",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "69.1%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:37",
+        "event_count": null,
+        "horizon": "3m",
+        "mae_display": "6.16",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "8.13",
+        "roc_auc_display": "—",
+        "sample_count": 204,
+        "skill_score_display": "15.5%",
+        "target": "N225",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "4.13",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "49.0%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19 08:37",
+        "event_count": null,
+        "horizon": "1m",
+        "mae_display": "4.72",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "6.08",
+        "roc_auc_display": "—",
+        "sample_count": 206,
+        "skill_score_display": "-14.4%",
+        "target": "N225",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "10.89",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "86.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:37",
+        "event_count": null,
+        "horizon": "6m",
+        "mae_display": "6.33",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "8.33",
+        "roc_auc_display": "—",
+        "sample_count": 200,
+        "skill_score_display": "41.8%",
+        "target": "IXIC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "7.20",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "72.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:36",
+        "event_count": null,
+        "horizon": "3m",
+        "mae_display": "6.08",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "7.52",
+        "roc_auc_display": "—",
+        "sample_count": 203,
+        "skill_score_display": "15.5%",
+        "target": "IXIC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "4.11",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "53.2%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19 08:36",
+        "event_count": null,
+        "horizon": "1m",
+        "mae_display": "4.17",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "5.38",
+        "roc_auc_display": "—",
+        "sample_count": 205,
+        "skill_score_display": "-1.5%",
+        "target": "IXIC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "8.34",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "82.5%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:36",
+        "event_count": null,
+        "horizon": "6m",
+        "mae_display": "5.37",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "7.08",
+        "roc_auc_display": "—",
+        "sample_count": 200,
+        "skill_score_display": "35.6%",
+        "target": "GSPC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "5.71",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "72.9%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:35",
+        "event_count": null,
+        "horizon": "3m",
+        "mae_display": "4.89",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "6.11",
+        "roc_auc_display": "—",
+        "sample_count": 203,
+        "skill_score_display": "14.3%",
+        "target": "GSPC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "3.37",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "59.5%",
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19 08:35",
+        "event_count": null,
+        "horizon": "1m",
+        "mae_display": "3.46",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "4.58",
+        "roc_auc_display": "—",
+        "sample_count": 205,
+        "skill_score_display": "-2.6%",
+        "target": "GSPC",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      },
+      {
+        "baseline_mae_display": "7.42",
+        "brier_score_display": "—",
+        "direction_accuracy_display": "78.0%",
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19 08:35",
+        "event_count": null,
+        "horizon": "6m",
+        "mae_display": "5.23",
+        "model_version": "return_lightgbm_v2",
+        "pr_auc_display": "—",
+        "rmse_display": "6.78",
+        "roc_auc_display": "—",
+        "sample_count": 200,
+        "skill_score_display": "29.5%",
+        "target": "DJI",
+        "validation_method": "lightgbm_refit_walk_forward",
+        "warnings": []
+      }
+    ]
   },
   "model_version": "regime_v2_score",
   "monthly_model_status": {
@@ -2259,7 +3819,7 @@
         "metric_label": "ROC-AUC 0.68 / PR-AUC 0.15",
         "model_label": "GSPC 63日 -10.0%",
         "sample_label": "検証 240件 / イベント 19件",
-        "updated_at": "2026-06-20 08:33"
+        "updated_at": "2026-06-19 06:13"
       },
       {
         "label": "急落確率モデル",
@@ -2284,7 +3844,7 @@
       }
     ],
     "has_any": true,
-    "latest_backtest_date": "2026-06-20 08:33",
+    "latest_backtest_date": "2026-06-19 06:13",
     "latest_training_date": "2026-06-19",
     "status_label": "要確認",
     "tone": "warning",
@@ -2339,14 +3899,14 @@
     "tone": "warning"
   },
   "raw_archive_status": {
-    "archive_count": 0,
-    "checksum_short": "—",
-    "file_exists": false,
-    "has_archive": false,
-    "latest_created_at": "—",
-    "latest_file": "—",
-    "latest_size_display": "—",
-    "path": "/home/runner/work/yoshi-nakane0.github.io-finance/yoshi-nakane0.github.io-finance/static/macro/raw_archive",
+    "archive_count": 2,
+    "checksum_short": "a7190d041504",
+    "file_exists": true,
+    "has_archive": true,
+    "latest_created_at": "2026-06-19 06:13",
+    "latest_file": "macro_raw_purge_old_data_20260619061338.csv.gz",
+    "latest_size_display": "2.4 MB",
+    "path": "/Users/naka/yoshi-nakane0.github.io-finance/static/macro/raw_archive/macro_raw_purge_old_data_20260619061338.csv.gz",
     "storage_backend": "local"
   },
   "regime_probability_model": {
@@ -2364,7 +3924,7 @@
     "warnings": []
   },
   "scenario_analysis": {
-    "base_market_stress_score": 23,
+    "base_market_stress_score": 19,
     "base_regime_fit_display": "近さの目安 66%",
     "base_regime_label": "拡大",
     "base_regime_probability_display": "66%",
@@ -2446,7 +4006,7 @@
         "is_custom": false,
         "key": "most_likely",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 23,
+        "market_stress_score": 19,
         "recession_probability_display": "7%",
         "regime_fit_display": "近さの目安 66%",
         "regime_label": "拡大",
@@ -2462,8 +4022,8 @@
         "inflation_probability_display": "92%",
         "is_custom": false,
         "key": "top_risk",
-        "market_stress_delta_display": "+4pt",
-        "market_stress_score": 27,
+        "market_stress_delta_display": "+3pt",
+        "market_stress_score": 22,
         "recession_probability_display": "9%",
         "regime_fit_display": "近さの目安 62%",
         "regime_label": "拡大",
@@ -2473,9 +4033,9 @@
         "world_state_delta": {
           "credit_score": -13.6,
           "inflation_score": 6.7,
-          "market_stress_score": 4.0,
+          "market_stress_score": 3.0,
           "policy_pressure_score": 1.7,
-          "risk_appetite_score": -6.0
+          "risk_appetite_score": -5.0
         },
         "world_state_delta_rows": [
           {
@@ -2493,8 +4053,8 @@
             "label": "政策圧力"
           },
           {
-            "delta": 4.0,
-            "delta_display": "+4.0",
+            "delta": 3.0,
+            "delta_display": "+3.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -2507,8 +4067,8 @@
             "label": "信用"
           },
           {
-            "delta": -6.0,
-            "delta_display": "-6.0",
+            "delta": -5.0,
+            "delta_display": "-5.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -2522,7 +4082,7 @@
         "is_custom": false,
         "key": "improvement",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 23,
+        "market_stress_score": 19,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 69%",
         "regime_label": "拡大",
@@ -2556,8 +4116,8 @@
         "inflation_probability_display": "82%",
         "is_custom": false,
         "key": "market_shock",
-        "market_stress_delta_display": "+10pt",
-        "market_stress_score": 33,
+        "market_stress_delta_display": "+8pt",
+        "market_stress_score": 27,
         "recession_probability_display": "19%",
         "regime_fit_display": "近さの目安 34%",
         "regime_label": "拡大",
@@ -2566,13 +4126,13 @@
         "title": "ショックシナリオ",
         "world_state_delta": {
           "credit_score": -27.3,
-          "market_stress_score": 10.0,
-          "risk_appetite_score": -16.0
+          "market_stress_score": 8.0,
+          "risk_appetite_score": -13.0
         },
         "world_state_delta_rows": [
           {
-            "delta": 10.0,
-            "delta_display": "+10.0",
+            "delta": 8.0,
+            "delta_display": "+8.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -2585,8 +4145,8 @@
             "label": "信用"
           },
           {
-            "delta": -16.0,
-            "delta_display": "-16.0",
+            "delta": -13.0,
+            "delta_display": "-13.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -2600,7 +4160,7 @@
         "is_custom": false,
         "key": "rate_cut_delay",
         "market_stress_delta_display": "+4pt",
-        "market_stress_score": 27,
+        "market_stress_score": 23,
         "recession_probability_display": "8%",
         "regime_fit_display": "近さの目安 62%",
         "regime_label": "拡大",
@@ -2642,8 +4202,8 @@
         "inflation_probability_display": "82%",
         "is_custom": false,
         "key": "rates_down_risk_on",
-        "market_stress_delta_display": "-3pt",
-        "market_stress_score": 20,
+        "market_stress_delta_display": "-4pt",
+        "market_stress_score": 15,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 71%",
         "regime_label": "拡大",
@@ -2652,9 +4212,9 @@
         "title": "金利低下・リスクオン",
         "world_state_delta": {
           "credit_score": 2.4,
-          "market_stress_score": -3.0,
+          "market_stress_score": -4.0,
           "policy_pressure_score": 2.1,
-          "risk_appetite_score": 6.0
+          "risk_appetite_score": 5.0
         },
         "world_state_delta_rows": [
           {
@@ -2665,8 +4225,8 @@
             "label": "政策圧力"
           },
           {
-            "delta": -3.0,
-            "delta_display": "-3.0",
+            "delta": -4.0,
+            "delta_display": "-4.0",
             "is_negative": true,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -2679,8 +4239,8 @@
             "label": "信用"
           },
           {
-            "delta": 6.0,
-            "delta_display": "+6.0",
+            "delta": 5.0,
+            "delta_display": "+5.0",
             "is_negative": false,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -2690,6 +4250,26 @@
     ]
   },
   "similar_periods": [
+    {
+      "core_pce_display": "128.4",
+      "distance_display": "0.16",
+      "indpro_display": "101.5",
+      "month_label": "2026年01月",
+      "month_start": "2026-01-01",
+      "nasdaq_return_display": "-3.4%",
+      "nasdaq_return_pos": false,
+      "nasdaq_return_value": -3.382556700330624,
+      "nikkei_return_display": "-13.2%",
+      "nikkei_return_pos": false,
+      "nikkei_return_value": -13.231121697947831,
+      "nydow_return_display": "+0.2%",
+      "nydow_return_pos": true,
+      "nydow_return_value": 0.1747776849578699,
+      "spread_display": "0.74",
+      "spx_return_display": "-0.9%",
+      "spx_return_pos": false,
+      "spx_return_value": -0.8668344740704348
+    },
     {
       "core_pce_display": "127.9",
       "distance_display": "0.17",
@@ -2729,26 +4309,6 @@
       "spx_return_display": "+0.1%",
       "spx_return_pos": true,
       "spx_return_value": 0.12996181666717824
-    },
-    {
-      "core_pce_display": "128.4",
-      "distance_display": "0.17",
-      "indpro_display": "101.1",
-      "month_label": "2026年01月",
-      "month_start": "2026-01-01",
-      "nasdaq_return_display": "-3.4%",
-      "nasdaq_return_pos": false,
-      "nasdaq_return_value": -3.382556700330624,
-      "nikkei_return_display": "-13.2%",
-      "nikkei_return_pos": false,
-      "nikkei_return_value": -13.231121697947831,
-      "nydow_return_display": "+0.2%",
-      "nydow_return_pos": true,
-      "nydow_return_value": 0.1747776849578699,
-      "spread_display": "0.74",
-      "spx_return_display": "-0.9%",
-      "spx_return_pos": false,
-      "spx_return_value": -0.8668344740704348
     },
     {
       "core_pce_display": "129.3",
@@ -2791,7 +4351,7 @@
       "spx_return_value": 2.2686871904923698
     }
   ],
-  "source": "github_actions",
+  "source": "local_validation",
   "stale": false,
   "top_decision": {
     "axis_summary": [
@@ -2807,12 +4367,12 @@
       },
       {
         "label": "金融環境",
-        "score_display": "86%",
+        "score_display": "88%",
         "value": "追い風"
       },
       {
         "label": "日経影響",
-        "score_display": "77%",
+        "score_display": "78%",
         "value": "上昇支援"
       }
     ],
@@ -2882,7 +4442,7 @@
         "market_stage": 3,
         "name_ja": "鉱工業生産指数",
         "series_id": "INDPRO",
-        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.6 99.1,12.7 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
+        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,14.6 5.2,22.3 10.4,18.5 15.7,23.7 20.9,26.5 26.1,28.0 31.3,19.4 36.5,21.6 41.7,12.9 47.0,13.4 52.2,12.7 57.4,14.0 62.6,9.8 67.8,6.3 73.0,8.5 78.3,8.2 83.5,11.9 88.7,13.5 93.9,9.4 99.1,9.8 104.3,5.8 109.6,8.5 114.8,1.2 120.0,0.0\"/></svg>",
         "yoy_display": "+1.7%",
         "yoy_value": 1.6659155850265566
       },
@@ -2904,15 +4464,15 @@
       }
     ],
     "final_judgment": {
-      "confidence": "A / 87%",
-      "direction": "中立〜改善",
+      "confidence": "データ品質 A / 92%",
+      "direction": "中立（物価警戒）",
       "max_risk": "インフレ再加速リスクが高い・米金利上昇が株価バリュエーションを圧迫",
       "nikkei_impact": "上昇支援",
-      "summary": "成長ペースが落ち、慎重に見る局面です。 ただし物価高が金利や消費の重しになります。"
+      "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意"
     },
     "freshness": {
-      "confidence": "A / 87%",
-      "data_freshness": "76%",
+      "confidence": "データ品質 A / 92%",
+      "data_freshness": "77%",
       "updated_at": "2026-06-19"
     },
     "good_points": [
@@ -2941,15 +4501,13 @@
     "market_stress": {
       "abnormal_items": [
         "SKEW（テール警戒）",
-        "NAAIMエクスポージャー",
-        "MOVE指数",
-        "VIX/VIX3M比"
+        "MOVE指数"
       ],
-      "data_quality_display": "90%",
+      "data_quality_display": "95%",
       "level": "calm",
       "level_label": "平常",
-      "score": 23,
-      "score_display": "23/100",
+      "score": 19,
+      "score_display": "19/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "nikkei": {
@@ -2988,6 +4546,15 @@
       "summary": "利下げ織り込み後退。米2年金利5日変化は+11.0bpです。",
       "tone": "warning"
     },
+    "reliability": {
+      "data_quality": "A / 92%",
+      "display_status": "参考",
+      "live_record": "Live実績 未評価",
+      "model_validation": "C / 検証不足",
+      "note": "実際に保存した予測の結果がまだ確定していません。",
+      "operation_check": "短期確認 正常 / 保存 1件",
+      "pseudo_live": "疑似Live 20件 / 的中 80%"
+    },
     "scenarios": [
       {
         "name": "基本",
@@ -3013,26 +4580,760 @@
     ]
   },
   "validation_weight_report": {
-    "generated_at": "2026-06-20T08:37:38.313681+00:00",
+    "generated_at": "2026-06-21T07:25:53.472301+00:00",
     "validation_weights": [
+      {
+        "display_grade": "blocked",
+        "display_reason": "検証結果なし",
+        "evaluated_at": "2026-06-19T08:29:22.035717+00:00",
+        "horizon": "63d",
+        "metrics_used": {},
+        "model_key": "crash_probability_logistic_v1:GSPC:63d",
+        "model_version": "crash_probability_logistic_v1",
+        "report_id": 97,
+        "sample_count": 0,
+        "source": "model_validation_report",
+        "target": "GSPC",
+        "validation_weight": 0.0
+      },
+      {
+        "display_grade": "reference",
+        "display_reason": "方向一致率が低いため参考",
+        "evaluated_at": "2026-06-19T08:29:34.881878+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 2.6061111111111117,
+          "direction_accuracy": 0.5,
+          "live_settled_sample_count": 1,
+          "mae": 3.067224167678131,
+          "model_refit_count": 144,
+          "rmse": 4.0710153360563845,
+          "skill_score": -0.1769353020295532,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DEXJPUS:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 98,
+        "sample_count": 144,
+        "source": "model_validation_report",
+        "target": "DEXJPUS",
+        "validation_weight": 0.3615
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:29:47.207392+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 4.65887323943662,
+          "direction_accuracy": 0.6830985915492958,
+          "live_settled_sample_count": 1,
+          "mae": 4.328374021661801,
+          "model_refit_count": 142,
+          "rmse": 6.067122343034377,
+          "skill_score": 0.07093973173109647,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DEXJPUS:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 99,
+        "sample_count": 142,
+        "source": "model_validation_report",
+        "target": "DEXJPUS",
+        "validation_weight": 1.0228
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:29:59.575305+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 6.353669064748202,
+          "direction_accuracy": 0.6906474820143885,
+          "live_settled_sample_count": 1,
+          "mae": 4.5257106969024035,
+          "model_refit_count": 139,
+          "rmse": 5.8570163306382605,
+          "skill_score": 0.28770122416160837,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DEXJPUS:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 100,
+        "sample_count": 139,
+        "source": "model_validation_report",
+        "target": "DEXJPUS",
+        "validation_weight": 1.118
+      },
+      {
+        "display_grade": "reference",
+        "display_reason": "方向一致率が低いため参考",
+        "evaluated_at": "2026-06-19T08:30:12.019585+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 0.1801388888888889,
+          "direction_accuracy": 0.4513888888888889,
+          "live_settled_sample_count": 1,
+          "mae": 0.20981577843323262,
+          "model_refit_count": 144,
+          "rmse": 0.2619641668451704,
+          "skill_score": -0.16474449091694288,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DGS10:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 101,
+        "sample_count": 144,
+        "source": "model_validation_report",
+        "target": "DGS10",
+        "validation_weight": 0.3312
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:30:24.523508+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 0.32859154929577467,
+          "direction_accuracy": 0.6619718309859155,
+          "live_settled_sample_count": 1,
+          "mae": 0.31379215186686027,
+          "model_refit_count": 142,
+          "rmse": 0.42506406320554785,
+          "skill_score": 0.045038886303168546,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DGS10:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 102,
+        "sample_count": 142,
+        "source": "model_validation_report",
+        "target": "DGS10",
+        "validation_weight": 0.994
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:30:37.500444+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 0.45697841726618704,
+          "direction_accuracy": 0.7841726618705036,
+          "live_settled_sample_count": 1,
+          "mae": 0.30813380010538494,
+          "model_refit_count": 139,
+          "rmse": 0.411083337736703,
+          "skill_score": 0.32571476362329177,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:DGS10:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 103,
+        "sample_count": 139,
+        "source": "model_validation_report",
+        "target": "DGS10",
+        "validation_weight": 1.1881
+      },
+      {
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "evaluated_at": "2026-06-19T08:30:58.180131+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 0.579104545454545,
+          "direction_accuracy": 0.6287878787878788,
+          "live_settled_sample_count": 1,
+          "mae": 0.5929637059003007,
+          "model_refit_count": 264,
+          "rmse": 1.1778123693062565,
+          "skill_score": -0.023932052605246668,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:INDPRO:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 104,
+        "sample_count": 264,
+        "source": "model_validation_report",
+        "target": "INDPRO",
+        "validation_weight": 0.5346
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:31:18.864001+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 1.1548152671755723,
+          "direction_accuracy": 0.7595419847328244,
+          "live_settled_sample_count": 1,
+          "mae": 0.921082725093975,
+          "model_refit_count": 262,
+          "rmse": 1.963114392100086,
+          "skill_score": 0.20239820924194774,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:INDPRO:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 105,
+        "sample_count": 262,
+        "source": "model_validation_report",
+        "target": "INDPRO",
+        "validation_weight": 1.1459
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:31:39.925427+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 1.8416594594594597,
+          "direction_accuracy": 0.806949806949807,
+          "live_settled_sample_count": 1,
+          "mae": 1.2027326936184721,
+          "model_refit_count": 259,
+          "rmse": 2.334304017792292,
+          "skill_score": 0.34692991831862185,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:INDPRO:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 106,
+        "sample_count": 259,
+        "source": "model_validation_report",
+        "target": "INDPRO",
+        "validation_weight": 1.2052
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:32:02.943291+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 0.19329277566539912,
+          "direction_accuracy": 0.9695817490494296,
+          "live_settled_sample_count": 1,
+          "mae": 0.07491517555676128,
+          "model_refit_count": 263,
+          "rmse": 0.1073702468400125,
+          "skill_score": 0.6124264070456324,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:PCEPILFE:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 107,
+        "sample_count": 263,
+        "source": "model_validation_report",
+        "target": "PCEPILFE",
+        "validation_weight": 1.25
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:32:26.948492+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 0.5699080459770114,
+          "direction_accuracy": 0.9693486590038314,
+          "live_settled_sample_count": 1,
+          "mae": 0.15162699969917867,
+          "model_refit_count": 261,
+          "rmse": 0.2234699461477455,
+          "skill_score": 0.7339447990434322,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:PCEPILFE:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 108,
+        "sample_count": 261,
+        "source": "model_validation_report",
+        "target": "PCEPILFE",
+        "validation_weight": 1.25
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:32:50.220627+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 1.1201666666666665,
+          "direction_accuracy": 0.9883720930232558,
+          "live_settled_sample_count": 1,
+          "mae": 0.20235555826419505,
+          "model_refit_count": 258,
+          "rmse": 0.32287887955764544,
+          "skill_score": 0.8193522765086787,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:PCEPILFE:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 109,
+        "sample_count": 258,
+        "source": "model_validation_report",
+        "target": "PCEPILFE",
+        "validation_weight": 1.25
+      },
+      {
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "evaluated_at": "2026-06-19T08:33:02.481501+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 0.1106338028169014,
+          "direction_accuracy": 0.5563380281690141,
+          "live_settled_sample_count": 1,
+          "mae": 0.11865013001978543,
+          "model_refit_count": 142,
+          "rmse": 0.15017208521687908,
+          "skill_score": -0.072458208963051,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:T10Y2Y:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 110,
+        "sample_count": 142,
+        "source": "model_validation_report",
+        "target": "T10Y2Y",
+        "validation_weight": 0.456
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:33:14.838300+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 0.20642857142857143,
+          "direction_accuracy": 0.7357142857142858,
+          "live_settled_sample_count": 1,
+          "mae": 0.17776781652169096,
+          "model_refit_count": 140,
+          "rmse": 0.23342712261142126,
+          "skill_score": 0.1388410272305628,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:T10Y2Y:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 111,
+        "sample_count": 140,
+        "source": "model_validation_report",
+        "target": "T10Y2Y",
+        "validation_weight": 1.0962
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:33:27.481705+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 0.3281751824817518,
+          "direction_accuracy": 0.8394160583941606,
+          "live_settled_sample_count": 1,
+          "mae": 0.19581202832979167,
+          "model_refit_count": 137,
+          "rmse": 0.2586682879388523,
+          "skill_score": 0.4033307855609106,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:T10Y2Y:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 112,
+        "sample_count": 137,
+        "source": "model_validation_report",
+        "target": "T10Y2Y",
+        "validation_weight": 1.2296
+      },
+      {
+        "display_grade": "reference",
+        "display_reason": "単純予測を上回っていないため参考",
+        "evaluated_at": "2026-06-19T08:33:48.752921+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 0.18931297709923664,
+          "direction_accuracy": 0.5534351145038168,
+          "live_settled_sample_count": 1,
+          "mae": 0.21492931253433978,
+          "model_refit_count": 262,
+          "rmse": 0.7342871956036389,
+          "skill_score": -0.1353120944354238,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:UNRATE:1m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 113,
+        "sample_count": 262,
+        "source": "model_validation_report",
+        "target": "UNRATE",
+        "validation_weight": 0.4224
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:34:10.573517+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 0.40384615384615385,
+          "direction_accuracy": 0.6653846153846154,
+          "live_settled_sample_count": 1,
+          "mae": 0.3590757297967787,
+          "model_refit_count": 260,
+          "rmse": 1.1488354683886517,
+          "skill_score": 0.11086009764607174,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:UNRATE:3m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 114,
+        "sample_count": 260,
+        "source": "model_validation_report",
+        "target": "UNRATE",
+        "validation_weight": 1.0295
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:34:31.318684+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 0.6696498054474709,
+          "direction_accuracy": 0.8599221789883269,
+          "live_settled_sample_count": 1,
+          "mae": 0.47679051929417,
+          "model_refit_count": 257,
+          "rmse": 1.453891996072059,
+          "skill_score": 0.2880002123265446,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "macro_forecast_lightgbm_v1:UNRATE:6m",
+        "model_version": "macro_forecast_lightgbm_v1",
+        "report_id": 115,
+        "sample_count": 257,
+        "source": "model_validation_report",
+        "target": "UNRATE",
+        "validation_weight": 1.2449
+      },
+      {
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19T08:34:48.416105+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 3.219396124298135,
+          "direction_accuracy": 0.5756097560975609,
+          "live_settled_sample_count": 1,
+          "mae": 3.4050856038255883,
+          "model_refit_count": 205,
+          "rmse": 4.5942918701021105,
+          "skill_score": -0.05767835716952541,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:DJI:1m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 116,
+        "sample_count": 205,
+        "source": "model_validation_report",
+        "target": "DJI",
+        "validation_weight": 0.2779
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:35:05.389921+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 5.234373676030869,
+          "direction_accuracy": 0.6748768472906403,
+          "live_settled_sample_count": 0,
+          "mae": 4.852046520693073,
+          "model_refit_count": 203,
+          "rmse": 6.1745065782666275,
+          "skill_score": 0.07304162427083494,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:DJI:3m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 117,
+        "sample_count": 203,
+        "source": "model_validation_report",
+        "target": "DJI",
+        "validation_weight": 1.0177
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:35:22.166382+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 7.416741316855247,
+          "direction_accuracy": 0.78,
+          "live_settled_sample_count": 0,
+          "mae": 5.231440198477028,
+          "model_refit_count": 200,
+          "rmse": 6.7779650312039434,
+          "skill_score": 0.2946443761510079,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:DJI:6m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 118,
+        "sample_count": 200,
+        "source": "model_validation_report",
+        "target": "DJI",
+        "validation_weight": 1.185
+      },
+      {
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19T08:35:39.356264+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 3.372437481873957,
+          "direction_accuracy": 0.5951219512195122,
+          "live_settled_sample_count": 1,
+          "mae": 3.4614037200394794,
+          "model_refit_count": 205,
+          "rmse": 4.580700472687373,
+          "skill_score": -0.02638039656589486,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:GSPC:1m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 119,
+        "sample_count": 205,
+        "source": "model_validation_report",
+        "target": "GSPC",
+        "validation_weight": 0.3082
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:35:56.358239+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 5.705260904351768,
+          "direction_accuracy": 0.729064039408867,
+          "live_settled_sample_count": 0,
+          "mae": 4.889793616652515,
+          "model_refit_count": 203,
+          "rmse": 6.112634177524244,
+          "skill_score": 0.1429325146335102,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:GSPC:3m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 120,
+        "sample_count": 203,
+        "source": "model_validation_report",
+        "target": "GSPC",
+        "validation_weight": 1.0933
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:36:13.439471+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 8.335762948027565,
+          "direction_accuracy": 0.825,
+          "live_settled_sample_count": 0,
+          "mae": 5.372076273617892,
+          "model_refit_count": 200,
+          "rmse": 7.083786915992268,
+          "skill_score": 0.35553874227085003,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:GSPC:6m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 121,
+        "sample_count": 200,
+        "source": "model_validation_report",
+        "target": "GSPC",
+        "validation_weight": 1.2188
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:36:48.205841+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 7.201815645349059,
+          "direction_accuracy": 0.729064039408867,
+          "live_settled_sample_count": 0,
+          "mae": 6.083316888264485,
+          "model_refit_count": 203,
+          "rmse": 7.515816743339183,
+          "skill_score": 0.15530788514517202,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:IXIC:3m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 123,
+        "sample_count": 203,
+        "source": "model_validation_report",
+        "target": "IXIC",
+        "validation_weight": 1.0995
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:37:05.162726+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 10.885709885220454,
+          "direction_accuracy": 0.865,
+          "live_settled_sample_count": 0,
+          "mae": 6.3305776138734,
+          "model_refit_count": 200,
+          "rmse": 8.325254346621104,
+          "skill_score": 0.4184506402776327,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:IXIC:6m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 124,
+        "sample_count": 200,
+        "source": "model_validation_report",
+        "target": "IXIC",
+        "validation_weight": 1.2488
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:37:40.527260+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline_mae": 7.291995226943725,
+          "direction_accuracy": 0.6911764705882353,
+          "live_settled_sample_count": 0,
+          "mae": 6.163909508800605,
+          "model_refit_count": 204,
+          "rmse": 8.130193115226048,
+          "skill_score": 0.15470192766650126,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:N225:3m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 126,
+        "sample_count": 204,
+        "source": "model_validation_report",
+        "target": "N225",
+        "validation_weight": 1.0707
+      },
+      {
+        "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-19T08:37:58.058049+00:00",
+        "horizon": "6m",
+        "metrics_used": {
+          "baseline_mae": 10.448993509315011,
+          "direction_accuracy": 0.736318407960199,
+          "live_settled_sample_count": 0,
+          "mae": 7.7384509378769,
+          "model_refit_count": 201,
+          "rmse": 10.192514731264533,
+          "skill_score": 0.25940704901593936,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:N225:6m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 127,
+        "sample_count": 201,
+        "source": "model_validation_report",
+        "target": "N225",
+        "validation_weight": 1.1522
+      },
+      {
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19T09:08:41.086179+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 4.113642394678497,
+          "direction_accuracy": 0.5560975609756098,
+          "live_settled_sample_count": 0,
+          "mae": 4.31579998833613,
+          "model_refit_count": 205,
+          "rmse": 5.814329054768263,
+          "skill_score": -0.04914321038677305,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "short_horizon_walk_forward"
+        },
+        "model_key": "short_horizon_return_v1:IXIC:1m",
+        "model_version": "short_horizon_return_v1",
+        "report_id": 129,
+        "sample_count": 205,
+        "source": "model_validation_report",
+        "target": "IXIC",
+        "validation_weight": 0.2675
+      },
+      {
+        "display_grade": "hidden",
+        "display_reason": "1か月先の株価判断はbasecalcを優先",
+        "evaluated_at": "2026-06-19T09:08:15.178975+00:00",
+        "horizon": "1m",
+        "metrics_used": {
+          "baseline_mae": 4.125370154908196,
+          "direction_accuracy": 0.5048543689320388,
+          "live_settled_sample_count": 0,
+          "mae": 4.688380928662344,
+          "model_refit_count": 206,
+          "rmse": 6.076961216126707,
+          "skill_score": -0.13647521376580007,
+          "validation_method": "lightgbm_refit_walk_forward",
+          "validation_source": "short_horizon_walk_forward"
+        },
+        "model_key": "short_horizon_return_v1:N225:1m",
+        "model_version": "short_horizon_return_v1",
+        "report_id": 128,
+        "sample_count": 206,
+        "source": "model_validation_report",
+        "target": "N225",
+        "validation_weight": 0.1854
+      },
       {
         "display_grade": "show",
         "display_reason": "House View Backtest 的中率を反映",
-        "evaluated_at": "2026-06-18T07:24:58.340034+00:00",
+        "evaluated_at": "2026-06-21T06:57:43.960800+00:00",
         "horizon": "backtest",
         "metrics_used": {
-          "hit_count": 7,
-          "hit_rate": 0.6364,
-          "too_bullish_count": 2,
-          "too_defensive_count": 2
+          "hit_count": 197,
+          "hit_rate": 0.7378,
+          "too_bullish_count": 32,
+          "too_defensive_count": 38
         },
         "model_key": "macro_hatzius_v1:macro_regime:backtest",
         "model_version": "macro_hatzius_v1",
         "report_id": null,
-        "sample_count": 11,
+        "sample_count": 267,
         "source": "house_view_backtest",
         "target": "macro_regime",
-        "validation_weight": 0.35
+        "validation_weight": 0.7378
       }
     ],
     "warnings": [],
@@ -3089,7 +5390,7 @@
       "WTREGEN"
     ],
     "fred_active_series_count": 47,
-    "generated_at": "2026-06-20T08:37:38.312979+00:00",
+    "generated_at": "2026-06-21T07:25:53.456142+00:00",
     "missing_vintage_series": [],
     "strict_point_in_time_ready": true,
     "vintage_coverage_pct": 100.0,
@@ -3100,64 +5401,64 @@
     "archive_recommended": false,
     "is_large": false,
     "is_stale": false,
-    "latest_collected_at": "2026-06-20 08:35",
+    "latest_collected_at": "2026-06-19 06:12",
     "note": "FREDの改定前データを蓄積しており、point-in-time検証に使えます。",
     "series_count": 47,
     "status_label": "蓄積済み",
     "tone": "good",
-    "total_count": 100054
+    "total_count": 3193
   },
   "warnings": [],
   "world_model_operations": {
-    "next_monthly_due": "—",
+    "next_monthly_due": "2026-07-19 06:17",
     "rows": [
       {
-        "age_days": 0,
+        "age_days": 2,
         "cadence": "daily",
         "is_stale": false,
         "label": "日次更新",
-        "last_finished_at": "2026-06-20 08:36",
+        "last_finished_at": "2026-06-19 06:13",
         "status": "success",
         "status_label": "成功",
-        "summary_label": "World State を更新しました。"
+        "summary_label": "日次更新を実行しました。"
       },
       {
-        "age_days": 0,
+        "age_days": 28,
         "cadence": "weekly",
-        "is_stale": false,
+        "is_stale": true,
         "label": "週次検証",
-        "last_finished_at": "2026-06-20 08:36",
+        "last_finished_at": "2026-05-24 05:24",
         "status": "success",
-        "status_label": "日次内で確認",
-        "summary_label": "共有DB未設定のため、日次更新の実行履歴を表示しています。"
+        "status_label": "成功",
+        "summary_label": "週次検証が完了しました。"
       },
       {
-        "age_days": 0,
+        "age_days": 2,
         "cadence": "monthly",
         "is_stale": false,
         "label": "月次学習",
-        "last_finished_at": "2026-06-20 08:33",
+        "last_finished_at": "2026-06-19 06:17",
         "status": "success",
-        "status_label": "出力更新済み",
-        "summary_label": "月次モデル出力ファイルを確認しました。"
+        "status_label": "成功",
+        "summary_label": "月次メンテナンスが完了しました。"
       },
       {
-        "age_days": 0,
+        "age_days": 2,
         "cadence": "archive",
         "is_stale": false,
         "label": "履歴退避",
-        "last_finished_at": "2026-06-20 08:33",
+        "last_finished_at": "2026-06-19 06:11",
         "status": "success",
-        "status_label": "月次内で退避",
-        "summary_label": "月次メンテナンス内の履歴退避を前提に表示しています。"
+        "status_label": "成功",
+        "summary_label": "アーカイブを作成しました。"
       }
     ],
-    "status_label": "運用中",
-    "tone": "good"
+    "status_label": "要確認",
+    "tone": "warning"
   },
   "world_state": {
-    "as_of_date": "2026-06-20",
-    "data_quality_display": "95%",
+    "as_of_date": "2026-06-19",
+    "data_quality_display": "98%",
     "has_snapshot": true,
     "model_version": "world_state_v1",
     "negative_drivers": [
@@ -3195,7 +5496,7 @@
         "display": "52",
         "field": "policy_pressure_score",
         "label": "政策圧力",
-        "value": 52.38
+        "value": 51.78
       },
       {
         "bar_pct": 98,
@@ -3212,11 +5513,11 @@
         "value": 94.0
       },
       {
-        "bar_pct": 50,
-        "display": "50",
+        "bar_pct": 71,
+        "display": "71",
         "field": "risk_appetite_score",
         "label": "リスク選好",
-        "value": 50.0
+        "value": 71.0
       },
       {
         "bar_pct": 100,
@@ -3226,11 +5527,11 @@
         "value": 100.0
       },
       {
-        "bar_pct": 23,
-        "display": "23",
+        "bar_pct": 17,
+        "display": "17",
         "field": "market_stress_score",
         "label": "市場ストレス",
-        "value": 23.0
+        "value": 17.0
       }
     ],
     "summary": "成長は強め、雇用は強い、物価は比較的安定。",

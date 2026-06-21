@@ -847,6 +847,77 @@ class MacroReliabilityEnhancementTest(TestCase):
             report['accuracy_sections']['live']['sample_kind'],
         )
 
+    def test_house_view_validation_adds_short_term_operation_health(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.6,
+            metadata={'primary_regime': 'expansion'},
+        )
+
+        report = build_house_view_validation_report()
+
+        health = report['operation_health']
+        self.assertEqual(health['status_label'], '注意')
+        self.assertEqual(health['saved_forecast_count'], 1)
+        self.assertEqual(health['pending_count'], 1)
+        self.assertEqual(health['settled_count'], 0)
+        self.assertEqual(health['missing_features_hash_count'], 1)
+        self.assertEqual(health['missing_prediction_interval_count'], 1)
+        self.assertEqual(health['latest_as_of'], '2026-06-01')
+
+    def test_house_view_validation_adds_recent_pseudo_live_from_backtest(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        with TemporaryDirectory() as tmpdir:
+            backtest_path = Path(tmpdir) / 'house_view_backtest.json'
+            backtest_path.write_text(
+                json.dumps({
+                    'backtest_accuracy': {
+                        'sample_count': 2,
+                        'hit_count': 1,
+                        'hit_rate': 0.5,
+                    },
+                    'rows': [
+                        {
+                            'as_of_date': '2026-01-01',
+                            'target_date': '2026-04-01',
+                            'horizon_months': 3,
+                            'predicted_regime': 'expansion',
+                            'actual_regime': 'expansion',
+                            'hit': True,
+                            'miss_type': 'hit',
+                        },
+                        {
+                            'as_of_date': '2026-02-01',
+                            'target_date': '2026-05-01',
+                            'horizon_months': 3,
+                            'predicted_regime': 'expansion',
+                            'actual_regime': 'slowdown',
+                            'hit': False,
+                            'miss_type': 'too_bullish',
+                        },
+                    ],
+                }),
+                encoding='utf-8',
+            )
+
+            report = build_house_view_validation_report(backtest_path=backtest_path)
+
+        pseudo_live = report['accuracy_sections']['pseudo_live']
+        self.assertEqual(pseudo_live['status'], 'available')
+        self.assertEqual(pseudo_live['sample_kind'], 'recent_backtest_replay')
+        self.assertEqual(pseudo_live['sample_count'], 2)
+        self.assertEqual(pseudo_live['hit_count'], 1)
+        self.assertEqual(pseudo_live['hit_rate'], 0.5)
+        self.assertEqual(pseudo_live['too_bullish_count'], 1)
+        self.assertEqual(pseudo_live['period']['start'], '2026-01-01')
+        self.assertEqual(pseudo_live['period']['end'], '2026-02-01')
+
     def test_house_view_backtest_replays_monthly_predictions_for_3m_and_6m(self):
         from macro.services.house_view_backtest import run_house_view_backtest
 
@@ -863,7 +934,8 @@ class MacroReliabilityEnhancementTest(TestCase):
             data_quality=90,
         )
 
-        with mock.patch(
+        with mock.patch('macro.services.house_view_backtest.timezone.localdate', return_value=date(2026, 7, 1)), \
+             mock.patch(
             'macro.services.house_view_backtest.regime.build_current_regime_assessment',
             return_value={
                 'regime_label': 'expansion',
@@ -888,6 +960,61 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertEqual(report['backtest_accuracy']['data_modes']['revised_reference']['sample_count'], 2)
         self.assertEqual(report['rows'][0]['validation_target'], 'macro_regime_3m')
         self.assertEqual(report['rows'][1]['miss_type'], 'too_bullish')
+
+    def test_house_view_backtest_computes_actual_regime_when_snapshot_is_missing(self):
+        from macro.services.house_view_backtest import run_house_view_backtest
+
+        def fake_assessment(as_of, data_mode):
+            if as_of == date(2015, 1, 1):
+                return {'regime_label': RegimeSnapshot.Label.SLOWDOWN}, 'revised_reference'
+            if data_mode == 'revised_reference' and as_of in (
+                date(2015, 4, 1),
+                date(2015, 7, 1),
+            ):
+                return {'regime_label': RegimeSnapshot.Label.EXPANSION}, 'computed_actual'
+            return None, data_mode
+
+        with mock.patch(
+            'macro.services.house_view_backtest._build_assessment',
+            side_effect=fake_assessment,
+        ):
+            report = run_house_view_backtest(
+                start=date(2015, 1, 1),
+                end=date(2015, 7, 1),
+                horizons=(3, 6),
+                data_mode='auto',
+            )
+
+        self.assertEqual(report['backtest_accuracy']['sample_count'], 2)
+        self.assertEqual(
+            set(row['actual_source'] for row in report['rows']),
+            {'computed_actual'},
+        )
+        self.assertEqual(
+            set(row['actual_regime'] for row in report['rows']),
+            {RegimeSnapshot.Label.EXPANSION},
+        )
+
+    def test_house_view_backtest_skips_targets_that_are_not_observable_yet(self):
+        from macro.services.house_view_backtest import run_house_view_backtest
+
+        with mock.patch('macro.services.house_view_backtest.timezone.localdate', return_value=date(2026, 6, 21)), \
+             mock.patch(
+                 'macro.services.house_view_backtest._build_assessment',
+                 return_value=({'regime_label': RegimeSnapshot.Label.EXPANSION}, 'revised_reference'),
+             ):
+            report = run_house_view_backtest(
+                start=date(2026, 6, 1),
+                end=date(2026, 6, 1),
+                horizons=(3, 6),
+                data_mode='revised_reference',
+            )
+
+        self.assertEqual(report['backtest_accuracy']['sample_count'], 0)
+        self.assertIn(
+            '2026-06-01 の3m先はまだ実績日が来ていないためスキップしました。',
+            report['warnings'],
+        )
 
     def test_house_view_backtest_point_in_time_uses_vintage_values(self):
         from macro.services.house_view_backtest import run_house_view_backtest
@@ -1240,6 +1367,58 @@ class ProductionDataSyncTest(SimpleTestCase):
                 '{"version":"prod"}',
             )
             self.assertEqual(result['mirrored_count'], 1)
+
+
+class ProductionForecastLedgerImportTest(TestCase):
+    def test_sync_imports_forecast_ledger_into_local_forecast_snapshots(self):
+        from macro.services.production_data_sync import sync_production_data
+
+        payload = {
+            'forecast_ledger': [
+                {
+                    'as_of': '2026-06-20',
+                    'model_version': 'macro_hatzius_v1',
+                    'target': 'macro_regime',
+                    'horizon': '3m_6m',
+                    'prediction': 0.6569,
+                    'prediction_interval': {
+                        'type': 'regime_probability_range',
+                        'lower': 0.5569,
+                        'upper': 0.7569,
+                        'confidence': 0.76,
+                    },
+                    'features_hash': 'a' * 64,
+                    'primary_regime': 'expansion',
+                    'previous_regime': 'slowdown',
+                    'status': 'open',
+                    'realized_value': None,
+                    'error': None,
+                },
+            ],
+        }
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            (base_dir / 'static' / 'macro').mkdir(parents=True)
+
+            result = sync_production_data(
+                base_dir=base_dir,
+                paths=['static/macro/forecast_ledger.json'],
+                downloader=lambda url: json.dumps(payload).encode('utf-8'),
+            )
+
+        snapshot = ForecastSnapshot.objects.get(
+            as_of_date=date(2026, 6, 20),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+        )
+        self.assertEqual(result['forecast_snapshots_imported_count'], 1)
+        self.assertEqual(snapshot.prediction_value, 0.6569)
+        self.assertEqual(snapshot.prediction_interval['lower'], 0.5569)
+        self.assertEqual(snapshot.features_hash, 'a' * 64)
+        self.assertEqual(snapshot.metadata['primary_regime'], 'expansion')
+        self.assertEqual(snapshot.metadata['previous_regime'], 'slowdown')
 
 
 class _ObsStub:
@@ -2703,6 +2882,52 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['reliability']['model_validation'], 'C / 検証不足')
         self.assertEqual(context['reliability']['live_record'], 'Live実績 未評価')
         self.assertEqual(context['reliability']['display_status'], '参考')
+
+    def test_top_decision_context_includes_short_term_and_pseudo_live_status(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'house_view': {
+                'house_view': '景気判断は中立',
+                'confidence_grade': 'A',
+                'confidence_score': 91,
+                'display_allowed': True,
+            },
+            'house_view_validation': {
+                'accuracy_sections': {
+                    'live': {
+                        'sample_count': 0,
+                        'hit_count': 0,
+                        'hit_rate': None,
+                    },
+                    'pseudo_live': {
+                        'sample_count': 20,
+                        'hit_count': 15,
+                        'hit_rate': 0.75,
+                    },
+                },
+                'operation_health': {
+                    'status_label': '正常',
+                    'saved_forecast_count': 65,
+                },
+            },
+            'macro_forecast_report': {
+                'headline': '景気は中立',
+                'judgment': '景気は中立',
+                'nikkei_implication': '日経先物へのmacroバイアスは中立。',
+            },
+            'macro_decision': {
+                'headline': '景気は中立',
+                'detail': '確認中',
+                'confidence': {
+                    'grade': 'A',
+                    'score_display': '87%',
+                    'data_freshness_pct': 90,
+                },
+            },
+        })
+
+        self.assertEqual(context['reliability']['operation_check'], '短期確認 正常 / 保存 65件')
+        self.assertEqual(context['reliability']['pseudo_live'], '疑似Live 20件 / 的中 75%')
 
     def test_macro_decision_confidence_uses_data_quality_gate_cap(self):
         snapshot = RegimeSnapshot.objects.create(

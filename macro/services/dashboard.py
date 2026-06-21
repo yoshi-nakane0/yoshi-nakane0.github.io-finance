@@ -1582,11 +1582,27 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
     base = {
         'data_quality': _format_data_quality(decision, house_view),
     }
+    sections = validation.get('accuracy_sections') or {}
+    pseudo_live = sections.get('pseudo_live') or {}
+    operation_health = validation.get('operation_health') or {}
+    supplemental = {}
+    if operation_health:
+        supplemental['operation_check'] = (
+            f"短期確認 {operation_health.get('status_label') or '—'} / "
+            f"保存 {operation_health.get('saved_forecast_count') or 0}件"
+        )
+    if pseudo_live:
+        pseudo_sample_count = pseudo_live.get('sample_count') or 0
+        pseudo_hit_rate = pseudo_live.get('hit_rate')
+        if pseudo_sample_count and pseudo_hit_rate is not None:
+            supplemental['pseudo_live'] = f'疑似Live {pseudo_sample_count}件 / 的中 {pseudo_hit_rate:.0%}'
+        else:
+            supplemental['pseudo_live'] = '疑似Live 未生成'
+
     provided = validation.get('reliability') or {}
     if provided:
-        return {**base, **provided}
+        return {**base, **provided, **supplemental}
 
-    sections = validation.get('accuracy_sections') or {}
     live = sections.get('live') or {}
     sample_count = live.get('sample_count') or validation.get('sample_count') or 0
     hit_count = live.get('hit_count') or validation.get('hit_count') or 0
@@ -1612,6 +1628,7 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
         'model_validation': model_validation,
         'live_record': live_record,
         'display_status': display_status,
+        **supplemental,
     }
 
 
