@@ -131,6 +131,9 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
         'world_feature_vector': world_snapshot.feature_vector or {},
         'source_freshness': world_snapshot.source_freshness or {},
     }
+    source_dates = world_snapshot.explanation.get('source_dates') if world_snapshot.explanation else {}
+    if not source_dates:
+        source_dates = world_snapshot.source_freshness or {}
     features_hash = _stable_features_hash(feature_payload)
     prediction_interval = _prediction_interval(prediction_value, regime_confidence)
 
@@ -147,7 +150,11 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
                 'metadata': {
                     'primary_regime': primary,
                     'previous_regime': previous_regime,
+                    'confidence': round(regime_confidence / 100, 4) if regime_confidence else 0.0,
                     'features_hash': features_hash,
+                    'source_dates': source_dates,
+                    'data_vintage': 'point_in_time',
+                    'consensus_status': 'missing',
                     'feature_payload': feature_payload,
                     'state_vector': state_vector,
                     'regime_probabilities': regime_probabilities,

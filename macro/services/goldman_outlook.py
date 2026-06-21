@@ -7,6 +7,7 @@ from datetime import date
 from django.utils import timezone
 
 from ..models import RegimeSnapshot
+from .benchmark_outlook import build_benchmark_outlook
 
 
 GOLDMAN_PUBLIC_SOURCES = [
@@ -150,6 +151,7 @@ def build_goldman_outlook_comparison() -> dict:
         },
     }
     latest_source_date = _latest_public_source_date()
+    benchmark = build_benchmark_outlook()
     outlook_age_days = (
         timezone.localdate() - date.fromisoformat(latest_source_date)
     ).days
@@ -158,11 +160,14 @@ def build_goldman_outlook_comparison() -> dict:
         'source_scope': 'free_public_goldman_sachs_pages',
         'generated_at': timezone.now().isoformat(),
         'free_public_sources': GOLDMAN_PUBLIC_SOURCES,
+        'benchmark_outlooks': benchmark['benchmark_outlooks'],
         'goldman_sachs_public_outlook': GOLDMAN_PUBLIC_OUTLOOK,
         'house_view_snapshot': house_view,
         'comparison': comparison,
         'audit': {
             'comparison_mode': 'public_static_outlook_vs_live_house_view',
+            'house_view_correctness_usage': 'not_allowed',
+            'model_validation_usage': 'not_allowed',
             'latest_public_source_date': latest_source_date,
             'public_outlook_age_days': max(outlook_age_days, 0),
             'difference_reasons': _difference_reasons(comparison),

@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from ..models import (
+    ForecastSnapshot,
     MacroForecastRun,
     Observation,
     RegimeSnapshot,
@@ -16,11 +17,13 @@ from ..models import (
 )
 from .data_quality import build_data_quality_report
 from .model_validation import latest_validation_reports, model_display_grade
+from .upcoming_events import load_upcoming_high_impact_events
 
 
 GRADE_ORDER = {'A': 4, 'B': 3, 'C': 2, 'D': 1}
 TEN_YEAR_RATE_CHANGE_THRESHOLD = 4.5
 HY_SPREAD_CHANGE_THRESHOLD = 5.0
+MIN_LIVE_SAMPLE_FOR_FULL_CONFIDENCE = 10
 
 
 def _latest_world_state() -> Optional[WorldStateSnapshot]:
@@ -49,6 +52,12 @@ def _apply_grade_cap(grade: str, cap: str) -> str:
     if GRADE_ORDER.get(grade, 1) <= GRADE_ORDER.get(cap, 1):
         return grade
     return cap
+
+
+def _downgrade_grade(grade: str) -> str:
+    order = ['D', 'C', 'B', 'A']
+    index = order.index(grade) if grade in order else 0
+    return order[max(index - 1, 0)]
 
 
 def _probabilities(regime: Optional[RegimeSnapshot], world: Optional[WorldStateSnapshot]) -> dict:
@@ -137,6 +146,128 @@ def _model_risks() -> list[str]:
         if len(risks) >= 3:
             break
     return risks[:3]
+
+
+def _latest_validation_audit() -> dict:
+    reports = latest_validation_reports()
+    if not reports:
+        return {
+            'grade_cap': 'C',
+            'display_status': 'reference',
+            'reasons': ['model_validation_reportが空です。', 'model_cardsが空です。'],
+            'live_sample_count': 0,
+        }
+
+    reasons = []
+    grade_cap = 'A'
+    display_status = 'show'
+    live_sample_count = 0
+    for report in reports:
+        metrics = report.metrics or {}
+        live_sample_count += int(metrics.get('live_settled_sample_count') or 0)
+        display_grade, reason = model_display_grade(report)
+        if display_grade in {'blocked', 'hidden'}:
+            grade_cap = _apply_grade_cap(grade_cap, 'C')
+            display_status = 'reference'
+            reasons.append(f'{report.target} {report.horizon}: {reason}')
+        elif display_grade == 'reference':
+            grade_cap = _apply_grade_cap(grade_cap, 'C')
+            display_status = 'reference'
+            reasons.append(f'{report.target} {report.horizon}: {reason}')
+
+    if live_sample_count < MIN_LIVE_SAMPLE_FOR_FULL_CONFIDENCE:
+        grade_cap = _apply_grade_cap(grade_cap, 'C')
+        display_status = 'reference'
+        reasons.append('live実績が10件未満です。')
+
+    return {
+        'grade_cap': grade_cap,
+        'display_status': display_status,
+        'reasons': reasons,
+        'live_sample_count': live_sample_count,
+    }
+
+
+def _forecast_ledger_audit() -> dict:
+    snapshots = list(ForecastSnapshot.objects.order_by('-as_of_date', '-created_at')[:200])
+    if not snapshots:
+        return {
+            'grade_cap': 'C',
+            'display_status': 'reference',
+            'reasons': ['予測台帳が空です。'],
+        }
+
+    missing_confidence = 0
+    missing_features_hash = 0
+    missing_prediction_interval = 0
+    for snapshot in snapshots:
+        metadata = snapshot.metadata or {}
+        interval = snapshot.prediction_interval or {}
+        has_confidence = (
+            metadata.get('confidence') is not None
+            or interval.get('confidence') is not None
+            or interval.get('mae_pct') is not None
+            or interval.get('mae') is not None
+            or 'wilson_95' in str(interval.get('type') or '')
+        )
+        if not has_confidence:
+            missing_confidence += 1
+        if not snapshot.features_hash:
+            missing_features_hash += 1
+        if not snapshot.prediction_interval:
+            missing_prediction_interval += 1
+
+    reasons = []
+    if missing_confidence:
+        reasons.append('予測台帳にconfidence欠損があります。')
+    if missing_features_hash:
+        reasons.append('予測台帳にfeatures_hash欠損があります。')
+    if missing_prediction_interval:
+        reasons.append('予測台帳にprediction_interval欠損があります。')
+
+    return {
+        'grade_cap': 'C' if reasons else 'A',
+        'display_status': 'reference' if reasons else 'show',
+        'reasons': reasons,
+    }
+
+
+def _external_context_audit(as_of=None) -> dict:
+    snapshots = list(ForecastSnapshot.objects.order_by('-as_of_date', '-created_at')[:200])
+    consensus_available = any(
+        ((snapshot.metadata or {}).get('consensus_status') in {'available', 'partial'})
+        or bool((snapshot.metadata or {}).get('consensus'))
+        for snapshot in snapshots
+    )
+    reasons = []
+    grade_cap = 'A'
+    if not consensus_available:
+        grade_cap = 'B'
+        reasons.append('市場コンセンサス未取得のためB以下です。')
+
+    upcoming_events = load_upcoming_high_impact_events(today=as_of, days_ahead=1)
+    downgrade_steps = 0
+    if upcoming_events:
+        downgrade_steps = 1
+        reasons.append('重要指標の発表前後のため一段階下げます。')
+
+    return {
+        'grade_cap': grade_cap,
+        'downgrade_steps': downgrade_steps,
+        'display_status': 'reference' if reasons else 'show',
+        'reasons': reasons,
+        'upcoming_high_impact_events': upcoming_events,
+    }
+
+
+def _display_status(*statuses: str) -> str:
+    if 'blocked' in statuses:
+        return 'blocked'
+    if 'hidden' in statuses:
+        return 'hidden'
+    if 'reference' in statuses:
+        return 'reference'
+    return 'show'
 
 
 def _recent_observations(series_id: str, limit: int) -> list[Observation]:
@@ -326,6 +457,14 @@ def build_house_view_context(*, as_of=None) -> dict:
         _grade_from_score(confidence_score),
         quality.get('confidence_cap') or 'D',
     )
+    validation_audit = _latest_validation_audit()
+    ledger_audit = _forecast_ledger_audit()
+    external_audit = _external_context_audit(as_of=as_of)
+    confidence_grade = _apply_grade_cap(confidence_grade, validation_audit['grade_cap'])
+    confidence_grade = _apply_grade_cap(confidence_grade, ledger_audit['grade_cap'])
+    confidence_grade = _apply_grade_cap(confidence_grade, external_audit['grade_cap'])
+    for _ in range(external_audit['downgrade_steps']):
+        confidence_grade = _downgrade_grade(confidence_grade)
     if confidence_grade == 'C':
         confidence_score = min(confidence_score, 69)
     elif confidence_grade == 'D':
@@ -335,6 +474,12 @@ def build_house_view_context(*, as_of=None) -> dict:
     main_risks.extend(quality.get('blocking_issues') or [])
     main_risks.extend(quality.get('warnings') or [])
     main_risks.extend(_model_risks())
+    confidence_limit_reasons = (
+        list(validation_audit['reasons'])
+        + list(ledger_audit['reasons'])
+        + list(external_audit['reasons'])
+    )
+    main_risks.extend(confidence_limit_reasons)
     if probabilities.get('inflation_reacceleration', 0) >= 0.7:
         main_risks.append('金利再上昇時に株価先物へ逆風')
 
@@ -350,6 +495,25 @@ def build_house_view_context(*, as_of=None) -> dict:
         'regime_label': regime_label,
         'confidence_grade': confidence_grade,
         'confidence_score': confidence_score,
+        'display_status': _display_status(
+            'show' if quality.get('display_allowed') else 'reference',
+            validation_audit['display_status'],
+            ledger_audit['display_status'],
+            external_audit['display_status'],
+        ),
+        'publish_status': _display_status(
+            'show' if quality.get('display_allowed') else 'reference',
+            validation_audit['display_status'],
+            ledger_audit['display_status'],
+            external_audit['display_status'],
+        ),
+        'confidence_limit_reasons': confidence_limit_reasons,
+        'model_audit': {
+            'validation': validation_audit,
+            'forecast_ledger': ledger_audit,
+            'external_context': external_audit,
+        },
+        'upcoming_high_impact_events': external_audit['upcoming_high_impact_events'],
         'probabilities': probabilities,
         'key_drivers': _driver_list(world, probabilities),
         'main_risks': main_risks[:6],

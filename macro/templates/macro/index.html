@@ -195,6 +195,13 @@
                         <span class="macro-reliability-value">{{ top_decision.freshness.updated_at }}</span>
                     </div>
                 </div>
+                {% if top_decision.reliability.confidence_limit_reasons %}
+                    <ul class="macro-messages">
+                        {% for reason in top_decision.reliability.confidence_limit_reasons %}
+                            <li class="macro-message macro-message--warning">{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                 {% if top_decision.driver_cards %}
                     <details class="macro-more">
                         <summary>判断に効いた指標</summary>

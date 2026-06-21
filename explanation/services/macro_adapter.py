@@ -23,6 +23,8 @@ def load_macro_signal() -> MacroSignal:
         confidence_score=confidence_score,
         confidence_grade=context.get('confidence_grade') or _grade_from_score(confidence_score),
         data_quality_score=_safe_int(data_quality.get('freshness_score'), confidence_score),
+        display_status=context.get('display_status') or 'reference',
+        publish_status=context.get('publish_status') or context.get('display_status') or 'reference',
         warnings=_dedupe(warnings),
         source=context,
         as_of=_parse_as_of(context.get('generated_at') or context.get('as_of')),

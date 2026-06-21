@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from macro.models import ModelValidationReport
@@ -47,10 +47,17 @@ def build_model_validation_report(limit=100):
         })
     freshness = _freshness()
     warnings = []
+    status = 'ok'
+    if not rows:
+        status = 'blocked'
+        warnings.append('validation rows = 0')
     if freshness['is_stale']:
+        if status == 'ok':
+            status = 'stale'
         warnings.append('model_validation_report の更新日が古いです。再検証してください。')
     return {
         'model_validation_report': rows,
+        'status': status,
         'freshness': freshness,
         'warnings': warnings,
     }
@@ -66,9 +73,16 @@ class Command(BaseCommand):
             help='出力先JSONパス',
         )
         parser.add_argument('--limit', type=int, default=100)
+        parser.add_argument(
+            '--allow-empty',
+            action='store_true',
+            help='検証結果が空でもJSONを書き出す（手元の診断用途のみ）',
+        )
 
     def handle(self, *args, **options):
         payload = build_model_validation_report(limit=options['limit'])
+        if payload['status'] == 'blocked' and not options['allow_empty']:
+            raise CommandError('model_validation_report is blocked: validation rows = 0')
         write_static_macro_payload(payload, options['output'])
         self.stdout.write(
             self.style.SUCCESS(f"exported model validation report: {options['output']}")

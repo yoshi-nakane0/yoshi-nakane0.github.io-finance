@@ -1632,7 +1632,14 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
         live_record = f'Live実績 {sample_count}件 / 的中 {hit_count}件'
 
     display_status = '表示可'
-    if not house_view.get('display_allowed', True) or sample_count < 10:
+    house_display_status = house_view.get('display_status') or house_view.get('publish_status')
+    if house_display_status in {'reference', 'hidden', 'blocked'}:
+        display_status = {
+            'reference': '参考',
+            'hidden': '非表示',
+            'blocked': '使用不可',
+        }[house_display_status]
+    elif not house_view.get('display_allowed', True) or sample_count < 10:
         display_status = '参考'
 
     return {
@@ -1640,6 +1647,7 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
         'model_validation': model_validation,
         'live_record': live_record,
         'display_status': display_status,
+        'confidence_limit_reasons': house_view.get('confidence_limit_reasons') or [],
         **supplemental,
     }
 
@@ -2211,6 +2219,16 @@ def build_macro_forecast_report_context() -> Dict:
         'change_summary': report.get('change_summary') or '',
         'what_changed': report.get('what_changed') or [],
         'market_mispricing_watch': report.get('market_mispricing_watch') or [],
+        'executive_summary': report.get('executive_summary') or {},
+        'what_changed_detail': report.get('what_changed_detail') or {},
+        'growth_view': report.get('growth_view') or {},
+        'inflation_view': report.get('inflation_view') or {},
+        'labor_view': report.get('labor_view') or {},
+        'policy_view': report.get('policy_view') or {},
+        'market_implication': report.get('market_implication') or {},
+        'scenario_table': report.get('scenario_table') or [],
+        'invalidation_triggers': report.get('invalidation_triggers') or [],
+        'model_reliability': report.get('model_reliability') or {},
         'axes': axes,
         'scenarios': scenarios,
         'warnings': run.warnings or [],

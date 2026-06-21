@@ -665,6 +665,8 @@ def walk_forward_validate(rows, *, min_train: int = 36) -> dict:
             'mae': model_mae,
             'rmse': math.sqrt(mean(squared_errors)) if squared_errors else None,
             'baseline_mae': baseline_mae,
+            'baseline_models': ['zero', 'last_value', 'moving_average'],
+            'baseline': 'best_available_naive_baseline',
             'skill_score': skill_score,
             'direction_accuracy': (
                 len(direction_hits) / sample_count if sample_count else None
@@ -712,8 +714,27 @@ def save_forecast_snapshot(
         data_quality=feature_meta['data_quality'],
         metadata=feature_meta['metadata'],
     )
+    confidence = (metadata or {}).get('confidence')
+    if confidence is None:
+        confidence = round((feature_snapshot.data_quality or 0.0) / 100, 4)
+    if prediction_interval is None:
+        prediction_interval = {
+            'type': 'point_estimate_range',
+            'lower': prediction_value,
+            'upper': prediction_value,
+            'confidence': confidence,
+        }
+    elif prediction_interval.get('confidence') is None:
+        prediction_interval = {
+            **prediction_interval,
+            'confidence': confidence,
+        }
     combined_metadata = {
         **(metadata or {}),
+        'confidence': confidence,
+        'source_dates': feature_meta['source_dates'],
+        'data_vintage': (metadata or {}).get('data_vintage') or 'point_in_time',
+        'consensus_status': (metadata or {}).get('consensus_status') or 'missing',
         'feature_snapshot_id': feature_snapshot.id,
         'feature_snapshot_hash': feature_snapshot.feature_hash,
         'feature_namespace': namespace,

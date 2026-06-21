@@ -60,6 +60,7 @@ jobs:
           python manage.py compute_world_state
           python manage.py run_macro_forecast
           python manage.py settle_forecast_snapshots
+          python manage.py run_model_validation
           python manage.py export_macro_payload --output static/macro/latest_dashboard.json
           python manage.py export_macro_house_view --output static/macro/house_view.json
           python manage.py export_macro_quality --output static/macro/data_quality_report.json
@@ -112,13 +113,51 @@ jobs:
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       TZ: Asia/Tokyo
     steps:
-      - name: Skip without database
-        if: ${{ env.DATABASE_URL == '' }}
-        run: echo "DATABASE_URL is not set; skipped weekly validation."
-
       - name: Checkout
-        if: ${{ env.DATABASE_URL != '' }}
         uses: actions/checkout@v4
+
+      - name: Write validation warning without database
+        if: ${{ env.DATABASE_URL == '' }}
+        run: |
+          mkdir -p static/macro
+          cat > static/macro/model_validation_report.json <<'JSON'
+          {
+            "freshness": {
+              "latest_evaluated_at": null,
+              "age_days": null,
+              "stale_after_days": 30,
+              "is_stale": true
+            },
+            "model_validation_report": [],
+            "status": "stale",
+            "warnings": [
+              "DATABASE_URL is not set; weekly validation was not executed."
+            ]
+          }
+          JSON
+          cat > static/macro/model_cards.json <<'JSON'
+          {
+            "model_cards": [],
+            "status": "blocked",
+            "warnings": [
+              "model cards = 0",
+              "DATABASE_URL is not set; weekly validation was not executed."
+            ]
+          }
+          JSON
+
+      - name: Commit validation warning
+        if: ${{ env.DATABASE_URL == '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static/macro/model_validation_report.json static/macro/model_cards.json
+          if git diff --cached --quiet; then
+            echo "No validation warning changes."
+            exit 0
+          fi
+          git commit -m "Mark weekly macro validation skipped"
+          git push
 
       - name: Set up Python
         if: ${{ env.DATABASE_URL != '' }}

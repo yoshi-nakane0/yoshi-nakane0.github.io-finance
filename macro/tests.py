@@ -29,6 +29,7 @@ from .models import (
     Indicator,
     MacroForecastRun,
     ModelValidationReport,
+    MacroEventSurprise,
     Observation,
     PolicyExpectationSnapshot,
     PriceObservation,
@@ -160,6 +161,9 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('python manage.py weekly_macro_validation', workflow)
         self.assertIn('python manage.py run_macro_forecast', workflow)
         self.assertIn('python manage.py export_macro_forecast_ledger --output static/macro/forecast_ledger.json', workflow)
+        self.assertIn('Write validation warning without database', workflow)
+        self.assertIn('"status": "stale"', workflow)
+        self.assertIn('DATABASE_URL is not set; weekly validation was not executed.', workflow)
         self.assertIn('git add static/macro/*.json', workflow)
         self.assertNotIn('git add static/macro/latest_dashboard.json runtime/db.sqlite3', workflow)
         self.assertIn('git commit -m "Update macro generated data"', workflow)
@@ -348,7 +352,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('weekly-validation:', workflow)
         self.assertIn('python manage.py weekly_macro_validation', workflow)
         self.assertIn(
-            'DATABASE_URL is not set; skipped weekly validation.',
+            'DATABASE_URL is not set; weekly validation was not executed.',
             workflow,
         )
         self.assertFalse(
@@ -771,6 +775,23 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertGreaterEqual(report['audit']['public_outlook_age_days'], 0)
         self.assertTrue(report['audit']['difference_reasons'])
         self.assertIn('House View', report['audit']['difference_reasons'][0])
+        self.assertEqual(report['audit']['house_view_correctness_usage'], 'not_allowed')
+        self.assertIn('benchmark_outlooks', report)
+        self.assertIn('goldman_public', {row['source_id'] for row in report['benchmark_outlooks']})
+
+    def test_benchmark_outlook_keeps_public_sources_as_reference_only(self):
+        from macro.services.benchmark_outlook import build_benchmark_outlook
+
+        payload = build_benchmark_outlook()
+
+        self.assertEqual(payload['source_scope'], 'free_public_reference_benchmarks')
+        self.assertTrue(payload['benchmark_outlooks'])
+        self.assertTrue(
+            all(row['can_score_house_view'] is False for row in payload['benchmark_outlooks'])
+        )
+        self.assertIn('goldman_public', {row['source_id'] for row in payload['benchmark_outlooks']})
+        self.assertIn('fomc_sep', {row['source_id'] for row in payload['benchmark_outlooks']})
+        self.assertIn('fedwatch_public', {row['source_id'] for row in payload['benchmark_outlooks']})
 
     def test_house_view_validation_scores_settled_regime_predictions(self):
         from macro.services.house_view_validation import build_house_view_validation_report
@@ -2315,6 +2336,118 @@ class DashboardFormatTest(TestCase):
         self.assertIn('雇用はまだ強い', result['key_drivers'])
         self.assertIn('主要系列の欠損があります。', result['blocking_issues'])
 
+    def test_house_view_caps_confidence_with_model_audit_gates(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=71,
+            inflation_score=82,
+            policy_pressure_score=63,
+            credit_score=58,
+            liquidity_score=55,
+            risk_appetite_score=61,
+            market_trend_score=57,
+            market_stress_score=29,
+            recession_risk_score=17,
+            inflation_reacceleration_score=82,
+            financial_stress_score=19,
+            data_quality=98,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=96,
+            data_quality=98,
+            regime_probabilities={'expansion': 0.66},
+            risk_probabilities={'inflation_reacceleration': 0.82},
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.66,
+        )
+
+        with mock.patch('macro.services.house_view.build_data_quality_report', return_value={
+            'as_of': '2026-06-17',
+            'display_allowed': True,
+            'confidence_cap': 'A',
+            'freshness_score': 98,
+            'warnings': [],
+            'blocking_issues': [],
+        }):
+            result = house_view.build_house_view_context()
+
+        self.assertEqual(result['confidence_grade'], 'C')
+        self.assertLessEqual(result['confidence_score'], 69)
+        self.assertEqual(result['display_status'], 'reference')
+        self.assertEqual(result['publish_status'], 'reference')
+        self.assertIn('model_validation_reportが空です。', result['confidence_limit_reasons'])
+        self.assertIn('予測台帳にfeatures_hash欠損があります。', result['confidence_limit_reasons'])
+        self.assertIn('予測台帳にprediction_interval欠損があります。', result['confidence_limit_reasons'])
+
+    def test_house_view_downgrades_for_missing_consensus_and_upcoming_events(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=71,
+            inflation_score=62,
+            policy_pressure_score=63,
+            credit_score=58,
+            liquidity_score=55,
+            market_trend_score=57,
+            market_stress_score=29,
+            data_quality=98,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=96,
+            data_quality=98,
+            regime_probabilities={'expansion': 0.66},
+            risk_probabilities={'inflation_reacceleration': 0.42},
+        )
+        ModelValidationReport.objects.create(
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            sample_count=50,
+            metrics={
+                'direction_accuracy': 0.62,
+                'skill_score': 0.2,
+                'live_settled_sample_count': 12,
+            },
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.66,
+            prediction_interval={'lower': 0.56, 'upper': 0.76},
+            features_hash='a' * 64,
+            metadata={'confidence': 0.8, 'consensus_status': 'missing'},
+        )
+
+        with mock.patch('macro.services.house_view.build_data_quality_report', return_value={
+            'as_of': '2026-06-17',
+            'display_allowed': True,
+            'confidence_cap': 'A',
+            'freshness_score': 98,
+            'warnings': [],
+            'blocking_issues': [],
+        }), mock.patch(
+            'macro.services.house_view.load_upcoming_high_impact_events',
+            return_value=[{'date': date(2026, 6, 18), 'event': 'CPI'}],
+        ):
+            result = house_view.build_house_view_context(as_of=date(2026, 6, 17))
+
+        self.assertEqual(result['confidence_grade'], 'C')
+        self.assertIn('市場コンセンサス未取得のためB以下です。', result['confidence_limit_reasons'])
+        self.assertIn('重要指標の発表前後のため一段階下げます。', result['confidence_limit_reasons'])
+        self.assertEqual(result['upcoming_high_impact_events'][0]['event'], 'CPI')
+
     def test_house_view_shows_current_invalidation_trigger_status(self):
         unrate, _ = Indicator.objects.update_or_create(
             fred_series_id='UNRATE',
@@ -3487,6 +3620,56 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(validation_rows[0]['sample_count'], 206)
         self.assertEqual(len(card_rows), 1)
         self.assertEqual(card_rows[0]['sample_count'], 206)
+
+    def test_empty_model_validation_and_cards_are_blocked_exports(self):
+        from macro.management.commands.export_macro_model_cards import build_model_cards
+        from macro.management.commands.export_macro_model_validation import (
+            build_model_validation_report,
+        )
+
+        validation_payload = build_model_validation_report()
+        cards_payload = build_model_cards()
+
+        self.assertEqual(validation_payload['status'], 'blocked')
+        self.assertIn('validation rows = 0', validation_payload['warnings'])
+        self.assertEqual(cards_payload['status'], 'blocked')
+        self.assertIn('model cards = 0', cards_payload['warnings'])
+
+        with TemporaryDirectory() as tmpdir:
+            validation_path = Path(tmpdir) / 'model_validation_report.json'
+            cards_path = Path(tmpdir) / 'model_cards.json'
+            with self.assertRaises(CommandError):
+                call_command('export_macro_model_validation', '--output', str(validation_path))
+            with self.assertRaises(CommandError):
+                call_command('export_macro_model_cards', '--output', str(cards_path))
+
+    def test_forecast_ledger_exports_required_audit_fields_without_nulls(self):
+        from macro.management.commands.export_macro_forecast_ledger import build_forecast_ledger
+
+        snapshot = ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.66,
+            metadata={'source_dates': {'world_state': '2026-06-17'}},
+        )
+
+        row = build_forecast_ledger()['forecast_ledger'][0]
+
+        self.assertEqual(
+            row['forecast_id'],
+            f'{snapshot.as_of_date}:macro_hatzius_v1:macro_regime:3m_6m',
+        )
+        self.assertIsNotNone(row['created_at'])
+        self.assertIn('realized_at', row)
+        self.assertEqual(row['source_dates'], {'world_state': '2026-06-17'})
+        self.assertEqual(row['data_vintage'], 'unknown')
+        self.assertEqual(row['confidence'], 0.0)
+        self.assertTrue(row['features_hash'])
+        self.assertIsNotNone(row['prediction_interval'])
+        self.assertIn('features_hash missing', row['audit_warnings'])
+        self.assertIn('prediction_interval missing', row['audit_warnings'])
 
 
 class DashboardCacheTest(TestCase):
@@ -4932,6 +5115,9 @@ class HatziusStyleMacroEngineTest(TestCase):
             result.snapshot.metadata['regime_probabilities']['expansion'],
             0.58,
         )
+        self.assertEqual(result.snapshot.metadata['confidence'], 0.74)
+        self.assertEqual(result.snapshot.metadata['data_vintage'], 'point_in_time')
+        self.assertIn('source_dates', result.snapshot.metadata)
         self.assertIn('change_summary', result.run.report)
         self.assertIn('market_mispricing_watch', result.run.report)
         self.assertEqual(MacroScenario.objects.count(), 3)
@@ -4978,6 +5164,86 @@ class HatziusStyleMacroEngineTest(TestCase):
         )
         self.assertIn('物価再加速リスク', report['what_changed'])
         self.assertIn('金利上昇リスク', report['market_mispricing_watch'])
+        self.assertEqual(report['executive_summary']['publish_status'], 'reference')
+        self.assertIn('growth_view', report)
+        self.assertIn('inflation_view', report)
+        self.assertIn('labor_view', report)
+        self.assertIn('policy_view', report)
+        self.assertIn('market_implication', report)
+        self.assertIn('scenario_table', report)
+        self.assertIn('model_reliability', report)
+
+    def test_event_surprise_calculates_consensus_gap_and_market_impact(self):
+        from macro.services.event_surprise import build_event_surprise, save_event_surprise
+
+        surprise = build_event_surprise(
+            event_name='Core CPI',
+            actual=3.4,
+            consensus=3.2,
+            previous=3.1,
+            unit='%',
+            category='inflation',
+        )
+
+        self.assertEqual(surprise['surprise'], 0.2)
+        self.assertEqual(surprise['revision'], 0.3)
+        self.assertEqual(surprise['direction'], 'above_consensus')
+        self.assertIn('利下げ期待後退', surprise['market_impact'])
+        self.assertIn('インフレ見通しを上方修正', surprise['next_forecast_impact'])
+
+        saved = save_event_surprise(
+            event_date=date(2026, 6, 17),
+            event_name='Core CPI',
+            actual=3.4,
+            consensus=3.2,
+            previous=3.1,
+            unit='%',
+            category='inflation',
+            source='manual_consensus',
+        )
+
+        self.assertEqual(MacroEventSurprise.objects.count(), 1)
+        self.assertEqual(saved.surprise, 0.2)
+        self.assertEqual(saved.revision, 0.3)
+        self.assertEqual(saved.direction, 'above_consensus')
+
+    def test_market_pricing_gap_maps_macro_view_to_asset_implications(self):
+        from macro.services.market_pricing import build_market_pricing_gap
+
+        gap = build_market_pricing_gap(
+            state_vector={
+                'axes': {
+                    'growth_momentum': {'score': 72},
+                    'inflation_pressure': {'score': 78},
+                    'financial_conditions': {'score': 35},
+                    'nikkei_macro_bias': {'score': 42},
+                }
+            },
+            market_inputs={
+                'dgs10': 4.7,
+                'hy_spread': 3.2,
+                'usd_jpy_trend': 'yen_weakness',
+            },
+        )
+
+        self.assertEqual(gap['rates'], 'インフレ再加速を十分警戒')
+        self.assertEqual(gap['credit'], '景気悪化警戒は限定的')
+        self.assertIn('macro viewと市場価格のズレ', gap['summary'])
+
+    def test_policy_reaction_function_maps_macro_conditions(self):
+        from macro.services.policy_path import build_policy_reaction_function
+
+        policy = build_policy_reaction_function(
+            inflation_reacceleration=0.78,
+            recession_probability=0.12,
+            labor_score=70,
+            usd_jpy_pressure='yen_weakness',
+        )
+
+        self.assertEqual(policy['fed_next_move_bias'], 'hold_or_hawkish')
+        self.assertIn('利下げしにくい', policy['fed_reaction_conditions'][0])
+        self.assertEqual(policy['boj_next_move_bias'], 'hike_watch')
+        self.assertIn('円安', policy['boj_reaction_conditions'][0])
 
     def test_validation_records_brier_score_and_direction_hit(self):
         from macro.models import MacroForecastOutcome

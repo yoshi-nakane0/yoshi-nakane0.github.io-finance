@@ -10,6 +10,8 @@ class MacroSignal:
     confidence_score: int
     confidence_grade: str
     data_quality_score: int
+    display_status: str = 'reference'
+    publish_status: str = 'reference'
     warnings: List[str] = field(default_factory=list)
     source: Dict[str, Any] = field(default_factory=dict)
     as_of: Optional[datetime] = None

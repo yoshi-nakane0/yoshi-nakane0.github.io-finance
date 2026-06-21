@@ -749,3 +749,40 @@ class ModelValidationReport(models.Model):
 
     def __str__(self):
         return f'{self.model_version} {self.target} {self.horizon}'
+
+
+class MacroEventSurprise(models.Model):
+    """経済指標の市場予想との差を後から参照できる形で保存する。"""
+
+    event_date = models.DateField()
+    event_name = models.CharField(max_length=128)
+    category = models.CharField(max_length=32, default='macro')
+    actual = models.FloatField(null=True, blank=True)
+    consensus = models.FloatField(null=True, blank=True)
+    previous = models.FloatField(null=True, blank=True)
+    surprise = models.FloatField(null=True, blank=True)
+    revision = models.FloatField(null=True, blank=True)
+    unit = models.CharField(max_length=16, blank=True)
+    direction = models.CharField(max_length=32, default='unknown')
+    market_impact = models.TextField(blank=True)
+    next_forecast_impact = models.TextField(blank=True)
+    source = models.CharField(max_length=64, default='manual_consensus')
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-event_date', 'event_name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['event_date', 'event_name', 'source'],
+                name='uq_macro_event_surprise_identity',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['category', '-event_date']),
+            models.Index(fields=['direction', '-event_date']),
+        ]
+
+    def __str__(self):
+        return f'{self.event_date}: {self.event_name} {self.direction}'

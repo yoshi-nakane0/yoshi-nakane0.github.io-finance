@@ -360,6 +360,8 @@ class ExplanationMacroAdapterTests(SimpleTestCase):
                 'confidence_grade': 'B',
                 'house_view': 'Macro判断',
                 'regime_label': 'expansion',
+                'display_status': 'reference',
+                'publish_status': 'reference',
             },
         ):
             with mock.patch(
@@ -369,6 +371,8 @@ class ExplanationMacroAdapterTests(SimpleTestCase):
                 signal = load_macro_signal()
 
         self.assertEqual(signal.source['generated_at'], '2026-06-19T08:30:00+00:00')
+        self.assertEqual(signal.display_status, 'reference')
+        self.assertEqual(signal.publish_status, 'reference')
         self.assertEqual(signal.as_of, timezone.datetime(2026, 6, 19, 8, 30, tzinfo=dt_timezone.utc))
 
 
