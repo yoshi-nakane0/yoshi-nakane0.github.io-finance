@@ -446,12 +446,12 @@
       "decision_label": "停止",
       "decision_level": "blocked",
       "fallback_used": false,
-      "last_failed_at": "2026-06-21T10:06:44.675472+00:00",
+      "last_failed_at": "2026-06-21T14:34:31.622764+00:00",
       "last_success_at": null,
       "source": "NQ=F / ES=F / YM=F"
     },
     "price_data": {
-      "age_minutes": 3486,
+      "age_minutes": 3754,
       "decision_label": "判定可能",
       "decision_level": "ready",
       "fallback_used": false,
@@ -479,7 +479,7 @@
       "fallback_display": "なし",
       "key": "intermarket",
       "label": "米国3指数確認",
-      "last_failed_at": "2026-06-21T10:06:44.675472+00:00",
+      "last_failed_at": "2026-06-21T14:34:31.622764+00:00",
       "last_success_at": "",
       "source": "NQ=F / ES=F / YM=F"
     }
@@ -487,13 +487,36 @@
   "data": {
     "price_display": "71,620",
     "world_model": {
-      "action_note": "上昇方向だが追撃買いは危険。押し目確認待ち。",
+      "action_note": "矛盾があるため、強いロング・ショートは出しません。",
       "as_of": "",
       "basecalc_signal": {
-        "action_note": "上昇方向だが追撃買いは危険。押し目確認待ち。",
+        "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+        "allowed_direction": "neutral",
+        "allowed_horizons": {
+          "1d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          },
+          "3d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          },
+          "5d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          }
+        },
         "as_of": "2026-06-19 09:00 JST",
+        "confidence_calibrated": false,
         "confidence_label": "Middle",
         "confidence_score": 68,
+        "contract_status": "limited",
         "counter_bias": {
           "direction": "down",
           "label": "上昇優勢だが反落警戒",
@@ -506,6 +529,7 @@
           "score": 100
         },
         "directional_allowed": true,
+        "display_price": 71620.0,
         "excluded_inputs": [
           "macro",
           "valuation",
@@ -518,25 +542,31 @@
         ],
         "horizons": {
           "1d": {
+            "display_allowed": false,
             "expected_return_pct": -0.39,
             "horizon_label": "1営業日後の方向",
-            "main_bias": "up",
-            "main_bias_label": "上昇方向",
-            "setup_label": "上昇トレンド継続"
+            "main_bias": "range",
+            "main_bias_label": "方向感なし",
+            "setup_label": "上昇トレンド継続",
+            "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
           },
           "3d": {
+            "display_allowed": false,
             "expected_return_pct": -0.65,
             "horizon_label": "3営業日後の方向",
-            "main_bias": "up",
-            "main_bias_label": "上昇方向",
-            "setup_label": "上昇トレンド継続"
+            "main_bias": "range",
+            "main_bias_label": "方向感なし",
+            "setup_label": "上昇トレンド継続",
+            "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
           },
           "5d": {
+            "display_allowed": false,
             "expected_return_pct": -0.81,
             "horizon_label": "5営業日後の方向",
-            "main_bias": "up",
-            "main_bias_label": "上昇方向",
-            "setup_label": "上昇トレンド継続"
+            "main_bias": "range",
+            "main_bias_label": "方向感なし",
+            "setup_label": "上昇トレンド継続",
+            "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
           }
         },
         "included_inputs": [
@@ -547,6 +577,10 @@
           "dow_futures_price_action"
         ],
         "instrument": "nikkei_futures",
+        "invalidated_targets": {
+          "downside": [],
+          "upside": []
+        },
         "levels": {
           "invalidation": {
             "bearish": 73350,
@@ -557,150 +591,13 @@
               "無効化ラインが遠くリスク幅が大きいです"
             ]
           },
-          "resistance_zones": [
-            {
-              "confidence": "Middle",
-              "distance_abs": 1730.0,
-              "distance_atr": 1.0,
-              "distance_pct": 2.42,
-              "expected_value_pct": 0.05,
-              "label": "T1",
-              "price": 73350,
-              "probability": 0.02,
-              "probability_display": "0.02",
-              "probability_source": "empirical",
-              "rank_score": 16,
-              "reason": "ATR 1.0",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_1"
-            },
-            {
-              "confidence": "Low",
-              "distance_abs": 2590.0,
-              "distance_atr": 1.5,
-              "distance_pct": 3.62,
-              "expected_value_pct": 0.07,
-              "label": "T2",
-              "price": 74210,
-              "probability": 0.02,
-              "probability_display": "0.02",
-              "probability_source": "empirical",
-              "rank_score": -1,
-              "reason": "ATR 1.5",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_1_5"
-            },
-            {
-              "confidence": "Low",
-              "distance_abs": 3460.0,
-              "distance_atr": 2.0,
-              "distance_pct": 4.83,
-              "expected_value_pct": 0.1,
-              "label": "T3",
-              "price": 75080,
-              "probability": 0.02,
-              "probability_display": "0.02",
-              "probability_source": "empirical",
-              "rank_score": -6,
-              "reason": "ATR 2.0",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_2"
-            },
-            {
-              "confidence": "Low",
-              "distance_abs": 1320.0,
-              "distance_atr": 0.76,
-              "distance_pct": 1.84,
-              "expected_value_pct": 0.06,
-              "label": "T4",
-              "price": 72940,
-              "probability": 0.03,
-              "probability_display": "0.03",
-              "probability_source": "empirical",
-              "rank_score": 6,
-              "reason": "Pivot R3",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "pivot_r3"
-            }
-          ],
-          "support_zones": [
-            {
-              "confidence": "Middle",
-              "distance_abs": 1730.0,
-              "distance_atr": 1.0,
-              "distance_pct": -2.42,
-              "expected_value_pct": 0.24,
-              "label": "T1",
-              "price": 69890,
-              "probability": 0.1,
-              "probability_display": "0.10",
-              "probability_source": "empirical",
-              "rank_score": 20,
-              "reason": "ATR 1.0",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_1"
-            },
-            {
-              "confidence": "Low",
-              "distance_abs": 2590.0,
-              "distance_atr": 1.5,
-              "distance_pct": -3.62,
-              "expected_value_pct": 0.36,
-              "label": "T2",
-              "price": 69030,
-              "probability": 0.1,
-              "probability_display": "0.10",
-              "probability_source": "empirical",
-              "rank_score": 4,
-              "reason": "ATR 1.5",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_1_5"
-            },
-            {
-              "confidence": "Low",
-              "distance_abs": 3460.0,
-              "distance_atr": 2.0,
-              "distance_pct": -4.83,
-              "expected_value_pct": 0.48,
-              "label": "T3",
-              "price": 68160,
-              "probability": 0.1,
-              "probability_display": "0.10",
-              "probability_source": "empirical",
-              "rank_score": -1,
-              "reason": "ATR 2.0",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "atr_2"
-            },
-            {
-              "confidence": "High",
-              "distance_abs": 9270.0,
-              "distance_atr": 5.36,
-              "distance_pct": -12.94,
-              "expected_value_pct": 1.29,
-              "label": "T4",
-              "price": 62350,
-              "probability": 0.1,
-              "probability_display": "0.10",
-              "probability_source": "empirical",
-              "rank_score": 17,
-              "reason": "直近10本安値",
-              "reliability": "middle",
-              "sample_count": 30,
-              "source": "recent_low"
-            }
-          ]
+          "resistance_zones": [],
+          "support_zones": []
         },
+        "model_price": 71620.0,
         "nikkei_technical_score": 27,
         "price": 71620.0,
-        "primary_direction": "up",
+        "primary_direction": "neutral",
         "primary_setup": "trend_follow_long",
         "readiness_level": "ready",
         "scenario_probabilities": {
@@ -927,8 +824,68 @@
         },
         "scope": "technical_with_us_index_confirmation",
         "source": "basecalc",
+        "stop_reasons": [
+          "米国3指数確認が不足"
+        ],
         "technical_regime": "bullish_technical",
-        "us_index_confirmation_score": 0
+        "us_index_confirmation_score": 0,
+        "validated_targets": {
+          "downside": [],
+          "upside": []
+        },
+        "validation_gate_status": {
+          "1d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.62,
+              "direction_allowed": true,
+              "model_score": 0.62,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          },
+          "3d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.43000000000000005,
+              "direction_allowed": true,
+              "model_score": 0.68,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          },
+          "5d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.37,
+              "direction_allowed": true,
+              "model_score": 0.5700000000000001,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          }
+        }
       },
       "chase_risk": "medium",
       "components": {
@@ -960,6 +917,7 @@
       "confidence_score": 68,
       "confidence_warnings": [],
       "continuation_score": 86,
+      "contract_status": "limited",
       "counter_bias": {
         "direction": "down",
         "label": "上昇優勢だが反落警戒",
@@ -985,79 +943,11 @@
       "data_quality_level": "good",
       "data_quality_score": 96,
       "data_warning": "価格データが15分以上古い可能性があります。",
-      "direction": "up",
-      "direction_label": "上昇優勢",
-      "directional_allowed": true,
-      "downside_targets": [
-        {
-          "confidence": "Middle",
-          "distance_abs": 1730.0,
-          "distance_atr": 1.0,
-          "distance_pct": -2.42,
-          "expected_value_pct": 0.24,
-          "label": "T1",
-          "price": 69890,
-          "probability": 0.1,
-          "probability_display": "0.10",
-          "probability_source": "empirical",
-          "rank_score": 20,
-          "reason": "ATR 1.0",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_1"
-        },
-        {
-          "confidence": "Low",
-          "distance_abs": 2590.0,
-          "distance_atr": 1.5,
-          "distance_pct": -3.62,
-          "expected_value_pct": 0.36,
-          "label": "T2",
-          "price": 69030,
-          "probability": 0.1,
-          "probability_display": "0.10",
-          "probability_source": "empirical",
-          "rank_score": 4,
-          "reason": "ATR 1.5",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_1_5"
-        },
-        {
-          "confidence": "Low",
-          "distance_abs": 3460.0,
-          "distance_atr": 2.0,
-          "distance_pct": -4.83,
-          "expected_value_pct": 0.48,
-          "label": "T3",
-          "price": 68160,
-          "probability": 0.1,
-          "probability_display": "0.10",
-          "probability_source": "empirical",
-          "rank_score": -1,
-          "reason": "ATR 2.0",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_2"
-        },
-        {
-          "confidence": "High",
-          "distance_abs": 9270.0,
-          "distance_atr": 5.36,
-          "distance_pct": -12.94,
-          "expected_value_pct": 1.29,
-          "label": "T4",
-          "price": 62350,
-          "probability": 0.1,
-          "probability_display": "0.10",
-          "probability_source": "empirical",
-          "rank_score": 17,
-          "reason": "直近10本安値",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "recent_low"
-        }
-      ],
+      "direction": "neutral",
+      "direction_label": "方向判断停止",
+      "directional_allowed": false,
+      "display_price": 71620.0,
+      "downside_targets": [],
       "evidence": [
         "EMA5 > EMA20 > EMA60で短中期が上向き",
         "現在値がVWAP上",
@@ -1210,25 +1100,31 @@
       },
       "horizons": {
         "1d": {
+          "display_allowed": false,
           "expected_return_pct": -0.39,
           "horizon_label": "1営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         },
         "3d": {
+          "display_allowed": false,
           "expected_return_pct": -0.65,
           "horizon_label": "3営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         },
         "5d": {
+          "display_allowed": false,
           "expected_return_pct": -0.81,
           "horizon_label": "5営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         }
       },
       "intermarket_technicals": {
@@ -1239,7 +1135,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-21T10:06:44.298518+00:00",
+        "fetched_at": "2026-06-21T14:34:31.233491+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1269,6 +1165,7 @@
       "is_stale": true,
       "last_updated_display": "2026-06-19 09:00 JST",
       "main_scenario": "73,350から74,210方向を試しやすい",
+      "model_price": 71620.0,
       "model_version": "wm_v2.0.0",
       "momentum_score": 13.0,
       "near_levels": {
@@ -1369,6 +1266,118 @@
         "vwap": 31358.347
       },
       "nikkei_technical_score": 27,
+      "output_contract": {
+        "allowed_direction": "neutral",
+        "allowed_horizons": {
+          "1d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          },
+          "3d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          },
+          "5d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "reasons": [],
+            "target_probability_allowed": true
+          }
+        },
+        "available_display": "支持抵抗・ATRレンジのみ",
+        "confidence_calculated_from_snapshot_id": "",
+        "confidence_calibrated": false,
+        "confidence_status": "未較正",
+        "contract_status": "limited",
+        "data_quality_score": 96,
+        "directional_allowed": true,
+        "display_price": 71620.0,
+        "explanation_allowed": false,
+        "generated_at": "2026-06-21T14:34:34.189731+00:00",
+        "invalidated_targets": {
+          "downside": [],
+          "upside": []
+        },
+        "latest_price": null,
+        "model_price": 71620.0,
+        "model_version": "wm_v2.0.0",
+        "ohlcv_bar_count": null,
+        "price_age_minutes": 3754,
+        "price_source": "225navi",
+        "probability_display_allowed": true,
+        "range_calculated_from_price": 71620.0,
+        "readiness_level": "ready",
+        "snapshot_id": "9b8cdd67-53b2-493f-bccb-8fcae900264d",
+        "source_timestamp": "2026-06-19 09:00 JST",
+        "stop_reasons": [
+          "米国3指数確認が不足"
+        ],
+        "target_calculated_from_price": 71620.0,
+        "target_display_allowed": true,
+        "us_index_status": "missing",
+        "validated_targets": {
+          "downside": [],
+          "upside": []
+        },
+        "validation_gate_status": {
+          "1d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.62,
+              "direction_allowed": true,
+              "model_score": 0.62,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          },
+          "3d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.43000000000000005,
+              "direction_allowed": true,
+              "model_score": 0.68,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          },
+          "5d": {
+            "direction_allowed": true,
+            "display_mode": "directional",
+            "model_vs_baseline": {
+              "atr_score": 0.37,
+              "direction_allowed": true,
+              "model_score": 0.5700000000000001,
+              "reasons": [],
+              "sample_count": 300
+            },
+            "reasons": [],
+            "state_gate": {
+              "direction_allowed": true,
+              "reasons": []
+            },
+            "target_probability_allowed": true
+          }
+        },
+        "validation_report_version": ""
+      },
       "performance_adjustment": {
         "applied": true,
         "avg_return_pct": 0.75,
@@ -1384,8 +1393,8 @@
       },
       "phase_label": "押し目買い優勢",
       "price": 71620.0,
-      "primary_direction": "up",
-      "primary_scenario": "上昇優勢",
+      "primary_direction": "range",
+      "primary_scenario": "方向判断停止",
       "primary_score": 86,
       "primary_setup": "trend_follow_long",
       "primary_setup_label": "上昇トレンド継続",
@@ -1425,7 +1434,7 @@
       "readiness_level": "ready",
       "rebound_improvement_score": 7,
       "reversal_risk_score": 100,
-      "scenario_label": "上昇優勢だが反落警戒点灯",
+      "scenario_label": "判定停止",
       "scenario_probabilities": {
         "down_reversal": 46,
         "range": 5,
@@ -1738,36 +1747,17 @@
         "source": "225navi",
         "symbol": "NIY=F"
       },
-      "stale_minutes": 3486,
+      "stale_minutes": 3754,
       "state_key": "bull_trend_continuation",
       "state_label": "上昇継続",
+      "stop_reasons": [
+        "米国3指数確認が不足"
+      ],
       "strength_label": "やや強い",
       "sub_scenario": "62,350を割ると上昇判定は弱まる",
       "target_1_display": "73,350",
       "target_2_display": "74,210",
-      "target_ranges": [
-        {
-          "basis": "ATR",
-          "high": 73180,
-          "horizon": "1d",
-          "label": "1日想定レンジ",
-          "low": 70060
-        },
-        {
-          "basis": "ATR・過去分布",
-          "high": 74390,
-          "horizon": "3d",
-          "label": "3日メインレンジ",
-          "low": 68850
-        },
-        {
-          "basis": "ATR・過去分布",
-          "high": 75600,
-          "horizon": "5d",
-          "label": "5日拡張レンジ",
-          "low": 67640
-        }
-      ],
+      "target_ranges": [],
       "technical_regime": "bullish_technical",
       "transition_probs": [
         {
@@ -1828,76 +1818,7 @@
         }
       ],
       "trend_score": 40,
-      "upside_targets": [
-        {
-          "confidence": "Middle",
-          "distance_abs": 1730.0,
-          "distance_atr": 1.0,
-          "distance_pct": 2.42,
-          "expected_value_pct": 0.05,
-          "label": "T1",
-          "price": 73350,
-          "probability": 0.02,
-          "probability_display": "0.02",
-          "probability_source": "empirical",
-          "rank_score": 16,
-          "reason": "ATR 1.0",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_1"
-        },
-        {
-          "confidence": "Low",
-          "distance_abs": 2590.0,
-          "distance_atr": 1.5,
-          "distance_pct": 3.62,
-          "expected_value_pct": 0.07,
-          "label": "T2",
-          "price": 74210,
-          "probability": 0.02,
-          "probability_display": "0.02",
-          "probability_source": "empirical",
-          "rank_score": -1,
-          "reason": "ATR 1.5",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_1_5"
-        },
-        {
-          "confidence": "Low",
-          "distance_abs": 3460.0,
-          "distance_atr": 2.0,
-          "distance_pct": 4.83,
-          "expected_value_pct": 0.1,
-          "label": "T3",
-          "price": 75080,
-          "probability": 0.02,
-          "probability_display": "0.02",
-          "probability_source": "empirical",
-          "rank_score": -6,
-          "reason": "ATR 2.0",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "atr_2"
-        },
-        {
-          "confidence": "Low",
-          "distance_abs": 1320.0,
-          "distance_atr": 0.76,
-          "distance_pct": 1.84,
-          "expected_value_pct": 0.06,
-          "label": "T4",
-          "price": 72940,
-          "probability": 0.03,
-          "probability_display": "0.03",
-          "probability_source": "empirical",
-          "rank_score": 6,
-          "reason": "Pivot R3",
-          "reliability": "middle",
-          "sample_count": 30,
-          "source": "pivot_r3"
-        }
-      ],
+      "upside_targets": [],
       "us_index_confirmation": {
         "components": {},
         "confirmation_label": "mixed",
@@ -1906,7 +1827,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-21T10:06:44.298518+00:00",
+        "fetched_at": "2026-06-21T14:34:31.233491+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1928,17 +1849,13 @@
     "can_show_prediction": true,
     "confidence": "Middle",
     "confidence_score": 68,
+    "contract_status": "limited",
     "daily_bars": 3343,
     "data_quality_level": "good",
     "data_quality_score": 96,
-    "direction": "up",
-    "direction_label": "上昇優勢",
-    "downside_target": {
-      "label": "第1候補",
-      "price": 69890,
-      "probability_label": "0.10",
-      "reason": "ATR 1.0"
-    },
+    "direction": "neutral",
+    "direction_label": "方向判断停止",
+    "downside_target": null,
     "fallback_used": false,
     "invalidation": "62,350",
     "last_updated": "2026-06-19 09:00 JST",
@@ -1956,13 +1873,7 @@
     },
     "prediction_stop_reasons": [],
     "price": 71620.0,
-    "range_1d": {
-      "basis": "ATR",
-      "high": 73180,
-      "horizon": "1d",
-      "label": "1日想定レンジ",
-      "low": 70060
-    },
+    "range_1d": null,
     "readiness_label": "判定可能",
     "readiness_level": "ready",
     "risk_reason": [
@@ -1970,12 +1881,10 @@
     ],
     "state_label": "上昇継続",
     "status_summary": "要確認: 米国3指数確認",
-    "upside_target": {
-      "label": "第1候補",
-      "price": 73350,
-      "probability_label": "0.02",
-      "reason": "ATR 1.0"
-    },
+    "stop_reasons": [
+      "米国3指数確認が不足"
+    ],
+    "upside_target": null,
     "us_index_confirmation": {
       "label": "まちまち",
       "reasons": [
@@ -1984,7 +1893,7 @@
     }
   },
   "detail_mode": false,
-  "generated_at": "2026-06-21T10:06:47.047732+00:00",
+  "generated_at": "2026-06-21T14:34:34.189831+00:00",
   "intermarket_technicals": {
     "components": {},
     "confirmation_label": "mixed",
@@ -1993,7 +1902,7 @@
     "evidence": [
       "米国3指数データなし"
     ],
-    "fetched_at": "2026-06-21T10:06:44.298518+00:00",
+    "fetched_at": "2026-06-21T14:34:31.233491+00:00",
     "readiness": {
       "level": "blocked",
       "missing": [
@@ -2006,7 +1915,7 @@
     },
     "risk_label": "technical_confirm"
   },
-  "job_duration_sec": 2.928,
+  "job_duration_sec": 3.273,
   "market_shock": {
     "as_of": "2026-06-21",
     "has_data": false,
@@ -2672,13 +2581,36 @@
   "updated": false,
   "warnings": [],
   "world_model": {
-    "action_note": "上昇方向だが追撃買いは危険。押し目確認待ち。",
+    "action_note": "矛盾があるため、強いロング・ショートは出しません。",
     "as_of": "",
     "basecalc_signal": {
-      "action_note": "上昇方向だが追撃買いは危険。押し目確認待ち。",
+      "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+      "allowed_direction": "neutral",
+      "allowed_horizons": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        }
+      },
       "as_of": "2026-06-19 09:00 JST",
+      "confidence_calibrated": false,
       "confidence_label": "Middle",
       "confidence_score": 68,
+      "contract_status": "limited",
       "counter_bias": {
         "direction": "down",
         "label": "上昇優勢だが反落警戒",
@@ -2691,6 +2623,7 @@
         "score": 100
       },
       "directional_allowed": true,
+      "display_price": 71620.0,
       "excluded_inputs": [
         "macro",
         "valuation",
@@ -2703,25 +2636,31 @@
       ],
       "horizons": {
         "1d": {
+          "display_allowed": false,
           "expected_return_pct": -0.39,
           "horizon_label": "1営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         },
         "3d": {
+          "display_allowed": false,
           "expected_return_pct": -0.65,
           "horizon_label": "3営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         },
         "5d": {
+          "display_allowed": false,
           "expected_return_pct": -0.81,
           "horizon_label": "5営業日後の方向",
-          "main_bias": "up",
-          "main_bias_label": "上昇方向",
-          "setup_label": "上昇トレンド継続"
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "上昇トレンド継続",
+          "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
         }
       },
       "included_inputs": [
@@ -2732,6 +2671,10 @@
         "dow_futures_price_action"
       ],
       "instrument": "nikkei_futures",
+      "invalidated_targets": {
+        "downside": [],
+        "upside": []
+      },
       "levels": {
         "invalidation": {
           "bearish": 73350,
@@ -2742,150 +2685,13 @@
             "無効化ラインが遠くリスク幅が大きいです"
           ]
         },
-        "resistance_zones": [
-          {
-            "confidence": "Middle",
-            "distance_abs": 1730.0,
-            "distance_atr": 1.0,
-            "distance_pct": 2.42,
-            "expected_value_pct": 0.05,
-            "label": "T1",
-            "price": 73350,
-            "probability": 0.02,
-            "probability_display": "0.02",
-            "probability_source": "empirical",
-            "rank_score": 16,
-            "reason": "ATR 1.0",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_1"
-          },
-          {
-            "confidence": "Low",
-            "distance_abs": 2590.0,
-            "distance_atr": 1.5,
-            "distance_pct": 3.62,
-            "expected_value_pct": 0.07,
-            "label": "T2",
-            "price": 74210,
-            "probability": 0.02,
-            "probability_display": "0.02",
-            "probability_source": "empirical",
-            "rank_score": -1,
-            "reason": "ATR 1.5",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_1_5"
-          },
-          {
-            "confidence": "Low",
-            "distance_abs": 3460.0,
-            "distance_atr": 2.0,
-            "distance_pct": 4.83,
-            "expected_value_pct": 0.1,
-            "label": "T3",
-            "price": 75080,
-            "probability": 0.02,
-            "probability_display": "0.02",
-            "probability_source": "empirical",
-            "rank_score": -6,
-            "reason": "ATR 2.0",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_2"
-          },
-          {
-            "confidence": "Low",
-            "distance_abs": 1320.0,
-            "distance_atr": 0.76,
-            "distance_pct": 1.84,
-            "expected_value_pct": 0.06,
-            "label": "T4",
-            "price": 72940,
-            "probability": 0.03,
-            "probability_display": "0.03",
-            "probability_source": "empirical",
-            "rank_score": 6,
-            "reason": "Pivot R3",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "pivot_r3"
-          }
-        ],
-        "support_zones": [
-          {
-            "confidence": "Middle",
-            "distance_abs": 1730.0,
-            "distance_atr": 1.0,
-            "distance_pct": -2.42,
-            "expected_value_pct": 0.24,
-            "label": "T1",
-            "price": 69890,
-            "probability": 0.1,
-            "probability_display": "0.10",
-            "probability_source": "empirical",
-            "rank_score": 20,
-            "reason": "ATR 1.0",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_1"
-          },
-          {
-            "confidence": "Low",
-            "distance_abs": 2590.0,
-            "distance_atr": 1.5,
-            "distance_pct": -3.62,
-            "expected_value_pct": 0.36,
-            "label": "T2",
-            "price": 69030,
-            "probability": 0.1,
-            "probability_display": "0.10",
-            "probability_source": "empirical",
-            "rank_score": 4,
-            "reason": "ATR 1.5",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_1_5"
-          },
-          {
-            "confidence": "Low",
-            "distance_abs": 3460.0,
-            "distance_atr": 2.0,
-            "distance_pct": -4.83,
-            "expected_value_pct": 0.48,
-            "label": "T3",
-            "price": 68160,
-            "probability": 0.1,
-            "probability_display": "0.10",
-            "probability_source": "empirical",
-            "rank_score": -1,
-            "reason": "ATR 2.0",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "atr_2"
-          },
-          {
-            "confidence": "High",
-            "distance_abs": 9270.0,
-            "distance_atr": 5.36,
-            "distance_pct": -12.94,
-            "expected_value_pct": 1.29,
-            "label": "T4",
-            "price": 62350,
-            "probability": 0.1,
-            "probability_display": "0.10",
-            "probability_source": "empirical",
-            "rank_score": 17,
-            "reason": "直近10本安値",
-            "reliability": "middle",
-            "sample_count": 30,
-            "source": "recent_low"
-          }
-        ]
+        "resistance_zones": [],
+        "support_zones": []
       },
+      "model_price": 71620.0,
       "nikkei_technical_score": 27,
       "price": 71620.0,
-      "primary_direction": "up",
+      "primary_direction": "neutral",
       "primary_setup": "trend_follow_long",
       "readiness_level": "ready",
       "scenario_probabilities": {
@@ -3112,8 +2918,68 @@
       },
       "scope": "technical_with_us_index_confirmation",
       "source": "basecalc",
+      "stop_reasons": [
+        "米国3指数確認が不足"
+      ],
       "technical_regime": "bullish_technical",
-      "us_index_confirmation_score": 0
+      "us_index_confirmation_score": 0,
+      "validated_targets": {
+        "downside": [],
+        "upside": []
+      },
+      "validation_gate_status": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.62,
+            "direction_allowed": true,
+            "model_score": 0.62,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.43000000000000005,
+            "direction_allowed": true,
+            "model_score": 0.68,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.37,
+            "direction_allowed": true,
+            "model_score": 0.5700000000000001,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        }
+      }
     },
     "chase_risk": "medium",
     "components": {
@@ -3145,6 +3011,7 @@
     "confidence_score": 68,
     "confidence_warnings": [],
     "continuation_score": 86,
+    "contract_status": "limited",
     "counter_bias": {
       "direction": "down",
       "label": "上昇優勢だが反落警戒",
@@ -3170,79 +3037,11 @@
     "data_quality_level": "good",
     "data_quality_score": 96,
     "data_warning": "価格データが15分以上古い可能性があります。",
-    "direction": "up",
-    "direction_label": "上昇優勢",
-    "directional_allowed": true,
-    "downside_targets": [
-      {
-        "confidence": "Middle",
-        "distance_abs": 1730.0,
-        "distance_atr": 1.0,
-        "distance_pct": -2.42,
-        "expected_value_pct": 0.24,
-        "label": "T1",
-        "price": 69890,
-        "probability": 0.1,
-        "probability_display": "0.10",
-        "probability_source": "empirical",
-        "rank_score": 20,
-        "reason": "ATR 1.0",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_1"
-      },
-      {
-        "confidence": "Low",
-        "distance_abs": 2590.0,
-        "distance_atr": 1.5,
-        "distance_pct": -3.62,
-        "expected_value_pct": 0.36,
-        "label": "T2",
-        "price": 69030,
-        "probability": 0.1,
-        "probability_display": "0.10",
-        "probability_source": "empirical",
-        "rank_score": 4,
-        "reason": "ATR 1.5",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_1_5"
-      },
-      {
-        "confidence": "Low",
-        "distance_abs": 3460.0,
-        "distance_atr": 2.0,
-        "distance_pct": -4.83,
-        "expected_value_pct": 0.48,
-        "label": "T3",
-        "price": 68160,
-        "probability": 0.1,
-        "probability_display": "0.10",
-        "probability_source": "empirical",
-        "rank_score": -1,
-        "reason": "ATR 2.0",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_2"
-      },
-      {
-        "confidence": "High",
-        "distance_abs": 9270.0,
-        "distance_atr": 5.36,
-        "distance_pct": -12.94,
-        "expected_value_pct": 1.29,
-        "label": "T4",
-        "price": 62350,
-        "probability": 0.1,
-        "probability_display": "0.10",
-        "probability_source": "empirical",
-        "rank_score": 17,
-        "reason": "直近10本安値",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "recent_low"
-      }
-    ],
+    "direction": "neutral",
+    "direction_label": "方向判断停止",
+    "directional_allowed": false,
+    "display_price": 71620.0,
+    "downside_targets": [],
     "evidence": [
       "EMA5 > EMA20 > EMA60で短中期が上向き",
       "現在値がVWAP上",
@@ -3395,25 +3194,31 @@
     },
     "horizons": {
       "1d": {
+        "display_allowed": false,
         "expected_return_pct": -0.39,
         "horizon_label": "1営業日後の方向",
-        "main_bias": "up",
-        "main_bias_label": "上昇方向",
-        "setup_label": "上昇トレンド継続"
+        "main_bias": "range",
+        "main_bias_label": "方向感なし",
+        "setup_label": "上昇トレンド継続",
+        "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
       },
       "3d": {
+        "display_allowed": false,
         "expected_return_pct": -0.65,
         "horizon_label": "3営業日後の方向",
-        "main_bias": "up",
-        "main_bias_label": "上昇方向",
-        "setup_label": "上昇トレンド継続"
+        "main_bias": "range",
+        "main_bias_label": "方向感なし",
+        "setup_label": "上昇トレンド継続",
+        "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
       },
       "5d": {
+        "display_allowed": false,
         "expected_return_pct": -0.81,
         "horizon_label": "5営業日後の方向",
-        "main_bias": "up",
-        "main_bias_label": "上昇方向",
-        "setup_label": "上昇トレンド継続"
+        "main_bias": "range",
+        "main_bias_label": "方向感なし",
+        "setup_label": "上昇トレンド継続",
+        "stop_reason": "方向と期待リターンが矛盾 / 米国3指数確認が不足"
       }
     },
     "intermarket_technicals": {
@@ -3424,7 +3229,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-21T10:06:44.298518+00:00",
+      "fetched_at": "2026-06-21T14:34:31.233491+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
@@ -3454,6 +3259,7 @@
     "is_stale": true,
     "last_updated_display": "2026-06-19 09:00 JST",
     "main_scenario": "73,350から74,210方向を試しやすい",
+    "model_price": 71620.0,
     "model_version": "wm_v2.0.0",
     "momentum_score": 13.0,
     "near_levels": {
@@ -3554,6 +3360,118 @@
       "vwap": 31358.347
     },
     "nikkei_technical_score": 27,
+    "output_contract": {
+      "allowed_direction": "neutral",
+      "allowed_horizons": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        }
+      },
+      "available_display": "支持抵抗・ATRレンジのみ",
+      "confidence_calculated_from_snapshot_id": "",
+      "confidence_calibrated": false,
+      "confidence_status": "未較正",
+      "contract_status": "limited",
+      "data_quality_score": 96,
+      "directional_allowed": true,
+      "display_price": 71620.0,
+      "explanation_allowed": false,
+      "generated_at": "2026-06-21T14:34:34.189731+00:00",
+      "invalidated_targets": {
+        "downside": [],
+        "upside": []
+      },
+      "latest_price": null,
+      "model_price": 71620.0,
+      "model_version": "wm_v2.0.0",
+      "ohlcv_bar_count": null,
+      "price_age_minutes": 3754,
+      "price_source": "225navi",
+      "probability_display_allowed": true,
+      "range_calculated_from_price": 71620.0,
+      "readiness_level": "ready",
+      "snapshot_id": "9b8cdd67-53b2-493f-bccb-8fcae900264d",
+      "source_timestamp": "2026-06-19 09:00 JST",
+      "stop_reasons": [
+        "米国3指数確認が不足"
+      ],
+      "target_calculated_from_price": 71620.0,
+      "target_display_allowed": true,
+      "us_index_status": "missing",
+      "validated_targets": {
+        "downside": [],
+        "upside": []
+      },
+      "validation_gate_status": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.62,
+            "direction_allowed": true,
+            "model_score": 0.62,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.43000000000000005,
+            "direction_allowed": true,
+            "model_score": 0.68,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.37,
+            "direction_allowed": true,
+            "model_score": 0.5700000000000001,
+            "reasons": [],
+            "sample_count": 300
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        }
+      },
+      "validation_report_version": ""
+    },
     "performance_adjustment": {
       "applied": true,
       "avg_return_pct": 0.75,
@@ -3569,8 +3487,8 @@
     },
     "phase_label": "押し目買い優勢",
     "price": 71620.0,
-    "primary_direction": "up",
-    "primary_scenario": "上昇優勢",
+    "primary_direction": "range",
+    "primary_scenario": "方向判断停止",
     "primary_score": 86,
     "primary_setup": "trend_follow_long",
     "primary_setup_label": "上昇トレンド継続",
@@ -3610,7 +3528,7 @@
     "readiness_level": "ready",
     "rebound_improvement_score": 7,
     "reversal_risk_score": 100,
-    "scenario_label": "上昇優勢だが反落警戒点灯",
+    "scenario_label": "判定停止",
     "scenario_probabilities": {
       "down_reversal": 46,
       "range": 5,
@@ -3923,36 +3841,17 @@
       "source": "225navi",
       "symbol": "NIY=F"
     },
-    "stale_minutes": 3486,
+    "stale_minutes": 3754,
     "state_key": "bull_trend_continuation",
     "state_label": "上昇継続",
+    "stop_reasons": [
+      "米国3指数確認が不足"
+    ],
     "strength_label": "やや強い",
     "sub_scenario": "62,350を割ると上昇判定は弱まる",
     "target_1_display": "73,350",
     "target_2_display": "74,210",
-    "target_ranges": [
-      {
-        "basis": "ATR",
-        "high": 73180,
-        "horizon": "1d",
-        "label": "1日想定レンジ",
-        "low": 70060
-      },
-      {
-        "basis": "ATR・過去分布",
-        "high": 74390,
-        "horizon": "3d",
-        "label": "3日メインレンジ",
-        "low": 68850
-      },
-      {
-        "basis": "ATR・過去分布",
-        "high": 75600,
-        "horizon": "5d",
-        "label": "5日拡張レンジ",
-        "low": 67640
-      }
-    ],
+    "target_ranges": [],
     "technical_regime": "bullish_technical",
     "transition_probs": [
       {
@@ -4013,76 +3912,7 @@
       }
     ],
     "trend_score": 40,
-    "upside_targets": [
-      {
-        "confidence": "Middle",
-        "distance_abs": 1730.0,
-        "distance_atr": 1.0,
-        "distance_pct": 2.42,
-        "expected_value_pct": 0.05,
-        "label": "T1",
-        "price": 73350,
-        "probability": 0.02,
-        "probability_display": "0.02",
-        "probability_source": "empirical",
-        "rank_score": 16,
-        "reason": "ATR 1.0",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_1"
-      },
-      {
-        "confidence": "Low",
-        "distance_abs": 2590.0,
-        "distance_atr": 1.5,
-        "distance_pct": 3.62,
-        "expected_value_pct": 0.07,
-        "label": "T2",
-        "price": 74210,
-        "probability": 0.02,
-        "probability_display": "0.02",
-        "probability_source": "empirical",
-        "rank_score": -1,
-        "reason": "ATR 1.5",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_1_5"
-      },
-      {
-        "confidence": "Low",
-        "distance_abs": 3460.0,
-        "distance_atr": 2.0,
-        "distance_pct": 4.83,
-        "expected_value_pct": 0.1,
-        "label": "T3",
-        "price": 75080,
-        "probability": 0.02,
-        "probability_display": "0.02",
-        "probability_source": "empirical",
-        "rank_score": -6,
-        "reason": "ATR 2.0",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "atr_2"
-      },
-      {
-        "confidence": "Low",
-        "distance_abs": 1320.0,
-        "distance_atr": 0.76,
-        "distance_pct": 1.84,
-        "expected_value_pct": 0.06,
-        "label": "T4",
-        "price": 72940,
-        "probability": 0.03,
-        "probability_display": "0.03",
-        "probability_source": "empirical",
-        "rank_score": 6,
-        "reason": "Pivot R3",
-        "reliability": "middle",
-        "sample_count": 30,
-        "source": "pivot_r3"
-      }
-    ],
+    "upside_targets": [],
     "us_index_confirmation": {
       "components": {},
       "confirmation_label": "mixed",
@@ -4091,7 +3921,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-21T10:06:44.298518+00:00",
+      "fetched_at": "2026-06-21T14:34:31.233491+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
