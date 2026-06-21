@@ -1,25 +1,25 @@
 {
   "validation_weight_report": {
-    "generated_at": "2026-06-20T08:37:52.000827+00:00",
+    "generated_at": "2026-06-21T09:12:43.829504+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
         "display_reason": "House View Backtest 的中率を反映",
-        "evaluated_at": "2026-06-18T07:24:58.340034+00:00",
+        "evaluated_at": "2026-06-21T06:57:43.960800+00:00",
         "horizon": "backtest",
         "metrics_used": {
-          "hit_count": 7,
-          "hit_rate": 0.6364,
-          "too_bullish_count": 2,
-          "too_defensive_count": 2
+          "hit_count": 197,
+          "hit_rate": 0.7378,
+          "too_bullish_count": 32,
+          "too_defensive_count": 38
         },
         "model_key": "macro_hatzius_v1:macro_regime:backtest",
         "model_version": "macro_hatzius_v1",
         "report_id": null,
-        "sample_count": 11,
+        "sample_count": 267,
         "source": "house_view_backtest",
         "target": "macro_regime",
-        "validation_weight": 0.35
+        "validation_weight": 0.7378
       }
     ],
     "warnings": [],

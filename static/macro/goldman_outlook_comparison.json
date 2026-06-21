@@ -1,4 +1,15 @@
 {
+  "audit": {
+    "comparison_mode": "public_static_outlook_vs_live_house_view",
+    "difference_reasons": [
+      "House Viewの景気後退確率はGoldman公開見通しより12.8%pt低い。",
+      "House Viewの主レジームはslowdownで、Goldman公開見通しの成長観と同じ方向かを監査対象にする。",
+      "インフレは直接比較できるHouse View数値がないため、レジーム判断で補助比較する。"
+    ],
+    "latest_public_source_date": "2026-01-15",
+    "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
+    "public_outlook_age_days": 157
+  },
   "comparison": {
     "growth_view": {
       "goldman_public_view": "above_consensus_us_growth",
@@ -34,7 +45,7 @@
       "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
     }
   ],
-  "generated_at": "2026-06-20T08:37:50.345637+00:00",
+  "generated_at": "2026-06-21T09:12:42.163659+00:00",
   "goldman_sachs_public_outlook": {
     "as_of": "2026-01-11",
     "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -56,9 +67,9 @@
     }
   },
   "house_view_snapshot": {
-    "as_of": "2026-06-20",
+    "as_of": "2026-06-21",
     "confidence": 76.0,
-    "data_quality": 94.0,
+    "data_quality": 93.0,
     "primary_regime": "slowdown",
     "regime_probabilities": {
       "contraction": 0.02018798202221658,
