@@ -12,15 +12,18 @@ def snapshot_to_view(snapshot):
     world_model = _world_model_from_basecalc(basecalc)
     scenario = snapshot.scenario or {}
     manual_price = _manual_price_from_basecalc(basecalc)
+    trade_decision = _trade_decision(snapshot, world_model)
     return {
         'snapshot': snapshot,
         'as_of_display': snapshot.as_of.astimezone(JST).strftime('%Y-%m-%d %H:%M JST'),
         'status_label': manual_price.get('status_label') if manual_price.get('active') else _status_label(snapshot.audit_level),
         'confidence_display': _confidence_display(snapshot, manual_price),
         'manual_price': manual_price,
+        'trade_decision': trade_decision,
+        'decision_card': _decision_card(trade_decision, snapshot),
         'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
-        'long_judgment': _trade_judgment('long', snapshot, world_model),
-        'short_judgment': _trade_judgment('short', snapshot, world_model),
+        'long_judgment': _trade_judgment('long', snapshot, world_model, trade_decision),
+        'short_judgment': _trade_judgment('short', snapshot, world_model, trade_decision),
         'world_model_predictions': _world_model_predictions(world_model),
         'macro': {
             'bias': snapshot.macro_bias,
@@ -48,8 +51,10 @@ def snapshot_to_api(snapshot):
     macro = source.get('macro') or {}
     basecalc = source.get('basecalc') or {}
     levels = (snapshot.scenario or {}).get('levels') or {}
+    trade_decision = _trade_decision(snapshot, _world_model_from_basecalc(basecalc))
     return {
         'as_of': snapshot.as_of.isoformat(),
+        'version': snapshot.version,
         'final': {
             'label': snapshot.final_label,
             'stance': snapshot.final_stance,
@@ -73,6 +78,7 @@ def snapshot_to_api(snapshot):
             'level': snapshot.audit_level,
             'items': snapshot.audit_items or [],
         },
+        'trade_decision': trade_decision,
     }
 
 
@@ -205,7 +211,22 @@ def _confidence_display(snapshot, manual_price):
     return f'{snapshot.confidence_grade} / {snapshot.confidence_score}%'
 
 
-def _trade_judgment(side, snapshot, world_model):
+def _trade_judgment(side, snapshot, world_model, trade_decision=None):
+    trade_decision = trade_decision or {}
+    if trade_decision and trade_decision.get('decision_type') != 'legacy_reference':
+        selected = trade_decision.get('selected_side')
+        watch = trade_decision.get('reversal_watch') or {}
+        target = trade_decision.get('target_1') if selected == side else None
+        return {
+            'label': 'ロング判断' if side == 'long' else 'ショート判断',
+            'stance': _side_stance(side, trade_decision),
+            'price': _target_display(target),
+            'probability': _probability_display(trade_decision.get('probability') if selected == side else None),
+            'setup': _side_setup(side, trade_decision, watch),
+            'stop': _price_with_suffix(trade_decision.get('stop_price') if selected == side else None),
+            'reward_risk': _rr_display(trade_decision.get('reward_risk') if selected == side else None),
+            'reasons': _side_reasons(side, trade_decision),
+        }
     output_contract = world_model.get('output_contract') or {}
     if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
         reason = (world_model.get('stop_reasons') or output_contract.get('stop_reasons') or ['出力整合性を確認中'])[0]
@@ -215,6 +236,9 @@ def _trade_judgment(side, snapshot, world_model):
             'price': 'N/A',
             'probability': '表示停止',
             'setup': reason,
+            'stop': 'N/A',
+            'reward_risk': 'N/A',
+            'reasons': [reason],
         }
     target_key = 'upside_targets' if side == 'long' else 'downside_targets'
     target = _first_target(world_model.get(target_key))
@@ -226,6 +250,9 @@ def _trade_judgment(side, snapshot, world_model):
         'price': f'{price}円' if price != 'N/A' else 'N/A',
         'probability': probability,
         'setup': world_model.get('primary_setup_label') or world_model.get('state_label') or '判断材料を確認中',
+        'stop': 'N/A',
+        'reward_risk': 'N/A',
+        'reasons': [],
     }
 
 
@@ -277,6 +304,170 @@ def _first_target(targets):
         if isinstance(target, dict) and target.get('price') is not None:
             return target
     return {}
+
+
+def _trade_decision(snapshot, world_model):
+    decision = dict(snapshot.trade_decision or {})
+    if decision:
+        return decision
+    return {
+        'selected_side': _legacy_selected_side(snapshot.final_stance),
+        'decision_type': 'legacy_reference',
+        'horizon': '3d',
+        'current_price': world_model.get('display_price') or world_model.get('price'),
+        'entry_price': world_model.get('display_price') or world_model.get('price'),
+        'target_1': None,
+        'target_2': None,
+        'stop_price': None,
+        'invalidation_price': world_model.get('invalidation_price'),
+        'reward_risk': None,
+        'expected_return_pct': None,
+        'probability': None,
+        'confidence_score': snapshot.confidence_score,
+        'confidence_grade': snapshot.confidence_grade,
+        'long_score': 0,
+        'short_score': 0,
+        'no_trade_score': 0,
+        'trend_follow_score': 0,
+        'reversal_score': 0,
+        'counter_scenario': world_model.get('counter_bias') or {},
+        'reversal_watch': {},
+        'reasons': list(snapshot.evidence or [])[:3],
+        'warnings': [],
+        'blocked_reasons': [],
+        'model_version': snapshot.version,
+        'price_source': 'market_data',
+    }
+
+
+def _legacy_selected_side(final_stance):
+    if final_stance in {'bullish', 'conditional_bullish'}:
+        return 'long'
+    if final_stance in {'bearish_alert', 'sell_rally_watch'}:
+        return 'short'
+    return 'no_trade'
+
+
+def _decision_card(trade_decision, snapshot):
+    selected = trade_decision.get('selected_side') or 'no_trade'
+    return {
+        'label': _selected_side_label(selected),
+        'decision_type': _decision_type_label(trade_decision.get('decision_type')),
+        'current_price': _price_with_suffix(trade_decision.get('current_price')),
+        'entry': _entry_display(trade_decision),
+        'target': _target_display(trade_decision.get('target_1')),
+        'stop': _price_with_suffix(trade_decision.get('stop_price')),
+        'invalidation': _price_with_suffix(trade_decision.get('invalidation_price')),
+        'reward_risk': _rr_display(trade_decision.get('reward_risk')),
+        'confidence': f"{trade_decision.get('confidence_grade') or snapshot.confidence_grade} / {trade_decision.get('confidence_score', snapshot.confidence_score)}%",
+        'counter': _counter_display(trade_decision),
+        'reasons': list(trade_decision.get('reasons') or [])[:3],
+        'warnings': list((trade_decision.get('warnings') or []) + (trade_decision.get('blocked_reasons') or []))[:4],
+    }
+
+
+def _selected_side_label(value):
+    return {
+        'long': 'ロング',
+        'short': 'ショート',
+        'no_trade': '見送り',
+    }.get(value, '見送り')
+
+
+def _decision_type_label(value):
+    return {
+        'trend_follow': '順張り',
+        'pullback': '押し目待ち',
+        'rally_sell': '戻り売り',
+        'reversal_watch': '逆張りWATCH',
+        'reversal_entry': '逆張りENTRY',
+        'no_chase_long': '高値追い禁止',
+        'no_chase_short': '突っ込み売り禁止',
+        'no_trade_conflict': '条件不足',
+        'no_trade_data_blocked': 'データ停止',
+        'legacy_reference': '参考判断',
+    }.get(value, value or '条件確認')
+
+
+def _entry_display(decision):
+    if decision.get('selected_side') == 'no_trade':
+        return 'なし'
+    low = _format_price(decision.get('entry_zone_low'))
+    high = _format_price(decision.get('entry_zone_high'))
+    if low != 'N/A' and high != 'N/A':
+        return f'{low}〜{high}円'
+    return _price_with_suffix(decision.get('entry_price'))
+
+
+def _counter_display(decision):
+    watch = decision.get('reversal_watch') or {}
+    if watch:
+        side = _selected_side_label(watch.get('side'))
+        status = 'ENTRY' if watch.get('status') == 'entry' else 'WATCH'
+        return f"{side}逆張り{status}: {watch.get('label') or ''}".strip()
+    counter = decision.get('counter_scenario') or {}
+    return counter.get('label') or 'N/A'
+
+
+def _side_stance(side, decision):
+    selected = decision.get('selected_side')
+    if selected == side:
+        return '採用'
+    watch = decision.get('reversal_watch') or {}
+    if watch.get('side') == side:
+        return 'WATCH' if watch.get('status') != 'entry' else 'ENTRY候補'
+    if selected == 'no_trade':
+        return '見送り'
+    return '非採用'
+
+
+def _side_setup(side, decision, watch):
+    if decision.get('selected_side') == side:
+        return _decision_type_label(decision.get('decision_type'))
+    if watch.get('side') == side:
+        return watch.get('label') or _decision_type_label('reversal_watch')
+    reasons = decision.get('blocked_reasons') or []
+    return reasons[0] if reasons else '採用条件なし'
+
+
+def _side_reasons(side, decision):
+    if decision.get('selected_side') == side:
+        return list(decision.get('reasons') or [])[:3]
+    watch = decision.get('reversal_watch') or {}
+    if watch.get('side') == side:
+        return list(watch.get('reasons') or [])[:3]
+    return list(decision.get('blocked_reasons') or [])[:3]
+
+
+def _target_display(target):
+    if not target:
+        return 'N/A'
+    price = _format_price(target.get('price'))
+    return f'{price}円' if price != 'N/A' else 'N/A'
+
+
+def _price_with_suffix(value):
+    price = _format_price(value)
+    return f'{price}円' if price != 'N/A' else 'N/A'
+
+
+def _rr_display(value):
+    try:
+        return f'{float(value):.2f}'
+    except (TypeError, ValueError):
+        return 'N/A'
+
+
+def _probability_display(value):
+    if value is None:
+        return '参考'
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if 0 <= number <= 1:
+        return f'{number * 100:.0f}%'
+    return f'{number:.0f}%'
 
 
 def _format_price(value):

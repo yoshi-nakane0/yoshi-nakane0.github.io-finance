@@ -1,4 +1,4 @@
-from datetime import timezone as dt_timezone
+from datetime import timedelta, timezone as dt_timezone
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -6,17 +6,189 @@ from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
-from .models import ExplanationSnapshot
+from basecalc.models import MarketBar
+
+from .models import ExplanationSnapshot, ExplanationTradeOutcome
 from .services.audit_engine import evaluate_audit
 from .services.contracts import BasecalcSignal, MacroSignal
 from .services.freshness import build_explanation_refresh_status
-from .services.fusion_engine import build_final_decision
+from .services.fusion_engine import build_final_decision, build_trade_decision_v2
 from .services.macro_adapter import load_macro_signal
 from .services.scenario_builder import build_scenarios
-from .services.serializer import snapshot_to_view
+from .services.serializer import snapshot_to_api, snapshot_to_view
+from .services.target_selector import select_trade_targets
+from .services.validation_engine import evaluate_trade_outcome
 
 
 class ExplanationDecisionEngineTests(SimpleTestCase):
+    def _macro(self, bias='positive', **overrides):
+        data = {
+            'bias': bias,
+            'summary': 'Macroは支援的。',
+            'confidence_score': 78,
+            'confidence_grade': 'B',
+            'data_quality_score': 82,
+        }
+        data.update(overrides)
+        return MacroSignal(**data)
+
+    def _basecalc(self, bias='bullish', **overrides):
+        data = {
+            'bias': bias,
+            'summary': '日経先物は上昇優勢。',
+            'confidence_score': 72,
+            'confidence_grade': 'B',
+            'data_quality_score': 86,
+            'readiness_level': 'ready',
+            'can_show_prediction': True,
+            'current_price': 42000,
+            'support': 41600,
+            'resistance': 42800,
+            'invalidation': 41400,
+            'bullish_invalidation': 41400,
+            'bearish_invalidation': 42600,
+            'direction_1d': 'up',
+            'direction_3d': 'up',
+            'direction_5d': 'up',
+            'primary_direction': 'up',
+            'primary_setup': 'trend_follow_long',
+            'counter_bias': {'direction': 'down', 'score': 20, 'label': '反落警戒は限定的'},
+            'scenario_probabilities': {'up_continuation': 68, 'range': 20, 'down_reversal': 12},
+            'horizons': {'1d': {'expected_return_pct': 0.4}, '3d': {'expected_return_pct': 0.8}, '5d': {'expected_return_pct': 1.1}},
+            'expected_return_1d': 0.4,
+            'expected_return_3d': 0.8,
+            'expected_return_5d': 1.1,
+            'validated_targets': {
+                'upside': [{'label': 'T1', 'price': 42800, 'probability': 0.62}],
+                'downside': [{'label': 'T1', 'price': 41000, 'probability': 0.45}],
+            },
+            'reversal_risk_score': 20,
+            'rebound_improvement_score': 10,
+            'continuation_score': 72,
+            'shock_score': 15,
+        }
+        data.update(overrides)
+        return BasecalcSignal(**data)
+
+    def test_trade_decision_v2_selects_single_long_with_target_stop_and_rr(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc()
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'long')
+        self.assertEqual(decision.decision_type, 'trend_follow')
+        self.assertEqual(decision.target_1['price'], 42800)
+        self.assertEqual(decision.stop_price, 41400)
+        self.assertGreaterEqual(decision.reward_risk, 1.2)
+        self.assertGreater(decision.long_score, decision.short_score)
+        self.assertFalse(decision.blocked_reasons)
+
+    def test_bullish_overheated_market_blocks_long_chasing_and_keeps_short_watch(self):
+        macro = self._macro('negative')
+        basecalc = self._basecalc(
+            resistance=42220,
+            bearish_invalidation=42450,
+            reversal_risk_score=82,
+            counter_bias={'direction': 'down', 'score': 82, 'label': '上昇優勢だが反落警戒'},
+            scenario_probabilities={'up_continuation': 36, 'range': 24, 'down_reversal': 40},
+            validated_targets={
+                'upside': [{'label': 'T1', 'price': 42220, 'probability': 0.51}],
+                'downside': [{'label': 'T1', 'price': 41000, 'probability': 0.57}],
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_chase_long')
+        self.assertEqual(decision.reversal_watch['side'], 'short')
+        self.assertIn('高値追い禁止', decision.warnings)
+
+    def test_bearish_oversold_market_blocks_short_chasing_and_keeps_long_watch(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            bias='bearish',
+            summary='日経先物は下落優勢。',
+            current_price=42000,
+            support=41820,
+            resistance=42600,
+            invalidation=42600,
+            bullish_invalidation=41400,
+            bearish_invalidation=42600,
+            direction_1d='down',
+            direction_3d='down',
+            direction_5d='down',
+            primary_direction='down',
+            primary_setup='trend_follow_short',
+            expected_return_1d=-0.4,
+            expected_return_3d=-0.8,
+            expected_return_5d=-1.0,
+            horizons={'1d': {'expected_return_pct': -0.4}, '3d': {'expected_return_pct': -0.8}, '5d': {'expected_return_pct': -1.0}},
+            rebound_improvement_score=84,
+            counter_bias={'direction': 'up', 'score': 84, 'label': '下落優勢だが買い戻し警戒'},
+            scenario_probabilities={'down_continuation': 34, 'range': 25, 'up_reversal': 41},
+            validated_targets={
+                'upside': [{'label': 'T1', 'price': 43200, 'probability': 0.55}],
+                'downside': [{'label': 'T1', 'price': 41820, 'probability': 0.58}],
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_chase_short')
+        self.assertEqual(decision.reversal_watch['side'], 'long')
+        self.assertIn('突っ込み売り禁止', decision.warnings)
+
+    def test_trade_decision_v2_blocks_when_reward_risk_is_too_low(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            validated_targets={
+                'upside': [{'label': 'T1', 'price': 42300, 'probability': 0.62}],
+                'downside': [{'label': 'T1', 'price': 41000, 'probability': 0.45}],
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_trade_conflict')
+        self.assertIn('R/R不足', decision.blocked_reasons)
+
+    def test_trade_decision_v2_blocks_contract_error_and_hides_targets(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            contract_status='error',
+            stop_reasons=['現在値と計算基準価格が不一致'],
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_trade_data_blocked')
+        self.assertIsNone(decision.target_1)
+        self.assertIsNone(decision.probability)
+        self.assertIn('現在値と計算基準価格が不一致', decision.blocked_reasons)
+
+    def test_target_selector_uses_side_specific_target_stop_and_rr(self):
+        basecalc = self._basecalc()
+
+        long_plan = select_trade_targets('long', 42000, basecalc)
+        short_plan = select_trade_targets('short', 42000, basecalc)
+
+        self.assertEqual(long_plan.target_1['price'], 42800)
+        self.assertEqual(long_plan.stop_price, 41400)
+        self.assertEqual(long_plan.reward_risk, 1.33)
+        self.assertEqual(short_plan.target_1['price'], 41000)
+        self.assertEqual(short_plan.stop_price, 42600)
+        self.assertEqual(short_plan.reward_risk, 1.67)
+
     def test_bullish_basecalc_with_macro_inflation_risk_is_conditional_when_audit_warns(self):
         macro = MacroSignal(
             bias='neutral_inflation_risk',
@@ -163,6 +335,36 @@ class ExplanationViewCompositionTests(SimpleTestCase):
                 },
             },
             evidence=['Basecalcは上方向。', 'Macroは支援的。'],
+            trade_decision={
+                'selected_side': 'long',
+                'decision_type': 'trend_follow',
+                'horizon': '3d',
+                'current_price': 69400,
+                'entry_price': 69400,
+                'entry_zone_low': 69296,
+                'entry_zone_high': 69452,
+                'target_1': {'label': 'T1', 'price': 71180, 'probability': 0.05},
+                'target_2': None,
+                'stop_price': 67620,
+                'invalidation_price': 67620,
+                'reward_risk': 1.0,
+                'expected_return_pct': 0.4,
+                'probability': 0.05,
+                'confidence_score': 68,
+                'confidence_grade': 'B-',
+                'long_score': 70,
+                'short_score': 30,
+                'no_trade_score': 35,
+                'trend_follow_score': 72,
+                'reversal_score': 20,
+                'counter_scenario': {'label': '反落警戒は限定的'},
+                'reversal_watch': {},
+                'reasons': ['ロング採用。'],
+                'warnings': [],
+                'blocked_reasons': [],
+                'model_version': 'explanation_v2',
+                'price_source': 'market_data',
+            },
             source_snapshots={
                 'macro': {'summary': 'Macroは支援的。'},
                 'basecalc': {
@@ -206,12 +408,16 @@ class ExplanationViewCompositionTests(SimpleTestCase):
     def test_view_context_prioritizes_long_short_and_world_model_predictions(self):
         context = snapshot_to_view(self._snapshot())
 
+        self.assertEqual(context['decision_card']['label'], 'ロング')
+        self.assertEqual(context['decision_card']['target'], '71,180円')
+        self.assertEqual(context['decision_card']['stop'], '67,620円')
         self.assertEqual(context['long_judgment']['label'], 'ロング判断')
         self.assertEqual(context['long_judgment']['price'], '71,180円')
         self.assertEqual(context['long_judgment']['probability'], '5%')
         self.assertEqual(context['short_judgment']['label'], 'ショート判断')
-        self.assertEqual(context['short_judgment']['price'], '67,620円')
-        self.assertEqual(context['short_judgment']['probability'], '8%')
+        self.assertEqual(context['short_judgment']['stance'], '非採用')
+        self.assertEqual(context['short_judgment']['price'], 'N/A')
+        self.assertEqual(context['short_judgment']['probability'], '参考')
         self.assertEqual(
             [item['horizon'] for item in context['world_model_predictions']],
             ['1d', '3d', '5d'],
@@ -233,6 +439,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         context = snapshot_to_view(snapshot)
 
+        self.assertEqual(context['decision_card']['label'], 'ロング')
+        self.assertEqual(context['long_judgment']['stance'], '採用')
+        snapshot.trade_decision = {}
+        context = snapshot_to_view(snapshot)
         self.assertEqual(context['long_judgment']['stance'], '停止')
         self.assertEqual(context['long_judgment']['price'], 'N/A')
         self.assertEqual(context['long_judgment']['probability'], '表示停止')
@@ -247,14 +457,23 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         html = render_to_string('explanation/index.html', context)
 
+        decision_index = html.index('最終判定')
         long_index = html.index('ロング判断')
         short_index = html.index('ショート判断')
         world_index = html.index('world model 予測数値')
         final_index = html.index('最終判断')
 
+        self.assertLess(decision_index, long_index)
         self.assertLess(long_index, short_index)
         self.assertLess(short_index, world_index)
         self.assertLess(world_index, final_index)
+
+    def test_api_includes_trade_decision_selected_side(self):
+        payload = snapshot_to_api(self._snapshot())
+
+        self.assertEqual(payload['version'], 'explanation_v2')
+        self.assertEqual(payload['trade_decision']['selected_side'], 'long')
+        self.assertEqual(payload['trade_decision']['target_1']['price'], 71180)
 
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())
@@ -397,6 +616,75 @@ class ExplanationFreshnessTests(SimpleTestCase):
         )
 
         self.assertFalse(status['needs_refresh'])
+
+
+class ExplanationTradeOutcomeValidationTests(TestCase):
+    def test_evaluate_trade_outcome_records_target_stop_direction_and_rr(self):
+        as_of = timezone.now() - timedelta(days=4)
+        snapshot = ExplanationSnapshot.objects.create(
+            as_of=as_of,
+            final_label='強気継続',
+            final_stance='bullish',
+            action_posture='上昇継続。',
+            confidence_score=70,
+            confidence_grade='B',
+            macro_bias='positive',
+            basecalc_bias='bullish',
+            alignment_status='aligned',
+            data_quality_score=80,
+            audit_level='valid',
+            audit_items=[],
+            scenario={},
+            evidence=[],
+            trade_decision={
+                'selected_side': 'long',
+                'decision_type': 'trend_follow',
+                'current_price': 42000,
+                'entry_price': 42000,
+                'target_1': {'price': 42800},
+                'target_2': {'price': 43200},
+                'stop_price': 41400,
+                'reward_risk': 1.33,
+                'confidence_score': 70,
+            },
+            source_snapshots={
+                'basecalc': {
+                    'raw': {
+                        'world_model': {
+                            'features': {
+                                'source_symbol': 'NIY=F',
+                                'instrument_key': 'cme_nikkei_futures',
+                            },
+                            'similar_summary': {'case_count': 24},
+                        },
+                    },
+                },
+            },
+            score_breakdown={},
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=as_of + timedelta(days=1),
+            open=42000,
+            high=42900,
+            low=41900,
+            close=42750,
+            source='test',
+            instrument_key='cme_nikkei_futures',
+        )
+
+        outcome = evaluate_trade_outcome(snapshot, '1d')
+
+        self.assertIsNotNone(outcome)
+        self.assertEqual(ExplanationTradeOutcome.objects.count(), 1)
+        self.assertEqual(outcome.selected_side, 'long')
+        self.assertTrue(outcome.target_1_hit)
+        self.assertFalse(outcome.stop_hit)
+        self.assertTrue(outcome.direction_hit)
+        self.assertEqual(outcome.expected_rr, 1.33)
+        self.assertEqual(outcome.confidence_bucket, 'high')
+        self.assertEqual(outcome.sample_count_at_decision, 24)
 
 
 class ExplanationMacroAdapterTests(SimpleTestCase):

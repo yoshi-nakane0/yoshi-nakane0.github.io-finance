@@ -20,11 +20,12 @@ class ExplanationSnapshot(models.Model):
     audit_items = models.JSONField(default=list)
 
     scenario = models.JSONField(default=dict)
+    trade_decision = models.JSONField(default=dict)
     evidence = models.JSONField(default=list)
     source_snapshots = models.JSONField(default=dict)
     score_breakdown = models.JSONField(default=dict)
 
-    version = models.CharField(max_length=32, default='explanation_v1')
+    version = models.CharField(max_length=32, default='explanation_v2')
 
     class Meta:
         ordering = ['-as_of', '-created_at']
@@ -56,3 +57,48 @@ class ExplanationOutcome(models.Model):
 
     def __str__(self):
         return f'{self.horizon} {self.evaluated_at:%Y-%m-%d}: {self.realized_return_pct:+.2f}%'
+
+
+class ExplanationTradeOutcome(models.Model):
+    explanation = models.ForeignKey(ExplanationSnapshot, on_delete=models.CASCADE)
+    horizon = models.CharField(max_length=16)
+    evaluated_at = models.DateTimeField()
+
+    selected_side = models.CharField(max_length=16)
+    decision_type = models.CharField(max_length=32)
+    trend_or_reversal = models.CharField(max_length=32, blank=True, default='')
+    entry_price = models.FloatField(blank=True, null=True)
+    target_1_price = models.FloatField(blank=True, null=True)
+    target_1_hit = models.BooleanField(default=False)
+    target_2_price = models.FloatField(blank=True, null=True)
+    target_2_hit = models.BooleanField(default=False)
+    stop_price = models.FloatField(blank=True, null=True)
+    stop_hit = models.BooleanField(default=False)
+    max_favorable_excursion = models.FloatField(blank=True, null=True)
+    max_adverse_excursion = models.FloatField(blank=True, null=True)
+    exit_price = models.FloatField(blank=True, null=True)
+    exit_reason = models.CharField(max_length=32, blank=True, default='')
+    realized_rr = models.FloatField(blank=True, null=True)
+    expected_rr = models.FloatField(blank=True, null=True)
+    direction_hit = models.BooleanField(default=False)
+    macro_regime = models.CharField(max_length=64, blank=True, default='')
+    technical_regime = models.CharField(max_length=64, blank=True, default='')
+    confidence_bucket = models.CharField(max_length=16, blank=True, default='')
+    sample_count_at_decision = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-evaluated_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['explanation', 'horizon'],
+                name='unique_explanation_trade_horizon',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['selected_side', '-evaluated_at'], name='explanation_trade_side_idx'),
+            models.Index(fields=['decision_type', '-evaluated_at'], name='explanation_trade_type_idx'),
+            models.Index(fields=['confidence_bucket', '-evaluated_at'], name='explanation_trade_conf_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.horizon} {self.selected_side} {self.evaluated_at:%Y-%m-%d}'

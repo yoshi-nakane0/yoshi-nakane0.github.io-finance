@@ -37,6 +37,57 @@
       {% endif %}
 
       <section class="common-section">
+        <p class="common-kicker">日経先物 1日〜5日</p>
+        <h1 class="common-title">最終判定：{{ decision_card.label }} / {{ decision_card.decision_type }}</h1>
+        <div class="common-list">
+          <div class="common-row">
+            <span>現在値</span>
+            <strong>{{ decision_card.current_price }}</strong>
+          </div>
+          <div class="common-row">
+            <span>エントリー条件</span>
+            <strong>{{ decision_card.entry }}</strong>
+          </div>
+          <div class="common-row">
+            <span>第1目標</span>
+            <strong>{{ decision_card.target }}</strong>
+          </div>
+          <div class="common-row">
+            <span>損切り</span>
+            <strong>{{ decision_card.stop }}</strong>
+          </div>
+          <div class="common-row">
+            <span>無効化</span>
+            <strong>{{ decision_card.invalidation }}</strong>
+          </div>
+          <div class="common-row">
+            <span>R/R</span>
+            <strong>{{ decision_card.reward_risk }}</strong>
+          </div>
+          <div class="common-row">
+            <span>信頼度</span>
+            <strong>{{ decision_card.confidence }}</strong>
+          </div>
+          <div class="common-row common-row--stack">
+            <span>逆方向シナリオ</span>
+            <strong>{{ decision_card.counter }}</strong>
+          </div>
+        </div>
+        <ol class="common-ordered-list">
+          {% for reason in decision_card.reasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ol>
+        {% if decision_card.warnings %}
+          <ul class="common-bullet-list">
+            {% for warning in decision_card.warnings %}
+              <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+
+      <section class="common-section">
         <h2 class="common-section-title">日経先物価格</h2>
         <form method="get" action="" class="common-action-form">
           <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
@@ -91,6 +142,14 @@
             <span>セットアップ</span>
             <strong>{{ long_judgment.setup }}</strong>
           </div>
+          <div class="common-row">
+            <span>損切り</span>
+            <strong>{{ long_judgment.stop }}</strong>
+          </div>
+          <div class="common-row">
+            <span>R/R</span>
+            <strong>{{ long_judgment.reward_risk }}</strong>
+          </div>
         </div>
       </section>
 
@@ -114,6 +173,14 @@
             <span>セットアップ</span>
             <strong>{{ short_judgment.setup }}</strong>
           </div>
+          <div class="common-row">
+            <span>損切り</span>
+            <strong>{{ short_judgment.stop }}</strong>
+          </div>
+          <div class="common-row">
+            <span>R/R</span>
+            <strong>{{ short_judgment.reward_risk }}</strong>
+          </div>
         </div>
       </section>
 
@@ -133,7 +200,8 @@
         </div>
       </section>
 
-      <section class="common-section">
+      <details class="common-section">
+        <summary class="common-section-title">従来の統合ラベル</summary>
         <p class="common-kicker">日経先物 1日〜5日</p>
         <h1 class="common-title">最終判断：{{ snapshot.final_label }}</h1>
         <div class="common-list">
@@ -154,10 +222,10 @@
             <strong>{{ as_of_display }}</strong>
           </div>
         </div>
-      </section>
+      </details>
 
-      <section class="common-section">
-        <h2 class="common-section-title">判断理由</h2>
+      <details class="common-section">
+        <summary class="common-section-title">Macro / Basecalc 詳細</summary>
         <div class="common-card-grid">
           <article class="common-card">
             <h3>Macro</h3>
@@ -172,7 +240,7 @@
             <p>{{ snapshot.audit_items.0 }}</p>
           </article>
         </div>
-      </section>
+      </details>
 
       <section class="common-section">
         <h2 class="common-section-title">理由</h2>
@@ -218,6 +286,41 @@
           </div>
         </div>
       </section>
+
+      <details class="common-section">
+        <summary class="common-section-title">検証成績</summary>
+        {% if trade_validation_summary.available %}
+          <h3 class="common-subtitle">Long / Short / No Trade 別</h3>
+          <div class="common-list">
+            {% for row in trade_validation_summary.side_rows %}
+              <div class="common-row">
+                <span>{{ row.label }} / {{ row.sample_count }}件</span>
+                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+          <h3 class="common-subtitle">Trend / Reversal 別</h3>
+          <div class="common-list">
+            {% for row in trade_validation_summary.style_rows %}
+              <div class="common-row">
+                <span>{{ row.label }} / {{ row.sample_count }}件</span>
+                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+          <h3 class="common-subtitle">信頼度別</h3>
+          <div class="common-list">
+            {% for row in trade_validation_summary.confidence_rows %}
+              <div class="common-row">
+                <span>{{ row.label }} / {{ row.sample_count }}件</span>
+                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="common-notice">検証成績は、1d / 3d / 5d の評価データが保存されると表示されます。</p>
+        {% endif %}
+      </details>
 
       <details class="common-section">
         <summary class="common-section-title">監査</summary>

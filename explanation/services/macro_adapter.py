@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.utils import timezone
 
@@ -26,6 +26,7 @@ def load_macro_signal() -> MacroSignal:
         display_status=context.get('display_status') or 'reference',
         publish_status=context.get('publish_status') or context.get('display_status') or 'reference',
         warnings=_dedupe(warnings),
+        factor_vector=_macro_factor_vector(context),
         source=context,
         as_of=_parse_as_of(context.get('generated_at') or context.get('as_of')),
     )
@@ -67,6 +68,80 @@ def _macro_bias(context):
     if label in {'slowdown'}:
         return 'neutral_cautious'
     return 'neutral'
+
+
+def _macro_factor_vector(context):
+    bias = _macro_bias(context)
+    probabilities = context.get('probabilities') or context.get('risk_probabilities') or {}
+    scores = context.get('scores') or {}
+    risk_appetite = _safe_int(
+        context.get('risk_appetite_score') or scores.get('risk_appetite_score'),
+        50,
+    )
+    growth = _safe_int(context.get('growth_score') or scores.get('growth_score'), _growth_from_bias(bias))
+    inflation = _probability_score(probabilities, 'inflation_reacceleration')
+    stress = max(
+        _probability_score(probabilities, 'financial_stress'),
+        _probability_score(probabilities, 'recession'),
+        _probability_score(probabilities, 'recession_probability'),
+    )
+    rates_pressure = max(inflation, _safe_int(context.get('rates_pressure_score'), 0))
+    fx_support = _safe_int(context.get('fx_support_score'), 50)
+    event_risk = _safe_int(
+        context.get('event_risk_score') or (context.get('upcoming_event_risk') or {}).get('score'),
+        0,
+    )
+    policy_uncertainty = _safe_int(context.get('policy_uncertainty_score'), 0)
+    long_filter = 1.0
+    short_filter = 1.0
+    if bias == 'positive':
+        long_filter += 0.18
+        short_filter -= 0.12
+    elif bias == 'negative':
+        long_filter -= 0.18
+        short_filter += 0.18
+    elif bias == 'neutral_inflation_risk':
+        long_filter -= 0.10
+        short_filter += 0.08
+    long_filter -= min(0.18, inflation / 1000)
+    short_filter += min(0.12, stress / 1200)
+    volatility_filter = 1 + min(0.5, (stress + event_risk + policy_uncertainty) / 300)
+    as_of = _parse_as_of(context.get('generated_at') or context.get('as_of'))
+    return {
+        'growth_score': growth,
+        'inflation_risk_score': inflation,
+        'rates_pressure_score': rates_pressure,
+        'fx_support_score': fx_support,
+        'credit_stress_score': stress,
+        'event_risk_score': event_risk,
+        'risk_appetite_score': risk_appetite,
+        'policy_uncertainty_score': policy_uncertainty,
+        'macro_long_filter': round(max(0.65, min(1.35, long_filter)), 2),
+        'macro_short_filter': round(max(0.65, min(1.35, short_filter)), 2),
+        'macro_volatility_filter': round(volatility_filter, 2),
+        'macro_stale': timezone.now() - as_of > timedelta(days=7),
+    }
+
+
+def _growth_from_bias(bias):
+    if bias == 'positive':
+        return 70
+    if bias == 'negative':
+        return 30
+    if bias == 'neutral_cautious':
+        return 45
+    return 50
+
+
+def _probability_score(probabilities, key):
+    value = probabilities.get(key)
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0
+    if 0 <= number <= 1:
+        return int(round(number * 100))
+    return int(round(number))
 
 
 def _safe_int(value, default):

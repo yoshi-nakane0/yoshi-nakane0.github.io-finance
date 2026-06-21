@@ -11,6 +11,7 @@ from .models import ExplanationSnapshot
 from .services.factory import build_explanation_snapshot
 from .services.freshness import build_explanation_refresh_status
 from .services.serializer import snapshot_to_api, snapshot_to_view
+from .services.validation_engine import build_trade_validation_summary
 
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ def index(request):
     price_override = _manual_price_from_request(request)
     snapshot, is_preview = _latest_or_preview(price_override)
     context = snapshot_to_view(snapshot)
+    context['trade_validation_summary'] = _safe_trade_validation_summary()
     context['is_preview'] = is_preview
     context['refresh_status'] = build_explanation_refresh_status(snapshot)
     context['can_precompute_explanation'] = _can_precompute_explanation(request)
@@ -47,6 +49,7 @@ def index(request):
 def audit(request):
     snapshot, is_preview = _latest_or_preview()
     context = snapshot_to_view(snapshot)
+    context['trade_validation_summary'] = _safe_trade_validation_summary()
     context['is_preview'] = is_preview
     context['score_breakdown'] = snapshot.score_breakdown or {}
     context['source_snapshots'] = snapshot.source_snapshots or {}
@@ -100,3 +103,15 @@ def _manual_price_from_request(request):
     except (TypeError, ValueError):
         return None
     return price if price > 0 else None
+
+
+def _safe_trade_validation_summary():
+    try:
+        return build_trade_validation_summary()
+    except (OperationalError, ProgrammingError):
+        return {
+            'available': False,
+            'side_rows': [],
+            'style_rows': [],
+            'confidence_rows': [],
+        }

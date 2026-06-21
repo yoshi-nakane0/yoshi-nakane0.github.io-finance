@@ -68,6 +68,17 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     warnings.extend(decision.get('prediction_stop_reasons') or [])
     warnings.extend(intermarket.get('evidence') or [])
 
+    basecalc_signal = world_model.get('basecalc_signal') or {}
+    current_price = _safe_float(
+        output_contract.get('display_price')
+        or basecalc_signal.get('display_price')
+        or world_model.get('display_price')
+        or world_model.get('price')
+    )
+    invalidation = world_model.get('invalidation') or {}
+    if not isinstance(invalidation, dict):
+        invalidation = {}
+
     return BasecalcSignal(
         bias=_technical_bias(world_model, decision, output_contract),
         summary=_summary(world_model, decision, output_contract),
@@ -79,9 +90,25 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         support=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('downside_target'), world_model.get('downside_targets')),
         resistance=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('upside_target'), world_model.get('upside_targets')),
         invalidation=_safe_float(world_model.get('invalidation_price') or decision.get('invalidation')),
+        current_price=current_price,
+        price_source='manual' if (context.get('manual_price_override') or {}).get('active') else 'market_data',
         direction_1d=_horizon_bias(world_model, '1d'),
         direction_3d=_horizon_bias(world_model, '3d'),
         direction_5d=_horizon_bias(world_model, '5d'),
+        primary_direction=world_model.get('primary_direction') or basecalc_signal.get('primary_direction') or world_model.get('direction') or 'range',
+        primary_setup=world_model.get('primary_setup') or basecalc_signal.get('primary_setup') or 'range_wait',
+        counter_bias=world_model.get('counter_bias') or basecalc_signal.get('counter_bias') or {},
+        scenario_probabilities=world_model.get('scenario_probabilities') or basecalc_signal.get('scenario_probabilities') or {},
+        horizons=world_model.get('horizons') or basecalc_signal.get('horizons') or {},
+        expected_return_1d=_expected_return(world_model, '1d'),
+        expected_return_3d=_expected_return(world_model, '3d'),
+        expected_return_5d=_expected_return(world_model, '5d'),
+        bullish_invalidation=_safe_float(invalidation.get('bullish') or world_model.get('bullish_invalidation')),
+        bearish_invalidation=_safe_float(invalidation.get('bearish') or world_model.get('bearish_invalidation')),
+        reversal_risk_score=_safe_int(world_model.get('reversal_risk_score'), 0),
+        rebound_improvement_score=_safe_int(world_model.get('rebound_improvement_score'), 0),
+        continuation_score=_safe_int(world_model.get('continuation_score'), 0),
+        shock_score=_safe_int(world_model.get('shock_score'), 0),
         fallback_used=bool(decision.get('fallback_used') or (world_model.get('data_quality') or {}).get('fallback_used')),
         us_index_available=(intermarket.get('readiness') or {}).get('usable') is not False,
         contract_status=output_contract.get('contract_status') or 'unchecked',
@@ -327,6 +354,19 @@ def _target_price(primary, targets):
             if value is not None:
                 return value
     return None
+
+
+def _expected_return(world_model, horizon):
+    value = world_model.get(f'expected_return_{horizon}')
+    if value is not None:
+        return _safe_float(value)
+    item = (world_model.get('horizons') or {}).get(horizon) or {}
+    if item.get('expected_return_pct') is not None:
+        return _safe_float(item.get('expected_return_pct'))
+    item = (world_model.get('expected_returns') or {}).get(horizon) or {}
+    if isinstance(item, dict):
+        return _safe_float(item.get('value') or item.get('expected_return_pct'))
+    return _safe_float(item)
 
 
 def _safe_float(value):
