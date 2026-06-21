@@ -34,6 +34,14 @@ class BasecalcSignal:
     direction_5d: str = 'neutral'
     fallback_used: bool = False
     us_index_available: bool = True
+    contract_status: str = 'unchecked'
+    allowed_direction: str = 'stopped'
+    allowed_horizons: Dict[str, Any] = field(default_factory=dict)
+    validated_targets: Dict[str, Any] = field(default_factory=dict)
+    invalidated_targets: Dict[str, Any] = field(default_factory=dict)
+    stop_reasons: List[str] = field(default_factory=list)
+    confidence_calibrated: bool = False
+    validation_gate_status: Dict[str, Any] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     source: Dict[str, Any] = field(default_factory=dict)
     as_of: Optional[datetime] = None

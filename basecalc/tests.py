@@ -392,11 +392,15 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         rendered_context = render_mock.call_args.args[2]
-        self.assertEqual(rendered_context['world_model']['price'], 42500)
-        self.assertEqual(rendered_context['data']['price_display'], '42,500')
-        self.assertEqual(rendered_context['data']['world_model']['price'], 42500)
+        self.assertEqual(rendered_context['world_model']['price'], 41000)
+        self.assertEqual(rendered_context['world_model']['output_contract']['model_price'], 41000)
+        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 42500)
+        self.assertEqual(rendered_context['world_model']['contract_status'], 'error')
+        self.assertEqual(rendered_context['data']['price_display'], '41,000')
+        self.assertEqual(rendered_context['data']['world_model']['price'], 41000)
         self.assertEqual(rendered_context['decision']['price'], 42500)
-        self.assertEqual(rendered_context['price_param'], '42500')
+        self.assertEqual(rendered_context['latest_price_display'], '42,500')
+        self.assertEqual(rendered_context['price_param'], '41000')
         build_context.assert_not_called()
 
     def test_get_updates_saved_snapshot_current_price_when_saved_timestamp_is_newer_but_price_differs(self):
@@ -464,10 +468,17 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         rendered_context = render_mock.call_args.args[2]
-        self.assertEqual(rendered_context['world_model']['price'], 71240)
-        self.assertEqual(rendered_context['data']['price_display'], '71,240')
+        self.assertEqual(rendered_context['world_model']['price'], 66670)
+        self.assertEqual(rendered_context['world_model']['output_contract']['model_price'], 66670)
+        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 71240)
+        self.assertEqual(rendered_context['world_model']['contract_status'], 'error')
+        self.assertIn('現在値と計算基準価格が不一致', rendered_context['world_model']['stop_reasons'])
+        self.assertEqual(rendered_context['data']['price_display'], '66,670')
+        self.assertEqual(rendered_context['latest_price_display'], '71,240')
         self.assertEqual(rendered_context['decision']['price'], 71240)
-        self.assertEqual(rendered_context['price_param'], '71240')
+        self.assertIsNone(rendered_context['decision']['upside_target'])
+        self.assertIsNone(rendered_context['decision']['downside_target'])
+        self.assertEqual(rendered_context['price_param'], '66670')
 
     def test_get_keeps_latest_daily_bar_when_stale_snapshot_has_newer_fetch_time(self):
         snapshot = {
@@ -978,7 +989,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '米国3指数確認 / 市場ストレス')
         self.assertContains(response, '追いかけリスク')
         self.assertContains(response, '1日・3日・5日の見通し')
-        self.assertContains(response, '上昇維持だが反落警戒')
+        self.assertContains(response, '方向予測は停止')
+        self.assertContains(response, 'ATRレンジ・支持抵抗のみ確認')
         self.assertNotContains(response, '追いかけリスク: low')
         self.assertNotContains(response, '1d の方向')
         self.assertNotContains(response, '>up<', html=True)

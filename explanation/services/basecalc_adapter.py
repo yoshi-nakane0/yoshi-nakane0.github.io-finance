@@ -6,6 +6,7 @@ from django.utils import timezone
 from basecalc.market_bars import attach_saved_daily_bars
 from basecalc.market_shock import build_market_shock_context
 from basecalc.outcomes import performance_summary
+from basecalc.output_contract import apply_output_contract
 from basecalc.services.decision_context import (
     build_basecalc_decision_context,
     enrich_basecalc_context,
@@ -17,6 +18,7 @@ from basecalc.status import (
     status_display_rows,
 )
 from basecalc.snapshot import load_basecalc_snapshot
+from basecalc.validation_report import load_validation_report
 from basecalc.views import (
     _manual_price_status_row,
     _manual_price_override_context,
@@ -24,6 +26,7 @@ from basecalc.views import (
     get_stale_futures_snapshot,
 )
 from basecalc.world_model import build_world_model
+from basecalc.signal_contract import build_basecalc_signal_contract
 
 from .contracts import BasecalcSignal
 
@@ -35,6 +38,17 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     else:
         context = enrich_basecalc_context(dict(snapshot)) if snapshot else {}
     world_model = context.get('world_model') or {}
+    if isinstance(world_model, dict):
+        apply_output_contract(
+            world_model,
+            display_price=(world_model.get('output_contract') or {}).get('display_price') or world_model.get('price'),
+            validation_report=load_validation_report(),
+            performance_by_horizon=context.get('backtest_performance_by_horizon') or {},
+        )
+        world_model['basecalc_signal'] = build_basecalc_signal_contract(world_model)
+        context = enrich_basecalc_context(context)
+        world_model = context.get('world_model') or {}
+    output_contract = world_model.get('output_contract') or {}
     decision = context.get('decision') or {}
     confidence_score = _safe_int(decision.get('confidence_score') or world_model.get('confidence_score'), 0)
     data_quality_score = _safe_int(
@@ -47,6 +61,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         or {}
     )
     warnings = []
+    warnings.extend(output_contract.get('stop_reasons') or [])
     warnings.extend(world_model.get('confidence_warnings') or [])
     warnings.extend(world_model.get('warnings') or [])
     warnings.extend((world_model.get('readiness') or {}).get('warnings') or [])
@@ -54,21 +69,29 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     warnings.extend(intermarket.get('evidence') or [])
 
     return BasecalcSignal(
-        bias=_technical_bias(world_model, decision),
-        summary=_summary(world_model, decision),
+        bias=_technical_bias(world_model, decision, output_contract),
+        summary=_summary(world_model, decision, output_contract),
         confidence_score=confidence_score,
         confidence_grade=decision.get('confidence') or world_model.get('confidence') or _grade_from_score(confidence_score),
         data_quality_score=data_quality_score,
         readiness_level=decision.get('readiness_level') or world_model.get('readiness_level') or 'blocked',
-        can_show_prediction=bool(decision.get('can_show_prediction')),
-        support=_target_price(decision.get('downside_target'), world_model.get('downside_targets')),
-        resistance=_target_price(decision.get('upside_target'), world_model.get('upside_targets')),
+        can_show_prediction=bool(decision.get('can_show_prediction')) and output_contract.get('contract_status') != 'error',
+        support=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('downside_target'), world_model.get('downside_targets')),
+        resistance=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('upside_target'), world_model.get('upside_targets')),
         invalidation=_safe_float(world_model.get('invalidation_price') or decision.get('invalidation')),
         direction_1d=_horizon_bias(world_model, '1d'),
         direction_3d=_horizon_bias(world_model, '3d'),
         direction_5d=_horizon_bias(world_model, '5d'),
         fallback_used=bool(decision.get('fallback_used') or (world_model.get('data_quality') or {}).get('fallback_used')),
         us_index_available=(intermarket.get('readiness') or {}).get('usable') is not False,
+        contract_status=output_contract.get('contract_status') or 'unchecked',
+        allowed_direction=output_contract.get('allowed_direction') or 'stopped',
+        allowed_horizons=output_contract.get('allowed_horizons') or {},
+        validated_targets=output_contract.get('validated_targets') or {},
+        invalidated_targets=output_contract.get('invalidated_targets') or {},
+        stop_reasons=output_contract.get('stop_reasons') or [],
+        confidence_calibrated=bool(output_contract.get('confidence_calibrated')),
+        validation_gate_status=output_contract.get('validation_gate_status') or {},
         warnings=_dedupe(warnings),
         source=context,
         as_of=_parse_as_of(world_model.get('as_of') or snapshot.get('generated_at')),
@@ -91,7 +114,7 @@ def _manual_price_context(saved_snapshot, price):
         return _saved_context_with_manual_price(
             enriched_saved_context,
             price,
-            basis='saved_basecalc_with_manual_price',
+            basis='saved_basecalc_with_manual_price_recalc_unavailable',
         )
     market_shock = _safe_market_shock_context(manual_snapshot, intermarket_context)
     basecalc_status = {
@@ -105,11 +128,23 @@ def _manual_price_context(saved_snapshot, price):
     manual_price = _manual_price_override_context(price)
     if manual_price['active']:
         status_rows.append(_manual_price_status_row(manual_price))
+    performance = performance_summary('1d', is_backtest=True)
+    performance_by_horizon = {
+        horizon: performance_summary(horizon, is_backtest=True)
+        for horizon in ('1d', '3d', '5d')
+    }
+    apply_output_contract(
+        world_model,
+        display_price=price,
+        validation_report=load_validation_report(),
+        performance_by_horizon=performance_by_horizon,
+    )
+    world_model['basecalc_signal'] = build_basecalc_signal_contract(world_model)
     decision = build_basecalc_decision_context(
         world_model,
         market_shock,
         status_rows,
-        performance_summary('1d', is_backtest=True),
+        performance,
     )
     return {
         **saved_context,
@@ -124,6 +159,7 @@ def _manual_price_context(saved_snapshot, price):
         'intermarket_technicals': world_model.get('intermarket_technicals') or {},
         'basecalc_status': basecalc_status,
         'basecalc_status_rows': status_rows,
+        'backtest_performance_by_horizon': performance_by_horizon,
         'manual_price_override': manual_price,
         'manual_price_mode': _manual_price_mode('recalculated_basecalc_with_manual_price'),
         'price_param': str(int(price)),
@@ -141,15 +177,18 @@ def _manual_recalc_is_usable(world_model):
 def _saved_context_with_manual_price(context, price, basis):
     result = deepcopy(context)
     world_model = deepcopy(result.get('world_model') or {})
-    features = deepcopy(world_model.get('features') or {})
-    world_model['price'] = price
     world_model['manual_price_override'] = True
     world_model['manual_price'] = int(price)
-    features['price'] = price
-    features['close'] = price
-    world_model['features'] = features
+    apply_output_contract(
+        world_model,
+        display_price=price,
+        latest_price=price,
+        validation_report=load_validation_report(),
+        performance_by_horizon=result.get('backtest_performance_by_horizon') or {},
+    )
+    world_model['basecalc_signal'] = build_basecalc_signal_contract(world_model)
     data = deepcopy(result.get('data') or {})
-    data['price_display'] = _price_display(price)
+    data['price_display'] = _price_display(world_model.get('price'))
     data['world_model'] = world_model
     result['data'] = data
     result['world_model'] = world_model
@@ -157,12 +196,9 @@ def _saved_context_with_manual_price(context, price, basis):
     manual_price = _manual_price_override_context(price)
     result['manual_price_override'] = manual_price
     result['manual_price_mode'] = _manual_price_mode(basis)
-    result['price_param'] = str(int(price))
+    result['price_param'] = str(int(world_model.get('price') or price))
 
-    decision = deepcopy(result.get('decision') or {})
-    if decision:
-        decision['price'] = price
-    result['decision'] = decision
+    result = enrich_basecalc_context(result)
 
     status_rows = list(result.get('basecalc_status_rows') or [])
     if manual_price['active'] and not any(row.get('key') == 'manual_price' for row in status_rows):
@@ -172,10 +208,15 @@ def _saved_context_with_manual_price(context, price, basis):
 
 
 def _manual_price_mode(basis):
+    basecalc_source = (
+        'Basecalcページの保存済み判断を固定し、手入力価格との差は契約エラーとして停止'
+        if basis == 'saved_basecalc_with_manual_price_recalc_unavailable'
+        else 'Basecalcページを手入力価格で再計算'
+    )
     return {
         'basis': basis,
         'macro_source': 'Macroページの保存済み最新判断',
-        'basecalc_source': 'Basecalcページの保存済みチャート判断に手入力価格を反映',
+        'basecalc_source': basecalc_source,
     }
 
 
@@ -237,7 +278,9 @@ def _price_display(value):
         return ''
 
 
-def _technical_bias(world_model, decision):
+def _technical_bias(world_model, decision, output_contract=None):
+    if (output_contract or {}).get('contract_status') == 'error':
+        return 'neutral'
     direction = world_model.get('direction') or decision.get('direction')
     if direction == 'up':
         return 'bullish'
@@ -246,7 +289,10 @@ def _technical_bias(world_model, decision):
     return 'neutral'
 
 
-def _summary(world_model, decision):
+def _summary(world_model, decision, output_contract=None):
+    if (output_contract or {}).get('contract_status') == 'error':
+        reasons = (output_contract or {}).get('stop_reasons') or ['出力整合性を確認中']
+        return f"basecalcの方向判断は停止。理由：{reasons[0]}"
     label = decision.get('direction_label') or world_model.get('direction_label') or '判定確認中'
     horizons = world_model.get('horizons') or {}
     directions = [

@@ -105,6 +105,34 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(scenario['levels']['support'], 67620)
         self.assertEqual(scenario['levels']['invalidation'], 62350)
 
+    def test_scenarios_hide_upside_extension_when_us_indices_are_missing(self):
+        macro = MacroSignal(
+            bias='neutral',
+            summary='景気判断は中立。',
+            confidence_score=70,
+            confidence_grade='B',
+            data_quality_score=80,
+        )
+        basecalc = BasecalcSignal(
+            bias='bullish',
+            summary='日経先物は上昇優勢。',
+            confidence_score=68,
+            confidence_grade='Middle',
+            data_quality_score=96,
+            readiness_level='ready',
+            can_show_prediction=True,
+            support=67620,
+            resistance=71180,
+            invalidation=62350,
+            contract_status='limited',
+            us_index_available=False,
+        )
+
+        scenario = build_scenarios(macro, basecalc)
+
+        self.assertIn('上値拡張は米国3指数確認まで表示停止', scenario['upside']['text'])
+        self.assertEqual(scenario['levels']['resistance'], 71180)
+
 
 class ExplanationViewCompositionTests(SimpleTestCase):
     def _snapshot(self):
@@ -189,6 +217,27 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             ['1d', '3d', '5d'],
         )
         self.assertEqual(context['world_model_predictions'][0]['expected_return'], '-0.02%')
+
+    def test_contract_error_hides_trade_targets_and_marks_basecalc_stopped(self):
+        snapshot = self._snapshot()
+        raw = snapshot.source_snapshots['basecalc']['raw']
+        raw['world_model']['contract_status'] = 'error'
+        raw['world_model']['stop_reasons'] = ['現在値と計算基準価格が不一致']
+        raw['world_model']['output_contract'] = {
+            'contract_status': 'error',
+            'stop_reasons': ['現在値と計算基準価格が不一致'],
+            'target_display_allowed': False,
+            'probability_display_allowed': False,
+            'allowed_horizons': {},
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['long_judgment']['stance'], '停止')
+        self.assertEqual(context['long_judgment']['price'], 'N/A')
+        self.assertEqual(context['long_judgment']['probability'], '表示停止')
+        self.assertEqual(context['short_judgment']['stance'], '停止')
+        self.assertEqual(context['basecalc']['summary'], 'basecalcの方向判断は停止。理由：現在値と計算基準価格が不一致')
 
     def test_template_renders_priority_sections_before_details(self):
         context = snapshot_to_view(self._snapshot())
@@ -541,7 +590,10 @@ class ExplanationManualPriceViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         raw = response.context['snapshot'].source_snapshots['basecalc']['raw']
-        self.assertEqual(raw['world_model']['price'], 42000)
-        self.assertEqual(raw['world_model']['confidence_score'], 68)
-        self.assertEqual(raw['manual_price_mode']['basis'], 'saved_basecalc_with_manual_price')
-        self.assertNotEqual(response.context['snapshot'].confidence_grade, 'D')
+        self.assertEqual(raw['world_model']['price'], 66670)
+        self.assertEqual(raw['world_model']['output_contract']['display_price'], 42000)
+        self.assertEqual(raw['world_model']['contract_status'], 'error')
+        self.assertEqual(raw['world_model']['confidence_score'], 49)
+        self.assertEqual(raw['manual_price_mode']['basis'], 'saved_basecalc_with_manual_price_recalc_unavailable')
+        self.assertEqual(response.context['long_judgment']['price'], 'N/A')
+        self.assertEqual(response.context['snapshot'].final_label, '判定保留')

@@ -13,6 +13,8 @@ from .persistence import export_basecalc_history
 from .intermarket_technicals import get_intermarket_technical_snapshot
 from .market_shock import build_market_shock_context
 from .services.decision_context import build_basecalc_decision_context
+from .output_contract import apply_output_contract
+from .signal_contract import build_basecalc_signal_contract
 from .snapshot import write_basecalc_snapshot
 from .status import (
     intermarket_status_entry,
@@ -125,6 +127,12 @@ def export_basecalc_snapshot(
         horizon: performance_summary(horizon, is_backtest=True)
         for horizon in ("1d", "3d", "5d")
     }
+    apply_output_contract(
+        world_model,
+        display_price=price,
+        performance_by_horizon=backtest_performance_by_horizon,
+    )
+    world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     decision = build_basecalc_decision_context(
         world_model,
         market_shock_context,

@@ -35,6 +35,8 @@ jobs:
         run: python manage.py test basecalc
       - name: Refresh basecalc
         run: python manage.py refresh_basecalc_data --export-history --export-path basecalc/data/basecalc_history.json
+      - name: Output contract check
+        run: python manage.py check_basecalc_output_contract --snapshot basecalc/data/latest_snapshot.json
       - name: Data integrity check
         run: python manage.py check_basecalc_data_integrity
       - name: Commit updated history

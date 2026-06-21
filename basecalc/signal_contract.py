@@ -20,15 +20,29 @@ EXCLUDED_INPUTS = [
 
 def build_basecalc_signal_contract(outlook: dict) -> dict:
     outlook = outlook or {}
+    output_contract = outlook.get("output_contract") or {}
     return {
         "source": "basecalc",
         "scope": "technical_with_us_index_confirmation",
         "instrument": "nikkei_futures",
         "as_of": outlook.get("as_of") or outlook.get("last_updated_display") or "",
         "price": outlook.get("price"),
+        "model_price": output_contract.get("model_price") or outlook.get("model_price") or outlook.get("price"),
+        "display_price": output_contract.get("display_price") or outlook.get("display_price") or outlook.get("price"),
         "readiness_level": outlook.get("readiness_level"),
-        "directional_allowed": outlook.get("directional_allowed"),
+        "directional_allowed": output_contract.get("directional_allowed", outlook.get("directional_allowed")),
         "primary_direction": outlook.get("direction"),
+        "allowed_direction": output_contract.get("allowed_direction") or outlook.get("direction"),
+        "allowed_horizons": output_contract.get("allowed_horizons") or {},
+        "validated_targets": output_contract.get("validated_targets") or {
+            "upside": outlook.get("upside_targets") or [],
+            "downside": outlook.get("downside_targets") or [],
+        },
+        "invalidated_targets": output_contract.get("invalidated_targets") or {},
+        "stop_reasons": output_contract.get("stop_reasons") or outlook.get("stop_reasons") or [],
+        "confidence_calibrated": output_contract.get("confidence_calibrated"),
+        "validation_gate_status": output_contract.get("validation_gate_status") or {},
+        "contract_status": output_contract.get("contract_status") or outlook.get("contract_status") or "unchecked",
         "counter_bias": outlook.get("counter_bias") or {},
         "scenario_probabilities": outlook.get("scenario_probabilities") or {},
         "action_note": outlook.get("action_note") or "",

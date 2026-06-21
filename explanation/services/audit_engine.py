@@ -7,7 +7,13 @@ def evaluate_audit(macro: MacroSignal, basecalc: BasecalcSignal) -> AuditResult:
     confidence_cap = None
     alignment = alignment_status(macro.bias, basecalc.bias)
 
-    if macro.bias == 'data_unavailable' or basecalc.readiness_level == 'blocked':
+    if basecalc.contract_status == 'error':
+        items.append('basecalcの方向判断は停止')
+        items.extend(basecalc.stop_reasons[:2])
+        penalty += 30
+        confidence_cap = 'D'
+        level = 'blocked'
+    elif macro.bias == 'data_unavailable' or basecalc.readiness_level == 'blocked':
         items.append('判定に必要な主要データが不足')
         penalty += 30
         confidence_cap = 'D'

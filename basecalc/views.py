@@ -35,6 +35,8 @@ from .validation_report import load_validation_report
 from .world_model import build_world_model
 from .data_quality import is_snapshot_stale
 from .github_actions import dispatch_refresh_workflow, get_refresh_workflow_state
+from .output_contract import apply_output_contract
+from .signal_contract import build_basecalc_signal_contract
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -307,6 +309,13 @@ def build_context(request, force_update=False, persist_price_override=None):
         horizon: performance_summary(horizon, is_backtest=True)
         for horizon in ("1d", "3d", "5d")
     }
+    apply_output_contract(
+        world_model,
+        display_price=price,
+        validation_report=load_validation_report(),
+        performance_by_horizon=backtest_performance_by_horizon,
+    )
+    world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     if force_update:
         evaluate_due_predictions(price)
         save_prediction(world_model)
@@ -477,17 +486,26 @@ def hydrate_saved_snapshot_current_price(context, world_model):
     latest_snapshot = get_stale_futures_snapshot()
     latest_price = price_from_futures_snapshot(latest_snapshot)
     if latest_price is None:
-        return context
-    if not should_update_saved_snapshot_price(context, latest_snapshot):
+        apply_output_contract(
+            world_model,
+            display_price=world_model.get("price"),
+            validation_report=load_validation_report(),
+            performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
+        )
+        world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
         return context
 
-    world_model["price"] = latest_price
+    model_price = normalize_price(world_model.get("price"))
+    context["latest_price"] = latest_price
+    context["latest_price_display"] = format_price(latest_price, decimals=0)
+    context["model_price_display"] = format_price(model_price, decimals=0)
     data = context.setdefault("data", {})
-    data["price_display"] = format_price(latest_price, decimals=0)
+    if model_price is not None:
+        data["price_display"] = format_price(model_price, decimals=0)
     data_world_model = data.get("world_model")
     if isinstance(data_world_model, dict):
-        data_world_model["price"] = latest_price
-    context["price_param"] = format_price_param(latest_price)
+        data_world_model["price"] = world_model.get("price")
+    context["price_param"] = format_price_param(model_price)
 
     basecalc_status = dict(context.get("basecalc_status") or {})
     basecalc_status["price_data"] = price_status_entry(
@@ -496,64 +514,15 @@ def hydrate_saved_snapshot_current_price(context, world_model):
     )
     context["basecalc_status"] = basecalc_status
     context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    apply_output_contract(
+        world_model,
+        display_price=latest_price,
+        latest_price=latest_price,
+        validation_report=load_validation_report(),
+        performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
+    )
+    world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     return context
-
-
-def should_update_saved_snapshot_price(context, latest_snapshot):
-    latest_price = price_from_futures_snapshot(latest_snapshot)
-    saved_price = normalize_price((context.get("world_model") or {}).get("price"))
-    if latest_price is not None and saved_price is not None and latest_price != saved_price:
-        return True
-    latest_time = _snapshot_fetched_at(latest_snapshot)
-    saved_time = _saved_snapshot_price_time(context)
-    if latest_time and saved_time:
-        return latest_time >= saved_time
-    return True
-
-
-def _snapshot_fetched_at(snapshot):
-    if not isinstance(snapshot, dict):
-        return None
-    return _parse_saved_snapshot_time(snapshot.get("fetched_at"))
-
-
-def _saved_snapshot_price_time(context):
-    status = context.get("basecalc_status") or {}
-    price_data = status.get("price_data") if isinstance(status, dict) else {}
-    if isinstance(price_data, dict):
-        parsed = _parse_saved_snapshot_time(price_data.get("last_success_at"))
-        if parsed:
-            return parsed
-    world_model = context.get("world_model") or {}
-    if isinstance(world_model, dict):
-        parsed = _parse_saved_snapshot_time(world_model.get("last_updated_display"))
-        if parsed:
-            return parsed
-    return _parse_saved_snapshot_time(context.get("generated_at"))
-
-
-def _parse_saved_snapshot_time(value):
-    if not value:
-        return None
-    if isinstance(value, datetime):
-        parsed = value
-    else:
-        text = str(value).strip()
-        if text.endswith(" JST"):
-            text = text[:-4]
-            try:
-                parsed = datetime.strptime(text, "%Y-%m-%d %H:%M")
-            except ValueError:
-                return None
-            parsed = timezone.make_aware(parsed, timezone=timezone.get_fixed_timezone(540))
-        else:
-            try:
-                parsed = datetime.fromisoformat(text)
-            except ValueError:
-                return None
-    if timezone.is_naive(parsed):
-        parsed = timezone.make_aware(parsed, timezone=dt_timezone.utc)
-    return parsed
 
 
 def _snapshot_from_world_model(world_model):

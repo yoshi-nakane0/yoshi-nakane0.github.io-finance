@@ -40,6 +40,7 @@ from .state_machine import estimate_expected_returns, estimate_transition_probab
 from .targets import build_targets
 from .readiness import evaluate_indicator_validity, evaluate_world_model_readiness
 from .scenario_engine import build_scenarios
+from .output_contract import apply_output_contract
 from .signal_contract import build_basecalc_signal_contract
 from .technical_regime import classify_technical_regime
 from .technical_state import build_technical_state
@@ -331,6 +332,7 @@ def build_world_model(price, market_snapshot=None, intermarket_context=None, as_
         "data_warning": _data_warning(snapshot, stale_minutes),
         "components": sentiment["components"],
     }
+    apply_output_contract(result, display_price=price)
     result["basecalc_signal"] = build_basecalc_signal_contract(result)
     return result
 
@@ -829,6 +831,7 @@ def blocked_world_model(
         "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
         "components": {},
     }
+    apply_output_contract(result, display_price=price)
     result["basecalc_signal"] = build_basecalc_signal_contract(result)
     return result
 
@@ -929,6 +932,7 @@ def limited_world_model(
         "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
         "components": {},
     }
+    apply_output_contract(result, display_price=price)
     result["basecalc_signal"] = build_basecalc_signal_contract(result)
     return result
 

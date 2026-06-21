@@ -9,9 +9,12 @@ def build_basecalc_decision_context(
     intermarket = world_model.get("us_index_confirmation") or world_model.get("intermarket_technicals") or {}
     data_quality = world_model.get("data_quality") or {}
     readiness_display = world_model.get("readiness_display") or {}
+    output_contract = world_model.get("output_contract") or {}
+    contract_stopped = output_contract.get("contract_status") == "error"
+    display_price = output_contract.get("display_price") or world_model.get("display_price") or world_model.get("price")
 
     return {
-        "price": world_model.get("price"),
+        "price": display_price if contract_stopped else world_model.get("price"),
         "last_updated": world_model.get("last_updated_display"),
         "readiness_level": world_model.get("readiness_level"),
         "readiness_label": _readiness_label(world_model.get("readiness_level")),
@@ -28,15 +31,17 @@ def build_basecalc_decision_context(
         "daily_bars": readiness_display.get("daily_bars"),
         "main_reason": _top_evidence(world_model),
         "risk_reason": _top_risk(world_model, market_shock),
-        "upside_target": _primary_target(world_model.get("upside_targets")),
-        "downside_target": _primary_target(world_model.get("downside_targets")),
+        "upside_target": None if contract_stopped else _primary_target(world_model.get("upside_targets")),
+        "downside_target": None if contract_stopped else _primary_target(world_model.get("downside_targets")),
         "invalidation": world_model.get("invalidation_display"),
-        "range_1d": _primary_range(world_model.get("target_ranges")),
+        "range_1d": None if contract_stopped else _primary_range(world_model.get("target_ranges")),
         "market_stress": _market_stress_summary(world_model, market_shock),
         "us_index_confirmation": _us_index_confirmation_summary(intermarket),
         "status_summary": _status_summary(status_rows),
-        "can_show_prediction": can_show_prediction(world_model, performance),
+        "can_show_prediction": False if contract_stopped else can_show_prediction(world_model, performance),
         "prediction_stop_reasons": prediction_stop_reasons(world_model, performance),
+        "contract_status": output_contract.get("contract_status") or "unchecked",
+        "stop_reasons": output_contract.get("stop_reasons") or [],
     }
 
 
@@ -86,8 +91,10 @@ def build_basecalc_top_context(world_model, decision, status_rows=None, performa
 
 def _top_status(decision, status_rows):
     attention = decision.get("status_summary") or _status_summary(status_rows or [])
+    if decision.get("contract_status") == "error":
+        attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or "出力整合性エラー"
     return {
-        "readiness": decision.get("readiness_label") or "判定不可",
+        "readiness": "停止" if decision.get("contract_status") == "error" else decision.get("readiness_label") or "判定不可",
         "data_quality": (
             f"{str(decision.get('data_quality_level') or 'unknown').title()} "
             f"{decision.get('data_quality_score') or 0}/100"
@@ -99,6 +106,20 @@ def _top_status(decision, status_rows):
 
 
 def _top_final_judgment(world_model, decision):
+    if (world_model.get("output_contract") or {}).get("contract_status") == "error":
+        reasons = world_model.get("stop_reasons") or ["出力の整合性を確認中"]
+        return {
+            "headline": "方向判断：停止",
+            "setup": "再計算待ち",
+            "supplement": f"理由: {reasons[0]}",
+        }
+    if (world_model.get("output_contract") or {}).get("directional_allowed") is False:
+        reasons = world_model.get("stop_reasons") or ["検証ゲート停止中"]
+        return {
+            "headline": "方向判断：停止",
+            "setup": "レンジ・節目確認",
+            "supplement": f"理由: {reasons[0]}",
+        }
     headline = (
         (world_model.get("counter_bias") or {}).get("label")
         or _judgment_with_reversal(
@@ -124,6 +145,14 @@ def _judgment_with_reversal(direction_label, reversal_score):
 
 
 def _top_action(world_model):
+    if (world_model.get("output_contract") or {}).get("contract_status") == "error":
+        return {
+            "judgment": "様子見",
+            "prohibited": "強いロング・ショート",
+            "allowed": "支持抵抗・ATRレンジ確認のみ",
+            "caution": "再計算後に判断",
+            "note": "価格、ターゲット、レンジの時点がそろうまで判断を止めます。",
+        }
     note = str(world_model.get("action_note") or "")
     if "押し目" in note or "追撃" in note:
         judgment = "押し目確認待ち"
@@ -149,12 +178,13 @@ def _action_summary(world_model):
 
 def _top_lines(world_model, decision):
     near_levels = world_model.get("near_levels") or {}
+    stopped = (world_model.get("output_contract") or {}).get("contract_status") == "error"
     return {
         "current_price": decision.get("price") or world_model.get("price"),
-        "upside_resistance": _target_price(decision.get("upside_target")),
-        "downside_support": _target_price(decision.get("downside_target")),
-        "near_upside": _first_level_price(near_levels.get("upside")),
-        "near_downside": _first_level_price(near_levels.get("downside")),
+        "upside_resistance": None if stopped else _target_price(decision.get("upside_target")),
+        "downside_support": None if stopped else _target_price(decision.get("downside_target")),
+        "near_upside": None if stopped else _first_level_price(near_levels.get("upside")),
+        "near_downside": None if stopped else _first_level_price(near_levels.get("downside")),
         "short_term_weakening": "前日安値・EMA20・VWAP割れ",
         "structural_break": decision.get("invalidation") or world_model.get("invalidation_display") or "—",
     }
@@ -209,6 +239,11 @@ def _top_risks(world_model, decision):
 
 
 def _top_horizons(world_model, performance):
+    output_contract = world_model.get("output_contract") or {}
+    if output_contract.get("contract_status") == "error":
+        reason = " / ".join((output_contract.get("stop_reasons") or [])[:2])
+        return [{"label": "停止", "summary": "方向予測は停止", "note": reason or "出力整合性を確認中"}]
+    allowed_horizons = output_contract.get("allowed_horizons") or {}
     direction = world_model.get("direction")
     if direction == "down":
         rows = [
@@ -223,7 +258,17 @@ def _top_horizons(world_model, performance):
             ("5日", "上昇継続と反落の分岐"),
         ]
     note = _direction_precision_note(performance)
-    return [{"label": label, "summary": summary, "note": note} for label, summary in rows]
+    filtered = []
+    horizon_keys = ("1d", "3d", "5d")
+    for horizon, (label, summary) in zip(horizon_keys, rows):
+        gate = allowed_horizons.get(horizon) or {}
+        if gate and not gate.get("direction_allowed", True):
+            continue
+        filtered.append({"label": label, "summary": summary, "note": note})
+    if not filtered and allowed_horizons:
+        reason = " / ".join((output_contract.get("stop_reasons") or [])[:2])
+        return [{"label": "停止", "summary": "方向予測は停止。ATRレンジ・支持抵抗のみ確認", "note": reason}]
+    return filtered or [{"label": label, "summary": summary, "note": note} for label, summary in rows]
 
 
 def _direction_precision_note(performance):
@@ -246,6 +291,13 @@ def _top_external(world_model, decision):
 
 
 def _top_confidence(decision, performance):
+    if decision.get("contract_status") == "error":
+        return {
+            "data_quality": "確認中",
+            "direction": "停止",
+            "range": "参考",
+            "validation_note": "出力契約エラーのため、信頼度を強調しません。",
+        }
     data_quality_score = int(decision.get("data_quality_score") or 0)
     t1_rate = _performance_float(performance, "target_t1_hit_rate")
     return {
@@ -376,6 +428,9 @@ def _chase_risk_sentence(value):
 
 def can_show_prediction(world_model, performance=None):
     world_model = world_model or {}
+    output_contract = world_model.get("output_contract") or {}
+    if output_contract.get("contract_status") == "error":
+        return False
     similar = world_model.get("similar_summary") or {}
     data_quality = world_model.get("data_quality") or {}
 
@@ -400,7 +455,8 @@ def prediction_stop_reasons(world_model, performance=None):
         return []
     similar = world_model.get("similar_summary") or {}
     data_quality = world_model.get("data_quality") or {}
-    reasons = []
+    output_contract = world_model.get("output_contract") or {}
+    reasons = list(output_contract.get("stop_reasons") or [])
     if world_model.get("readiness_level") != "ready":
         reasons.append("判定状態が未達")
     if int(world_model.get("confidence_score") or 0) < 45:

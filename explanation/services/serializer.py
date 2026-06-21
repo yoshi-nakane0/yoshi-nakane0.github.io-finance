@@ -28,7 +28,7 @@ def snapshot_to_view(snapshot):
         },
         'basecalc': {
             'bias': snapshot.basecalc_bias,
-            'summary': basecalc.get('summary') or '',
+            'summary': _basecalc_summary(basecalc, world_model),
             'resistance': (scenario.get('levels') or {}).get('resistance_display'),
             'support': (scenario.get('levels') or {}).get('support_display'),
             'invalidation': (scenario.get('levels') or {}).get('invalidation_display'),
@@ -206,6 +206,16 @@ def _confidence_display(snapshot, manual_price):
 
 
 def _trade_judgment(side, snapshot, world_model):
+    output_contract = world_model.get('output_contract') or {}
+    if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
+        reason = (world_model.get('stop_reasons') or output_contract.get('stop_reasons') or ['出力整合性を確認中'])[0]
+        return {
+            'label': 'ロング判断' if side == 'long' else 'ショート判断',
+            'stance': '停止',
+            'price': 'N/A',
+            'probability': '表示停止',
+            'setup': reason,
+        }
     target_key = 'upside_targets' if side == 'long' else 'downside_targets'
     target = _first_target(world_model.get(target_key))
     price = _format_price((target or {}).get('price'))
@@ -237,19 +247,29 @@ def _trade_stance(side, final_stance):
 
 def _world_model_predictions(world_model):
     horizons = world_model.get('horizons') or {}
+    output_contract = world_model.get('output_contract') or {}
+    allowed = output_contract.get('allowed_horizons') or {}
     return [
         {
             'horizon': horizon,
-            'bias': _bias_label((horizons.get(horizon) or {}).get('main_bias')),
+            'bias': '停止' if output_contract.get('contract_status') == 'error' or not (allowed.get(horizon) or {}).get('direction_allowed', True) else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
             'expected_return': _format_percent(
                 (horizons.get(horizon) or {}).get('expected_return_pct')
                 if (horizons.get(horizon) or {}).get('expected_return_pct') is not None
                 else world_model.get(f'expected_return_{horizon}')
             ),
-            'setup': (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
+            'setup': '方向判断停止' if output_contract.get('contract_status') == 'error' else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
         }
         for horizon in ('1d', '3d', '5d')
     ]
+
+
+def _basecalc_summary(basecalc, world_model):
+    output_contract = world_model.get('output_contract') or {}
+    if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
+        reason = (world_model.get('stop_reasons') or output_contract.get('stop_reasons') or ['出力整合性を確認中'])[0]
+        return f'basecalcの方向判断は停止。理由：{reason}'
+    return basecalc.get('summary') or ''
 
 
 def _first_target(targets):
