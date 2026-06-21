@@ -29,25 +29,67 @@ def _target_date(as_of_date, horizon: str):
     return as_of_date + relativedelta(months=3)
 
 
-def _live_rows() -> list[dict]:
-    rows = []
-    snapshots = (
+def _forecast_snapshots() -> list[ForecastSnapshot]:
+    return list(
         ForecastSnapshot.objects
         .filter(model_version=HOUSE_VIEW_MODEL_VERSION, target=HOUSE_VIEW_TARGET)
-        .order_by('as_of_date')
+        .order_by('as_of_date', 'created_at')
     )
+
+
+def _max_observed_target_date(snapshots: list[ForecastSnapshot]) -> date | None:
+    target_dates = []
+    for forecast in snapshots:
+        target_dates.append(_target_date(forecast.as_of_date, forecast.horizon))
+        target_dates.extend(
+            forecast.as_of_date + timedelta(days=target_days)
+            for target_days in SHORT_TERM_LIVE_TARGET_DAYS
+        )
+    return max(target_dates) if target_dates else None
+
+
+def _actual_snapshots(snapshots: list[ForecastSnapshot]) -> list[RegimeSnapshot]:
+    if not snapshots:
+        return []
+    start_date = min(forecast.as_of_date for forecast in snapshots)
+    end_date = _max_observed_target_date(snapshots)
+    if end_date is None:
+        return []
+    return list(
+        RegimeSnapshot.objects
+        .filter(snapshot_date__gt=start_date, snapshot_date__lte=end_date)
+        .exclude(regime_label=RegimeSnapshot.Label.UNKNOWN)
+        .order_by('snapshot_date')
+    )
+
+
+def _latest_actual(
+    actuals: list[RegimeSnapshot],
+    as_of_date: date,
+    target_date: date,
+) -> RegimeSnapshot | None:
+    latest = None
+    for actual in actuals:
+        if actual.snapshot_date <= as_of_date:
+            continue
+        if actual.snapshot_date > target_date:
+            break
+        latest = actual
+    return latest
+
+
+def _live_rows(
+    snapshots: list[ForecastSnapshot],
+    actuals: list[RegimeSnapshot],
+) -> list[dict]:
+    rows = []
     for forecast in snapshots:
         predicted_regime = (forecast.metadata or {}).get('primary_regime')
         if not predicted_regime:
             continue
         target_date = _target_date(forecast.as_of_date, forecast.horizon)
-        actual = (
-            RegimeSnapshot.objects
-            .filter(snapshot_date__gt=forecast.as_of_date, snapshot_date__lte=target_date)
-            .order_by('-snapshot_date')
-            .first()
-        )
-        if actual is None or actual.regime_label == RegimeSnapshot.Label.UNKNOWN:
+        actual = _latest_actual(actuals, forecast.as_of_date, target_date)
+        if actual is None:
             continue
         hit = predicted_regime == actual.regime_label
         prediction = forecast.prediction_value
@@ -177,12 +219,10 @@ def _pseudo_live_summary(backtest_path: str | Path | None = None) -> dict:
     }
 
 
-def _operation_health() -> dict:
-    snapshots = list(
-        ForecastSnapshot.objects
-        .filter(model_version=HOUSE_VIEW_MODEL_VERSION, target=HOUSE_VIEW_TARGET)
-        .order_by('as_of_date', 'created_at')
-    )
+def _operation_health(
+    snapshots: list[ForecastSnapshot],
+    actuals: list[RegimeSnapshot],
+) -> dict:
     if not snapshots:
         return {
             'status_label': '未保存',
@@ -205,13 +245,8 @@ def _operation_health() -> dict:
         if target_date > today:
             pending_count += 1
             continue
-        actual_exists = (
-            RegimeSnapshot.objects
-            .filter(snapshot_date__gt=forecast.as_of_date, snapshot_date__lte=target_date)
-            .exclude(regime_label=RegimeSnapshot.Label.UNKNOWN)
-            .exists()
-        )
-        if actual_exists:
+        actual = _latest_actual(actuals, forecast.as_of_date, target_date)
+        if actual is not None:
             settled_count += 1
         else:
             overdue_count += 1
@@ -297,16 +332,14 @@ def _live_summary(rows: list[dict]) -> dict:
     return summary
 
 
-def _short_term_live_section() -> dict:
+def _short_term_live_section(
+    snapshots: list[ForecastSnapshot],
+    actuals: list[RegimeSnapshot],
+) -> dict:
     rows = []
     pending_count = 0
     overdue_count = 0
     today = timezone.localdate()
-    snapshots = (
-        ForecastSnapshot.objects
-        .filter(model_version=HOUSE_VIEW_MODEL_VERSION, target=HOUSE_VIEW_TARGET)
-        .order_by('as_of_date')
-    )
     for forecast in snapshots:
         predicted_regime = (forecast.metadata or {}).get('primary_regime')
         if not predicted_regime:
@@ -316,13 +349,8 @@ def _short_term_live_section() -> dict:
             if target_date > today:
                 pending_count += 1
                 continue
-            actual = (
-                RegimeSnapshot.objects
-                .filter(snapshot_date__gt=forecast.as_of_date, snapshot_date__lte=target_date)
-                .order_by('-snapshot_date')
-                .first()
-            )
-            if actual is None or actual.regime_label == RegimeSnapshot.Label.UNKNOWN:
+            actual = _latest_actual(actuals, forecast.as_of_date, target_date)
+            if actual is None:
                 overdue_count += 1
                 continue
             hit = predicted_regime == actual.regime_label
@@ -369,7 +397,9 @@ def _short_term_live_section() -> dict:
 
 
 def build_house_view_validation_report(backtest_path: str | Path | None = None) -> dict:
-    rows = _live_rows()
+    snapshots = _forecast_snapshots()
+    actuals = _actual_snapshots(snapshots)
+    rows = _live_rows(snapshots, actuals)
 
     hit_count = sum(1 for row in rows if row['hit'])
     sample_count = len(rows)
@@ -381,7 +411,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
     }
     backtest_accuracy = _load_backtest_accuracy(backtest_path)
     pseudo_live_accuracy = _pseudo_live_summary(backtest_path)
-    short_term_live = _short_term_live_section()
+    short_term_live = _short_term_live_section(snapshots, actuals)
     return {
         'generated_at': timezone.now().isoformat(),
         'model_version': HOUSE_VIEW_MODEL_VERSION,
@@ -392,7 +422,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
             'short_term_live': short_term_live,
             'pseudo_live': pseudo_live_accuracy,
         },
-        'operation_health': _operation_health(),
+        'operation_health': _operation_health(snapshots, actuals),
         'sample_count': sample_count,
         'hit_count': hit_count,
         'hit_rate': hit_rate,

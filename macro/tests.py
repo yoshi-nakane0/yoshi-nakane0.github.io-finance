@@ -14,10 +14,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import SimpleTestCase
 from django.test import TestCase
-from django.test.utils import override_settings
+from django.test.utils import CaptureQueriesContext, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -103,7 +103,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('python manage.py compute_world_state', workflow)
         self.assertIn('python manage.py run_macro_forecast', workflow)
         self.assertIn('python manage.py settle_forecast_snapshots', workflow)
-        self.assertIn('python manage.py precompute_dashboard', workflow)
+        self.assertNotIn('python manage.py precompute_dashboard', workflow)
         self.assertIn(
             'python manage.py export_macro_payload --output static/macro/latest_dashboard.json',
             workflow,
@@ -141,7 +141,11 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             workflow,
         )
         self.assertIn(
-            'python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json',
+            (
+                'python manage.py export_macro_house_view_validation '
+                '--output static/macro/house_view_validation.json '
+                '--source-payload static/macro/latest_dashboard.json'
+            ),
             workflow,
         )
         self.assertIn(
@@ -961,6 +965,49 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertEqual(short_term['rows'][0]['target_days'], 5)
         self.assertEqual(short_term['rows'][1]['target_days'], 10)
 
+    def test_house_view_validation_batches_forecasts_and_actual_snapshots(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.7,
+            metadata={'primary_regime': 'expansion', 'confidence': 80},
+            features_hash='a' * 64,
+            prediction_interval={'lower': 0.5, 'upper': 0.9},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 1, 6),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=70,
+            data_quality=90,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 1, 11),
+            regime_label=RegimeSnapshot.Label.SLOWDOWN,
+            confidence=70,
+            data_quality=90,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=80,
+            data_quality=90,
+        )
+
+        with mock.patch(
+            'macro.services.house_view_validation.timezone.localdate',
+            return_value=date(2026, 4, 2),
+        ), CaptureQueriesContext(connection) as query_context:
+            report = build_house_view_validation_report()
+
+        self.assertLessEqual(len(query_context.captured_queries), 3)
+        self.assertEqual(report['accuracy_sections']['live']['sample_count'], 1)
+        self.assertEqual(report['accuracy_sections']['short_term_live']['sample_count'], 2)
+        self.assertEqual(report['operation_health']['settled_count'], 1)
+
     def test_house_view_backtest_replays_monthly_predictions_for_3m_and_6m(self):
         from macro.services.house_view_backtest import run_house_view_backtest
 
@@ -1321,6 +1368,43 @@ class MacroReliabilityEnhancementTest(TestCase):
                 call_command(command_name, output=str(output_path), stdout=StringIO())
                 payload = json.loads(output_path.read_text(encoding='utf-8'))
                 self.assertIn(expected_key, payload)
+
+    def test_house_view_validation_export_reuses_latest_dashboard_payload(self):
+        with TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            source_payload_path = output_dir / 'latest_dashboard.json'
+            output_path = output_dir / 'house_validation.json'
+            source_payload_path.write_text(
+                json.dumps({
+                    'house_view_validation': {
+                        'generated_at': '2026-06-21T00:00:00+09:00',
+                        'accuracy_sections': {
+                            'live': {'sample_count': 1},
+                        },
+                    },
+                }),
+                encoding='utf-8',
+            )
+
+            with mock.patch(
+                'macro.management.commands.export_macro_house_view_validation.'
+                'build_house_view_validation_report',
+            ) as build_mock:
+                call_command(
+                    'export_macro_house_view_validation',
+                    '--source-payload',
+                    str(source_payload_path),
+                    '--output',
+                    str(output_path),
+                    stdout=StringIO(),
+                )
+
+            build_mock.assert_not_called()
+            payload = json.loads(output_path.read_text(encoding='utf-8'))
+            self.assertEqual(
+                payload['house_view_validation']['generated_at'],
+                '2026-06-21T00:00:00+09:00',
+            )
 
 
 class UpdateLocalDataCommandTest(SimpleTestCase):
