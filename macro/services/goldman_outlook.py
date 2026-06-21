@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from django.utils import timezone
 
 from ..models import RegimeSnapshot
@@ -57,6 +59,10 @@ GOLDMAN_PUBLIC_OUTLOOK = {
 }
 
 
+def _latest_public_source_date() -> str:
+    return max(source['published_at'] for source in GOLDMAN_PUBLIC_SOURCES)
+
+
 def _latest_house_view_proxy() -> dict:
     snapshot = RegimeSnapshot.objects.order_by('-snapshot_date').first()
     if snapshot is None:
@@ -90,6 +96,29 @@ def _numeric_comparison(metric: str, goldman_value, local_value) -> dict:
     }
 
 
+def _difference_reasons(comparison: dict) -> list[str]:
+    reasons = []
+    recession = comparison.get('recession_probability_12m') or {}
+    if recession.get('difference') is not None:
+        difference = recession['difference']
+        direction = '高い' if difference > 0 else '低い'
+        reasons.append(
+            f"House Viewの景気後退確率はGoldman公開見通しより{abs(difference):.1%}pt{direction}。"
+        )
+
+    growth = comparison.get('growth_view') or {}
+    if growth.get('house_view_regime'):
+        reasons.append(
+            f"House Viewの主レジームは{growth['house_view_regime']}で、"
+            "Goldman公開見通しの成長観と同じ方向かを監査対象にする。"
+        )
+
+    inflation = comparison.get('inflation_view') or {}
+    if inflation.get('house_view_inflation_metric') is None:
+        reasons.append('インフレは直接比較できるHouse View数値がないため、レジーム判断で補助比較する。')
+    return reasons[:4]
+
+
 def build_goldman_outlook_comparison() -> dict:
     """公開されている Goldman 見通しを比較対象として返す。"""
     house_view = _latest_house_view_proxy()
@@ -120,6 +149,10 @@ def build_goldman_outlook_comparison() -> dict:
             'note': 'House View はレジーム中心のため、直接比較できる数値がない場合は空欄にする。',
         },
     }
+    latest_source_date = _latest_public_source_date()
+    outlook_age_days = (
+        timezone.localdate() - date.fromisoformat(latest_source_date)
+    ).days
 
     return {
         'source_scope': 'free_public_goldman_sachs_pages',
@@ -128,6 +161,13 @@ def build_goldman_outlook_comparison() -> dict:
         'goldman_sachs_public_outlook': GOLDMAN_PUBLIC_OUTLOOK,
         'house_view_snapshot': house_view,
         'comparison': comparison,
+        'audit': {
+            'comparison_mode': 'public_static_outlook_vs_live_house_view',
+            'latest_public_source_date': latest_source_date,
+            'public_outlook_age_days': max(outlook_age_days, 0),
+            'difference_reasons': _difference_reasons(comparison),
+            'next_review': 'Goldman公開ページが更新された時点で比較基準日を更新する。',
+        },
         'limitations': [
             'Goldman Sachs の有料・会員限定レポートは使わない。',
             '公開ページに数値がない項目は、無理に推定せず比較不能として扱う。',

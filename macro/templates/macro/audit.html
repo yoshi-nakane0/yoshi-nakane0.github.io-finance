@@ -128,6 +128,14 @@
                         <span class="macro-regime-status-pill">Backtest / Live</span>
                     </div>
                     <div class="macro-decision-grid">
+                        {% if house_view_validation.reliability %}
+                            <div class="macro-decision-card">
+                                <span class="macro-decision-label">検証上の表示扱い</span>
+                                <strong>{{ house_view_validation.reliability.display_status }}</strong>
+                                <p>{{ house_view_validation.reliability.model_validation }} / {{ house_view_validation.reliability.live_record }}</p>
+                                <span>{{ house_view_validation.reliability.note }}</span>
+                            </div>
+                        {% endif %}
                         <div class="macro-decision-card macro-decision-card--confidence">
                             <span class="macro-decision-label">Backtest精度</span>
                             <strong>{{ backtest.hit_rate|default:"—" }}</strong>
@@ -142,6 +150,7 @@
                             <strong>{{ live.hit_rate|default:"—" }}</strong>
                             <p>実際に保存した予測を後から検証します。</p>
                             <span>サンプル {{ live.sample_count|default:0 }}件 / 的中 {{ live.hit_count|default:0 }}件</span>
+                            <span>Brier {{ live.avg_brier_score|default:"—" }} / MAE {{ live.mae|default:"—" }}</span>
                             {% if live.status == "waiting_for_realizations" %}
                                 <p>結果が出るまで実績は増えません。</p>
                             {% endif %}

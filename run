@@ -6,6 +6,26 @@ set -euo pipefail
 echo "Select DEBUG mode: 1) True(開発)  2) False(公開)"
 read -r mode
 
+prompt_production_data_sync() {
+  echo "本番環境の最新データをローカルに反映しますか？"
+  echo "1. はい"
+  echo "2. いいえ"
+  read -r sync_choice
+
+  case "$sync_choice" in
+    1)
+      env DEBUG=True python manage.py sync_production_data
+      ;;
+    2)
+      echo "本番データ同期をスキップしました。"
+      ;;
+    *)
+      echo "Invalid input. Use 1 or 2." >&2
+      exit 1
+      ;;
+  esac
+}
+
 open_chrome() {
   local url="http://127.0.0.1:8000/"
   local profile_dir="/tmp/chrome-dev-profile"
@@ -67,6 +87,16 @@ open_chrome() {
 }
 
 case "$mode" in
+  1|2)
+    prompt_production_data_sync
+    ;;
+  *)
+    echo "Invalid input. Use 1 or 2." >&2
+    exit 1
+    ;;
+esac
+
+case "$mode" in
   1)
     open_chrome
     exec env DEBUG=True python manage.py runserver
@@ -76,9 +106,5 @@ case "$mode" in
     env DEBUG=False python manage.py collectstatic --noinput
     open_chrome
     exec env DEBUG=False python manage.py runserver
-    ;;
-  *)
-    echo "Invalid input. Use 1 or 2." >&2
-    exit 1
     ;;
 esac

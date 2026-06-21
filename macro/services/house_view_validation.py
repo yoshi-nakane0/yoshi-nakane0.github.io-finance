@@ -47,6 +47,9 @@ def _live_rows() -> list[dict]:
         if actual is None or actual.regime_label == RegimeSnapshot.Label.UNKNOWN:
             continue
         hit = predicted_regime == actual.regime_label
+        prediction = forecast.prediction_value
+        actual_event = 1.0 if hit else 0.0
+        absolute_error = abs(actual_event - prediction)
         rows.append({
             'as_of_date': forecast.as_of_date.isoformat(),
             'target_date': target_date.isoformat(),
@@ -56,6 +59,10 @@ def _live_rows() -> list[dict]:
             'actual_regime': actual.regime_label,
             'hit': hit,
             'miss_type': 'hit' if hit else 'wrong_regime',
+            'prediction': prediction,
+            'actual_event': actual_event,
+            'brier_score': round((prediction - actual_event) ** 2, 4),
+            'absolute_error': round(absolute_error, 4),
             'confidence': (forecast.metadata or {}).get('confidence'),
         })
     return rows
@@ -91,6 +98,51 @@ def _load_backtest_accuracy(backtest_path: str | Path | None = None) -> dict:
     }
 
 
+def _reliability(sample_count: int, hit_count: int, hit_rate) -> dict:
+    if sample_count <= 0:
+        return {
+            'model_validation': 'C / 検証不足',
+            'live_record': 'Live実績 未評価',
+            'display_status': '参考',
+            'note': '実際に保存した予測の結果がまだ確定していません。',
+        }
+    if sample_count < 10:
+        return {
+            'model_validation': 'C / 暫定',
+            'live_record': f'Live実績 {sample_count}件 / 的中 {hit_count}件',
+            'display_status': '参考',
+            'note': '検証件数が少ないため、予測精度としては参考扱いです。',
+        }
+
+    if hit_rate is None:
+        grade = 'C'
+        rate_display = '—'
+    else:
+        grade = 'A' if hit_rate >= 0.65 else 'B' if hit_rate >= 0.55 else 'C'
+        rate_display = f'{hit_rate:.0%}'
+    return {
+        'model_validation': f'{grade} / {rate_display}',
+        'live_record': f'Live実績 {sample_count}件 / 的中 {hit_count}件',
+        'display_status': '表示可',
+        'note': 'Live検証の件数が最低基準を満たしています。',
+    }
+
+
+def _live_summary(rows: list[dict]) -> dict:
+    summary = _summary(rows)
+    brier_values = [row['brier_score'] for row in rows if row.get('brier_score') is not None]
+    absolute_errors = [
+        row['absolute_error'] for row in rows if row.get('absolute_error') is not None
+    ]
+    summary['avg_brier_score'] = (
+        round(sum(brier_values) / len(brier_values), 4) if brier_values else None
+    )
+    summary['mae'] = (
+        round(sum(absolute_errors) / len(absolute_errors), 4) if absolute_errors else None
+    )
+    return summary
+
+
 def build_house_view_validation_report(backtest_path: str | Path | None = None) -> dict:
     rows = _live_rows()
 
@@ -98,7 +150,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
     sample_count = len(rows)
     hit_rate = round(hit_count / sample_count, 4) if sample_count else None
     live_accuracy = {
-        **_summary(rows),
+        **_live_summary(rows),
         'sample_kind': 'live_saved_forecasts',
         'status': 'available' if rows else 'waiting_for_realizations',
     }
@@ -114,6 +166,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
         'sample_count': sample_count,
         'hit_count': hit_count,
         'hit_rate': hit_rate,
+        'reliability': _reliability(sample_count, hit_count, hit_rate),
         'rows': rows[-120:],
         'warnings': (
             [] if sample_count >= 10 else ['検証件数が少ないため、的中率は暫定です。']

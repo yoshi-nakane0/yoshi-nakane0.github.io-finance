@@ -1510,6 +1510,15 @@ AXIS_SUMMARY_LABELS = {
     'financial_conditions': '金融環境',
     'nikkei_macro_bias': '日経影響',
 }
+HOUSE_VIEW_DIRECTION_LABELS = {
+    'expansion_with_inflation_risk': '改善（物価警戒）',
+    'inflation_risk': '中立（物価警戒）',
+    'expansion': '改善',
+    'slowdown': '弱含み',
+    'contraction': '悪化',
+    'recovery': '回復',
+    'unknown': 'データ確認中',
+}
 SCENARIO_ORDER = {
     'baseline': 0,
     'upside': 1,
@@ -1529,6 +1538,10 @@ def _extract_nikkei_impact(text: str, scenarios: List[Dict]) -> str:
 
 
 def _compact_direction(house_view: Dict, forecast: Dict, decision: Dict) -> str:
+    regime_label = house_view.get('regime_label')
+    if regime_label in HOUSE_VIEW_DIRECTION_LABELS:
+        return HOUSE_VIEW_DIRECTION_LABELS[regime_label]
+
     texts = ' '.join(
         str(value or '')
         for value in (
@@ -1549,12 +1562,57 @@ def _compact_direction(house_view: Dict, forecast: Dict, decision: Dict) -> str:
 
 
 def _format_confidence(decision: Dict, house_view: Dict) -> str:
+    data_quality = _format_data_quality(decision, house_view)
+    return f'データ品質 {data_quality}'
+
+
+def _format_data_quality(decision: Dict, house_view: Dict) -> str:
     confidence = decision.get('confidence') or {}
-    grade = confidence.get('grade') or house_view.get('confidence_grade') or '—'
-    score = confidence.get('score_display')
-    if not score and house_view.get('confidence_score') is not None:
+    grade = house_view.get('confidence_grade') or confidence.get('grade') or '—'
+    score = None
+    if house_view.get('confidence_score') is not None:
         score = f"{house_view.get('confidence_score')}%"
+    if not score:
+        score = confidence.get('score_display')
     return f'{grade} / {score or "—"}'
+
+
+def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict) -> Dict:
+    validation = context.get('house_view_validation') or {}
+    base = {
+        'data_quality': _format_data_quality(decision, house_view),
+    }
+    provided = validation.get('reliability') or {}
+    if provided:
+        return {**base, **provided}
+
+    sections = validation.get('accuracy_sections') or {}
+    live = sections.get('live') or {}
+    sample_count = live.get('sample_count') or validation.get('sample_count') or 0
+    hit_count = live.get('hit_count') or validation.get('hit_count') or 0
+    hit_rate = live.get('hit_rate') if live.get('hit_rate') is not None else validation.get('hit_rate')
+
+    if sample_count <= 0:
+        model_validation = 'C / 検証不足'
+        live_record = 'Live実績 未評価'
+    elif sample_count < 10:
+        model_validation = 'C / 暫定'
+        live_record = f'Live実績 {sample_count}件 / 的中 {hit_count}件'
+    else:
+        grade = 'A' if (hit_rate or 0) >= 0.65 else 'B' if (hit_rate or 0) >= 0.55 else 'C'
+        model_validation = f'{grade} / {hit_rate:.0%}' if hit_rate is not None else f'{grade} / —'
+        live_record = f'Live実績 {sample_count}件 / 的中 {hit_count}件'
+
+    display_status = '表示可'
+    if not house_view.get('display_allowed', True) or sample_count < 10:
+        display_status = '参考'
+
+    return {
+        'data_quality': base['data_quality'],
+        'model_validation': model_validation,
+        'live_record': live_record,
+        'display_status': display_status,
+    }
 
 
 def _top_invalidation_triggers(house_view: Dict) -> List[Dict]:
@@ -1641,6 +1699,7 @@ def build_top_decision_context(context: Dict) -> Dict:
         decision.get('bad_points') or house_view.get('main_risks') or [],
         negative=True,
     )
+    reliability = _top_validation_reliability(context, house_view, decision)
 
     return {
         'final_judgment': {
@@ -1648,8 +1707,8 @@ def build_top_decision_context(context: Dict) -> Dict:
             'nikkei_impact': nikkei_impact,
             'max_risk': '・'.join(risk_candidates[:2]) if risk_candidates else '主要リスクを確認中',
             'summary': (
-                decision.get('detail')
-                or house_view.get('house_view')
+                house_view.get('house_view')
+                or decision.get('detail')
                 or forecast.get('judgment')
                 or '主要データの更新後に最終判断を表示します。'
             ),
@@ -1678,6 +1737,7 @@ def build_top_decision_context(context: Dict) -> Dict:
             ),
             'updated_at': context.get('last_updated') or context.get('generated_at') or '—',
         },
+        'reliability': reliability,
         'driver_cards': (context.get('top_driver_cards') or context.get('indicator_cards') or [])[:5],
     }
 
@@ -2119,6 +2179,9 @@ def build_macro_forecast_report_context() -> Dict:
         'headline': report.get('headline') or '',
         'judgment': report.get('judgment') or '',
         'nikkei_implication': report.get('nikkei_implication') or '',
+        'change_summary': report.get('change_summary') or '',
+        'what_changed': report.get('what_changed') or [],
+        'market_mispricing_watch': report.get('market_mispricing_watch') or [],
         'axes': axes,
         'scenarios': scenarios,
         'warnings': run.warnings or [],

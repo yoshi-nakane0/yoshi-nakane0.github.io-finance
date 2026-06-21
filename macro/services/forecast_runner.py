@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import date
 from typing import List, Optional
@@ -57,6 +59,26 @@ def _primary_regime(probabilities: dict, fallback: str) -> str:
     return fallback or RegimeSnapshot.Label.UNKNOWN
 
 
+def _stable_features_hash(payload: dict) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(',', ':'),
+    ).encode('utf-8')
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _prediction_interval(probability: float, confidence: float) -> dict:
+    width = 0.10
+    return {
+        'type': 'regime_probability_range',
+        'lower': round(max(probability - width, 0.0), 4),
+        'upper': round(min(probability + width, 1.0), 4),
+        'confidence': round(confidence / 100, 4) if confidence else 0.0,
+    }
+
+
 def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
     target_date = as_of or timezone.localdate()
     world_snapshot = (
@@ -80,6 +102,7 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
         regime_probabilities,
         regime_snapshot.regime_label if regime_snapshot else '',
     )
+    previous_regime = _previous_regime(target_date)
     state_vector = build_economic_state_vector(world_snapshot)
     scenario_payloads = build_macro_scenarios(
         state_vector=state_vector,
@@ -89,11 +112,27 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
     report = write_macro_report(
         state_vector=state_vector,
         primary_regime=primary,
+        previous_regime=previous_regime,
         regime_probabilities=regime_probabilities,
         risk_probabilities=risk_probabilities,
         scenarios=scenario_payloads,
     )
     prediction_value = regime_probabilities.get(primary, 0.0)
+    regime_confidence = regime_snapshot.confidence if regime_snapshot else 0.0
+    feature_payload = {
+        'as_of': target_date.isoformat(),
+        'model_version': MODEL_VERSION,
+        'target': 'macro_regime',
+        'horizon': '3m_6m',
+        'primary_regime': primary,
+        'state_vector': state_vector,
+        'regime_probabilities': regime_probabilities,
+        'risk_probabilities': risk_probabilities,
+        'world_feature_vector': world_snapshot.feature_vector or {},
+        'source_freshness': world_snapshot.source_freshness or {},
+    }
+    features_hash = _stable_features_hash(feature_payload)
+    prediction_interval = _prediction_interval(prediction_value, regime_confidence)
 
     with transaction.atomic():
         snapshot, _ = ForecastSnapshot.objects.update_or_create(
@@ -103,11 +142,13 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
             horizon='3m_6m',
             defaults={
                 'prediction_value': prediction_value,
-                'prediction_interval': None,
-                'features_hash': '',
+                'prediction_interval': prediction_interval,
+                'features_hash': features_hash,
                 'metadata': {
                     'primary_regime': primary,
-                    'previous_regime': _previous_regime(target_date),
+                    'previous_regime': previous_regime,
+                    'features_hash': features_hash,
+                    'feature_payload': feature_payload,
                     'state_vector': state_vector,
                     'regime_probabilities': regime_probabilities,
                     'risk_probabilities': risk_probabilities,
@@ -121,7 +162,7 @@ def run_macro_forecast(*, as_of: Optional[date] = None) -> MacroForecastResult:
             defaults={
                 'forecast': snapshot,
                 'primary_regime': primary,
-                'previous_regime': _previous_regime(target_date),
+                'previous_regime': previous_regime,
                 'confidence': (
                     regime_snapshot.confidence if regime_snapshot else 0.0
                 ),

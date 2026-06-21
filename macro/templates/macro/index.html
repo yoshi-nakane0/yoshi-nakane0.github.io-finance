@@ -42,7 +42,7 @@
             <section class="macro-section macro-decision" id="macro-final-decision">
                 <div class="macro-section-headline">
                     <h2 class="macro-section-title macro-section-title--pulse">最終マクロ判断</h2>
-                    <span class="macro-regime-status-pill">信頼度 {{ top_decision.final_judgment.confidence }}</span>
+                    <span class="macro-regime-status-pill">{{ top_decision.final_judgment.confidence }}</span>
                 </div>
                 <div class="macro-regime-answer">
                     <div class="macro-regime-answer-label">景気の向き</div>
@@ -159,8 +159,20 @@
                 </div>
                 <div class="macro-reliability-grid">
                     <div class="macro-reliability-item">
-                        <span class="macro-reliability-label">信頼度</span>
-                        <span class="macro-reliability-value">{{ top_decision.freshness.confidence }}</span>
+                        <span class="macro-reliability-label">データ品質</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.data_quality|default:top_decision.freshness.confidence }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">モデル検証</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.model_validation|default:"—" }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">Live実績</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.live_record|default:"—" }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">表示扱い</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.display_status|default:"参考" }}</span>
                     </div>
                     <div class="macro-reliability-item">
                         <span class="macro-reliability-label">データ鮮度</span>

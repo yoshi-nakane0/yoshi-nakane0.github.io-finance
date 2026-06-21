@@ -228,6 +228,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'python manage.py export_macro_validation_weights --output static/macro/validation_weights.json',
             script,
         )
+
         self.assertNotIn('python manage.py run_house_view_backtest', script)
         self.assertIn('git add static/macro/*.json', script)
         self.assertNotIn('runtime/db.sqlite3', script)
@@ -264,6 +265,13 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json',
             backtest_script,
         )
+
+    def test_run_script_can_sync_production_data_before_startup(self):
+        script = (Path(settings.BASE_DIR) / 'run').read_text(encoding='utf-8')
+
+        self.assertIn('本番環境の最新データをローカルに反映しますか？', script)
+        self.assertIn('python manage.py sync_production_data', script)
+        self.assertIn('sync_choice', script)
 
     def test_vercel_build_skips_macro_refresh_unless_explicitly_enabled(self):
         build_script = (
@@ -754,6 +762,11 @@ class MacroReliabilityEnhancementTest(TestCase):
             2.5,
         )
         self.assertIn('recession_probability_12m', report['comparison'])
+        self.assertEqual(report['audit']['comparison_mode'], 'public_static_outlook_vs_live_house_view')
+        self.assertEqual(report['audit']['latest_public_source_date'], '2026-01-15')
+        self.assertGreaterEqual(report['audit']['public_outlook_age_days'], 0)
+        self.assertTrue(report['audit']['difference_reasons'])
+        self.assertIn('House View', report['audit']['difference_reasons'][0])
 
     def test_house_view_validation_scores_settled_regime_predictions(self):
         from macro.services.house_view_validation import build_house_view_validation_report
@@ -780,6 +793,10 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertEqual(report['hit_rate'], 1.0)
         self.assertEqual(report['rows'][0]['predicted_regime'], 'expansion')
         self.assertEqual(report['rows'][0]['actual_regime'], 'expansion')
+        self.assertEqual(report['rows'][0]['brier_score'], 0.09)
+        self.assertEqual(report['rows'][0]['absolute_error'], 0.3)
+        self.assertEqual(report['accuracy_sections']['live']['avg_brier_score'], 0.09)
+        self.assertEqual(report['accuracy_sections']['live']['mae'], 0.3)
 
     def test_house_view_validation_separates_backtest_and_live_accuracy(self):
         from macro.services.house_view_validation import build_house_view_validation_report
@@ -1153,6 +1170,76 @@ class UpdateLocalDataCommandTest(SimpleTestCase):
                 mock.call('precompute_dashboard'),
             ],
         )
+
+
+class ProductionDataSyncTest(SimpleTestCase):
+    def test_sync_downloads_static_and_basecalc_data(self):
+        from macro.services.production_data_sync import sync_production_data
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            static_path = base_dir / 'static' / 'macro' / 'latest_dashboard.json'
+            basecalc_path = base_dir / 'basecalc' / 'data' / 'latest_snapshot.json'
+            static_path.parent.mkdir(parents=True)
+            basecalc_path.parent.mkdir(parents=True)
+            static_path.write_text('{"version":"old"}', encoding='utf-8')
+            basecalc_path.write_text('{"version":"old"}', encoding='utf-8')
+
+            payloads = {
+                (
+                    'https://yoshi-nakane0-github-io-finance.vercel.app/'
+                    'static/macro/latest_dashboard.json'
+                ): b'{"version":"prod-static"}',
+                (
+                    'https://raw.githubusercontent.com/yoshi-nakane0/'
+                    'yoshi-nakane0.github.io-finance/main/'
+                    'basecalc/data/latest_snapshot.json'
+                ): b'{"version":"prod-basecalc"}',
+            }
+
+            result = sync_production_data(
+                base_dir=base_dir,
+                paths=[
+                    'static/macro/latest_dashboard.json',
+                    'basecalc/data/latest_snapshot.json',
+                ],
+                downloader=payloads.__getitem__,
+            )
+
+            self.assertEqual(
+                static_path.read_text(encoding='utf-8'),
+                '{"version":"prod-static"}',
+            )
+            self.assertEqual(
+                basecalc_path.read_text(encoding='utf-8'),
+                '{"version":"prod-basecalc"}',
+            )
+            self.assertEqual(result['updated_count'], 2)
+
+    def test_sync_mirrors_static_data_to_existing_staticfiles_alias(self):
+        from macro.services.production_data_sync import sync_production_data
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            static_path = base_dir / 'static' / 'macro' / 'house_view.json'
+            staticfiles_path = base_dir / 'staticfiles' / 'macro' / 'house_view.json'
+            static_path.parent.mkdir(parents=True)
+            staticfiles_path.parent.mkdir(parents=True)
+            static_path.write_text('{"version":"old"}', encoding='utf-8')
+            staticfiles_path.write_text('{"version":"old-staticfiles"}', encoding='utf-8')
+
+            result = sync_production_data(
+                base_dir=base_dir,
+                paths=['static/macro/house_view.json'],
+                downloader=lambda url: b'{"version":"prod"}',
+            )
+
+            self.assertEqual(static_path.read_text(encoding='utf-8'), '{"version":"prod"}')
+            self.assertEqual(
+                staticfiles_path.read_text(encoding='utf-8'),
+                '{"version":"prod"}',
+            )
+            self.assertEqual(result['mirrored_count'], 1)
 
 
 class _ObsStub:
@@ -2559,7 +2646,7 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(context['final_judgment']['direction'], '中立〜改善')
         self.assertEqual(context['final_judgment']['nikkei_impact'], '上昇支援')
-        self.assertEqual(context['final_judgment']['confidence'], 'A / 92%')
+        self.assertEqual(context['final_judgment']['confidence'], 'データ品質 A / 92%')
         self.assertEqual(len(context['invalidation_triggers']), 4)
         self.assertEqual(
             [item['name_key'] for item in context['scenarios']],
@@ -2569,6 +2656,53 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['bad_points'][0], 'インフレ再加速リスクが高い')
         self.assertLessEqual(len(context['bad_points']), 3)
         self.assertEqual(context['freshness']['data_freshness'], '82%')
+
+    def test_top_decision_uses_house_view_as_single_final_view(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'house_view': {
+                'house_view': '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
+                'regime_label': 'inflation_risk',
+                'confidence_grade': 'A',
+                'confidence_score': 91,
+                'display_allowed': True,
+            },
+            'house_view_validation': {
+                'accuracy_sections': {
+                    'live': {
+                        'sample_count': 0,
+                        'hit_count': 0,
+                        'hit_rate': None,
+                        'status': 'waiting_for_realizations',
+                    },
+                },
+            },
+            'macro_forecast_report': {
+                'headline': '景気は改善基調',
+                'judgment': '景気は改善方向',
+                'nikkei_implication': '日経先物へのmacroバイアスは上昇支援。',
+            },
+            'macro_decision': {
+                'headline': '景気は弱含みで物価も重い',
+                'detail': '別ロジックの古い説明',
+                'confidence': {
+                    'grade': 'A',
+                    'score_display': '87%',
+                    'data_freshness_pct': 90,
+                },
+            },
+        })
+
+        self.assertEqual(context['final_judgment']['direction'], '中立（物価警戒）')
+        self.assertEqual(
+            context['final_judgment']['summary'],
+            '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
+        )
+        self.assertEqual(context['final_judgment']['confidence'], 'データ品質 A / 91%')
+        self.assertEqual(context['reliability']['data_quality'], 'A / 91%')
+        self.assertEqual(context['reliability']['model_validation'], 'C / 検証不足')
+        self.assertEqual(context['reliability']['live_record'], 'Live実績 未評価')
+        self.assertEqual(context['reliability']['display_status'], '参考')
 
     def test_macro_decision_confidence_uses_data_quality_gate_cap(self):
         snapshot = RegimeSnapshot.objects.create(
@@ -4424,10 +4558,23 @@ class HatziusStyleMacroEngineTest(TestCase):
 
         self.assertEqual(result.snapshot.target, 'macro_regime')
         self.assertEqual(result.snapshot.horizon, '3m_6m')
+        self.assertEqual(len(result.snapshot.features_hash), 64)
+        self.assertEqual(result.snapshot.metadata['features_hash'], result.snapshot.features_hash)
+        self.assertEqual(
+            result.snapshot.prediction_interval,
+            {
+                'type': 'regime_probability_range',
+                'lower': 0.48,
+                'upper': 0.68,
+                'confidence': 0.74,
+            },
+        )
         self.assertEqual(
             result.snapshot.metadata['regime_probabilities']['expansion'],
             0.58,
         )
+        self.assertIn('change_summary', result.run.report)
+        self.assertIn('market_mispricing_watch', result.run.report)
         self.assertEqual(MacroScenario.objects.count(), 3)
         self.assertEqual(
             sum(s.probability for s in MacroScenario.objects.all()),
@@ -4442,6 +4589,36 @@ class HatziusStyleMacroEngineTest(TestCase):
             '米10年金利が急上昇し株式バリュエーションを圧迫',
             baseline.invalidation_triggers,
         )
+
+    def test_report_writer_records_change_summary_and_market_watch(self):
+        from macro.services.report_writer import write_macro_report
+
+        report = write_macro_report(
+            state_vector={
+                'axes': {
+                    'growth_momentum': {'label': '改善'},
+                    'inflation_pressure': {'label': '再加速警戒'},
+                    'financial_conditions': {'label': '引き締まり'},
+                    'nikkei_macro_bias': {'label': '中立'},
+                },
+            },
+            primary_regime='expansion',
+            previous_regime='slowdown',
+            regime_probabilities={'expansion': 0.62, 'slowdown': 0.22},
+            risk_probabilities={
+                'recession': 0.12,
+                'inflation_reacceleration': 0.72,
+                'financial_stress': 0.18,
+            },
+            scenarios=[],
+        )
+
+        self.assertEqual(
+            report['change_summary'],
+            '前回のslowdownからexpansionへ判断を変更。',
+        )
+        self.assertIn('物価再加速リスク', report['what_changed'])
+        self.assertIn('金利上昇リスク', report['market_mispricing_watch'])
 
     def test_validation_records_brier_score_and_direction_hit(self):
         from macro.models import MacroForecastOutcome
