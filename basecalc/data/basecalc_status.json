@@ -1,20 +1,20 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-20T19:58:17.860241+00:00",
+  "updated_at": "2026-06-21T05:20:15.798303+00:00",
   "price_data": {
     "last_success_at": "2026-06-19T00:00:00+00:00",
     "last_failed_at": "2026-06-07T12:43:43.098446+00:00",
     "source": "225navi:NIY=F",
-    "age_minutes": 2638,
+    "age_minutes": 3200,
     "fallback_used": false,
     "decision_level": "ready",
     "decision_label": "判定可能"
   },
   "intermarket": {
     "last_success_at": "2026-06-19T09:36:55.897922+00:00",
-    "last_failed_at": "2026-06-20T19:58:17.860232+00:00",
+    "last_failed_at": "2026-06-21T05:20:15.798294+00:00",
     "source": "NQ=F / ES=F / YM=F",
-    "age_minutes": 2061,
+    "age_minutes": 2623,
     "fallback_used": false,
     "asset_count": 0,
     "decision_level": "blocked",
