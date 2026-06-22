@@ -10,7 +10,7 @@
     "latest_public_source_date": "2026-01-15",
     "model_validation_usage": "not_allowed",
     "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
-    "public_outlook_age_days": 157
+    "public_outlook_age_days": 158
   },
   "benchmark_outlooks": [
     {
@@ -94,7 +94,7 @@
       "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
     }
   ],
-  "generated_at": "2026-06-21T09:45:53.745286+00:00",
+  "generated_at": "2026-06-22T11:20:09.806566+00:00",
   "goldman_sachs_public_outlook": {
     "as_of": "2026-01-11",
     "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -116,7 +116,7 @@
     }
   },
   "house_view_snapshot": {
-    "as_of": "2026-06-21",
+    "as_of": "2026-06-22",
     "confidence": 76.0,
     "data_quality": 93.0,
     "primary_regime": "slowdown",

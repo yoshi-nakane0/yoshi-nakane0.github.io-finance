@@ -1,23 +1,14 @@
 {
-  "as_of": "2026-06-21",
+  "as_of": "2026-06-22",
   "blocking_issues": [],
   "confidence_grade": "C",
   "confidence_limit_reasons": [
-    "IXIC 1m: 1か月先の株価判断はbasecalcを優先",
-    "N225 1m: 1か月先の株価判断はbasecalcを優先",
-    "GSPC 1m: 1か月先の株価判断はbasecalcを優先",
-    "DJI 1m: 1か月先の株価判断はbasecalcを優先",
-    "UNRATE 1m: 単純予測を上回っていないため参考",
-    "T10Y2Y 1m: 単純予測を上回っていないため参考",
-    "INDPRO 1m: 単純予測を上回っていないため参考",
-    "DGS10 1m: 方向一致率が低いため参考",
-    "DEXJPUS 1m: 方向一致率が低いため参考",
-    "GSPC 63d: 検証結果なし",
+    "live実績が10件未満です。",
     "市場コンセンサス未取得のためB以下です。"
   ],
   "confidence_score": 69,
   "data_quality_report": {
-    "as_of": "2026-06-21",
+    "as_of": "2026-06-22",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -63,12 +54,9 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
-    "IXIC 1m: 1か月先の株価判断はbasecalcを優先",
-    "N225 1m: 1か月先の株価判断はbasecalcを優先",
-    "GSPC 1m: 1か月先の株価判断はbasecalcを優先",
-    "DJI 1m: 1か月先の株価判断はbasecalcを優先",
-    "UNRATE 1m: 単純予測を上回っていないため参考",
-    "T10Y2Y 1m: 単純予測を上回っていないため参考"
+    "live実績が10件未満です。",
+    "市場コンセンサス未取得のためB以下です。",
+    "金利再上昇時に株価先物へ逆風"
   ],
   "model_audit": {
     "external_context": {
@@ -88,18 +76,9 @@
     "validation": {
       "display_status": "reference",
       "grade_cap": "C",
-      "live_sample_count": 20,
+      "live_sample_count": 0,
       "reasons": [
-        "IXIC 1m: 1か月先の株価判断はbasecalcを優先",
-        "N225 1m: 1か月先の株価判断はbasecalcを優先",
-        "GSPC 1m: 1か月先の株価判断はbasecalcを優先",
-        "DJI 1m: 1か月先の株価判断はbasecalcを優先",
-        "UNRATE 1m: 単純予測を上回っていないため参考",
-        "T10Y2Y 1m: 単純予測を上回っていないため参考",
-        "INDPRO 1m: 単純予測を上回っていないため参考",
-        "DGS10 1m: 方向一致率が低いため参考",
-        "DEXJPUS 1m: 方向一致率が低いため参考",
-        "GSPC 63d: 検証結果なし"
+        "live実績が10件未満です。"
       ]
     }
   },
