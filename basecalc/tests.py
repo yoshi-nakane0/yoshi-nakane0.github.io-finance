@@ -162,6 +162,79 @@ class BasecalcRuntimeHistoryHydrationTests(TestCase):
         self.assertEqual(WorldModelPrediction.objects.count(), 1)
         self.assertEqual(PredictionOutcome.objects.count(), 1)
 
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_serverless_imports_bundled_history_when_outcomes_are_incomplete(self):
+        existing_prediction = WorldModelPrediction.objects.create(
+            prediction_timestamp=timezone.make_aware(datetime(2026, 5, 30)),
+            price=39900,
+            state_key='range_neutral',
+            state_label='レンジ中立',
+            direction='neutral',
+            sentiment_score=0,
+            continuation_score=0,
+            shock_score=0,
+            confidence='Low',
+            confidence_score=40,
+            main_scenario='existing runtime row',
+        )
+        PredictionOutcome.objects.create(
+            prediction=existing_prediction,
+            horizon='1d',
+            evaluated_at=timezone.make_aware(datetime(2026, 5, 31)),
+            price_at_evaluation=39920,
+            realized_return_pct=0.05,
+            direction_hit=True,
+        )
+        payload = {
+            'schema': 'basecalc_history_v2',
+            'predictions': [
+                {
+                    'key': 'runtime-history-a',
+                    'created_at': '2026-06-01T00:00:00+00:00',
+                    'prediction_timestamp': '2026-06-01T00:00:00+00:00',
+                    'price': 40000,
+                    'state_key': 'bull_trend_continuation',
+                    'direction': 'bullish',
+                    'main_scenario': 'runtime import a',
+                },
+                {
+                    'key': 'runtime-history-b',
+                    'created_at': '2026-06-02T00:00:00+00:00',
+                    'prediction_timestamp': '2026-06-02T00:00:00+00:00',
+                    'price': 40100,
+                    'state_key': 'bull_trend_continuation',
+                    'direction': 'bullish',
+                    'main_scenario': 'runtime import b',
+                },
+            ],
+            'outcomes': [
+                {
+                    'prediction_key': 'runtime-history-a',
+                    'horizon': '1d',
+                    'evaluated_at': '2026-06-02T00:00:00+00:00',
+                    'price_at_evaluation': 40100,
+                    'realized_return_pct': 0.25,
+                    'direction_hit': True,
+                },
+                {
+                    'prediction_key': 'runtime-history-b',
+                    'horizon': '1d',
+                    'evaluated_at': '2026-06-03T00:00:00+00:00',
+                    'price_at_evaluation': 40200,
+                    'realized_return_pct': 0.25,
+                    'direction_hit': True,
+                },
+            ],
+        }
+        with TemporaryDirectory() as tmpdir:
+            history_path = Path(tmpdir) / 'basecalc_history.json'
+            history_path.write_text(json.dumps(payload), encoding='utf-8')
+
+            result = ensure_runtime_basecalc_history(history_path)
+
+        self.assertFalse(result['skipped'])
+        self.assertEqual(PredictionOutcome.objects.count(), 3)
+
 
 class BasecalcUpdateSecurityTests(TestCase):
     def setUp(self):

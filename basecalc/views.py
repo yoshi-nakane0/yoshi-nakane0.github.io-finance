@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 
@@ -140,7 +141,9 @@ def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
     if cache.get(CACHE_KEY_RUNTIME_HISTORY_IMPORT):
         return {"skipped": True, "reason": "cached"}
     try:
-        if PredictionOutcome.objects.exists():
+        existing_outcomes = PredictionOutcome.objects.count()
+        bundled_outcomes = _bundled_history_outcome_count(history_path)
+        if existing_outcomes and existing_outcomes >= bundled_outcomes:
             cache.set(CACHE_KEY_RUNTIME_HISTORY_IMPORT, True, timeout=3600)
             return {"skipped": True, "reason": "history_exists"}
     except (OperationalError, ProgrammingError):
@@ -153,6 +156,14 @@ def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
         timeout=3600 if not result.get("skipped") else 300,
     )
     return result
+
+
+def _bundled_history_outcome_count(history_path):
+    try:
+        payload = json.loads(Path(history_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    return len(payload.get("outcomes") or [])
 
 
 def snapshot_api(request):
