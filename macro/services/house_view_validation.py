@@ -287,7 +287,74 @@ def _operation_health(
     }
 
 
-def _reliability(sample_count: int, hit_count: int, hit_rate) -> dict:
+def _accuracy_grade(hit_rate) -> tuple[str, str]:
+    if hit_rate is None:
+        return 'C', '—'
+    grade = 'A' if hit_rate >= 0.65 else 'B' if hit_rate >= 0.55 else 'C'
+    return grade, f'{hit_rate:.0%}'
+
+
+def _validation_basis(
+    live_sample_count: int,
+    live_hit_rate,
+    pseudo_live: dict | None,
+    backtest: dict | None,
+) -> tuple[str, int, object] | None:
+    if live_sample_count >= 10:
+        return 'Live', live_sample_count, live_hit_rate
+
+    pseudo_live = pseudo_live or {}
+    if (
+        pseudo_live.get('status') == 'available'
+        and (pseudo_live.get('sample_count') or 0) >= 10
+    ):
+        return '疑似Live', pseudo_live['sample_count'], pseudo_live.get('hit_rate')
+
+    backtest = backtest or {}
+    if (
+        backtest.get('status') == 'available'
+        and (backtest.get('sample_count') or 0) >= 36
+    ):
+        return 'Backtest', backtest['sample_count'], backtest.get('hit_rate')
+
+    return None
+
+
+def _reliability(
+    sample_count: int,
+    hit_count: int,
+    hit_rate,
+    *,
+    pseudo_live: dict | None = None,
+    backtest: dict | None = None,
+) -> dict:
+    basis = _validation_basis(sample_count, hit_rate, pseudo_live, backtest)
+    if basis is not None:
+        basis_label, basis_count, basis_hit_rate = basis
+        grade, rate_display = _accuracy_grade(basis_hit_rate)
+        if basis_label == 'Live':
+            note = 'Live検証の件数が最低基準を満たしています。'
+        elif sample_count > 0:
+            note = (
+                f'Live実績は少ないため、{basis_label} {basis_count}件の検証結果を'
+                'モデル検証に使っています。'
+            )
+        else:
+            note = (
+                f'Live実績は未評価のため、{basis_label} {basis_count}件の検証結果を'
+                'モデル検証に使っています。'
+            )
+        return {
+            'model_validation': f'{grade} / {basis_label} {rate_display}',
+            'live_record': (
+                f'Live実績 {sample_count}件 / 的中 {hit_count}件'
+                if sample_count
+                else 'Live実績 未評価'
+            ),
+            'display_status': '表示可',
+            'note': note,
+        }
+
     if sample_count <= 0:
         return {
             'model_validation': 'C / 検証不足',
@@ -302,19 +369,20 @@ def _reliability(sample_count: int, hit_count: int, hit_rate) -> dict:
             'display_status': '参考',
             'note': '検証件数が少ないため、予測精度としては参考扱いです。',
         }
-
-    if hit_rate is None:
-        grade = 'C'
-        rate_display = '—'
-    else:
-        grade = 'A' if hit_rate >= 0.65 else 'B' if hit_rate >= 0.55 else 'C'
-        rate_display = f'{hit_rate:.0%}'
     return {
-        'model_validation': f'{grade} / {rate_display}',
+        'model_validation': 'C / 検証不足',
         'live_record': f'Live実績 {sample_count}件 / 的中 {hit_count}件',
-        'display_status': '表示可',
-        'note': 'Live検証の件数が最低基準を満たしています。',
+        'display_status': '参考',
+        'note': '検証に使える精度データを確認できません。',
     }
+
+
+def _validation_warnings(sample_count: int, reliability: dict) -> list[str]:
+    if sample_count >= 10:
+        return []
+    if reliability.get('display_status') == '表示可':
+        return ['Live検証件数は少ないため、モデル検証は疑似Live/Backtestも併用しています。']
+    return ['検証件数が少ないため、的中率は暫定です。']
 
 
 def _live_summary(rows: list[dict]) -> dict:
@@ -412,6 +480,13 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
     backtest_accuracy = _load_backtest_accuracy(backtest_path)
     pseudo_live_accuracy = _pseudo_live_summary(backtest_path)
     short_term_live = _short_term_live_section(snapshots, actuals)
+    reliability = _reliability(
+        sample_count,
+        hit_count,
+        hit_rate,
+        pseudo_live=pseudo_live_accuracy,
+        backtest=backtest_accuracy,
+    )
     return {
         'generated_at': timezone.now().isoformat(),
         'model_version': HOUSE_VIEW_MODEL_VERSION,
@@ -426,9 +501,7 @@ def build_house_view_validation_report(backtest_path: str | Path | None = None) 
         'sample_count': sample_count,
         'hit_count': hit_count,
         'hit_rate': hit_rate,
-        'reliability': _reliability(sample_count, hit_count, hit_rate),
+        'reliability': reliability,
         'rows': rows[-120:],
-        'warnings': (
-            [] if sample_count >= 10 else ['検証件数が少ないため、的中率は暫定です。']
-        ),
+        'warnings': _validation_warnings(sample_count, reliability),
     }

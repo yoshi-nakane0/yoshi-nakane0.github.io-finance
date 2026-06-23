@@ -7,6 +7,7 @@ views.py を薄く保つために集約。
 import json
 import logging
 import re
+from calendar import monthrange
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -366,7 +367,7 @@ def _active_indicator_freshness() -> Dict:
             })
             continue
         limit_days = FRESHNESS_LIMIT_DAYS.get(indicator.frequency)
-        age_days = max((today - latest_date).days, 0)
+        age_days = _freshness_age_days(latest_date, indicator.frequency, today)
         if limit_days is not None and age_days > limit_days:
             stale.append({
                 'series_id': indicator.fred_series_id,
@@ -387,6 +388,30 @@ def _active_indicator_freshness() -> Dict:
         'stale': stale,
         'freshness_pct': freshness_pct,
     }
+
+
+def _freshness_reference_date(observation_date: date, frequency: Optional[str]) -> date:
+    if frequency == Indicator.Frequency.MONTHLY:
+        return observation_date.replace(
+            day=monthrange(observation_date.year, observation_date.month)[1],
+        )
+    if frequency == Indicator.Frequency.QUARTERLY:
+        quarter_end_month = ((observation_date.month - 1) // 3 + 1) * 3
+        return date(
+            observation_date.year,
+            quarter_end_month,
+            monthrange(observation_date.year, quarter_end_month)[1],
+        )
+    return observation_date
+
+
+def _freshness_age_days(
+    observation_date: date,
+    frequency: Optional[str],
+    today: date,
+) -> int:
+    reference_date = _freshness_reference_date(observation_date, frequency)
+    return max((today - reference_date).days, 0)
 
 
 def _coerce_date(value) -> Optional[date]:
@@ -425,7 +450,7 @@ def _static_indicator_freshness(cards: List[Dict]) -> Optional[Dict]:
 
         frequency = card.get('frequency')
         limit_days = FRESHNESS_LIMIT_DAYS.get(frequency)
-        age_days = max((today - latest_date).days, 0)
+        age_days = _freshness_age_days(latest_date, frequency, today)
         if limit_days is not None and age_days > limit_days:
             stale.append({
                 'series_id': series_id,
@@ -1577,6 +1602,16 @@ def _format_data_quality(decision: Dict, house_view: Dict) -> str:
     return f'{grade} / {score or "—"}'
 
 
+def _top_data_freshness_display(context: Dict, confidence: Dict) -> str:
+    quality = context.get('data_quality_report') or {}
+    freshness_score = quality.get('freshness_score')
+    if freshness_score is not None:
+        return f'{freshness_score:.0f}%'
+    if confidence.get('data_freshness_pct') is not None:
+        return f"{confidence.get('data_freshness_pct')}%"
+    return '—'
+
+
 def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict) -> Dict:
     validation = context.get('house_view_validation') or {}
     base = {
@@ -1767,11 +1802,7 @@ def build_top_decision_context(context: Dict) -> Dict:
         'market_stress': decision.get('market_stress') or {},
         'freshness': {
             'confidence': _format_confidence(decision, house_view),
-            'data_freshness': (
-                f"{confidence.get('data_freshness_pct')}%"
-                if confidence.get('data_freshness_pct') is not None
-                else '—'
-            ),
+            'data_freshness': _top_data_freshness_display(context, confidence),
             'updated_at': context.get('last_updated') or context.get('generated_at') or '—',
         },
         'reliability': reliability,

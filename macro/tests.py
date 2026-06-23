@@ -943,6 +943,64 @@ class MacroReliabilityEnhancementTest(TestCase):
         self.assertEqual(pseudo_live['period']['start'], '2026-01-01')
         self.assertEqual(pseudo_live['period']['end'], '2026-02-01')
 
+    def test_house_view_validation_uses_pseudo_live_when_live_samples_are_few(self):
+        from macro.services.house_view_validation import build_house_view_validation_report
+
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 1, 1),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.7,
+            metadata={'primary_regime': 'slowdown'},
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 4, 1),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=80,
+            data_quality=90,
+        )
+
+        rows = []
+        for index in range(20):
+            as_of_date = date(2024, 1, 1) + relativedelta(months=index)
+            target_date = date(2024, 4, 1) + relativedelta(months=index)
+            rows.append({
+                'as_of_date': as_of_date.isoformat(),
+                'target_date': target_date.isoformat(),
+                'horizon_months': 3,
+                'predicted_regime': 'slowdown',
+                'actual_regime': 'slowdown' if index < 16 else 'recovery',
+                'hit': index < 16,
+                'miss_type': 'hit' if index < 16 else 'too_defensive',
+            })
+
+        with TemporaryDirectory() as tmpdir:
+            backtest_path = Path(tmpdir) / 'house_view_backtest.json'
+            backtest_path.write_text(
+                json.dumps({
+                    'backtest_accuracy': {
+                        'sample_count': 267,
+                        'hit_count': 197,
+                        'hit_rate': 0.7378,
+                    },
+                    'rows': rows,
+                }),
+                encoding='utf-8',
+            )
+
+            report = build_house_view_validation_report(backtest_path=backtest_path)
+
+        self.assertEqual(report['sample_count'], 1)
+        self.assertEqual(report['reliability']['live_record'], 'Live実績 1件 / 的中 0件')
+        self.assertEqual(report['reliability']['model_validation'], 'A / 疑似Live 80%')
+        self.assertEqual(report['reliability']['display_status'], '表示可')
+        self.assertIn('Live実績は少ないため', report['reliability']['note'])
+        self.assertEqual(
+            report['warnings'],
+            ['Live検証件数は少ないため、モデル検証は疑似Live/Backtestも併用しています。'],
+        )
+
     def test_house_view_validation_adds_5d_and_10d_short_term_live(self):
         from macro.services.house_view_validation import build_house_view_validation_report
 
@@ -3148,6 +3206,75 @@ class DashboardFormatTest(TestCase):
             context['warnings'],
         )
 
+    def test_reliability_treats_recent_monthly_and_quarterly_periods_as_fresh(self):
+        Indicator.objects.all().update(is_active=False)
+        specs = [
+            ('PCEPI', 'PCE', Indicator.Frequency.MONTHLY, date(2026, 4, 1)),
+            ('GDPC1', '実質GDP', Indicator.Frequency.QUARTERLY, date(2026, 1, 1)),
+        ]
+        for series_id, name, frequency, observation_date in specs:
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'source': Indicator.Source.FRED,
+                    'name_ja': name,
+                    'category': Indicator.Category.GROWTH,
+                    'importance': Indicator.Importance.B,
+                    'frequency': frequency,
+                    'is_active': True,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=observation_date,
+                value=1.0,
+            )
+
+        with mock.patch(
+            'macro.services.dashboard.timezone.localdate',
+            return_value=date(2026, 6, 23),
+        ):
+            context = dashboard.build_reliability_context(
+                last_updated='2026-06-23',
+            )
+
+        self.assertEqual(context['data_freshness_pct'], 100)
+        self.assertEqual(context['stale_count'], 0)
+        self.assertEqual(context['stale_items'], [])
+
+    def test_static_reliability_treats_recent_monthly_and_quarterly_periods_as_fresh(self):
+        payload = {
+            'last_updated': '2026-06-23',
+            'generated_at': '2026-06-23T09:00:00+09:00',
+            'audit_indicator_cards': [
+                {
+                    'series_id': 'PCEPI',
+                    'name_ja': 'PCE',
+                    'latest_date': '2026-04-01',
+                    'frequency': Indicator.Frequency.MONTHLY,
+                    'has_data': True,
+                },
+                {
+                    'series_id': 'GDPC1',
+                    'name_ja': '実質GDP',
+                    'latest_date': '2026-01-01',
+                    'frequency': Indicator.Frequency.QUARTERLY,
+                    'has_data': True,
+                },
+            ],
+        }
+
+        with mock.patch(
+            'macro.services.dashboard.timezone.localdate',
+            return_value=date(2026, 6, 23),
+        ):
+            context = dashboard.build_static_reliability_context(payload)
+
+        self.assertIsNotNone(context)
+        self.assertEqual(context['data_freshness_pct'], 100)
+        self.assertEqual(context['stale_count'], 0)
+        self.assertEqual(context['stale_items'], [])
+
     def test_top_indicator_cards_include_only_decision_series(self):
         keep, _ = Indicator.objects.update_or_create(
             fred_series_id='PCEPILFE',
@@ -3293,6 +3420,9 @@ class DashboardFormatTest(TestCase):
                     'data_freshness_pct': 82,
                 },
             },
+            'data_quality_report': {
+                'freshness_score': 100.0,
+            },
         })
 
         self.assertEqual(context['final_judgment']['direction'], '中立〜改善')
@@ -3306,7 +3436,7 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(len(context['axis_summary']), 4)
         self.assertEqual(context['bad_points'][0], 'インフレ再加速リスクが高い')
         self.assertLessEqual(len(context['bad_points']), 3)
-        self.assertEqual(context['freshness']['data_freshness'], '82%')
+        self.assertEqual(context['freshness']['data_freshness'], '100%')
 
     def test_top_decision_uses_house_view_as_single_final_view(self):
         context = dashboard.build_top_decision_context({
