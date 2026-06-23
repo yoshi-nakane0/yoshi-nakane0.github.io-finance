@@ -87,6 +87,23 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertNotIn('--export-snapshot-path', workflow)
         self.assertNotIn('basecalc/data/latest_snapshot.json', workflow)
 
+    def test_refresh_basecalc_tests_run_before_runtime_history_import(self):
+        workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'refresh-basecalc.yml'
+        ).read_text(encoding='utf-8')
+
+        test_command = 'python manage.py test --debug-mode basecalc'
+        self.assertIn(test_command, workflow)
+        test_index = workflow.index(test_command)
+        migrate_index = workflow.index('python manage.py migrate --noinput')
+        import_index = workflow.index('python manage.py import_basecalc_history')
+
+        self.assertLess(test_index, migrate_index)
+        self.assertLess(test_index, import_index)
+
     def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
         workflow = (

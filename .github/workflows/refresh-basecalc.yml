@@ -27,12 +27,12 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Test basecalc
+        run: python manage.py test --debug-mode basecalc
       - name: Migrate
         run: python manage.py migrate --noinput
       - name: Import existing basecalc history
         run: python manage.py import_basecalc_history --input basecalc/data/basecalc_history.json || true
-      - name: Test basecalc
-        run: python manage.py test basecalc
       - name: Refresh basecalc
         run: python manage.py refresh_basecalc_data --export-history --export-path basecalc/data/basecalc_history.json
       - name: Output contract check
