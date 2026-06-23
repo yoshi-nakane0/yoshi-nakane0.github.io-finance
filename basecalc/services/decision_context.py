@@ -474,7 +474,10 @@ def _confidence_direction_level(score):
 
 def _confidence_stop_reasons(output_contract, decision):
     reasons = []
+    confidence_score = _optional_int(decision.get("confidence_score"))
     for reason in (output_contract.get("stop_reasons") or []) + (decision.get("stop_reasons") or []):
+        if reason == "米国3指数確認が不足" and confidence_score is not None and confidence_score >= 45:
+            continue
         if reason and reason not in reasons:
             reasons.append(reason)
     return reasons

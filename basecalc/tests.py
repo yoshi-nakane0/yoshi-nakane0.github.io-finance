@@ -1352,6 +1352,38 @@ class BasecalcUpdateSecurityTests(TestCase):
             '検証中: 信頼度別の過去実績を確認中。詳細は検証ページ。',
         )
 
+    def test_basecalc_top_confidence_does_not_downgrade_middle_score_for_intermarket_only(self):
+        decision = {
+            'contract_status': 'limited',
+            'data_quality_score': 96,
+            'confidence_score': 69,
+            'stop_reasons': ['米国3指数確認が不足'],
+        }
+        world_model = {
+            'confidence_score': 69,
+            'similar_summary': {'case_count': 30},
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': True,
+                'confidence_calibrated': False,
+                'confidence_status': '未較正',
+                'allowed_horizons': {
+                    '1d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '3d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '5d': {'direction_allowed': True, 'target_probability_allowed': True},
+                },
+                'stop_reasons': ['米国3指数確認が不足'],
+            },
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {'target_t1_hit_rate': 0.5})
+
+        self.assertEqual(result['confidence']['direction'], '中 69/100（検証中）')
+        self.assertEqual(
+            result['confidence']['validation_note'],
+            '検証中: 信頼度別の過去実績を確認中。詳細は検証ページ。',
+        )
+
     def test_basecalc_index_normal_mode_hides_detail_analysis(self):
         snapshot = {
             'data': {'price_display': '71,240'},

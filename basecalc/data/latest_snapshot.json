@@ -86,12 +86,12 @@
       "decision_label": "停止",
       "decision_level": "blocked",
       "fallback_used": false,
-      "last_failed_at": "2026-06-23T02:43:38.460747+00:00",
+      "last_failed_at": "2026-06-23T02:57:59.235673+00:00",
       "last_success_at": null,
       "source": "NQ=F / ES=F / YM=F"
     },
     "price_data": {
-      "age_minutes": 163,
+      "age_minutes": 177,
       "decision_label": "判定可能",
       "decision_level": "ready",
       "fallback_used": false,
@@ -119,7 +119,7 @@
       "fallback_display": "なし",
       "key": "intermarket",
       "label": "米国3指数確認",
-      "last_failed_at": "2026-06-23T02:43:38.460747+00:00",
+      "last_failed_at": "2026-06-23T02:57:59.235673+00:00",
       "last_success_at": "",
       "source": "NQ=F / ES=F / YM=F"
     }
@@ -1239,7 +1239,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-23T02:43:38.455967+00:00",
+        "fetched_at": "2026-06-23T02:57:59.231062+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -1383,7 +1383,7 @@
         "directional_allowed": true,
         "display_price": 66670.0,
         "explanation_allowed": false,
-        "generated_at": "2026-06-23T02:43:38.477934+00:00",
+        "generated_at": "2026-06-23T02:57:59.252353+00:00",
         "invalidated_targets": {
           "downside": [
             {
@@ -1530,12 +1530,12 @@
         "model_price": 66670.0,
         "model_version": "wm_v2.0.0",
         "ohlcv_bar_count": null,
-        "price_age_minutes": 163,
+        "price_age_minutes": 177,
         "price_source": "225navi",
         "probability_display_allowed": true,
         "range_calculated_from_price": 66670.0,
         "readiness_level": "ready",
-        "snapshot_id": "9a26442b-56b1-4ed9-a3b0-31c27ff00d45",
+        "snapshot_id": "c511f66a-7b73-489f-bddf-9c606a70c3d0",
         "source_timestamp": "2026-06-23 09:00 JST",
         "stop_reasons": [
           "米国3指数確認が不足",
@@ -2050,7 +2050,7 @@
         "source": "225navi",
         "symbol": "NIY=F"
       },
-      "stale_minutes": 163,
+      "stale_minutes": 177,
       "state_key": "bull_trend_continuation",
       "state_label": "上昇継続",
       "stop_reasons": [
@@ -2187,7 +2187,7 @@
         "evidence": [
           "米国3指数データなし"
         ],
-        "fetched_at": "2026-06-23T02:43:38.455967+00:00",
+        "fetched_at": "2026-06-23T02:57:59.231062+00:00",
         "readiness": {
           "level": "blocked",
           "missing": [
@@ -2278,7 +2278,7 @@
     }
   },
   "detail_mode": false,
-  "generated_at": "2026-06-23T02:43:38.478109+00:00",
+  "generated_at": "2026-06-23T02:57:59.252522+00:00",
   "intermarket_technicals": {
     "components": {},
     "confirmation_label": "mixed",
@@ -2287,7 +2287,7 @@
     "evidence": [
       "米国3指数データなし"
     ],
-    "fetched_at": "2026-06-23T02:43:38.455967+00:00",
+    "fetched_at": "2026-06-23T02:57:59.231062+00:00",
     "readiness": {
       "level": "blocked",
       "missing": [
@@ -3598,7 +3598,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-23T02:43:38.455967+00:00",
+      "fetched_at": "2026-06-23T02:57:59.231062+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
@@ -3742,7 +3742,7 @@
       "directional_allowed": true,
       "display_price": 66670.0,
       "explanation_allowed": false,
-      "generated_at": "2026-06-23T02:43:38.477934+00:00",
+      "generated_at": "2026-06-23T02:57:59.252353+00:00",
       "invalidated_targets": {
         "downside": [
           {
@@ -3889,12 +3889,12 @@
       "model_price": 66670.0,
       "model_version": "wm_v2.0.0",
       "ohlcv_bar_count": null,
-      "price_age_minutes": 163,
+      "price_age_minutes": 177,
       "price_source": "225navi",
       "probability_display_allowed": true,
       "range_calculated_from_price": 66670.0,
       "readiness_level": "ready",
-      "snapshot_id": "9a26442b-56b1-4ed9-a3b0-31c27ff00d45",
+      "snapshot_id": "c511f66a-7b73-489f-bddf-9c606a70c3d0",
       "source_timestamp": "2026-06-23 09:00 JST",
       "stop_reasons": [
         "米国3指数確認が不足",
@@ -4409,7 +4409,7 @@
       "source": "225navi",
       "symbol": "NIY=F"
     },
-    "stale_minutes": 163,
+    "stale_minutes": 177,
     "state_key": "bull_trend_continuation",
     "state_label": "上昇継続",
     "stop_reasons": [
@@ -4546,7 +4546,7 @@
       "evidence": [
         "米国3指数データなし"
       ],
-      "fetched_at": "2026-06-23T02:43:38.455967+00:00",
+      "fetched_at": "2026-06-23T02:57:59.231062+00:00",
       "readiness": {
         "level": "blocked",
         "missing": [
