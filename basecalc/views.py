@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone as dt_timezone
+from pathlib import Path
 
 from django.core.cache import cache
+from django.db import OperationalError, ProgrammingError
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
+from myproject.settings import is_serverless_runtime
 
 from .intermarket_technicals import get_intermarket_technical_snapshot
 from .intermarket_technicals import build_us_index_technical_context
@@ -12,12 +15,13 @@ from .market_bars import attach_saved_daily_bars
 from .market_shock import build_market_shock_context
 from .market_context import _price_action_fallback_assets
 from .nikkei_bias import get_jgb10y_yield_percent, get_nikkei_per_values
-from .models import MarketBar, MarketSnapshot, WorldModelPrediction
+from .models import MarketBar, MarketSnapshot, PredictionOutcome, WorldModelPrediction
 from .outcomes import (
     evaluate_due_predictions,
     performance_summary,
     save_prediction,
 )
+from .persistence import import_basecalc_history
 from .serializers import serialize_snapshot
 from .services.decision_context import (
     build_basecalc_decision_context,
@@ -49,15 +53,18 @@ CACHE_KEY_DIVIDEND_INDEX = "nikkei_dividend_yield_index"
 CACHE_KEY_PER_FETCHED_AT = "nikkei_per_fetched_at"
 CACHE_KEY_PER_LATEST_VALUES = "nikkei_per_latest_values"
 CACHE_KEY_JGB_FETCHED_AT = "nikkei_jgb10y_fetched_at"
+CACHE_KEY_RUNTIME_HISTORY_IMPORT = "basecalc_runtime_history_import"
 CACHE_TTL_PRICE = 300
 CACHE_TTL_JGB = 3600
 PER_FETCH_MIN_INTERVAL_SEC = 21600
 JGB_FETCH_MIN_INTERVAL_SEC = 3600
 FUTURES_FETCH_MIN_INTERVAL_SEC = 60
+BASECALC_HISTORY_PATH = Path(__file__).resolve().parent / "data" / "basecalc_history.json"
 
 
 @ensure_csrf_cookie
 def index(request):
+    ensure_runtime_basecalc_history()
     can_update_basecalc_data = request.user.is_authenticated and request.user.is_staff
     if request.method == "POST":
         if request.POST.get("action") != "update":
@@ -125,6 +132,27 @@ def dispatch_basecalc_refresh_workflow(request):
         return HttpResponseForbidden("Forbidden")
     dispatch_refresh_workflow()
     return redirect("basecalc:index")
+
+
+def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
+    if not is_serverless_runtime():
+        return {"skipped": True, "reason": "not_serverless"}
+    if cache.get(CACHE_KEY_RUNTIME_HISTORY_IMPORT):
+        return {"skipped": True, "reason": "cached"}
+    try:
+        if PredictionOutcome.objects.exists():
+            cache.set(CACHE_KEY_RUNTIME_HISTORY_IMPORT, True, timeout=3600)
+            return {"skipped": True, "reason": "history_exists"}
+    except (OperationalError, ProgrammingError):
+        return {"skipped": True, "reason": "db_unavailable"}
+
+    result = import_basecalc_history(str(history_path))
+    cache.set(
+        CACHE_KEY_RUNTIME_HISTORY_IMPORT,
+        True,
+        timeout=3600 if not result.get("skipped") else 300,
+    )
+    return result
 
 
 def snapshot_api(request):

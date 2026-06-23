@@ -63,6 +63,7 @@ from .services.decision_context import (
 )
 from .targets import build_targets
 from .views import (
+    ensure_runtime_basecalc_history,
     get_futures_snapshot_for_update,
     get_stale_futures_snapshot,
     get_jgb10y_yield_for_update,
@@ -112,6 +113,54 @@ def _create_market_bar_series(count=80, symbol='NIY=F', instrument_key='cme_nikk
             )
         )
     return rows
+
+
+class BasecalcRuntimeHistoryHydrationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_serverless_imports_bundled_history_when_outcomes_empty(self):
+        payload = {
+            'schema': 'basecalc_history_v2',
+            'predictions': [
+                {
+                    'key': 'runtime-history-test',
+                    'created_at': '2026-06-01T00:00:00+00:00',
+                    'prediction_timestamp': '2026-06-01T00:00:00+00:00',
+                    'price': 40000,
+                    'state_key': 'bull_trend_continuation',
+                    'state_label': '上昇継続',
+                    'direction': 'bullish',
+                    'confidence': 'Medium',
+                    'confidence_score': 68,
+                    'main_scenario': 'runtime import test',
+                    'source_symbol': 'NIY=F',
+                    'source_name': '225navi',
+                    'readiness_level': 'ready',
+                    'directional_allowed': True,
+                }
+            ],
+            'outcomes': [
+                {
+                    'prediction_key': 'runtime-history-test',
+                    'horizon': '1d',
+                    'evaluated_at': '2026-06-02T00:00:00+00:00',
+                    'price_at_evaluation': 40100,
+                    'realized_return_pct': 0.25,
+                    'direction_hit': True,
+                }
+            ],
+        }
+        with TemporaryDirectory() as tmpdir:
+            history_path = Path(tmpdir) / 'basecalc_history.json'
+            history_path.write_text(json.dumps(payload), encoding='utf-8')
+
+            result = ensure_runtime_basecalc_history(history_path)
+
+        self.assertFalse(result['skipped'])
+        self.assertEqual(WorldModelPrediction.objects.count(), 1)
+        self.assertEqual(PredictionOutcome.objects.count(), 1)
 
 
 class BasecalcUpdateSecurityTests(TestCase):
