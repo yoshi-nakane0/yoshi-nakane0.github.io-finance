@@ -56,7 +56,11 @@ from .similarity import find_similar_cases
 from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
 from .scenario_engine import build_scenarios
-from .services.decision_context import build_basecalc_top_context, can_show_prediction
+from .services.decision_context import (
+    build_basecalc_decision_context,
+    build_basecalc_top_context,
+    can_show_prediction,
+)
 from .targets import build_targets
 from .views import (
     get_futures_snapshot_for_update,
@@ -403,7 +407,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rendered_context['price_param'], '41000')
         build_context.assert_not_called()
 
-    def test_get_updates_saved_snapshot_current_price_when_saved_timestamp_is_newer_but_price_differs(self):
+    def test_get_keeps_saved_snapshot_price_when_market_snapshot_is_older(self):
         snapshot = {
             'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
             'world_model': {
@@ -470,15 +474,302 @@ class BasecalcUpdateSecurityTests(TestCase):
         rendered_context = render_mock.call_args.args[2]
         self.assertEqual(rendered_context['world_model']['price'], 66670)
         self.assertEqual(rendered_context['world_model']['output_contract']['model_price'], 66670)
-        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 71240)
-        self.assertEqual(rendered_context['world_model']['contract_status'], 'error')
-        self.assertIn('現在値と計算基準価格が不一致', rendered_context['world_model']['stop_reasons'])
+        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 66670)
+        self.assertNotEqual(rendered_context['world_model']['contract_status'], 'error')
+        self.assertNotIn('現在値と計算基準価格が不一致', rendered_context['world_model']['stop_reasons'])
         self.assertEqual(rendered_context['data']['price_display'], '66,670')
-        self.assertEqual(rendered_context['latest_price_display'], '71,240')
-        self.assertEqual(rendered_context['decision']['price'], 71240)
-        self.assertIsNone(rendered_context['decision']['upside_target'])
-        self.assertIsNone(rendered_context['decision']['downside_target'])
+        self.assertEqual(rendered_context['latest_price_display'], '66,670')
+        self.assertEqual(rendered_context['decision']['price'], 66670)
         self.assertEqual(rendered_context['price_param'], '66670')
+
+    def test_saved_snapshot_intermarket_fallback_refreshes_status_summary(self):
+        context = {
+            'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
+            'world_model': {
+                'direction': 'up',
+                'price': 66670,
+                'last_updated_display': '2026-06-19 11:39 JST',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'case_count': 30, 'is_statistically_valid': True},
+                'target_ranges': [],
+                'market_context': {},
+                'us_index_confirmation': {
+                    'components': {},
+                    'readiness': {'level': 'blocked', 'usable': False},
+                },
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {
+                'price_data': {
+                    'last_success_at': '2026-06-19T02:39:39+00:00',
+                    'source': '225navi:NIY=F',
+                    'decision_level': 'ready',
+                    'decision_label': '判定可能',
+                },
+                'intermarket': {
+                    'source': 'NQ=F / ES=F / YM=F',
+                    'decision_level': 'blocked',
+                    'decision_label': '停止',
+                },
+            },
+            'basecalc_status_rows': [
+                {'label': '米国3指数確認', 'decision_level': 'blocked'},
+            ],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '66670',
+            'generated_at': '2026-06-19T02:39:39+00:00',
+        }
+        fallback_context = {
+            'confirmation_score': 40,
+            'confirmation_label': 'confirm_up',
+            'risk_label': 'technical_confirm',
+            'components': {
+                'nasdaq100_futures': {'score': 40},
+                'sp500_futures': {'score': 40},
+                'dow_futures': {'score': 40},
+            },
+            'direction_agreement': 'aligned',
+            'evidence': ['米国3指数確認可'],
+            'readiness': {
+                'level': 'ready',
+                'usable': True,
+                'reason': '米国3指数確認可',
+                'missing': [],
+            },
+        }
+
+        from basecalc.services.decision_context import enrich_basecalc_context
+        from basecalc.views import hydrate_saved_snapshot_context
+
+        with (
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=None),
+            patch('basecalc.views.build_us_index_technical_context', return_value=fallback_context),
+        ):
+            hydrate_saved_snapshot_context(context)
+            enrich_basecalc_context(context)
+
+        intermarket_row = next(
+            row
+            for row in context['basecalc_status_rows']
+            if row.get('key') == 'intermarket' or row.get('label') == '米国3指数確認'
+        )
+        self.assertEqual(intermarket_row['decision_level'], 'ready')
+        self.assertEqual(context['basecalc_top']['status']['attention'], '主要データは判定可能')
+        self.assertNotIn('米国3指数確認が不足', context['world_model']['stop_reasons'])
+
+    def test_saved_snapshot_ignores_older_validation_report_when_hydrating(self):
+        context = {
+            'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
+            'world_model': {
+                'direction': 'up',
+                'price': 66670,
+                'last_updated_display': '2026-06-23 09:00 JST',
+                'direction_label': '上昇優勢',
+                'state_key': 'bull_trend_continuation',
+                'state_label': '上昇継続',
+                'confidence': 'Low',
+                'confidence_score': 34,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 96,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 96,
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 80},
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'case_count': 0, 'is_statistically_valid': False},
+                'horizons': {
+                    '1d': {'main_bias': 'up', 'expected_return_pct': 0.18},
+                    '3d': {'main_bias': 'up', 'expected_return_pct': 0.2},
+                    '5d': {'main_bias': 'up', 'expected_return_pct': 0.3},
+                },
+                'upside_targets': [{'label': 'T1', 'price': 68570, 'probability_display': '表示停止'}],
+                'downside_targets': [{'label': 'T1', 'price': 64770, 'probability_display': '表示停止'}],
+                'target_ranges': [{'horizon': '1d', 'low': 64770, 'high': 68570}],
+                'us_index_confirmation': {
+                    'readiness': {'usable': True},
+                    'components': {
+                        'nasdaq100_futures': {'score': 10},
+                        'sp500_futures': {'score': 10},
+                        'dow_futures': {'score': 10},
+                    },
+                },
+                'output_contract': {
+                    'contract_status': 'limited',
+                    'generated_at': '2026-06-23T01:48:29+00:00',
+                    'directional_allowed': True,
+                    'allowed_horizons': {
+                        '1d': {'direction_allowed': True, 'target_probability_allowed': True},
+                        '3d': {'direction_allowed': True, 'target_probability_allowed': True},
+                        '5d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    },
+                    'stop_reasons': ['類似事例不足のため信頼度を50未満に制限'],
+                },
+            },
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'market_shock': {'has_data': True, 'tone': 'neutral'},
+            'backtest_performance_by_horizon': {},
+            'generated_at': '2026-06-23T01:48:29+00:00',
+        }
+        stale_validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'generated_at': '2026-06-18T09:49:36+00:00',
+            'horizons': {
+                '1d': {
+                    'summary': {
+                        'baseline_comparison': {
+                            'sample_count': 600,
+                            'rows': [
+                                {'key': 'model', 'risk_adjusted_return_pct': 0.1, 'balanced_accuracy': 0.4},
+                                {'key': 'atr_range', 'risk_adjusted_return_pct': 0.8, 'balanced_accuracy': 0.7},
+                            ],
+                        },
+                    },
+                    'state_summaries': [
+                        {
+                            'state_key': 'bull_trend_continuation',
+                            'state_label': '上昇継続',
+                            'avg_return_pct': 0.13,
+                            'directional_accuracy': 0.45,
+                        },
+                    ],
+                },
+            },
+        }
+
+        from basecalc.services.decision_context import enrich_basecalc_context
+        from basecalc.views import hydrate_saved_snapshot_context
+
+        with (
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=None),
+            patch('basecalc.views.load_validation_report', return_value=stale_validation_report),
+        ):
+            hydrate_saved_snapshot_context(context)
+            enrich_basecalc_context(context)
+
+        self.assertTrue(context['world_model']['output_contract']['directional_allowed'])
+        self.assertNotIn('現行モデルがATRベースラインを下回るため', context['world_model']['stop_reasons'])
+        self.assertEqual(context['basecalc_top']['confidence']['direction'], '参考（信頼度 34/100）')
+
+    def test_saved_snapshot_rebuilds_low_confidence_when_saved_bars_are_available(self):
+        context = {
+            'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
+            'world_model': {
+                'direction': 'up',
+                'price': 66670,
+                'last_updated_display': '2026-06-23 09:00 JST',
+                'confidence': 'Low',
+                'confidence_score': 34,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 96,
+                    'fallback_used': False,
+                    'source': '225navi',
+                    'symbol': 'NIY=F',
+                    'instrument_type': 'futures',
+                },
+                'data_quality_score': 96,
+                'source_status': {
+                    'source': '225navi',
+                    'symbol': 'NIY=F',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                },
+                'readiness_level': 'ready',
+                'similar_summary': {
+                    'case_count': 0,
+                    'searched_case_count': 19,
+                    'is_statistically_valid': False,
+                },
+                'us_index_confirmation': {
+                    'components': {},
+                    'readiness': {'usable': False},
+                },
+                'output_contract': {
+                    'contract_status': 'limited',
+                    'generated_at': '2026-06-23T01:48:29+00:00',
+                    'directional_allowed': True,
+                    'stop_reasons': ['類似事例不足のため信頼度を50未満に制限'],
+                },
+            },
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'market_shock': {'has_data': True, 'tone': 'neutral'},
+            'backtest_performance_by_horizon': {},
+            'generated_at': '2026-06-23T01:48:29+00:00',
+        }
+        rebuilt_world_model = {
+            **context['world_model'],
+            'confidence': 'Middle',
+            'confidence_score': 69,
+            'similar_summary': {
+                'case_count': 30,
+                'searched_case_count': 3276,
+                'is_statistically_valid': True,
+            },
+            'us_index_confirmation': {
+                'confirmation_score': 7,
+                'confirmation_label': 'divergent',
+                'components': {
+                    'nasdaq100_futures': {'score': -33},
+                    'sp500_futures': {'score': 31},
+                    'dow_futures': {'score': 54},
+                },
+                'readiness': {'usable': True},
+            },
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': True,
+                'stop_reasons': [],
+            },
+        }
+
+        from basecalc.views import hydrate_saved_snapshot_context
+
+        with (
+            patch('basecalc.views.get_stale_futures_snapshot', return_value=None),
+            patch('basecalc.views.attach_saved_daily_bars') as attach_bars,
+            patch('basecalc.views.build_world_model', return_value=rebuilt_world_model) as build_model,
+            patch('basecalc.views.load_validation_report', return_value=None),
+        ):
+            attach_bars.return_value = {
+                'symbol': 'NIY=F',
+                'source': '225navi',
+                'instrument_key': 'cme_nikkei_futures',
+                'instrument_type': 'futures',
+                'closes': [65000 + i for i in range(120)],
+                'highs': [65100 + i for i in range(120)],
+                'lows': [64900 + i for i in range(120)],
+                'opens': [65000 + i for i in range(120)],
+                'volumes': [0 for _ in range(120)],
+                'timestamps': [1700000000 + i * 86400 for i in range(120)],
+            }
+
+            hydrate_saved_snapshot_context(context)
+
+        self.assertEqual(context['world_model']['confidence_score'], 69)
+        self.assertEqual(context['world_model']['similar_summary']['case_count'], 30)
+        build_model.assert_called_once()
 
     def test_get_keeps_latest_daily_bar_when_stale_snapshot_has_newer_fetch_time(self):
         snapshot = {
@@ -619,7 +910,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '信頼度・データ品質・検証リンク')
-        self.assertContains(response, '方向精度は限定的。レンジ・節目確認を優先。詳細は検証ページ。')
+        self.assertContains(response, '検証ページで詳細確認。')
         self.assertNotContains(response, '予測表示停止')
         self.assertNotContains(response, '期待 1d')
 
@@ -693,6 +984,215 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual([row['label'] for row in result['horizons']], ['1日', '3日', '5日'])
         self.assertEqual(result['external']['us_indices'], 'まちまち')
         self.assertEqual(result['confidence']['direction'], '低〜中')
+
+    def test_basecalc_top_uses_range_only_action_when_direction_gate_stops_prediction(self):
+        world_model = {
+            'direction': 'up',
+            'price': 66670,
+            'direction_label': '上昇優勢',
+            'state_label': '上昇継続',
+            'primary_setup_label': '過熱で追いかけ不可',
+            'action_note': '上昇方向だが追撃買いは危険。押し目確認待ち。',
+            'counter_bias': {'label': '上昇優勢だが反落警戒', 'reasons': ['RSI過熱']},
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': False,
+                'available_display': '支持抵抗・ATRレンジのみ',
+                'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
+            },
+            'upside_targets': [{'label': 'T1', 'price': 68570, 'reason': 'ATR 1.0'}],
+            'downside_targets': [{'label': 'T1', 'price': 64770, 'reason': 'ATR 1.0'}],
+            'near_levels': {
+                'upside': [{'price': 66700, 'reason': '100円刻み'}],
+                'downside': [{'price': 66600, 'reason': '100円刻み'}],
+            },
+            'invalidation_display': '41,800',
+            'invalidation': {
+                'warnings': ['無効化ラインが遠くリスク幅が大きいです'],
+            },
+        }
+        decision = {
+            'readiness_label': '判定可能',
+            'data_quality_level': 'good',
+            'data_quality_score': 96,
+            'fallback_used': False,
+            'status_summary': '主要データは判定可能',
+            'price': 66670,
+            'direction_label': '上昇優勢',
+            'state_label': '上昇継続',
+            'upside_target': {'price': 68570, 'label': '第1候補'},
+            'downside_target': {'price': 64770, 'label': '第1候補'},
+            'contract_status': 'limited',
+            'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['final_judgment']['headline'], '上昇優勢だが反落警戒')
+        self.assertEqual(result['final_judgment']['setup'], '方向予測停止・レンジ確認')
+        self.assertEqual(result['action']['judgment'], 'レンジ・節目確認')
+        self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ確認のみ')
+        self.assertIn('現行モデルがATRベースラインを下回るため', result['action']['caution'])
+        self.assertEqual(result['lines']['structural_break'], '64,770')
+
+    def test_basecalc_top_risks_do_not_duplicate_reversal_warning(self):
+        world_model = {
+            'direction': 'up',
+            'price': 66670,
+            'direction_label': '上昇優勢',
+            'reversal_risk_score': 91,
+            'us_index_confirmation': {'confirmation_label': 'confirm_up'},
+        }
+        decision = {
+            'readiness_label': '判定可能',
+            'data_quality_level': 'good',
+            'data_quality_score': 96,
+            'fallback_used': False,
+            'risk_reason': ['反落警戒', '突発性'],
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['risks'], ['反落警戒91/100', '突発性'])
+
+    def test_basecalc_top_external_shows_us_scores_and_external_stress(self):
+        world_model = {
+            'direction': 'up',
+            'price': 66670,
+            'shock_score': 65,
+            'chase_risk': 'medium',
+            'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+            'readiness_level': 'ready',
+            'us_index_confirmation': {
+                'confirmation_score': 7,
+                'confirmation_label': 'divergent',
+                'components': {
+                    'nasdaq100_futures': {'symbol': 'NASDAQ', 'score': -33},
+                    'sp500_futures': {'symbol': 'S&P500', 'score': 31},
+                    'dow_futures': {'symbol': 'NYダウ', 'score': 54},
+                },
+                'evidence': [
+                    '米国3指数の方向が分裂',
+                    'S&P500、NYダウが上向き',
+                    'NASDAQ100が下向き',
+                ],
+            },
+        }
+        decision = build_basecalc_decision_context(
+            world_model,
+            {'has_data': True, 'tone': 'neutral', 'summary': '主要3指数に急変判定は出ていません。'},
+            [],
+            {},
+        )
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['external']['us_indices'], '方向分裂（確認 7/100）')
+        self.assertEqual(result['external']['us_reason'], 'NASDAQ -33 / S&P500 +31 / NYダウ +54')
+        self.assertEqual(result['external']['market_stress'], '通常')
+        self.assertEqual(result['external']['market_impact'], '警戒')
+
+    def test_basecalc_top_confidence_shows_gate_and_score_state(self):
+        decision = {
+            'contract_status': 'limited',
+            'data_quality_score': 96,
+            'confidence_score': 34,
+            'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
+        }
+        performance = {
+            'directional_accuracy': 0,
+            'target_t1_hit_rate': 0,
+            'sample_quality': 'insufficient',
+        }
+        world_model = {
+            'output_contract': {
+                'directional_allowed': False,
+                'allowed_horizons': {
+                    '1d': {'target_probability_allowed': False},
+                    '3d': {'target_probability_allowed': False},
+                    '5d': {'target_probability_allowed': False},
+                },
+                'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
+            }
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], performance)
+
+        self.assertEqual(result['confidence']['data_quality'], 'データ高 96/100 / 信頼度低 34/100')
+        self.assertEqual(result['confidence']['direction'], '停止（検証未達）')
+        self.assertEqual(result['confidence']['range'], '参考（到達確率停止）')
+        self.assertEqual(
+            result['confidence']['validation_note'],
+            '方向予測停止: 現行モデルがATRベースラインを下回るため。検証ページで詳細確認。',
+        )
+
+    def test_basecalc_top_confidence_marks_low_model_score_as_reference(self):
+        decision = {
+            'contract_status': 'limited',
+            'data_quality_score': 96,
+            'confidence_score': 34,
+            'stop_reasons': ['米国3指数確認が不足', '類似事例不足のため信頼度を50未満に制限'],
+        }
+        world_model = {
+            'confidence_score': 34,
+            'similar_summary': {'case_count': 0},
+            'upside_targets': [{'probability': None, 'probability_display': '表示停止'}],
+            'downside_targets': [{'probability': None, 'probability_display': '表示停止'}],
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': True,
+                'confidence_status': '未較正',
+                'allowed_horizons': {
+                    '1d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '3d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '5d': {'direction_allowed': True, 'target_probability_allowed': True},
+                },
+                'stop_reasons': ['米国3指数確認が不足', '類似事例不足のため信頼度を50未満に制限'],
+            },
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['confidence']['data_quality'], 'データ高 96/100 / 信頼度低 34/100')
+        self.assertEqual(result['confidence']['direction'], '参考（信頼度 34/100）')
+        self.assertEqual(result['confidence']['range'], '参考（到達確率なし・類似0件）')
+        self.assertEqual(
+            result['confidence']['validation_note'],
+            '参考扱い: 米国3指数確認が不足 / 類似事例不足のため信頼度を50未満に制限。検証ページで詳細確認。',
+        )
+
+    def test_basecalc_top_confidence_shows_uncalibrated_middle_score_as_testing(self):
+        decision = {
+            'contract_status': 'limited',
+            'data_quality_score': 96,
+            'confidence_score': 69,
+        }
+        world_model = {
+            'confidence_score': 69,
+            'similar_summary': {'case_count': 30},
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': True,
+                'confidence_calibrated': False,
+                'confidence_status': '未較正',
+                'allowed_horizons': {
+                    '1d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '3d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    '5d': {'direction_allowed': True, 'target_probability_allowed': True},
+                },
+                'stop_reasons': [],
+            },
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {'target_t1_hit_rate': 0.5})
+
+        self.assertEqual(result['confidence']['data_quality'], 'データ高 96/100 / 信頼度中 69/100')
+        self.assertEqual(result['confidence']['direction'], '中 69/100（検証中）')
+        self.assertEqual(result['confidence']['range'], '中')
+        self.assertEqual(
+            result['confidence']['validation_note'],
+            '検証中: 信頼度別の過去実績を確認中。詳細は検証ページ。',
+        )
 
     def test_basecalc_index_normal_mode_hides_detail_analysis(self):
         snapshot = {
@@ -3274,6 +3774,26 @@ class BasecalcWorldModelTests(TestCase):
         self.assertIn('bullish_reason', targets['invalidation'])
         self.assertIn('target_ranges', targets)
         self.assertIn('near_levels', targets)
+
+    def test_invalidation_lines_use_nearest_valid_candidate(self):
+        targets = build_targets(
+            {
+                'price': 66670,
+                'atr14': 1903.9831,
+                'previous_low': 66950,
+                'recent_low': 41800,
+                'ema20': 51816.7748,
+                'previous_high': 67000,
+                'recent_high': 68800,
+                'vwap': 40989.1346,
+            },
+            {'case_count': 0, 'is_statistically_valid': False},
+        )
+
+        self.assertEqual(targets['invalidation']['bullish'], 64770)
+        self.assertEqual(targets['invalidation']['bullish_reason'], 'ATR補正')
+        self.assertEqual(targets['invalidation']['bearish'], 68000)
+        self.assertEqual(targets['invalidation']['bearish_reason'], '前日高値 + ATR補正')
 
     def test_near_round_numbers_are_not_promoted_to_targets(self):
         targets = build_targets(

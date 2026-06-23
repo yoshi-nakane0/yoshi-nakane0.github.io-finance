@@ -1,4 +1,4 @@
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from django.core.cache import cache
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
@@ -464,7 +464,76 @@ def hydrate_saved_snapshot_context(context):
     world_model = context.get("world_model") or {}
     if not isinstance(world_model, dict):
         return context
+    hydrate_saved_snapshot_intermarket_context(context, world_model)
+    world_model = hydrate_saved_snapshot_world_model(context, world_model)
     hydrate_saved_snapshot_current_price(context, world_model)
+    _refresh_saved_snapshot_status_rows(context, world_model)
+    return context
+
+
+def hydrate_saved_snapshot_world_model(context, world_model):
+    if not _saved_world_model_needs_rebuild(world_model):
+        return world_model
+    model_price = normalize_price(world_model.get("price"))
+    if model_price is None:
+        return world_model
+    snapshot = _saved_snapshot_rebuild_frame(context, world_model, model_price)
+    snapshot = attach_saved_daily_bars(snapshot)
+    if len(snapshot.get("closes") or []) < 100:
+        return world_model
+    _apply_manual_price_to_snapshot_frame(snapshot, model_price)
+    intermarket_context = (
+        world_model.get("us_index_confirmation")
+        or world_model.get("intermarket_technicals")
+        or {}
+    )
+    rebuilt = build_world_model(model_price, snapshot, intermarket_context)
+    if int(rebuilt.get("confidence_score") or 0) <= int(world_model.get("confidence_score") or 0):
+        return world_model
+    context["world_model"] = rebuilt
+    data = context.setdefault("data", {})
+    data["world_model"] = rebuilt
+    data.update(rebuilt)
+    return rebuilt
+
+
+def _saved_world_model_needs_rebuild(world_model):
+    confidence_score = int(world_model.get("confidence_score") or 0)
+    similar_summary = world_model.get("similar_summary") or {}
+    intermarket = world_model.get("us_index_confirmation") or {}
+    components = intermarket.get("components") if isinstance(intermarket, dict) else {}
+    return (
+        confidence_score < 70
+        and (
+            int(similar_summary.get("case_count") or 0) < 30
+            or int(similar_summary.get("searched_case_count") or 0) < 100
+            or not components
+        )
+    )
+
+
+def _saved_snapshot_rebuild_frame(context, world_model, model_price):
+    data_quality = world_model.get("data_quality") or {}
+    source_status = world_model.get("source_status") or {}
+    features = world_model.get("features") or {}
+    timestamp = (
+        ((world_model.get("output_contract") or {}).get("generated_at"))
+        or context.get("generated_at")
+        or world_model.get("last_updated_display")
+    )
+    return {
+        "symbol": source_status.get("symbol") or data_quality.get("symbol") or features.get("symbol") or "NIY=F",
+        "source": source_status.get("source") or data_quality.get("source") or features.get("source") or "225navi",
+        "instrument_key": source_status.get("instrument_key") or features.get("instrument_key") or "cme_nikkei_futures",
+        "instrument_type": source_status.get("instrument_type") or data_quality.get("instrument_type") or features.get("instrument_type") or "futures",
+        "price": model_price,
+        "close": model_price,
+        "fetched_at": timestamp,
+        "quality": data_quality,
+    }
+
+
+def hydrate_saved_snapshot_intermarket_context(context, world_model):
     intermarket = world_model.get("us_index_confirmation") or {}
     components = intermarket.get("components") if isinstance(intermarket, dict) else {}
     if not components:
@@ -485,17 +554,32 @@ def hydrate_saved_snapshot_context(context):
 def hydrate_saved_snapshot_current_price(context, world_model):
     latest_snapshot = get_stale_futures_snapshot()
     latest_price = price_from_futures_snapshot(latest_snapshot)
+    model_price = normalize_price(world_model.get("price"))
     if latest_price is None:
         apply_output_contract(
             world_model,
-            display_price=world_model.get("price"),
-            validation_report=load_validation_report(),
+            display_price=model_price,
+            validation_report=_validation_report_for_saved_snapshot(context, world_model),
             performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
         )
         world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
+        _refresh_saved_snapshot_status_rows(context, world_model)
         return context
 
-    model_price = normalize_price(world_model.get("price"))
+    if not _market_snapshot_is_current_for_saved_snapshot(latest_snapshot, context, world_model):
+        context["latest_price"] = model_price
+        context["latest_price_display"] = format_price(model_price, decimals=0)
+        context["model_price_display"] = format_price(model_price, decimals=0)
+        apply_output_contract(
+            world_model,
+            display_price=model_price,
+            validation_report=_validation_report_for_saved_snapshot(context, world_model),
+            performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
+        )
+        world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
+        _refresh_saved_snapshot_status_rows(context, world_model)
+        return context
+
     context["latest_price"] = latest_price
     context["latest_price_display"] = format_price(latest_price, decimals=0)
     context["model_price_display"] = format_price(model_price, decimals=0)
@@ -507,22 +591,93 @@ def hydrate_saved_snapshot_current_price(context, world_model):
         data_world_model["price"] = world_model.get("price")
     context["price_param"] = format_price_param(model_price)
 
-    basecalc_status = dict(context.get("basecalc_status") or {})
-    basecalc_status["price_data"] = price_status_entry(
-        latest_snapshot,
-        world_model.get("readiness_level"),
-    )
-    context["basecalc_status"] = basecalc_status
-    context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    _refresh_saved_snapshot_status_rows(context, world_model, latest_snapshot)
     apply_output_contract(
         world_model,
         display_price=latest_price,
         latest_price=latest_price,
-        validation_report=load_validation_report(),
+        validation_report=_validation_report_for_saved_snapshot(context, world_model),
         performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
     )
     world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     return context
+
+
+def _refresh_saved_snapshot_status_rows(context, world_model, latest_snapshot=None):
+    basecalc_status = dict(context.get("basecalc_status") or {})
+    if latest_snapshot is not None:
+        basecalc_status["price_data"] = price_status_entry(
+            latest_snapshot,
+            world_model.get("readiness_level"),
+        )
+    intermarket_context = (
+        world_model.get("us_index_confirmation")
+        or world_model.get("intermarket_technicals")
+    )
+    if isinstance(intermarket_context, dict) and intermarket_context:
+        basecalc_status["intermarket"] = intermarket_status_entry(intermarket_context)
+    context["basecalc_status"] = basecalc_status
+    context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    return context
+
+
+def _validation_report_for_saved_snapshot(context, world_model):
+    report = load_validation_report()
+    if not report:
+        return None
+    report_timestamp = _parse_saved_snapshot_timestamp(report.get("generated_at"))
+    saved_timestamp = _saved_world_model_timestamp(context, world_model)
+    if report_timestamp is not None and saved_timestamp is not None and report_timestamp < saved_timestamp:
+        return None
+    return report
+
+
+def _market_snapshot_is_current_for_saved_snapshot(latest_snapshot, context, world_model):
+    latest_timestamp = _parse_saved_snapshot_timestamp((latest_snapshot or {}).get("fetched_at"))
+    saved_timestamp = _saved_world_model_timestamp(context, world_model)
+    if latest_timestamp is None or saved_timestamp is None:
+        return True
+    return latest_timestamp >= saved_timestamp
+
+
+def _saved_world_model_timestamp(context, world_model):
+    output_contract = (world_model or {}).get("output_contract") or {}
+    for value in (
+        output_contract.get("source_timestamp"),
+        (world_model or {}).get("last_updated_display"),
+        (world_model or {}).get("as_of"),
+        (context or {}).get("generated_at"),
+        output_contract.get("generated_at"),
+    ):
+        timestamp = _parse_saved_snapshot_timestamp(value)
+        if timestamp is not None:
+            return timestamp
+    return None
+
+
+def _parse_saved_snapshot_timestamp(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        timestamp = value
+    elif isinstance(value, str):
+        normalized = value.strip()
+        if normalized.endswith(" JST"):
+            try:
+                timestamp = datetime.strptime(normalized, "%Y-%m-%d %H:%M JST")
+            except ValueError:
+                return None
+            timestamp = timestamp.replace(tzinfo=dt_timezone(timedelta(hours=9)))
+        else:
+            try:
+                timestamp = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+    else:
+        return None
+    if timezone.is_naive(timestamp):
+        timestamp = timezone.make_aware(timestamp, timezone=dt_timezone.utc)
+    return timestamp
 
 
 def _snapshot_from_world_model(world_model):

@@ -85,7 +85,7 @@ def build_basecalc_top_context(world_model, decision, status_rows=None, performa
         "risks": _top_risks(world_model, decision),
         "horizons": _top_horizons(world_model, performance),
         "external": _top_external(world_model, decision),
-        "confidence": _top_confidence(decision, performance),
+        "confidence": _top_confidence(world_model, decision, performance),
     }
 
 
@@ -115,9 +115,16 @@ def _top_final_judgment(world_model, decision):
         }
     if (world_model.get("output_contract") or {}).get("directional_allowed") is False:
         reasons = world_model.get("stop_reasons") or ["検証ゲート停止中"]
+        headline = (
+            (world_model.get("counter_bias") or {}).get("label")
+            or _judgment_with_reversal(
+                decision.get("direction_label") or "判定不可",
+                world_model.get("reversal_risk_score"),
+            )
+        )
         return {
-            "headline": "方向判断：停止",
-            "setup": "レンジ・節目確認",
+            "headline": headline,
+            "setup": "方向予測停止・レンジ確認",
             "supplement": f"理由: {reasons[0]}",
         }
     headline = (
@@ -153,6 +160,16 @@ def _top_action(world_model):
             "caution": "再計算後に判断",
             "note": "価格、ターゲット、レンジの時点がそろうまで判断を止めます。",
         }
+    if (world_model.get("output_contract") or {}).get("directional_allowed") is False:
+        reasons = (world_model.get("output_contract") or {}).get("stop_reasons") or []
+        reason = " / ".join(reasons[:2]) or "方向予測の検証条件が未達"
+        return {
+            "judgment": "レンジ・節目確認",
+            "prohibited": "方向の断定・高値追い・追撃買い",
+            "allowed": "支持抵抗・ATRレンジ確認のみ",
+            "caution": reason,
+            "note": "方向予測は使わず、現在値に近い支持抵抗とATRレンジだけを確認します。",
+        }
     note = str(world_model.get("action_note") or "")
     if "押し目" in note or "追撃" in note:
         judgment = "押し目確認待ち"
@@ -179,14 +196,21 @@ def _action_summary(world_model):
 def _top_lines(world_model, decision):
     near_levels = world_model.get("near_levels") or {}
     stopped = (world_model.get("output_contract") or {}).get("contract_status") == "error"
+    upside_resistance = None if stopped else _target_price(decision.get("upside_target"))
+    downside_support = None if stopped else _target_price(decision.get("downside_target"))
     return {
         "current_price": decision.get("price") or world_model.get("price"),
-        "upside_resistance": None if stopped else _target_price(decision.get("upside_target")),
-        "downside_support": None if stopped else _target_price(decision.get("downside_target")),
+        "upside_resistance": upside_resistance,
+        "downside_support": downside_support,
         "near_upside": None if stopped else _first_level_price(near_levels.get("upside")),
         "near_downside": None if stopped else _first_level_price(near_levels.get("downside")),
         "short_term_weakening": "前日安値・EMA20・VWAP割れ",
-        "structural_break": decision.get("invalidation") or world_model.get("invalidation_display") or "—",
+        "structural_break": _structural_break_line(
+            world_model,
+            decision,
+            upside_resistance,
+            downside_support,
+        ),
     }
 
 
@@ -197,6 +221,30 @@ def _target_price(target):
 def _first_level_price(levels):
     first = (levels or [None])[0]
     return first.get("price") if isinstance(first, dict) else None
+
+
+def _structural_break_line(world_model, decision, upside_resistance, downside_support):
+    invalidation = world_model.get("invalidation") or {}
+    far_warning = "無効化ラインが遠くリスク幅が大きいです" in (
+        invalidation.get("warnings") or []
+    )
+    if (
+        far_warning
+        and (world_model.get("output_contract") or {}).get("directional_allowed") is False
+    ):
+        direction = world_model.get("direction")
+        if direction == "up" and downside_support is not None:
+            return _price_text(downside_support)
+        if direction == "down" and upside_resistance is not None:
+            return _price_text(upside_resistance)
+    return decision.get("invalidation") or world_model.get("invalidation_display") or "—"
+
+
+def _price_text(value):
+    try:
+        return f"{float(value):,.0f}"
+    except (TypeError, ValueError):
+        return value or "—"
 
 
 def _top_change_conditions(world_model):
@@ -228,6 +276,7 @@ def _top_risks(world_model, decision):
             risks.append(reason)
     if int(world_model.get("reversal_risk_score") or 0) >= 70:
         label = f"反落警戒{int(world_model.get('reversal_risk_score') or 0)}/100"
+        risks = [risk for risk in risks if not str(risk).startswith("反落警戒")]
         if label not in risks:
             risks.insert(0, label)
     intermarket = world_model.get("us_index_confirmation") or {}
@@ -281,16 +330,18 @@ def _direction_precision_note(performance):
 def _top_external(world_model, decision):
     us = decision.get("us_index_confirmation") or {}
     market = decision.get("market_stress") or {}
+    confirmation_score = (world_model.get("us_index_confirmation") or {}).get("confirmation_score")
     return {
-        "us_indices": us.get("label") or "データ待ち",
+        "us_indices": _us_indices_label(us.get("label"), confirmation_score),
         "chase_risk": _chase_risk_label(world_model.get("chase_risk")),
-        "us_reason": (us.get("reasons") or ["米国3指数データ待ち"])[0],
+        "us_reason": _us_component_score_summary(world_model)
+        or (us.get("reasons") or ["米国3指数データ待ち"])[0],
         "market_stress": market.get("label") or "通常",
         "market_impact": market.get("impact") or "中立",
     }
 
 
-def _top_confidence(decision, performance):
+def _top_confidence(world_model, decision, performance):
     if decision.get("contract_status") == "error":
         return {
             "data_quality": "確認中",
@@ -298,14 +349,175 @@ def _top_confidence(decision, performance):
             "range": "参考",
             "validation_note": "出力契約エラーのため、信頼度を強調しません。",
         }
-    data_quality_score = int(decision.get("data_quality_score") or 0)
+    world_model = world_model or {}
+    output_contract = world_model.get("output_contract") or {}
+    data_quality_score = _optional_int(decision.get("data_quality_score"))
+    if data_quality_score is None:
+        data_quality_score = _optional_int((world_model.get("data_quality") or {}).get("score")) or 0
+    confidence_score = _optional_int(decision.get("confidence_score"))
+    if confidence_score is None:
+        confidence_score = _optional_int(world_model.get("confidence_score"))
     t1_rate = _performance_float(performance, "target_t1_hit_rate")
+    direction_allowed = output_contract.get("directional_allowed")
+    target_probability_allowed = _target_probability_allowed(output_contract)
+    stop_reason = _first_stop_reason(output_contract, decision)
     return {
-        "data_quality": "高" if data_quality_score >= 80 else "中" if data_quality_score >= 60 else "低",
-        "direction": _direction_confidence(performance),
-        "range": "中" if t1_rate is None or t1_rate < 0.75 else "中〜高",
-        "validation_note": "方向精度は限定的。レンジ・節目確認を優先。詳細は検証ページ。",
+        "data_quality": _data_quality_confidence_label(data_quality_score, confidence_score),
+        "direction": _direction_confidence_label(
+            output_contract,
+            performance,
+            confidence_score,
+            direction_allowed,
+        ),
+        "range": _range_confidence_label(
+            world_model,
+            t1_rate,
+            target_probability_allowed,
+        ),
+        "validation_note": _validation_confidence_note(
+            output_contract,
+            decision,
+            direction_allowed,
+            stop_reason,
+        ),
     }
+
+
+def _us_indices_label(label, confirmation_score):
+    label = label or "データ待ち"
+    if confirmation_score is None:
+        return label
+    try:
+        return f"{label}（確認 {int(round(float(confirmation_score)))}/100）"
+    except (TypeError, ValueError):
+        return label
+
+
+def _us_component_score_summary(world_model):
+    components = ((world_model.get("us_index_confirmation") or {}).get("components") or {})
+    if not isinstance(components, dict) or not components:
+        return ""
+    parts = []
+    for key in ("nasdaq100_futures", "sp500_futures", "dow_futures"):
+        component = components.get(key)
+        if not isinstance(component, dict):
+            continue
+        score = component.get("score")
+        try:
+            score_text = f"{int(round(float(score))):+d}"
+        except (TypeError, ValueError):
+            continue
+        parts.append(f"{component.get('symbol') or key} {score_text}")
+    return " / ".join(parts)
+
+
+def _data_quality_confidence_label(score, confidence_score=None):
+    level = "高" if score >= 80 else "中" if score >= 60 else "低"
+    if confidence_score is None:
+        return f"データ{level} {score}/100"
+    confidence_level = "高" if confidence_score >= 70 else "中" if confidence_score >= 50 else "低"
+    return f"データ{level} {score}/100 / 信頼度{confidence_level} {confidence_score}/100"
+
+
+def _direction_confidence_label(output_contract, performance, confidence_score, direction_allowed):
+    if direction_allowed is False:
+        return "停止（検証未達）"
+    if confidence_score is not None and confidence_score < 45:
+        return f"参考（信頼度 {confidence_score}/100）"
+    if _confidence_is_uncalibrated(output_contract):
+        if confidence_score is not None:
+            return f"{_confidence_direction_level(confidence_score)} {confidence_score}/100（検証中）"
+        return "検証中"
+    return _direction_confidence(performance)
+
+
+def _range_confidence_label(world_model, t1_rate, target_probability_allowed):
+    if target_probability_allowed is False:
+        return "参考（到達確率停止）"
+    similar_count = _optional_int((world_model.get("similar_summary") or {}).get("case_count"))
+    if _targets_hide_probability(world_model):
+        if similar_count is not None:
+            return f"参考（到達確率なし・類似{similar_count}件）"
+        return "参考（到達確率なし）"
+    if similar_count is not None and similar_count < 10:
+        return f"参考（類似{similar_count}件）"
+    if t1_rate is None:
+        return "中"
+    return "中〜高" if t1_rate >= 0.75 else "中"
+
+
+def _validation_confidence_note(output_contract, decision, direction_allowed, stop_reason):
+    if direction_allowed is False:
+        return f"方向予測停止: {stop_reason}。検証ページで詳細確認。"
+    reasons = _confidence_stop_reasons(output_contract, decision)
+    if reasons:
+        return f"参考扱い: {' / '.join(reasons[:2])}。検証ページで詳細確認。"
+    if _confidence_is_uncalibrated(output_contract):
+        return "検証中: 信頼度別の過去実績を確認中。詳細は検証ページ。"
+    return "方向精度は限定的。レンジ・節目確認を優先。詳細は検証ページ。"
+
+
+def _confidence_is_uncalibrated(output_contract):
+    return (
+        output_contract.get("confidence_calibrated") is False
+        or output_contract.get("confidence_status") == "未較正"
+    )
+
+
+def _confidence_direction_level(score):
+    if score >= 75:
+        return "高"
+    if score >= 45:
+        return "中"
+    return "低"
+
+
+def _confidence_stop_reasons(output_contract, decision):
+    reasons = []
+    for reason in (output_contract.get("stop_reasons") or []) + (decision.get("stop_reasons") or []):
+        if reason and reason not in reasons:
+            reasons.append(reason)
+    return reasons
+
+
+def _targets_hide_probability(world_model):
+    for key in ("upside_targets", "downside_targets"):
+        for target in world_model.get(key) or []:
+            if not isinstance(target, dict):
+                continue
+            if target.get("probability_display") == "表示停止":
+                return True
+            if target.get("probability_source") == "hidden_low_sample":
+                return True
+    return False
+
+
+def _optional_int(value):
+    if value is None:
+        return None
+    try:
+        return int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _target_probability_allowed(output_contract):
+    allowed_horizons = output_contract.get("allowed_horizons") or {}
+    if not allowed_horizons:
+        return output_contract.get("probability_display_allowed")
+    allowed_values = [
+        item.get("target_probability_allowed")
+        for item in allowed_horizons.values()
+        if isinstance(item, dict) and "target_probability_allowed" in item
+    ]
+    if not allowed_values:
+        return output_contract.get("probability_display_allowed")
+    return any(allowed_values)
+
+
+def _first_stop_reason(output_contract, decision):
+    reasons = output_contract.get("stop_reasons") or decision.get("stop_reasons") or []
+    return reasons[0] if reasons else "検証条件が未達"
 
 
 def _direction_confidence(performance):
@@ -594,7 +806,9 @@ def _primary_range(ranges):
 def _market_stress_summary(world_model, market_shock):
     score = int(world_model.get("shock_score") or 0)
     tone = market_shock.get("tone")
-    if score >= 70 or tone == "negative":
+    if market_shock.get("has_data") and tone == "neutral":
+        label = "通常"
+    elif score >= 70 or tone == "negative":
         label = "強警戒"
     elif score >= 45:
         label = "警戒"

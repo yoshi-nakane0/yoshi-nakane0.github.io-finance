@@ -342,7 +342,7 @@ def _invalidation_line(price, atr, candidates, below):
     ]
     if not usable:
         return None, "", ""
-    value, reason = (min(usable, key=lambda item: item[0]) if below else max(usable, key=lambda item: item[0]))
+    value, reason = (max(usable, key=lambda item: item[0]) if below else min(usable, key=lambda item: item[0]))
     distance = abs(price - value)
     warning = ""
     if distance < atr * 0.35:
