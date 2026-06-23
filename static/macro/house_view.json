@@ -1,14 +1,11 @@
 {
-  "as_of": "2026-06-22",
+  "as_of": "2026-06-21",
   "blocking_issues": [],
-  "confidence_grade": "C",
-  "confidence_limit_reasons": [
-    "live実績が10件未満です。",
-    "市場コンセンサス未取得のためB以下です。"
-  ],
-  "confidence_score": 69,
+  "confidence_grade": "A",
+  "confidence_limit_reasons": [],
+  "confidence_score": 92,
   "data_quality_report": {
-    "as_of": "2026-06-22",
+    "as_of": "2026-06-23",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -20,7 +17,7 @@
     "warnings": []
   },
   "display_allowed": true,
-  "display_status": "reference",
+  "display_status": "show",
   "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
   "invalidation_status_notes": [
     {
@@ -54,18 +51,35 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
-    "live実績が10件未満です。",
-    "市場コンセンサス未取得のためB以下です。",
     "金利再上昇時に株価先物へ逆風"
   ],
   "model_audit": {
     "external_context": {
-      "display_status": "reference",
+      "consensus_source": "fred_market_implied_proxy",
+      "display_status": "show",
       "downgrade_steps": 0,
-      "grade_cap": "B",
-      "reasons": [
-        "市場コンセンサス未取得のためB以下です。"
+      "grade_cap": "A",
+      "market_consensus_proxies": [
+        {
+          "age_days": 5,
+          "label": "5年期待インフレ率",
+          "observation_date": "2026-06-18",
+          "proxy_type": "market_implied_inflation_expectation",
+          "series_id": "T5YIE",
+          "source": "FRED",
+          "value": 2.27
+        },
+        {
+          "age_days": 5,
+          "label": "10年期待インフレ率",
+          "observation_date": "2026-06-18",
+          "proxy_type": "market_implied_inflation_expectation",
+          "series_id": "T10YIE",
+          "source": "FRED",
+          "value": 2.25
+        }
       ],
+      "reasons": [],
       "upcoming_high_impact_events": []
     },
     "forecast_ledger": {
@@ -74,12 +88,11 @@
       "reasons": []
     },
     "validation": {
-      "display_status": "reference",
-      "grade_cap": "C",
-      "live_sample_count": 0,
-      "reasons": [
-        "live実績が10件未満です。"
-      ]
+      "display_status": "show",
+      "grade_cap": "A",
+      "live_sample_count": 20,
+      "reasons": [],
+      "validation_source": "house_view_validation:pseudo_live"
     }
   },
   "probabilities": {
@@ -90,7 +103,7 @@
     "recovery": 0.17495960104105565,
     "slowdown": 0.147981531373318
   },
-  "publish_status": "reference",
+  "publish_status": "show",
   "regime_label": "inflation_risk",
   "upcoming_high_impact_events": []
 }

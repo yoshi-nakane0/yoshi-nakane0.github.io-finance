@@ -1,4 +1,64 @@
 {
+  "audit": {
+    "comparison_mode": "public_static_outlook_vs_live_house_view",
+    "difference_reasons": [
+      "House Viewの景気後退確率はGoldman公開見通しより12.8%pt低い。",
+      "House Viewの主レジームはslowdownで、Goldman公開見通しの成長観と同じ方向かを監査対象にする。",
+      "インフレは直接比較できるHouse View数値がないため、レジーム判断で補助比較する。"
+    ],
+    "house_view_correctness_usage": "not_allowed",
+    "latest_public_source_date": "2026-01-15",
+    "model_validation_usage": "not_allowed",
+    "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
+    "public_outlook_age_days": 158
+  },
+  "benchmark_outlooks": [
+    {
+      "can_score_house_view": false,
+      "label": "Goldman Sachs public outlook",
+      "source_id": "goldman_public",
+      "source_scope": "free_public_pages_only",
+      "source_type": "public_research_page",
+      "summary": "公開ページに載る成長、インフレ、政策金利の参考見通し。",
+      "usage": "参考ベンチマーク。House Viewの正解判定やモデル検証の代替には使わない。"
+    },
+    {
+      "can_score_house_view": false,
+      "label": "FOMC SEP",
+      "source_id": "fomc_sep",
+      "source_scope": "free_public_official_release",
+      "source_type": "official_public_projection",
+      "summary": "Fed参加者の政策金利、成長、失業率、インフレ見通し。",
+      "usage": "政策パスの市場前提との差を確認する参考値。"
+    },
+    {
+      "can_score_house_view": false,
+      "label": "CME FedWatch public probabilities",
+      "source_id": "fedwatch_public",
+      "source_scope": "free_public_page",
+      "source_type": "public_market_implied_probability",
+      "summary": "次回FOMCの市場織り込みを確認する参考値。",
+      "usage": "政策反応関数と市場価格のズレを見る補助材料。"
+    },
+    {
+      "can_score_house_view": false,
+      "label": "OIS / rates public proxy",
+      "source_id": "ois_public_proxy",
+      "source_scope": "free_public_market_data_only",
+      "source_type": "public_market_pricing_proxy",
+      "summary": "金利市場が政策パスをどう織り込むかの補助材料。",
+      "usage": "市場織り込み差の参考。正解判定には使わない。"
+    },
+    {
+      "can_score_house_view": false,
+      "label": "Economist consensus public snippets",
+      "source_id": "economist_consensus_public",
+      "source_scope": "free_public_snippets_only",
+      "source_type": "public_consensus_snippet",
+      "summary": "有料端末や会員サイトを使わず、公開範囲だけで確認できる市場予想。",
+      "usage": "actual/consensus/surpriseの補助。欠損時は未取得として扱う。"
+    }
+  ],
   "comparison": {
     "growth_view": {
       "goldman_public_view": "above_consensus_us_growth",
@@ -34,7 +94,7 @@
       "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
     }
   ],
-  "generated_at": "2026-06-20T08:37:50.345637+00:00",
+  "generated_at": "2026-06-22T11:20:09.806566+00:00",
   "goldman_sachs_public_outlook": {
     "as_of": "2026-01-11",
     "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -56,9 +116,9 @@
     }
   },
   "house_view_snapshot": {
-    "as_of": "2026-06-20",
+    "as_of": "2026-06-22",
     "confidence": 76.0,
-    "data_quality": 94.0,
+    "data_quality": 93.0,
     "primary_regime": "slowdown",
     "regime_probabilities": {
       "contraction": 0.02018798202221658,

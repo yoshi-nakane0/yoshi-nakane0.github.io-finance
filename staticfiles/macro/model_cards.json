@@ -1,3 +1,42 @@
 {
-  "model_cards": []
+  "model_cards": [
+    {
+      "baseline": "best_available_naive_baseline",
+      "display_label": "トップ表示可",
+      "display_policy": "show",
+      "display_reason": "トップ表示可",
+      "evaluated_at": "2026-06-22T11:19:57.552573+00:00",
+      "event_count": null,
+      "feature_set": [],
+      "horizon": "3m",
+      "key_metrics": {
+        "baseline_mae": 5.955788348943174,
+        "brier_score": null,
+        "direction_accuracy": 0.6781609195402298,
+        "mae": 5.492145775258934,
+        "pr_auc": null,
+        "rmse": 7.50016560131785,
+        "roc_auc": null,
+        "skill_score": 0.07784738921531875
+      },
+      "known_weaknesses": [
+        "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
+      ],
+      "last_validated_at": "2026-06-22T11:19:57.552573+00:00",
+      "leakage_check": "not_flagged",
+      "limitations": [
+        "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
+      ],
+      "model_version": "return_lightgbm_v2",
+      "publication_lag_check": "not_flagged",
+      "purpose": "GSPCの3m先を予測する",
+      "sample_count": 261,
+      "target": "GSPC",
+      "training_period": null,
+      "validation_method": "walk_forward",
+      "validation_period": null
+    }
+  ],
+  "status": "ok",
+  "warnings": []
 }

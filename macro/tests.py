@@ -2387,6 +2387,218 @@ class DashboardFormatTest(TestCase):
         self.assertIn('予測台帳にfeatures_hash欠損があります。', result['confidence_limit_reasons'])
         self.assertIn('予測台帳にprediction_interval欠損があります。', result['confidence_limit_reasons'])
 
+    def test_house_view_uses_house_view_validation_for_top_confidence(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=71,
+            inflation_score=62,
+            policy_pressure_score=63,
+            credit_score=58,
+            liquidity_score=55,
+            market_trend_score=57,
+            market_stress_score=29,
+            data_quality=98,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=96,
+            data_quality=98,
+            regime_probabilities={'expansion': 0.66},
+            risk_probabilities={'inflation_reacceleration': 0.42},
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.66,
+            prediction_interval={'lower': 0.56, 'upper': 0.76, 'confidence': 0.8},
+            features_hash='a' * 64,
+            metadata={'confidence': 0.8, 'consensus_status': 'available'},
+        )
+        ModelValidationReport.objects.create(
+            model_version='short_horizon_return_v1',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.5, 'skill_score': -0.1},
+        )
+        ModelValidationReport.objects.create(
+            model_version='macro_forecast_lightgbm_v1',
+            target='UNRATE',
+            horizon='1m',
+            sample_count=262,
+            metrics={'direction_accuracy': 0.55, 'skill_score': -0.13},
+        )
+        ModelValidationReport.objects.create(
+            model_version='crash_probability_logistic_v1',
+            target='GSPC',
+            horizon='63d',
+            sample_count=0,
+            metrics={},
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            validation_path = Path(tmpdir) / 'static' / 'macro' / 'house_view_validation.json'
+            validation_path.parent.mkdir(parents=True)
+            validation_path.write_text(json.dumps({
+                'house_view_validation': {
+                    'accuracy_sections': {
+                        'live': {
+                            'sample_count': 0,
+                            'hit_count': 0,
+                            'hit_rate': None,
+                            'status': 'waiting_for_realizations',
+                        },
+                        'pseudo_live': {
+                            'sample_count': 20,
+                            'hit_count': 16,
+                            'hit_rate': 0.8,
+                            'status': 'available',
+                        },
+                        'backtest': {
+                            'sample_count': 267,
+                            'hit_count': 197,
+                            'hit_rate': 0.7378,
+                            'status': 'available',
+                        },
+                    },
+                },
+            }), encoding='utf-8')
+
+            with override_settings(BASE_DIR=Path(tmpdir)), mock.patch(
+                'macro.services.house_view.build_data_quality_report',
+                return_value={
+                    'as_of': '2026-06-17',
+                    'display_allowed': True,
+                    'confidence_cap': 'A',
+                    'freshness_score': 98,
+                    'warnings': [],
+                    'blocking_issues': [],
+                },
+            ), mock.patch(
+                'macro.services.house_view.load_upcoming_high_impact_events',
+                return_value=[],
+            ):
+                result = house_view.build_house_view_context()
+
+        self.assertEqual(result['confidence_grade'], 'A')
+        self.assertEqual(result['display_status'], 'show')
+        self.assertNotIn(
+            'N225 1m: 1か月先の株価判断はbasecalcを優先',
+            result['confidence_limit_reasons'],
+        )
+        self.assertNotIn(
+            'UNRATE 1m: 単純予測を上回っていないため参考',
+            result['confidence_limit_reasons'],
+        )
+
+    def test_house_view_accepts_free_fred_market_consensus_proxy(self):
+        WorldStateSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            growth_score=66,
+            labor_score=71,
+            inflation_score=62,
+            policy_pressure_score=63,
+            credit_score=58,
+            liquidity_score=55,
+            market_trend_score=57,
+            market_stress_score=29,
+            data_quality=98,
+        )
+        RegimeSnapshot.objects.create(
+            snapshot_date=date(2026, 6, 17),
+            regime_label=RegimeSnapshot.Label.EXPANSION,
+            confidence=96,
+            data_quality=98,
+            regime_probabilities={'expansion': 0.66},
+            risk_probabilities={'inflation_reacceleration': 0.42},
+        )
+        ForecastSnapshot.objects.create(
+            as_of_date=date(2026, 6, 17),
+            model_version='macro_hatzius_v1',
+            target='macro_regime',
+            horizon='3m_6m',
+            prediction_value=0.66,
+            prediction_interval={'lower': 0.56, 'upper': 0.76, 'confidence': 0.8},
+            features_hash='a' * 64,
+            metadata={'confidence': 0.8},
+        )
+        ModelValidationReport.objects.create(
+            model_version='short_horizon_return_v1',
+            target='N225',
+            horizon='1m',
+            sample_count=206,
+            metrics={'direction_accuracy': 0.5, 'skill_score': -0.1},
+        )
+        for series_id, name, value in [
+            ('T5YIE', '5年期待インフレ率', 2.27),
+            ('T10YIE', '10年期待インフレ率', 2.25),
+        ]:
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'name_ja': name,
+                    'category': Indicator.Category.INFLATION,
+                    'importance': Indicator.Importance.B,
+                    'frequency': Indicator.Frequency.DAILY,
+                    'is_active': True,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=date(2026, 6, 18),
+                value=value,
+            )
+
+        with TemporaryDirectory() as tmpdir:
+            validation_path = Path(tmpdir) / 'static' / 'macro' / 'house_view_validation.json'
+            validation_path.parent.mkdir(parents=True)
+            validation_path.write_text(json.dumps({
+                'house_view_validation': {
+                    'accuracy_sections': {
+                        'pseudo_live': {
+                            'sample_count': 20,
+                            'hit_count': 16,
+                            'hit_rate': 0.8,
+                            'status': 'available',
+                        },
+                    },
+                },
+            }), encoding='utf-8')
+
+            with override_settings(BASE_DIR=Path(tmpdir)), mock.patch(
+                'macro.services.house_view.build_data_quality_report',
+                return_value={
+                    'as_of': '2026-06-23',
+                    'display_allowed': True,
+                    'confidence_cap': 'A',
+                    'freshness_score': 98,
+                    'warnings': [],
+                    'blocking_issues': [],
+                },
+            ), mock.patch(
+                'macro.services.house_view.load_upcoming_high_impact_events',
+                return_value=[],
+            ):
+                result = house_view.build_house_view_context(as_of=date(2026, 6, 23))
+
+        external_context = result['model_audit']['external_context']
+        self.assertEqual(result['confidence_grade'], 'A')
+        self.assertEqual(result['display_status'], 'show')
+        self.assertEqual(external_context['grade_cap'], 'A')
+        self.assertEqual(external_context['consensus_source'], 'fred_market_implied_proxy')
+        self.assertEqual(
+            [row['series_id'] for row in external_context['market_consensus_proxies']],
+            ['T5YIE', 'T10YIE'],
+        )
+        self.assertNotIn(
+            '市場コンセンサス未取得のためB以下です。',
+            result['confidence_limit_reasons'],
+        )
+
     def test_house_view_downgrades_for_missing_consensus_and_upcoming_events(self):
         WorldStateSnapshot.objects.create(
             as_of_date=date(2026, 6, 17),
@@ -3085,7 +3297,7 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(context['final_judgment']['direction'], '中立〜改善')
         self.assertEqual(context['final_judgment']['nikkei_impact'], '上昇支援')
-        self.assertEqual(context['final_judgment']['confidence'], 'データ品質 A / 92%')
+        self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 92%')
         self.assertEqual(len(context['invalidation_triggers']), 4)
         self.assertEqual(
             [item['name_key'] for item in context['scenarios']],
@@ -3137,7 +3349,7 @@ class DashboardFormatTest(TestCase):
             context['final_judgment']['summary'],
             '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
         )
-        self.assertEqual(context['final_judgment']['confidence'], 'データ品質 A / 91%')
+        self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 91%')
         self.assertEqual(context['reliability']['data_quality'], 'A / 91%')
         self.assertEqual(context['reliability']['model_validation'], 'C / 検証不足')
         self.assertEqual(context['reliability']['live_record'], 'Live実績 未評価')

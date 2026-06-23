@@ -1563,7 +1563,7 @@ def _compact_direction(house_view: Dict, forecast: Dict, decision: Dict) -> str:
 
 def _format_confidence(decision: Dict, house_view: Dict) -> str:
     data_quality = _format_data_quality(decision, house_view)
-    return f'データ品質 {data_quality}'
+    return f'判断品質 {data_quality}'
 
 
 def _format_data_quality(decision: Dict, house_view: Dict) -> str:

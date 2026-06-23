@@ -41,13 +41,13 @@
         "too_defensive_count": 38
       },
       "live": {
-        "avg_brier_score": 0.4315,
+        "avg_brier_score": null,
         "hit_count": 0,
-        "hit_rate": 0.0,
-        "mae": 0.6569,
-        "sample_count": 1,
+        "hit_rate": null,
+        "mae": null,
+        "sample_count": 0,
         "sample_kind": "live_saved_forecasts",
-        "status": "available",
+        "status": "waiting_for_realizations",
         "too_bullish_count": 0,
         "too_defensive_count": 0
       },
@@ -424,12 +424,12 @@
         "too_defensive_count": 0
       }
     },
-    "generated_at": "2026-06-21T07:46:44.209020+00:00",
+    "generated_at": "2026-06-22T11:19:58.233983+00:00",
     "hit_count": 0,
-    "hit_rate": 0.0,
+    "hit_rate": null,
     "model_version": "macro_hatzius_v1",
     "operation_health": {
-      "latest_as_of": "2026-06-19",
+      "latest_as_of": "2026-06-22",
       "missing_features_hash_count": 0,
       "missing_prediction_interval_count": 0,
       "notes": [
@@ -443,28 +443,12 @@
     },
     "reliability": {
       "display_status": "参考",
-      "live_record": "Live実績 1件 / 的中 0件",
-      "model_validation": "C / 暫定",
-      "note": "検証件数が少ないため、予測精度としては参考扱いです。"
+      "live_record": "Live実績 未評価",
+      "model_validation": "C / 検証不足",
+      "note": "実際に保存した予測の結果がまだ確定していません。"
     },
-    "rows": [
-      {
-        "absolute_error": 0.6569,
-        "actual_event": 0.0,
-        "actual_regime": "slowdown",
-        "actual_snapshot_date": "2026-06-21",
-        "as_of_date": "2026-06-19",
-        "brier_score": 0.4315,
-        "confidence": null,
-        "hit": false,
-        "horizon": "3m_6m",
-        "miss_type": "wrong_regime",
-        "predicted_regime": "expansion",
-        "prediction": 0.6568708855634098,
-        "target_date": "2026-09-19"
-      }
-    ],
-    "sample_count": 1,
+    "rows": [],
+    "sample_count": 0,
     "target": "macro_regime",
     "warnings": [
       "検証件数が少ないため、的中率は暫定です。"

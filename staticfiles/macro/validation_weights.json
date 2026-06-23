@@ -1,25 +1,55 @@
 {
   "validation_weight_report": {
-    "generated_at": "2026-06-20T08:37:52.000827+00:00",
+    "generated_at": "2026-06-22T11:20:11.468255+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
+        "display_reason": "トップ表示可",
+        "evaluated_at": "2026-06-22T11:19:57.552573+00:00",
+        "horizon": "3m",
+        "metrics_used": {
+          "baseline": "best_available_naive_baseline",
+          "baseline_mae": 5.955788348943174,
+          "baseline_models": [
+            "zero",
+            "last_value",
+            "moving_average"
+          ],
+          "direction_accuracy": 0.6781609195402298,
+          "live_settled_sample_count": 0,
+          "mae": 5.492145775258934,
+          "model_refit_count": 0,
+          "rmse": 7.50016560131785,
+          "skill_score": 0.07784738921531875,
+          "validation_method": "rolling_mean_fallback",
+          "validation_source": "historical_walk_forward"
+        },
+        "model_key": "return_lightgbm_v2:GSPC:3m",
+        "model_version": "return_lightgbm_v2",
+        "report_id": 1,
+        "sample_count": 261,
+        "source": "model_validation_report",
+        "target": "GSPC",
+        "validation_weight": 1.0225
+      },
+      {
+        "display_grade": "show",
         "display_reason": "House View Backtest 的中率を反映",
-        "evaluated_at": "2026-06-18T07:24:58.340034+00:00",
+        "evaluated_at": "2026-06-21T06:57:43.960800+00:00",
         "horizon": "backtest",
         "metrics_used": {
-          "hit_count": 7,
-          "hit_rate": 0.6364,
-          "too_bullish_count": 2,
-          "too_defensive_count": 2
+          "hit_count": 197,
+          "hit_rate": 0.7378,
+          "too_bullish_count": 32,
+          "too_defensive_count": 38
         },
         "model_key": "macro_hatzius_v1:macro_regime:backtest",
         "model_version": "macro_hatzius_v1",
         "report_id": null,
-        "sample_count": 11,
+        "sample_count": 267,
         "source": "house_view_backtest",
         "target": "macro_regime",
-        "validation_weight": 0.35
+        "validation_weight": 0.7378
       }
     ],
     "warnings": [],

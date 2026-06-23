@@ -6,6 +6,7 @@ from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 
+from django.conf import settings
 from django.utils import timezone
 
 from ..models import (
@@ -15,7 +16,9 @@ from ..models import (
     RegimeSnapshot,
     WorldStateSnapshot,
 )
+from .dashboard_cache import load_static_macro_payload
 from .data_quality import build_data_quality_report
+from .house_view_validation import HOUSE_VIEW_MODEL_VERSION, HOUSE_VIEW_TARGET
 from .model_validation import latest_validation_reports, model_display_grade
 from .upcoming_events import load_upcoming_high_impact_events
 
@@ -24,6 +27,12 @@ GRADE_ORDER = {'A': 4, 'B': 3, 'C': 2, 'D': 1}
 TEN_YEAR_RATE_CHANGE_THRESHOLD = 4.5
 HY_SPREAD_CHANGE_THRESHOLD = 5.0
 MIN_LIVE_SAMPLE_FOR_FULL_CONFIDENCE = 10
+HOUSE_VIEW_VALIDATION_PATH = 'static/macro/house_view_validation.json'
+MARKET_CONSENSUS_PROXY_SERIES = (
+    ('T5YIE', '5年期待インフレ率'),
+    ('T10YIE', '10年期待インフレ率'),
+)
+MARKET_CONSENSUS_PROXY_MAX_AGE_DAYS = 7
 
 
 def _latest_world_state() -> Optional[WorldStateSnapshot]:
@@ -158,11 +167,29 @@ def _latest_validation_audit() -> dict:
             'live_sample_count': 0,
         }
 
+    house_view_reports = [
+        report for report in reports
+        if (
+            report.model_version == HOUSE_VIEW_MODEL_VERSION
+            and report.target == HOUSE_VIEW_TARGET
+        )
+    ]
+    if not house_view_reports:
+        static_audit = _static_house_view_validation_audit()
+        if static_audit:
+            return static_audit
+        return {
+            'grade_cap': 'C',
+            'display_status': 'reference',
+            'reasons': ['House View検証が未生成です。'],
+            'live_sample_count': 0,
+        }
+
     reasons = []
     grade_cap = 'A'
     display_status = 'show'
     live_sample_count = 0
-    for report in reports:
+    for report in house_view_reports:
         metrics = report.metrics or {}
         live_sample_count += int(metrics.get('live_settled_sample_count') or 0)
         display_grade, reason = model_display_grade(report)
@@ -186,6 +213,27 @@ def _latest_validation_audit() -> dict:
         'reasons': reasons,
         'live_sample_count': live_sample_count,
     }
+
+
+def _static_house_view_validation_audit() -> Optional[dict]:
+    payload = load_static_macro_payload(settings.BASE_DIR / HOUSE_VIEW_VALIDATION_PATH)
+    validation = (payload or {}).get('house_view_validation') or {}
+    sections = validation.get('accuracy_sections') or {}
+    for section_name in ('live', 'pseudo_live', 'backtest'):
+        section = sections.get(section_name) or {}
+        sample_count = int(section.get('sample_count') or 0)
+        hit_rate = section.get('hit_rate')
+        if sample_count < MIN_LIVE_SAMPLE_FOR_FULL_CONFIDENCE or hit_rate is None:
+            continue
+        grade_cap = 'A' if hit_rate >= 0.65 else 'B' if hit_rate >= 0.55 else 'C'
+        return {
+            'grade_cap': grade_cap,
+            'display_status': 'show' if grade_cap in {'A', 'B'} else 'reference',
+            'reasons': [],
+            'live_sample_count': sample_count,
+            'validation_source': f'house_view_validation:{section_name}',
+        }
+    return None
 
 
 def _forecast_ledger_audit() -> dict:
@@ -233,12 +281,16 @@ def _forecast_ledger_audit() -> dict:
 
 
 def _external_context_audit(as_of=None) -> dict:
+    as_of = as_of or timezone.localdate()
     snapshots = list(ForecastSnapshot.objects.order_by('-as_of_date', '-created_at')[:200])
-    consensus_available = any(
+    forecast_consensus_available = any(
         ((snapshot.metadata or {}).get('consensus_status') in {'available', 'partial'})
         or bool((snapshot.metadata or {}).get('consensus'))
         for snapshot in snapshots
     )
+    market_consensus_proxies = _market_consensus_proxy_rows(as_of)
+    market_consensus_available = len(market_consensus_proxies) == len(MARKET_CONSENSUS_PROXY_SERIES)
+    consensus_available = forecast_consensus_available or market_consensus_available
     reasons = []
     grade_cap = 'A'
     if not consensus_available:
@@ -256,8 +308,47 @@ def _external_context_audit(as_of=None) -> dict:
         'downgrade_steps': downgrade_steps,
         'display_status': 'reference' if reasons else 'show',
         'reasons': reasons,
+        'consensus_source': (
+            'forecast_snapshot'
+            if forecast_consensus_available
+            else 'fred_market_implied_proxy'
+            if market_consensus_available
+            else 'missing'
+        ),
+        'market_consensus_proxies': market_consensus_proxies,
         'upcoming_high_impact_events': upcoming_events,
     }
+
+
+def _market_consensus_proxy_rows(as_of) -> list[dict]:
+    rows = []
+    for series_id, fallback_name in MARKET_CONSENSUS_PROXY_SERIES:
+        observation = (
+            Observation.objects
+            .filter(
+                indicator__fred_series_id=series_id,
+                indicator__is_active=True,
+                observation_date__lte=as_of,
+            )
+            .select_related('indicator')
+            .order_by('-observation_date')
+            .first()
+        )
+        if observation is None:
+            continue
+        age_days = max((as_of - observation.observation_date).days, 0)
+        if age_days > MARKET_CONSENSUS_PROXY_MAX_AGE_DAYS:
+            continue
+        rows.append({
+            'series_id': series_id,
+            'label': observation.indicator.name_ja or fallback_name,
+            'observation_date': observation.observation_date.isoformat(),
+            'value': observation.value,
+            'age_days': age_days,
+            'source': 'FRED',
+            'proxy_type': 'market_implied_inflation_expectation',
+        })
+    return rows
 
 
 def _display_status(*statuses: str) -> str:
