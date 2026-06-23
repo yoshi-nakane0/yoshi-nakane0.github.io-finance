@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
@@ -44,6 +45,8 @@ from .data_quality import is_snapshot_stale
 from .github_actions import dispatch_refresh_workflow, get_refresh_workflow_state
 from .output_contract import apply_output_contract
 from .signal_contract import build_basecalc_signal_contract
+
+logger = logging.getLogger(__name__)
 
 CACHE_KEY_FWD = "nikkei_forward_per"
 CACHE_KEY_PRICE = "nikkei_price"
@@ -139,6 +142,12 @@ def dispatch_basecalc_refresh_workflow(request):
 
 def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
     if not _should_import_runtime_basecalc_history():
+        logger.info(
+            "basecalc runtime history hydration skipped: serverless=%s debug=%s sqlite_env=%s",
+            is_serverless_runtime(),
+            settings.DEBUG,
+            os.getenv("SQLITE_DB_PATH") or "",
+        )
         return {"skipped": True, "reason": "not_serverless"}
     if cache.get(CACHE_KEY_RUNTIME_HISTORY_IMPORT):
         return {"skipped": True, "reason": "cached"}
@@ -147,11 +156,17 @@ def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
         bundled_outcomes = _bundled_history_outcome_count(history_path)
         if existing_outcomes and existing_outcomes >= bundled_outcomes:
             cache.set(CACHE_KEY_RUNTIME_HISTORY_IMPORT, True, timeout=3600)
+            logger.info(
+                "basecalc runtime history hydration skipped: existing_outcomes=%s bundled_outcomes=%s",
+                existing_outcomes,
+                bundled_outcomes,
+            )
             return {"skipped": True, "reason": "history_exists"}
     except (OperationalError, ProgrammingError):
         return {"skipped": True, "reason": "db_unavailable"}
 
     result = import_basecalc_history(str(history_path))
+    logger.info("basecalc runtime history hydration result: %s", result)
     cache.set(
         CACHE_KEY_RUNTIME_HISTORY_IMPORT,
         True,
