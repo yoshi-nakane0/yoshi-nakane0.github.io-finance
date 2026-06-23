@@ -235,6 +235,42 @@ class BasecalcRuntimeHistoryHydrationTests(TestCase):
         self.assertFalse(result['skipped'])
         self.assertEqual(PredictionOutcome.objects.count(), 3)
 
+    @override_settings(DEBUG=False)
+    @mock.patch.dict('os.environ', {'VERCEL': '', 'SQLITE_DB_PATH': '/tmp/db.sqlite3'})
+    def test_production_sqlite_imports_bundled_history_without_vercel_env(self):
+        payload = {
+            'schema': 'basecalc_history_v2',
+            'predictions': [
+                {
+                    'key': 'production-sqlite-history',
+                    'created_at': '2026-06-01T00:00:00+00:00',
+                    'prediction_timestamp': '2026-06-01T00:00:00+00:00',
+                    'price': 40000,
+                    'state_key': 'bull_trend_continuation',
+                    'direction': 'bullish',
+                    'main_scenario': 'production sqlite import',
+                }
+            ],
+            'outcomes': [
+                {
+                    'prediction_key': 'production-sqlite-history',
+                    'horizon': '1d',
+                    'evaluated_at': '2026-06-02T00:00:00+00:00',
+                    'price_at_evaluation': 40100,
+                    'realized_return_pct': 0.25,
+                    'direction_hit': True,
+                }
+            ],
+        }
+        with TemporaryDirectory() as tmpdir:
+            history_path = Path(tmpdir) / 'basecalc_history.json'
+            history_path.write_text(json.dumps(payload), encoding='utf-8')
+
+            result = ensure_runtime_basecalc_history(history_path)
+
+        self.assertFalse(result['skipped'])
+        self.assertEqual(PredictionOutcome.objects.count(), 1)
+
 
 class BasecalcUpdateSecurityTests(TestCase):
     def setUp(self):

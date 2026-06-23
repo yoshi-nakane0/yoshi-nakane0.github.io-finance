@@ -1,7 +1,9 @@
 import json
+import os
 from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import OperationalError, ProgrammingError
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
@@ -136,7 +138,7 @@ def dispatch_basecalc_refresh_workflow(request):
 
 
 def ensure_runtime_basecalc_history(history_path=BASECALC_HISTORY_PATH):
-    if not is_serverless_runtime():
+    if not _should_import_runtime_basecalc_history():
         return {"skipped": True, "reason": "not_serverless"}
     if cache.get(CACHE_KEY_RUNTIME_HISTORY_IMPORT):
         return {"skipped": True, "reason": "cached"}
@@ -164,6 +166,14 @@ def _bundled_history_outcome_count(history_path):
     except (OSError, ValueError):
         return 0
     return len(payload.get("outcomes") or [])
+
+
+def _should_import_runtime_basecalc_history():
+    default_database = settings.DATABASES.get("default", {})
+    is_sqlite = default_database.get("ENGINE") == "django.db.backends.sqlite3"
+    runtime_sqlite_path = os.getenv("SQLITE_DB_PATH") or ""
+    uses_tmp_sqlite = Path(runtime_sqlite_path).as_posix().startswith("/tmp/")
+    return is_sqlite and (is_serverless_runtime() or (not settings.DEBUG and uses_tmp_sqlite))
 
 
 def snapshot_api(request):
