@@ -89,7 +89,7 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
             bundled_sqlite_path,
         )
         return
-    if sqlite_path.exists():
+    if sqlite_path.exists() and not is_serverless_runtime():
         try:
             if sqlite_file_signature(sqlite_path) == sqlite_file_signature(bundled_sqlite_path):
                 return

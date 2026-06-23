@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import tempfile
 from pathlib import Path
@@ -39,6 +40,22 @@ class SQLiteBootstrapTests(SimpleTestCase):
             bootstrap_sqlite_database(runtime, source)
 
             self.assertEqual(self._sample_count(runtime), 2)
+
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_serverless_bootstrap_refreshes_existing_runtime_db(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            source = tmpdir / 'source.sqlite3'
+            runtime = tmpdir / 'runtime.sqlite3'
+            source.write_bytes(b'source-db')
+            runtime.write_bytes(b'stale--db')
+            timestamp_ns = 1_700_000_000_000_000_000
+            os.utime(source, ns=(timestamp_ns, timestamp_ns))
+            os.utime(runtime, ns=(timestamp_ns, timestamp_ns))
+
+            bootstrap_sqlite_database(runtime, source)
+
+            self.assertEqual(runtime.read_bytes(), source.read_bytes())
 
     def test_private_runtime_bundle_is_default_source_when_present(self):
         private_bundle = BASE_DIR / 'runtime' / 'db.sqlite3'
