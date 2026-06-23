@@ -1,0 +1,503 @@
+{
+  "house_view_validation": {
+    "accuracy_sections": {
+      "backtest": {
+        "data_modes": {
+          "revised_reference": {
+            "hit_count": 197,
+            "hit_rate": 0.7378,
+            "sample_count": 267,
+            "too_bullish_count": 32,
+            "too_defensive_count": 38
+          }
+        },
+        "generated_at": "2026-06-21T06:57:43.960800+00:00",
+        "hit_count": 197,
+        "hit_rate": 0.7378,
+        "horizons": {
+          "3m": {
+            "hit_count": 101,
+            "hit_rate": 0.7481,
+            "sample_count": 135,
+            "too_bullish_count": 16,
+            "too_defensive_count": 18
+          },
+          "6m": {
+            "hit_count": 96,
+            "hit_rate": 0.7273,
+            "sample_count": 132,
+            "too_bullish_count": 16,
+            "too_defensive_count": 20
+          }
+        },
+        "period": {
+          "end": "2026-06-18",
+          "start": "2015-01-01"
+        },
+        "sample_count": 267,
+        "sample_kind": "backtest_replay",
+        "status": "available",
+        "too_bullish_count": 32,
+        "too_defensive_count": 38
+      },
+      "live": {
+        "avg_brier_score": 0.4315,
+        "hit_count": 0,
+        "hit_rate": 0.0,
+        "mae": 0.6569,
+        "sample_count": 3,
+        "sample_kind": "live_saved_forecasts",
+        "status": "available",
+        "too_bullish_count": 0,
+        "too_defensive_count": 0
+      },
+      "pseudo_live": {
+        "hit_count": 16,
+        "hit_rate": 0.8,
+        "period": {
+          "end": "2026-03-01",
+          "start": "2025-04-01"
+        },
+        "rows": [
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-10-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-04-01",
+            "confidence": 69,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-10-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-08-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-05-01",
+            "confidence": 68,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-08-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-11-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-05-01",
+            "confidence": 68,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-11-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-09-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-06-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-09-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-12-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-06-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-12-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-10-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-07-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-10-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-01-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-07-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-01-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-11-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-08-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-11-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-02-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-08-01",
+            "confidence": 62,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-02-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2025-12-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-09-01",
+            "confidence": 61,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2025-12-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-03-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-09-01",
+            "confidence": 61,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-03-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-01-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-10-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-01-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-04-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-10-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "6m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-04-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-02-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-11-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-02-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-05-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-11-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "6m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-05-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-03-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2025-12-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-03-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-05-23",
+            "actual_source": "saved_snapshot",
+            "as_of_date": "2025-12-01",
+            "confidence": 60,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "6m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-06-01",
+            "validation_target": "macro_regime_6m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-04-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2026-01-01",
+            "confidence": 74,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "3m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-04-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "slowdown",
+            "actual_snapshot_date": "2026-05-01",
+            "actual_source": "revised_reference",
+            "as_of_date": "2026-02-01",
+            "confidence": 74,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": true,
+            "horizon": "3m",
+            "miss_type": "hit",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-05-01",
+            "validation_target": "macro_regime_3m"
+          },
+          {
+            "actual_regime": "recovery",
+            "actual_snapshot_date": "2026-05-23",
+            "actual_source": "saved_snapshot",
+            "as_of_date": "2026-03-01",
+            "confidence": 76,
+            "data_mode": "revised_reference",
+            "data_quality": 100,
+            "hit": false,
+            "horizon": "3m",
+            "miss_type": "too_defensive",
+            "predicted_regime": "slowdown",
+            "target_date": "2026-06-01",
+            "validation_target": "macro_regime_3m"
+          }
+        ],
+        "sample_count": 20,
+        "sample_kind": "recent_backtest_replay",
+        "sample_limit": 20,
+        "status": "available",
+        "too_bullish_count": 0,
+        "too_defensive_count": 4
+      },
+      "short_term_live": {
+        "avg_brier_score": null,
+        "hit_count": 0,
+        "hit_rate": null,
+        "horizon_10d": {
+          "avg_brier_score": null,
+          "hit_count": 0,
+          "hit_rate": null,
+          "mae": null,
+          "sample_count": 0,
+          "too_bullish_count": 0,
+          "too_defensive_count": 0
+        },
+        "horizon_5d": {
+          "avg_brier_score": null,
+          "hit_count": 0,
+          "hit_rate": null,
+          "mae": null,
+          "sample_count": 0,
+          "too_bullish_count": 0,
+          "too_defensive_count": 0
+        },
+        "horizons": {
+          "10d": {
+            "avg_brier_score": null,
+            "hit_count": 0,
+            "hit_rate": null,
+            "mae": null,
+            "sample_count": 0,
+            "too_bullish_count": 0,
+            "too_defensive_count": 0
+          },
+          "5d": {
+            "avg_brier_score": null,
+            "hit_count": 0,
+            "hit_rate": null,
+            "mae": null,
+            "sample_count": 0,
+            "too_bullish_count": 0,
+            "too_defensive_count": 0
+          }
+        },
+        "mae": null,
+        "overdue_count": 0,
+        "pending_count": 6,
+        "rows": [],
+        "sample_count": 0,
+        "sample_kind": "short_term_live_saved_forecasts",
+        "status": "waiting_for_realizations",
+        "target_days": [
+          5,
+          10
+        ],
+        "too_bullish_count": 0,
+        "too_defensive_count": 0
+      }
+    },
+    "generated_at": "2026-06-23T02:12:48.785287+00:00",
+    "hit_count": 0,
+    "hit_rate": 0.0,
+    "model_version": "macro_hatzius_v1",
+    "operation_health": {
+      "latest_as_of": "2026-06-22",
+      "missing_features_hash_count": 0,
+      "missing_prediction_interval_count": 0,
+      "notes": [
+        "結果待ちの予測が3件あります。"
+      ],
+      "overdue_count": 0,
+      "pending_count": 3,
+      "saved_forecast_count": 3,
+      "settled_count": 0,
+      "status_label": "正常"
+    },
+    "reliability": {
+      "display_status": "表示可",
+      "live_record": "Live実績 3件 / 的中 0件",
+      "model_validation": "A / 疑似Live 80%",
+      "note": "Live実績は少ないため、疑似Live 20件の検証結果をモデル検証に使っています。"
+    },
+    "rows": [
+      {
+        "absolute_error": 0.6569,
+        "actual_event": 0.0,
+        "actual_regime": "slowdown",
+        "actual_snapshot_date": "2026-06-23",
+        "as_of_date": "2026-06-19",
+        "brier_score": 0.4315,
+        "confidence": null,
+        "hit": false,
+        "horizon": "3m_6m",
+        "miss_type": "wrong_regime",
+        "predicted_regime": "expansion",
+        "prediction": 0.6568708855634098,
+        "target_date": "2026-09-19"
+      },
+      {
+        "absolute_error": 0.6569,
+        "actual_event": 0.0,
+        "actual_regime": "slowdown",
+        "actual_snapshot_date": "2026-06-23",
+        "as_of_date": "2026-06-21",
+        "brier_score": 0.4315,
+        "confidence": 0.76,
+        "hit": false,
+        "horizon": "3m_6m",
+        "miss_type": "wrong_regime",
+        "predicted_regime": "expansion",
+        "prediction": 0.6568708855634098,
+        "target_date": "2026-09-21"
+      },
+      {
+        "absolute_error": 0.6569,
+        "actual_event": 0.0,
+        "actual_regime": "slowdown",
+        "actual_snapshot_date": "2026-06-23",
+        "as_of_date": "2026-06-22",
+        "brier_score": 0.4315,
+        "confidence": null,
+        "hit": false,
+        "horizon": "3m_6m",
+        "miss_type": "wrong_regime",
+        "predicted_regime": "expansion",
+        "prediction": 0.6568708855634098,
+        "target_date": "2026-09-22"
+      }
+    ],
+    "sample_count": 3,
+    "target": "macro_regime",
+    "warnings": [
+      "Live検証件数は少ないため、モデル検証は疑似Live/Backtestも併用しています。"
+    ]
+  }
+}

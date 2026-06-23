@@ -1,0 +1,12 @@
+{
+  "as_of": "2026-06-23",
+  "blocking_issues": [],
+  "confidence_cap": "A",
+  "display_allowed": true,
+  "freshness_score": 100.0,
+  "missing_required_count": 0,
+  "required_count": 8,
+  "stale_required_count": 0,
+  "usable_for_decision": true,
+  "warnings": []
+}

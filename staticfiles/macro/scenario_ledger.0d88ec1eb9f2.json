@@ -1,0 +1,80 @@
+{
+  "scenario_ledger": [
+    {
+      "as_of": "2026-06-22",
+      "confirmation_rules": [
+        "成長モメンタム",
+        "物価圧力",
+        "金融環境",
+        "信用ストレス"
+      ],
+      "expected_market_impact": {
+        "nikkei_futures": "upside_support",
+        "sp500": "neutral",
+        "usd_jpy": "rate_sensitive"
+      },
+      "invalidation_rules": [
+        "米失業率が3か月連続で上昇",
+        "クレジットスプレッドが急拡大",
+        "コアインフレが2か月連続で再加速",
+        "米10年金利が急上昇し株式バリュエーションを圧迫",
+        "ドル円が急変し日経先物の外需株に逆風"
+      ],
+      "name": "基本",
+      "outcome": null,
+      "probability": 0.5853,
+      "scenario_id": "baseline_2026-06-22",
+      "status": "open",
+      "watch_window": "20 trading days"
+    },
+    {
+      "as_of": "2026-06-22",
+      "confirmation_rules": [
+        "雇用悪化",
+        "信用スプレッド拡大",
+        "原油高",
+        "円急変"
+      ],
+      "expected_market_impact": {
+        "nikkei_futures": "downside_pressure",
+        "sp500": "valuation_pressure",
+        "usd_jpy": "rate_sensitive"
+      },
+      "invalidation_rules": [
+        "信用環境の改善",
+        "雇用の再加速",
+        "米金利の安定化"
+      ],
+      "name": "下振れ",
+      "outcome": null,
+      "probability": 0.1393,
+      "scenario_id": "downside_2026-06-22",
+      "status": "open",
+      "watch_window": "20 trading days"
+    },
+    {
+      "as_of": "2026-06-22",
+      "confirmation_rules": [
+        "雇用安定",
+        "インフレ鈍化",
+        "信用環境改善"
+      ],
+      "expected_market_impact": {
+        "nikkei_futures": "upside_support",
+        "sp500": "neutral",
+        "usd_jpy": "rate_sensitive"
+      },
+      "invalidation_rules": [
+        "雇用統計の急悪化",
+        "コア物価の再加速",
+        "VIXの急上昇"
+      ],
+      "name": "上振れ",
+      "outcome": null,
+      "probability": 0.2754,
+      "scenario_id": "upside_2026-06-22",
+      "status": "open",
+      "watch_window": "20 trading days"
+    }
+  ]
+}
