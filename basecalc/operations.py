@@ -9,6 +9,13 @@ from .outcomes import (
     prune_prediction_history,
     save_prediction,
 )
+from .daily_sync import (
+    build_snapshot_from_market_bar,
+    fetch_nikkei_futures_daily_rows,
+    latest_synced_bar,
+    save_daily_bars,
+    write_latest_market_snapshot,
+)
 from .persistence import export_basecalc_history
 from .intermarket_technicals import get_intermarket_technical_snapshot
 from .market_shock import build_market_shock_context
@@ -55,17 +62,22 @@ def refresh_basecalc_data(
         }
     started = time.monotonic()
     try:
-        futures_snapshot = get_cached_futures_snapshot()
-        price = normalize_price(cache.get(CACHE_KEY_PRICE))
+        futures_snapshot, latest_bar = _refresh_latest_futures_snapshot()
+        if futures_snapshot is None:
+            futures_snapshot = get_cached_futures_snapshot()
+        price = price_from_futures_snapshot(futures_snapshot)
         if price is None:
-            price = price_from_futures_snapshot(futures_snapshot)
-        futures_snapshot = get_cached_futures_snapshot()
-        snapshot_price = price_from_futures_snapshot(futures_snapshot)
-        if snapshot_price is not None:
-            price = snapshot_price
+            price = normalize_price(cache.get(CACHE_KEY_PRICE))
+        if price is not None:
             cache.set(CACHE_KEY_PRICE, price, timeout=None)
         intermarket_context = get_intermarket_technical_snapshot()
         world_model = build_world_model(price or 0, futures_snapshot, intermarket_context)
+        if futures_snapshot and latest_bar:
+            write_latest_market_snapshot(
+                futures_snapshot,
+                world_model,
+                latest_bar=latest_bar,
+            )
         basecalc_status = {
             "price_data": price_status_entry(
                 futures_snapshot,
@@ -114,6 +126,31 @@ def refresh_basecalc_data(
             cache.delete(CACHE_KEY_REFRESH_LOCK)
 
 
+def _refresh_latest_futures_snapshot():
+    try:
+        rows, source, attempts = fetch_nikkei_futures_daily_rows()
+    except Exception:
+        return None, None
+    if not rows:
+        return None, None
+
+    saved = save_daily_bars(rows, update_existing=True)
+    latest_bar = latest_synced_bar(rows)
+    snapshot = build_snapshot_from_market_bar(latest_bar) if latest_bar else None
+    if not snapshot:
+        return None, None
+
+    snapshot["_market_bars_saved"] = saved["created"] + saved["updated"]
+    snapshot["_market_bars_created"] = saved["created"]
+    snapshot["_market_bars_updated"] = saved["updated"]
+    snapshot["_sync_source"] = source
+    snapshot["_sync_attempts"] = attempts
+    cache.set(CACHE_KEY_PRICE, snapshot["price"], timeout=None)
+    cache.set("nikkei_futures_snapshot", snapshot, timeout=300)
+    cache.set("nikkei_futures_snapshot_last_good", snapshot, timeout=None)
+    return snapshot, latest_bar
+
+
 def export_basecalc_snapshot(
     *,
     world_model,
@@ -124,6 +161,7 @@ def export_basecalc_snapshot(
     job_duration_sec,
 ):
     price = world_model.get("price") or 0
+    decision_price = _decision_price_metadata(world_model, futures_snapshot, price)
     market_shock_context = _safe_market_shock_context(
         futures_snapshot,
         intermarket_context,
@@ -163,6 +201,11 @@ def export_basecalc_snapshot(
         "data_quality": world_model.get("data_quality_score", 0),
         "model_version": world_model.get("model_version", ""),
         "job_duration_sec": job_duration_sec,
+        "decision_base_price": decision_price["value"],
+        "decision_price_as_of": decision_price["as_of"],
+        "decision_price_source": decision_price["source"],
+        "decision_price_symbol": decision_price["symbol"],
+        "decision_price": decision_price,
         "warnings": [],
         "data": {
             "price_display": f"{price:,.0f}" if price else "N/A",
@@ -188,6 +231,29 @@ def export_basecalc_snapshot(
     enrich_basecalc_context(payload)
     write_basecalc_snapshot(payload, export_snapshot_path)
     return payload
+
+
+def _decision_price_metadata(world_model, futures_snapshot=None, price=0):
+    futures_snapshot = futures_snapshot or {}
+    source_status = world_model.get("source_status") or {}
+    snapshot_price = price_from_futures_snapshot(futures_snapshot)
+    value = snapshot_price if snapshot_price is not None else price
+    return {
+        "value": value,
+        "as_of": _timestamp_iso(futures_snapshot.get("fetched_at")),
+        "source": futures_snapshot.get("source") or source_status.get("source") or "",
+        "symbol": futures_snapshot.get("symbol") or source_status.get("symbol") or "",
+    }
+
+
+def _timestamp_iso(value):
+    if not value:
+        return ""
+    if isinstance(value, str):
+        return value
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return str(value)
 
 
 def _safe_market_shock_context(futures_snapshot=None, intermarket_context=None):

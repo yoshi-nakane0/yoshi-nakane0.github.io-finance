@@ -39,7 +39,7 @@
                     </div>
                     <div class="wm-purpose-card__facts">
                         <span>注意 <strong>{{ basecalc_top.status.attention }}</strong></span>
-                        <span>更新 <strong>{{ basecalc_top.status.updated_at }}</strong></span>
+                        <span>判定作成日時 <strong>{{ basecalc_top.status.updated_at }}</strong></span>
                     </div>
                 </article>
 
@@ -80,7 +80,7 @@
                         <span class="wm-purpose-card__label">実用ライン</span>
                     </div>
                     <div class="wm-purpose-targets">
-                        <span class="wm-purpose-targets__item">現在値 <strong>{{ basecalc_top.lines.current_price|floatformat:0|intcomma|default:"N/A" }}</strong></span>
+                        <span class="wm-purpose-targets__item">判定基準価格 <strong>{{ basecalc_top.lines.current_price|floatformat:0|intcomma|default:"N/A" }}</strong></span>
                         <span class="wm-purpose-targets__item">上値抵抗 <strong>{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}</strong></span>
                         <span class="wm-purpose-targets__item">下値支持 <strong>{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}</strong></span>
                         <span class="wm-purpose-targets__item">直近上値 <strong>{{ basecalc_top.lines.near_upside|floatformat:0|intcomma|default:"N/A" }}</strong></span>

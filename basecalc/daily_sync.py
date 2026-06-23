@@ -182,7 +182,7 @@ def build_snapshot_from_market_bar(latest):
         "closes": [latest.close],
         "volumes": [latest.volume or 0],
         "timestamps": [int(latest.timestamp.timestamp())],
-        "fetched_at": timezone.now(),
+        "fetched_at": latest.timestamp,
         "fallback_used": False,
     }
     snapshot = attach_saved_daily_bars(snapshot)

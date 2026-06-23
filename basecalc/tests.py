@@ -1843,9 +1843,11 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '判定ステータス')
+        self.assertContains(response, '判定作成日時')
         self.assertContains(response, '最終テクニカル判断')
         self.assertContains(response, '行動判断')
         self.assertContains(response, '実用ライン')
+        self.assertContains(response, '判定基準価格')
         self.assertContains(response, '判断を変える条件')
         self.assertContains(response, '根拠3つ / 警戒3つ')
         self.assertContains(response, '1日・3日・5日の見通し')
@@ -2390,10 +2392,11 @@ class BasecalcUpdateSecurityTests(TestCase):
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
         )
+        latest_date = timezone.localdate()
         MarketBar.objects.create(
             symbol='NIY=F',
             timeframe='1d',
-            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+            timestamp=timezone.make_aware(datetime.combine(latest_date - timezone.timedelta(days=1), datetime.min.time())),
             open=67650,
             high=67910,
             low=66950,
@@ -2405,7 +2408,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         )
         rows = [
             {
-                'date': date(2026, 6, 5),
+                'date': latest_date,
                 'open': 67350,
                 'high': 67410,
                 'low': 65890,
@@ -2472,10 +2475,11 @@ class BasecalcUpdateSecurityTests(TestCase):
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
         )
+        latest_date = timezone.localdate()
         MarketBar.objects.create(
             symbol='NIY=F',
             timeframe='1d',
-            timestamp=timezone.make_aware(datetime(2026, 6, 3)),
+            timestamp=timezone.make_aware(datetime.combine(latest_date - timezone.timedelta(days=1), datetime.min.time())),
             open=66800,
             high=67200,
             low=66400,
@@ -2488,7 +2492,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         MarketBar.objects.create(
             symbol='NIY=F',
             timeframe='1d',
-            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+            timestamp=timezone.make_aware(datetime.combine(latest_date, datetime.min.time())),
             open=62427.5,
             high=63802.5,
             low=62347.5,
@@ -2500,7 +2504,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         )
         rows = [
             {
-                'date': date(2026, 6, 4),
+                'date': latest_date,
                 'open': 67650,
                 'high': 67910,
                 'low': 66950,
@@ -2520,7 +2524,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         upgraded_bar = MarketBar.objects.get(
             symbol='NIY=F',
             timeframe='1d',
-            timestamp=timezone.make_aware(datetime(2026, 6, 4)),
+            timestamp=timezone.make_aware(datetime.combine(latest_date, datetime.min.time())),
         )
         self.assertEqual(upgraded_bar.source, '225navi')
         self.assertEqual(upgraded_bar.close, 67640)
@@ -2723,6 +2727,32 @@ class BasecalcUpdateSecurityTests(TestCase):
         latest_snapshot = MarketSnapshot.objects.order_by('-fetched_at').first()
         self.assertEqual(latest_snapshot.price, 70460)
         self.assertEqual(latest_snapshot.source, 'matsui')
+
+    def test_market_bar_snapshot_uses_price_timestamp_as_fetched_at(self):
+        from basecalc.daily_sync import build_snapshot_from_market_bar
+
+        _create_market_bar_series(
+            count=80,
+            start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        latest_bar = MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 23, 14, 54)),
+            open=72840,
+            high=73760,
+            low=70460,
+            close=70460,
+            volume=37529,
+            source='matsui',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+
+        snapshot = build_snapshot_from_market_bar(latest_bar)
+
+        self.assertEqual(snapshot['price'], 70460)
+        self.assertEqual(snapshot['fetched_at'], latest_bar.timestamp)
 
     def test_225navi_fetch_records_http_failure_diagnostics(self):
         from requests import RequestException
@@ -2928,43 +2958,17 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(snapshot['price'], 70460)
         self.assertEqual(snapshot['closes'][-1], 70460)
 
-    def test_refresh_basecalc_data_uses_saved_225navi_without_live_futures_fetch(self):
+    def test_refresh_basecalc_data_uses_latest_synced_price_before_cached_snapshot(self):
         from .operations import refresh_basecalc_data
 
         _create_market_bar_series(
             count=80,
-            start=timezone.now() - timezone.timedelta(days=90),
+            start=timezone.make_aware(datetime(2026, 3, 1)),
         )
-        latest_date = timezone.localdate()
-        MarketBar.objects.filter(
-            symbol='NIY=F',
-            timestamp__date__gte=latest_date - timezone.timedelta(days=4),
-        ).delete()
-        rows = [
-            (latest_date - timezone.timedelta(days=4), 66250, 67240, 66240, 67080),
-            (latest_date - timezone.timedelta(days=3), 67070, 67220, 65580, 66750),
-            (latest_date - timezone.timedelta(days=2), 67220, 68800, 67190, 68560),
-            (latest_date - timezone.timedelta(days=1), 67650, 67910, 66950, 67640),
-            (latest_date, 67350, 67410, 65890, 66670),
-        ]
-        for row_date, open_price, high, low, close in rows:
-            MarketBar.objects.create(
-                symbol='NIY=F',
-                timeframe='1d',
-                timestamp=timezone.make_aware(datetime.combine(row_date, datetime.min.time())),
-                open=open_price,
-                high=high,
-                low=low,
-                close=close,
-                volume=None,
-                source='225navi',
-                instrument_key='cme_nikkei_futures',
-                instrument_type='futures',
-            )
         MarketSnapshot.objects.create(
             symbol='NIY=F',
             timeframe='1d',
-            fetched_at=timezone.now(),
+            fetched_at=timezone.make_aware(datetime(2026, 6, 13)),
             price=66670,
             open=67350,
             high=67410,
@@ -2975,18 +2979,57 @@ class BasecalcUpdateSecurityTests(TestCase):
             instrument_type='futures',
             readiness_level='limited',
         )
+        latest_timestamp = timezone.now()
+        rows = [
+            {
+                'date': latest_timestamp.date() - timezone.timedelta(days=1),
+                'open': 71590,
+                'high': 73090,
+                'low': 71320,
+                'close': 72860,
+                'volume': None,
+                'source': '225navi',
+            },
+            {
+                'date': latest_timestamp.date(),
+                'timestamp': latest_timestamp,
+                'open': 72840,
+                'high': 73760,
+                'low': 69770,
+                'close': 69770,
+                'volume': 37529,
+                'source': 'matsui',
+            },
+        ]
 
-        with (
-            patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
-            patch('basecalc.operations.write_basecalc_status'),
-        ):
-            result = refresh_basecalc_data(save=False, use_lock=False)
+        with TemporaryDirectory() as tmpdir:
+            snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
+            with (
+                patch(
+                    'basecalc.operations.fetch_nikkei_futures_daily_rows',
+                    return_value=(rows, 'matsui', []),
+                ),
+                patch('basecalc.operations.get_cached_futures_snapshot') as cached_snapshot,
+                patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
+                patch('basecalc.operations.write_basecalc_status'),
+            ):
+                result = refresh_basecalc_data(
+                    save=False,
+                    use_lock=False,
+                    export_snapshot_path=str(snapshot_path),
+                )
+            payload = json.loads(snapshot_path.read_text(encoding='utf-8'))
 
+        cached_snapshot.assert_not_called()
         self.assertTrue(result['updated'])
-        self.assertEqual(result['price'], 66670)
+        self.assertEqual(result['price'], 69770)
         self.assertEqual(result['readiness_level'], 'ready')
         self.assertNotEqual(result['state_key'], 'limited_reference')
-        self.assertEqual(result['source_status']['source'], '225navi')
+        self.assertEqual(result['source_status']['source'], 'matsui')
+        self.assertEqual(result['market_bars_saved'], 2)
+        self.assertEqual(payload['decision_base_price'], 69770)
+        self.assertEqual(payload['decision_price_source'], 'matsui')
+        self.assertEqual(payload['decision_price_as_of'], latest_timestamp.isoformat())
 
     def test_fresh_futures_cache_skips_external_refetch(self):
         cached = {
@@ -3159,6 +3202,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         with TemporaryDirectory() as tmpdir:
             snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
             with (
+                patch('basecalc.operations._refresh_latest_futures_snapshot', return_value=(None, None)),
                 patch('basecalc.operations.get_cached_futures_snapshot', return_value=_ready_snapshot()),
                 patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
                 patch('basecalc.operations.write_basecalc_status'),
@@ -3181,6 +3225,9 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertIn('world_model', payload)
         self.assertIn('data', payload)
         self.assertIn('performance_by_horizon', payload)
+        self.assertEqual(payload['decision_base_price'], payload['world_model']['price'])
+        self.assertEqual(payload['decision_price_source'], 'yahoo')
+        self.assertIn('decision_price_as_of', payload)
         practical_lines = payload['world_model']['practical_lines']
         self.assertEqual(practical_lines['current_price'], payload['world_model']['price'])
         self.assertGreater(practical_lines['upside_resistance'], practical_lines['current_price'])
@@ -3257,6 +3304,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         with TemporaryDirectory() as tmpdir:
             snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
             with (
+                patch('basecalc.operations._refresh_latest_futures_snapshot', return_value=(None, None)),
                 patch('basecalc.operations.get_cached_futures_snapshot', return_value=_ready_snapshot()),
                 patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
                 patch('basecalc.operations.build_world_model', return_value=low_confidence_world_model),
