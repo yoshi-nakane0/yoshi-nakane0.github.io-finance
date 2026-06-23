@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-06-21",
+  "as_of": "2026-06-23",
   "blocking_issues": [],
   "confidence_grade": "A",
   "confidence_limit_reasons": [],
-  "confidence_score": 92,
+  "confidence_score": 91,
   "data_quality_report": {
     "as_of": "2026-06-23",
     "blocking_issues": [],
@@ -29,11 +29,11 @@
       "label": "Core PCE"
     },
     {
-      "detail": "現状 4.49%（2026-06-17）。判断変更目安 4.50%以上、あと +0.01pt",
+      "detail": "現状 4.46%（2026-06-18）。判断変更目安 4.50%以上、あと +0.04pt",
       "label": "米10年金利"
     },
     {
-      "detail": "現状 2.63%（2026-06-17）。判断変更目安 5.00%以上、あと +2.37pt",
+      "detail": "現状 2.66%（2026-06-19）。判断変更目安 5.00%以上、あと +2.34pt",
       "label": "信用スプレッド"
     }
   ],
@@ -61,22 +61,22 @@
       "grade_cap": "A",
       "market_consensus_proxies": [
         {
-          "age_days": 5,
+          "age_days": 1,
           "label": "5年期待インフレ率",
-          "observation_date": "2026-06-18",
+          "observation_date": "2026-06-22",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T5YIE",
           "source": "FRED",
-          "value": 2.27
+          "value": 2.28
         },
         {
-          "age_days": 5,
+          "age_days": 1,
           "label": "10年期待インフレ率",
-          "observation_date": "2026-06-18",
+          "observation_date": "2026-06-22",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T10YIE",
           "source": "FRED",
-          "value": 2.25
+          "value": 2.23
         }
       ],
       "reasons": [],
@@ -98,7 +98,7 @@
   "probabilities": {
     "contraction": 0.02018798202221658,
     "expansion": 0.6568708855634098,
-    "financial_stress": 0.21193515864758772,
+    "financial_stress": 0.19316101651728157,
     "inflation_reacceleration": 0.8233758532469887,
     "recovery": 0.17495960104105565,
     "slowdown": 0.147981531373318

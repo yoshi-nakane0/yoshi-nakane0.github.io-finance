@@ -41,13 +41,13 @@
         "too_defensive_count": 38
       },
       "live": {
-        "avg_brier_score": 0.4315,
+        "avg_brier_score": null,
         "hit_count": 0,
-        "hit_rate": 0.0,
-        "mae": 0.6569,
-        "sample_count": 3,
+        "hit_rate": null,
+        "mae": null,
+        "sample_count": 0,
         "sample_kind": "live_saved_forecasts",
-        "status": "available",
+        "status": "waiting_for_realizations",
         "too_bullish_count": 0,
         "too_defensive_count": 0
       },
@@ -411,7 +411,7 @@
         },
         "mae": null,
         "overdue_count": 0,
-        "pending_count": 6,
+        "pending_count": 2,
         "rows": [],
         "sample_count": 0,
         "sample_kind": "short_term_live_saved_forecasts",
@@ -424,77 +424,31 @@
         "too_defensive_count": 0
       }
     },
-    "generated_at": "2026-06-23T02:12:48.785287+00:00",
+    "generated_at": "2026-06-23T08:47:36.134184+00:00",
     "hit_count": 0,
-    "hit_rate": 0.0,
+    "hit_rate": null,
     "model_version": "macro_hatzius_v1",
     "operation_health": {
-      "latest_as_of": "2026-06-22",
+      "latest_as_of": "2026-06-23",
       "missing_features_hash_count": 0,
       "missing_prediction_interval_count": 0,
       "notes": [
-        "結果待ちの予測が3件あります。"
+        "結果待ちの予測が1件あります。"
       ],
       "overdue_count": 0,
-      "pending_count": 3,
-      "saved_forecast_count": 3,
+      "pending_count": 1,
+      "saved_forecast_count": 1,
       "settled_count": 0,
       "status_label": "正常"
     },
     "reliability": {
       "display_status": "表示可",
-      "live_record": "Live実績 3件 / 的中 0件",
+      "live_record": "Live実績 未評価",
       "model_validation": "A / 疑似Live 80%",
-      "note": "Live実績は少ないため、疑似Live 20件の検証結果をモデル検証に使っています。"
+      "note": "Live実績は未評価のため、疑似Live 20件の検証結果をモデル検証に使っています。"
     },
-    "rows": [
-      {
-        "absolute_error": 0.6569,
-        "actual_event": 0.0,
-        "actual_regime": "slowdown",
-        "actual_snapshot_date": "2026-06-23",
-        "as_of_date": "2026-06-19",
-        "brier_score": 0.4315,
-        "confidence": null,
-        "hit": false,
-        "horizon": "3m_6m",
-        "miss_type": "wrong_regime",
-        "predicted_regime": "expansion",
-        "prediction": 0.6568708855634098,
-        "target_date": "2026-09-19"
-      },
-      {
-        "absolute_error": 0.6569,
-        "actual_event": 0.0,
-        "actual_regime": "slowdown",
-        "actual_snapshot_date": "2026-06-23",
-        "as_of_date": "2026-06-21",
-        "brier_score": 0.4315,
-        "confidence": 0.76,
-        "hit": false,
-        "horizon": "3m_6m",
-        "miss_type": "wrong_regime",
-        "predicted_regime": "expansion",
-        "prediction": 0.6568708855634098,
-        "target_date": "2026-09-21"
-      },
-      {
-        "absolute_error": 0.6569,
-        "actual_event": 0.0,
-        "actual_regime": "slowdown",
-        "actual_snapshot_date": "2026-06-23",
-        "as_of_date": "2026-06-22",
-        "brier_score": 0.4315,
-        "confidence": null,
-        "hit": false,
-        "horizon": "3m_6m",
-        "miss_type": "wrong_regime",
-        "predicted_regime": "expansion",
-        "prediction": 0.6568708855634098,
-        "target_date": "2026-09-22"
-      }
-    ],
-    "sample_count": 3,
+    "rows": [],
+    "sample_count": 0,
     "target": "macro_regime",
     "warnings": [
       "Live検証件数は少ないため、モデル検証は疑似Live/Backtestも併用しています。"
