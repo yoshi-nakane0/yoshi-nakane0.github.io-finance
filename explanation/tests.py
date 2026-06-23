@@ -10,6 +10,7 @@ from basecalc.models import MarketBar
 
 from .models import ExplanationSnapshot, ExplanationTradeOutcome
 from .services.audit_engine import evaluate_audit
+from .services.basecalc_adapter import _near_level_price
 from .services.contracts import BasecalcSignal, MacroSignal
 from .services.freshness import build_explanation_refresh_status
 from .services.fusion_engine import build_final_decision, build_trade_decision_v2
@@ -158,6 +159,10 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
 
         self.assertEqual(decision.selected_side, 'no_trade')
         self.assertEqual(decision.decision_type, 'no_trade_conflict')
+        self.assertEqual(decision.entry_price, 42000)
+        self.assertEqual(decision.target_1['price'], 42300)
+        self.assertEqual(decision.stop_price, 41400)
+        self.assertEqual(decision.invalidation_price, 41400)
         self.assertIn('R/R不足', decision.blocked_reasons)
 
     def test_trade_decision_v2_blocks_contract_error_and_hides_targets(self):
@@ -306,6 +311,24 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(scenario['levels']['resistance'], 71180)
 
 
+class ExplanationBasecalcAdapterTests(SimpleTestCase):
+    def test_near_level_price_uses_first_available_side_level(self):
+        world_model = {
+            'near_levels': {
+                'upside': [
+                    {'price': 66700, 'reason': '100円刻み'},
+                    {'price': 67000, 'reason': '500円刻み'},
+                ],
+                'downside': [
+                    {'price': 66600, 'reason': '100円刻み'},
+                ],
+            },
+        }
+
+        self.assertEqual(_near_level_price(world_model, 'upside'), 66700)
+        self.assertEqual(_near_level_price(world_model, 'downside'), 66600)
+
+
 class ExplanationViewCompositionTests(SimpleTestCase):
     def _snapshot(self):
         return ExplanationSnapshot(
@@ -423,6 +446,44 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             ['1d', '3d', '5d'],
         )
         self.assertEqual(context['world_model_predictions'][0]['expected_return'], '-0.02%')
+
+    def test_decision_card_shows_reference_levels_when_no_trade_has_candidate_plan(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'entry_price': 42400,
+            'entry_zone_low': 42336,
+            'entry_zone_high': 42432,
+            'target_1': {'label': 'T1', 'price': 42550, 'probability': 0.21},
+            'stop_price': 42290,
+            'invalidation_price': 42290,
+            'reward_risk': 1.36,
+            'blocked_reasons': ['スコア差不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['decision_card']['label'], '見送り')
+        self.assertEqual(context['decision_card']['entry'], '参考 42,336〜42,432円')
+        self.assertEqual(context['decision_card']['target'], '42,550円')
+        self.assertEqual(context['decision_card']['stop'], '42,290円')
+        self.assertEqual(context['decision_card']['invalidation'], '42,290円')
+        self.assertEqual(context['decision_card']['confidence'], '参考判定（B- / 68%）')
+
+    def test_decision_card_marks_low_confidence_blocked_trade_as_reference(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'confidence_score': 49,
+            'confidence_grade': 'C',
+            'blocked_reasons': ['類似事例不足のため信頼度を50未満に制限'],
+        })
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['decision_card']['confidence'], '参考判定（C / 49%）')
 
     def test_contract_error_hides_trade_targets_and_marks_basecalc_stopped(self):
         snapshot = self._snapshot()
@@ -751,6 +812,24 @@ class ExplanationPrecomputeViewTests(TestCase):
 
 
 class ExplanationManualPriceViewTests(TestCase):
+    def _create_market_bars(self, length=80, start=40000, step=30):
+        start_at = timezone.now() - timedelta(days=length)
+        for index in range(length):
+            close = start + index * step
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=start_at + timedelta(days=index),
+                open=close - 20,
+                high=close + 80,
+                low=close - 80,
+                close=close,
+                volume=1000,
+                source='test',
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+            )
+
     def _saved_basecalc_snapshot(self):
         return {
             'generated_at': timezone.now().isoformat(),
@@ -885,3 +964,44 @@ class ExplanationManualPriceViewTests(TestCase):
         self.assertEqual(raw['manual_price_mode']['basis'], 'saved_basecalc_with_manual_price_recalc_unavailable')
         self.assertEqual(response.context['long_judgment']['price'], 'N/A')
         self.assertEqual(response.context['snapshot'].final_label, '判定保留')
+
+    def test_manual_price_recalculates_trade_decision_from_saved_market_bars(self):
+        self._create_market_bars()
+        macro = MacroSignal(
+            bias='positive',
+            summary='Macroは支援的。',
+            confidence_score=90,
+            confidence_grade='A',
+            data_quality_score=90,
+            factor_vector={
+                'macro_long_filter': 2,
+                'growth_score': 80,
+                'fx_support_score': 80,
+                'risk_appetite_score': 80,
+            },
+        )
+
+        with (
+            mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
+            mock.patch(
+                'explanation.services.basecalc_adapter.load_basecalc_snapshot',
+                return_value=self._saved_basecalc_snapshot(),
+            ),
+            mock.patch(
+                'explanation.services.basecalc_adapter.get_stale_futures_snapshot',
+                return_value=None,
+                create=True,
+            ),
+        ):
+            response = self.client.get('/explanation/', {'price': '42400'})
+
+        self.assertEqual(response.status_code, 200)
+        raw = response.context['snapshot'].source_snapshots['basecalc']['raw']
+        trade_decision = response.context['snapshot'].trade_decision
+        self.assertEqual(raw['manual_price_mode']['basis'], 'recalculated_basecalc_with_manual_price')
+        self.assertEqual(raw['world_model']['price'], 42400)
+        self.assertNotEqual(raw['world_model']['contract_status'], 'error')
+        self.assertEqual(trade_decision['current_price'], 42400)
+        self.assertIsNotNone(trade_decision['entry_price'])
+        self.assertIsNotNone(trade_decision['target_1'])
+        self.assertIsNotNone(trade_decision['stop_price'])

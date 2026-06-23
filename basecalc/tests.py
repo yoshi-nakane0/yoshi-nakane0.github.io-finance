@@ -1074,7 +1074,6 @@ class BasecalcUpdateSecurityTests(TestCase):
             'growth_core_ratio_input': '0.6',
             'growth_wide_ratio_input': '0.7',
         }
-
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
             response = self.client.get(reverse('basecalc:index'))
 
@@ -1684,8 +1683,37 @@ class BasecalcUpdateSecurityTests(TestCase):
             'growth_core_ratio_input': '0.6',
             'growth_wide_ratio_input': '0.7',
         }
+        validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'horizons': {
+                horizon: {
+                    'summary': {
+                        'baseline_comparison': {
+                            'rows': [
+                                {
+                                    'key': 'model',
+                                    'risk_adjusted_return_pct': 0.0,
+                                    'balanced_accuracy': 0.4,
+                                    'directional_accuracy': 0.4,
+                                },
+                                {
+                                    'key': 'atr_range',
+                                    'risk_adjusted_return_pct': 1.0,
+                                    'balanced_accuracy': 0.7,
+                                    'directional_accuracy': 0.7,
+                                },
+                            ],
+                        },
+                    },
+                }
+                for horizon in ('1d', '3d', '5d')
+            },
+        }
 
-        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+        with (
+            patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot),
+            patch('basecalc.views.load_validation_report', return_value=validation_report),
+        ):
             response = self.client.get(reverse('basecalc:index'))
 
         self.assertContains(response, '米国3指数確認 / 市場ストレス')

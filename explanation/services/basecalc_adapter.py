@@ -87,8 +87,14 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         data_quality_score=data_quality_score,
         readiness_level=decision.get('readiness_level') or world_model.get('readiness_level') or 'blocked',
         can_show_prediction=bool(decision.get('can_show_prediction')) and output_contract.get('contract_status') != 'error',
-        support=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('downside_target'), world_model.get('downside_targets')),
-        resistance=None if output_contract.get('contract_status') == 'error' else _target_price(decision.get('upside_target'), world_model.get('upside_targets')),
+        support=None if output_contract.get('contract_status') == 'error' else (
+            _target_price(decision.get('downside_target'), world_model.get('downside_targets'))
+            or _near_level_price(world_model, 'downside')
+        ),
+        resistance=None if output_contract.get('contract_status') == 'error' else (
+            _target_price(decision.get('upside_target'), world_model.get('upside_targets'))
+            or _near_level_price(world_model, 'upside')
+        ),
         invalidation=_safe_float(world_model.get('invalidation_price') or decision.get('invalidation')),
         current_price=current_price,
         price_source='manual' if (context.get('manual_price_override') or {}).get('active') else 'market_data',
@@ -133,6 +139,7 @@ def _manual_price_context(saved_snapshot, price):
         base_snapshot = attach_saved_daily_bars(base_snapshot)
     else:
         base_snapshot = _fallback_snapshot_from_saved_context(saved_context, price)
+        base_snapshot = attach_saved_daily_bars(base_snapshot)
     manual_snapshot = _snapshot_with_manual_price_override(base_snapshot, price)
     intermarket_context = _intermarket_context(saved_context)
     world_model = build_world_model(price, manual_snapshot, intermarket_context)
@@ -196,9 +203,7 @@ def _manual_price_context(saved_snapshot, price):
 def _manual_recalc_is_usable(world_model):
     if not isinstance(world_model, dict):
         return False
-    if world_model.get('readiness_level') != 'ready':
-        return False
-    return _safe_int(world_model.get('confidence_score'), 0) >= 40
+    return world_model.get('readiness_level') == 'ready'
 
 
 def _saved_context_with_manual_price(context, price, basis):
@@ -294,7 +299,7 @@ def _fallback_snapshot_from_saved_context(context, price):
             int(timezone.now().timestamp()),
         ],
         'fetched_at': timezone.now(),
-        'fallback_used': True,
+        'fallback_used': False,
     }
 
 
@@ -353,6 +358,17 @@ def _target_price(primary, targets):
             value = _safe_float(target.get('price'))
             if value is not None:
                 return value
+    return None
+
+
+def _near_level_price(world_model, side):
+    near_levels = (world_model.get('near_levels') or {}).get(side) or []
+    for level in near_levels:
+        if not isinstance(level, dict):
+            continue
+        value = _safe_float(level.get('price'))
+        if value is not None:
+            return value
     return None
 
 

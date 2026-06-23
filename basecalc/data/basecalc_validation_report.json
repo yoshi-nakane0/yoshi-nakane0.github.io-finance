@@ -1,6 +1,6 @@
 {
   "schema": "basecalc_validation_report_v1",
-  "generated_at": "2026-06-18T09:49:36.956453+00:00",
+  "generated_at": "2026-06-23T07:22:57.511470+00:00",
   "filters": {
     "instrument_key": "cme_nikkei_futures",
     "readiness_level": "ready",
@@ -104,12 +104,12 @@
               "key": "atr_range",
               "label": "単純ATRレンジ",
               "sample_count": 600,
-              "directional_accuracy": 0.65,
-              "balanced_accuracy": 0.63,
-              "brier_score": 0.11,
-              "avg_strategy_return_pct": 0.59,
-              "risk_adjusted_return_pct": 0.54,
-              "max_drawdown_pct": -0.18,
+              "directional_accuracy": 0.37,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.16,
+              "avg_strategy_return_pct": -0.01,
+              "risk_adjusted_return_pct": -0.06,
+              "max_drawdown_pct": -6.0,
               "model_mae": 0
             },
             {
@@ -128,25 +128,25 @@
               "key": "model",
               "label": "現行モデル",
               "sample_count": 600,
-              "directional_accuracy": 0.34,
-              "balanced_accuracy": 0.32,
-              "brier_score": 0.21,
-              "avg_strategy_return_pct": -0.03,
-              "risk_adjusted_return_pct": -0.08,
-              "max_drawdown_pct": -41.48,
+              "directional_accuracy": 0.37,
+              "balanced_accuracy": 0.34,
+              "brier_score": 0.16,
+              "avg_strategy_return_pct": 0.0,
+              "risk_adjusted_return_pct": -0.05,
+              "max_drawdown_pct": -6.68,
               "model_mae": 0.98
             }
           ],
           "best_baseline": {
-            "key": "atr_range",
-            "label": "単純ATRレンジ",
+            "key": "always_up",
+            "label": "常に上昇",
             "sample_count": 600,
-            "directional_accuracy": 0.65,
-            "balanced_accuracy": 0.63,
-            "brier_score": 0.11,
-            "avg_strategy_return_pct": 0.59,
-            "risk_adjusted_return_pct": 0.54,
-            "max_drawdown_pct": -0.18,
+            "directional_accuracy": 0.36,
+            "balanced_accuracy": 0.33,
+            "brier_score": 0.2,
+            "avg_strategy_return_pct": 0.13,
+            "risk_adjusted_return_pct": 0.08,
+            "max_drawdown_pct": -10.55,
             "model_mae": 0
           }
         },
@@ -159,14 +159,14 @@
         {
           "state_key": "bull_trend_continuation",
           "state_label": "上昇継続",
-          "total_predictions": 414,
+          "total_predictions": 416,
           "directional_accuracy": 0.45,
-          "target_t1_hit_rate": 0.7,
+          "target_t1_hit_rate": 0.69,
           "invalidation_rate": 0.04,
-          "avg_return_pct": 0.13,
-          "expected_return_pct": 0.18,
-          "avg_mfe_pct": 1.04,
-          "avg_mae_pct": -1.11
+          "avg_return_pct": 0.14,
+          "expected_return_pct": 0.15,
+          "avg_mfe_pct": 1.05,
+          "avg_mae_pct": -1.1
         },
         {
           "state_key": "return_sell",
@@ -176,7 +176,7 @@
           "target_t1_hit_rate": 0.72,
           "invalidation_rate": 0.02,
           "avg_return_pct": 0.5,
-          "expected_return_pct": 0.06,
+          "expected_return_pct": 0.17,
           "avg_mfe_pct": 1.48,
           "avg_mae_pct": -2.14
         },
@@ -188,7 +188,7 @@
           "target_t1_hit_rate": 0.9,
           "invalidation_rate": 0.0,
           "avg_return_pct": -0.39,
-          "expected_return_pct": 0.11,
+          "expected_return_pct": 0.05,
           "avg_mfe_pct": 0.88,
           "avg_mae_pct": -1.77
         },
@@ -200,7 +200,7 @@
           "target_t1_hit_rate": 0.76,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.18,
-          "expected_return_pct": 0.17,
+          "expected_return_pct": 0.25,
           "avg_mfe_pct": 1.31,
           "avg_mae_pct": -1.39
         },
@@ -224,7 +224,7 @@
           "target_t1_hit_rate": 0.67,
           "invalidation_rate": 0.07,
           "avg_return_pct": 1.08,
-          "expected_return_pct": 0.03,
+          "expected_return_pct": 0.15,
           "avg_mfe_pct": 1.4,
           "avg_mae_pct": -3.01
         },
@@ -236,7 +236,7 @@
           "target_t1_hit_rate": 0.67,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.58,
-          "expected_return_pct": 0.24,
+          "expected_return_pct": 0.25,
           "avg_mfe_pct": 1.49,
           "avg_mae_pct": -1.25
         },
@@ -248,7 +248,7 @@
           "target_t1_hit_rate": 0.5,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.59,
-          "expected_return_pct": 0.16,
+          "expected_return_pct": 0.12,
           "avg_mfe_pct": 1.76,
           "avg_mae_pct": -2.08
         },
@@ -260,7 +260,7 @@
           "target_t1_hit_rate": 0.75,
           "invalidation_rate": 0.25,
           "avg_return_pct": -0.41,
-          "expected_return_pct": 0.18,
+          "expected_return_pct": 0.22,
           "avg_mfe_pct": 0.99,
           "avg_mae_pct": -2.39
         },
@@ -272,21 +272,9 @@
           "target_t1_hit_rate": 0.67,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.79,
-          "expected_return_pct": -0.14,
+          "expected_return_pct": -0.06,
           "avg_mfe_pct": 2.76,
           "avg_mae_pct": -1.63
-        },
-        {
-          "state_key": "data_unavailable",
-          "state_label": "データ不足",
-          "total_predictions": 2,
-          "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.5,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.4,
-          "expected_return_pct": 0,
-          "avg_mfe_pct": 0,
-          "avg_mae_pct": -0.4
         },
         {
           "state_key": "limited_reference",
@@ -296,7 +284,7 @@
           "target_t1_hit_rate": 0.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": -1.9,
-          "expected_return_pct": 0.13,
+          "expected_return_pct": 0,
           "avg_mfe_pct": 0,
           "avg_mae_pct": -4.89
         }
@@ -424,10 +412,10 @@
         ],
         "recent_window": {
           "label": "直近60日",
-          "sample_count": 73,
-          "directional_accuracy": 0.38,
-          "avg_return_pct": 0.25,
-          "target_t1_hit_rate": 0.73,
+          "sample_count": 63,
+          "directional_accuracy": 0.35,
+          "avg_return_pct": 0.24,
+          "target_t1_hit_rate": 0.76,
           "sample_quality": "reliable"
         },
         "volatility_regimes": [
@@ -680,12 +668,12 @@
               "key": "atr_range",
               "label": "単純ATRレンジ",
               "sample_count": 600,
-              "directional_accuracy": 0.66,
-              "balanced_accuracy": 0.73,
-              "brier_score": 0.12,
-              "avg_strategy_return_pct": 1.48,
-              "risk_adjusted_return_pct": 1.43,
-              "max_drawdown_pct": -0.11,
+              "directional_accuracy": 0.15,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.21,
+              "avg_strategy_return_pct": -0.01,
+              "risk_adjusted_return_pct": -0.06,
+              "max_drawdown_pct": -6.0,
               "model_mae": 0
             },
             {
@@ -704,25 +692,25 @@
               "key": "model",
               "label": "現行モデル",
               "sample_count": 600,
-              "directional_accuracy": 0.45,
-              "balanced_accuracy": 0.34,
-              "brier_score": 0.25,
-              "avg_strategy_return_pct": 0.16,
-              "risk_adjusted_return_pct": 0.11,
-              "max_drawdown_pct": -76.8,
+              "directional_accuracy": 0.29,
+              "balanced_accuracy": 0.37,
+              "brier_score": 0.23,
+              "avg_strategy_return_pct": 0.07,
+              "risk_adjusted_return_pct": 0.02,
+              "max_drawdown_pct": -17.08,
               "model_mae": 1.79
             }
           ],
           "best_baseline": {
-            "key": "atr_range",
-            "label": "単純ATRレンジ",
+            "key": "always_up",
+            "label": "常に上昇",
             "sample_count": 600,
-            "directional_accuracy": 0.66,
-            "balanced_accuracy": 0.73,
-            "brier_score": 0.12,
-            "avg_strategy_return_pct": 1.48,
-            "risk_adjusted_return_pct": 1.43,
-            "max_drawdown_pct": -0.11,
+            "directional_accuracy": 0.5,
+            "balanced_accuracy": 0.33,
+            "brier_score": 0.24,
+            "avg_strategy_return_pct": 0.31,
+            "risk_adjusted_return_pct": 0.26,
+            "max_drawdown_pct": -72.06,
             "model_mae": 0
           }
         },
@@ -735,14 +723,14 @@
         {
           "state_key": "bull_trend_continuation",
           "state_label": "上昇継続",
-          "total_predictions": 414,
+          "total_predictions": 416,
           "directional_accuracy": 0.59,
           "target_t1_hit_rate": 0.86,
           "invalidation_rate": 0.08,
-          "avg_return_pct": 0.34,
-          "expected_return_pct": 0.3,
-          "avg_mfe_pct": 1.79,
-          "avg_mae_pct": -2.05
+          "avg_return_pct": 0.36,
+          "expected_return_pct": 0.25,
+          "avg_mfe_pct": 1.8,
+          "avg_mae_pct": -2.04
         },
         {
           "state_key": "return_sell",
@@ -752,7 +740,7 @@
           "target_t1_hit_rate": 0.89,
           "invalidation_rate": 0.09,
           "avg_return_pct": -0.02,
-          "expected_return_pct": 0.1,
+          "expected_return_pct": 0.28,
           "avg_mfe_pct": 2.38,
           "avg_mae_pct": -2.73
         },
@@ -764,7 +752,7 @@
           "target_t1_hit_rate": 0.97,
           "invalidation_rate": 0.0,
           "avg_return_pct": -0.64,
-          "expected_return_pct": 0.18,
+          "expected_return_pct": 0.08,
           "avg_mfe_pct": 1.1,
           "avg_mae_pct": -2.39
         },
@@ -776,7 +764,7 @@
           "target_t1_hit_rate": 0.84,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.75,
-          "expected_return_pct": 0.29,
+          "expected_return_pct": 0.41,
           "avg_mfe_pct": 2.18,
           "avg_mae_pct": -1.78
         },
@@ -788,7 +776,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.6,
-          "expected_return_pct": 0.22,
+          "expected_return_pct": 0.21,
           "avg_mfe_pct": 2.12,
           "avg_mae_pct": -1.44
         },
@@ -800,7 +788,7 @@
           "target_t1_hit_rate": 0.87,
           "invalidation_rate": 0.13,
           "avg_return_pct": 1.51,
-          "expected_return_pct": 0.05,
+          "expected_return_pct": 0.25,
           "avg_mfe_pct": 2.07,
           "avg_mae_pct": -4.36
         },
@@ -812,7 +800,7 @@
           "target_t1_hit_rate": 0.8,
           "invalidation_rate": 0.2,
           "avg_return_pct": 0.93,
-          "expected_return_pct": 0.39,
+          "expected_return_pct": 0.41,
           "avg_mfe_pct": 2.11,
           "avg_mae_pct": -6.42
         },
@@ -824,7 +812,7 @@
           "target_t1_hit_rate": 0.75,
           "invalidation_rate": 0.0,
           "avg_return_pct": 2.45,
-          "expected_return_pct": 0.27,
+          "expected_return_pct": 0.2,
           "avg_mfe_pct": 3.27,
           "avg_mae_pct": -2.08
         },
@@ -836,7 +824,7 @@
           "target_t1_hit_rate": 0.75,
           "invalidation_rate": 0.25,
           "avg_return_pct": -0.86,
-          "expected_return_pct": 0.3,
+          "expected_return_pct": 0.37,
           "avg_mfe_pct": 0.99,
           "avg_mae_pct": -2.45
         },
@@ -848,7 +836,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": 2.17,
-          "expected_return_pct": -0.24,
+          "expected_return_pct": -0.09,
           "avg_mfe_pct": 2.76,
           "avg_mae_pct": -3.59
         },
@@ -860,7 +848,7 @@
           "target_t1_hit_rate": 0.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": -3.52,
-          "expected_return_pct": 0.22,
+          "expected_return_pct": 0,
           "avg_mfe_pct": 0,
           "avg_mae_pct": -6.48
         }
@@ -996,10 +984,10 @@
         ],
         "recent_window": {
           "label": "直近60日",
-          "sample_count": 73,
-          "directional_accuracy": 0.51,
-          "avg_return_pct": -0.26,
-          "target_t1_hit_rate": 0.85,
+          "sample_count": 63,
+          "directional_accuracy": 0.44,
+          "avg_return_pct": -0.42,
+          "target_t1_hit_rate": 0.87,
           "sample_quality": "reliable"
         },
         "volatility_regimes": [
@@ -1252,12 +1240,12 @@
               "key": "atr_range",
               "label": "単純ATRレンジ",
               "sample_count": 600,
-              "directional_accuracy": 0.74,
-              "balanced_accuracy": 0.8,
-              "brier_score": 0.1,
-              "avg_strategy_return_pct": 2.04,
-              "risk_adjusted_return_pct": 1.99,
-              "max_drawdown_pct": -0.08,
+              "directional_accuracy": 0.1,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.22,
+              "avg_strategy_return_pct": -0.01,
+              "risk_adjusted_return_pct": -0.06,
+              "max_drawdown_pct": -6.0,
               "model_mae": 0
             },
             {
@@ -1276,25 +1264,25 @@
               "key": "model",
               "label": "現行モデル",
               "sample_count": 600,
-              "directional_accuracy": 0.46,
-              "balanced_accuracy": 0.31,
+              "directional_accuracy": 0.28,
+              "balanced_accuracy": 0.33,
               "brier_score": 0.26,
-              "avg_strategy_return_pct": 0.39,
-              "risk_adjusted_return_pct": 0.34,
-              "max_drawdown_pct": -55.74,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -77.81,
               "model_mae": 2.33
             }
           ],
           "best_baseline": {
-            "key": "atr_range",
-            "label": "単純ATRレンジ",
+            "key": "always_up",
+            "label": "常に上昇",
             "sample_count": 600,
-            "directional_accuracy": 0.74,
-            "balanced_accuracy": 0.8,
-            "brier_score": 0.1,
-            "avg_strategy_return_pct": 2.04,
-            "risk_adjusted_return_pct": 1.99,
-            "max_drawdown_pct": -0.08,
+            "directional_accuracy": 0.54,
+            "balanced_accuracy": 0.33,
+            "brier_score": 0.24,
+            "avg_strategy_return_pct": 0.55,
+            "risk_adjusted_return_pct": 0.5,
+            "max_drawdown_pct": -78.85,
             "model_mae": 0
           }
         },
@@ -1307,14 +1295,14 @@
         {
           "state_key": "bull_trend_continuation",
           "state_label": "上昇継続",
-          "total_predictions": 414,
-          "directional_accuracy": 0.6,
+          "total_predictions": 416,
+          "directional_accuracy": 0.61,
           "target_t1_hit_rate": 0.92,
           "invalidation_rate": 0.12,
-          "avg_return_pct": 0.84,
-          "expected_return_pct": 0.38,
-          "avg_mfe_pct": 2.37,
-          "avg_mae_pct": -2.65
+          "avg_return_pct": 0.85,
+          "expected_return_pct": 0.31,
+          "avg_mfe_pct": 2.38,
+          "avg_mae_pct": -2.64
         },
         {
           "state_key": "return_sell",
@@ -1324,7 +1312,7 @@
           "target_t1_hit_rate": 0.98,
           "invalidation_rate": 0.13,
           "avg_return_pct": 0.77,
-          "expected_return_pct": 0.12,
+          "expected_return_pct": 0.35,
           "avg_mfe_pct": 4.4,
           "avg_mae_pct": -3.21
         },
@@ -1336,7 +1324,7 @@
           "target_t1_hit_rate": 0.97,
           "invalidation_rate": 0.0,
           "avg_return_pct": -1.66,
-          "expected_return_pct": 0.23,
+          "expected_return_pct": 0.1,
           "avg_mfe_pct": 1.26,
           "avg_mae_pct": -3.33
         },
@@ -1348,7 +1336,7 @@
           "target_t1_hit_rate": 0.92,
           "invalidation_rate": 0.0,
           "avg_return_pct": 1.25,
-          "expected_return_pct": 0.36,
+          "expected_return_pct": 0.52,
           "avg_mfe_pct": 3.0,
           "avg_mae_pct": -3.94
         },
@@ -1360,7 +1348,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": -3.4,
-          "expected_return_pct": 0.27,
+          "expected_return_pct": 0.26,
           "avg_mfe_pct": 2.91,
           "avg_mae_pct": -5.91
         },
@@ -1372,7 +1360,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.13,
           "avg_return_pct": 1.3,
-          "expected_return_pct": 0.06,
+          "expected_return_pct": 0.31,
           "avg_mfe_pct": 2.58,
           "avg_mae_pct": -4.58
         },
@@ -1384,7 +1372,7 @@
           "target_t1_hit_rate": 0.93,
           "invalidation_rate": 0.27,
           "avg_return_pct": 1.1,
-          "expected_return_pct": 0.49,
+          "expected_return_pct": 0.51,
           "avg_mfe_pct": 2.63,
           "avg_mae_pct": -12.04
         },
@@ -1396,7 +1384,7 @@
           "target_t1_hit_rate": 0.88,
           "invalidation_rate": 0.0,
           "avg_return_pct": 3.03,
-          "expected_return_pct": 0.34,
+          "expected_return_pct": 0.25,
           "avg_mfe_pct": 3.81,
           "avg_mae_pct": -2.08
         },
@@ -1408,7 +1396,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.5,
           "avg_return_pct": -1.18,
-          "expected_return_pct": 0.37,
+          "expected_return_pct": 0.46,
           "avg_mfe_pct": 0.99,
           "avg_mae_pct": -3.25
         },
@@ -1420,7 +1408,7 @@
           "target_t1_hit_rate": 1.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": 0.14,
-          "expected_return_pct": -0.3,
+          "expected_return_pct": -0.12,
           "avg_mfe_pct": 2.76,
           "avg_mae_pct": -3.65
         },
@@ -1432,7 +1420,7 @@
           "target_t1_hit_rate": 0.0,
           "invalidation_rate": 0.0,
           "avg_return_pct": -0.82,
-          "expected_return_pct": 0.28,
+          "expected_return_pct": 0,
           "avg_mfe_pct": 0.78,
           "avg_mae_pct": -6.48
         }
@@ -1568,10 +1556,10 @@
         ],
         "recent_window": {
           "label": "直近60日",
-          "sample_count": 73,
-          "directional_accuracy": 0.51,
-          "avg_return_pct": 0.08,
-          "target_t1_hit_rate": 0.93,
+          "sample_count": 63,
+          "directional_accuracy": 0.48,
+          "avg_return_pct": -0.02,
+          "target_t1_hit_rate": 0.94,
           "sample_quality": "reliable"
         },
         "volatility_regimes": [

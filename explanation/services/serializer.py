@@ -359,11 +359,29 @@ def _decision_card(trade_decision, snapshot):
         'stop': _price_with_suffix(trade_decision.get('stop_price')),
         'invalidation': _price_with_suffix(trade_decision.get('invalidation_price')),
         'reward_risk': _rr_display(trade_decision.get('reward_risk')),
-        'confidence': f"{trade_decision.get('confidence_grade') or snapshot.confidence_grade} / {trade_decision.get('confidence_score', snapshot.confidence_score)}%",
+        'confidence': _decision_confidence_display(trade_decision, snapshot),
         'counter': _counter_display(trade_decision),
         'reasons': list(trade_decision.get('reasons') or [])[:3],
         'warnings': list((trade_decision.get('warnings') or []) + (trade_decision.get('blocked_reasons') or []))[:4],
     }
+
+
+def _decision_confidence_display(trade_decision, snapshot):
+    grade = trade_decision.get('confidence_grade') or snapshot.confidence_grade
+    score = trade_decision.get('confidence_score', snapshot.confidence_score)
+    display = f'{grade} / {score}%'
+    if _is_reference_decision(trade_decision):
+        return f'参考判定（{display}）'
+    return display
+
+
+def _is_reference_decision(trade_decision):
+    decision_type = trade_decision.get('decision_type') or ''
+    return (
+        trade_decision.get('selected_side') == 'no_trade'
+        or decision_type.startswith('no_')
+        or bool(trade_decision.get('blocked_reasons'))
+    )
 
 
 def _selected_side_label(value):
@@ -390,13 +408,16 @@ def _decision_type_label(value):
 
 
 def _entry_display(decision):
-    if decision.get('selected_side') == 'no_trade':
+    is_reference = decision.get('selected_side') == 'no_trade'
+    if is_reference and not decision.get('entry_price') and decision.get('entry_zone_low') is None:
         return 'なし'
     low = _format_price(decision.get('entry_zone_low'))
     high = _format_price(decision.get('entry_zone_high'))
     if low != 'N/A' and high != 'N/A':
-        return f'{low}〜{high}円'
-    return _price_with_suffix(decision.get('entry_price'))
+        value = f'{low}〜{high}円'
+    else:
+        value = _price_with_suffix(decision.get('entry_price'))
+    return f'参考 {value}' if is_reference and value != 'N/A' else value
 
 
 def _counter_display(decision):

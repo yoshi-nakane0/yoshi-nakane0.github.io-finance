@@ -100,7 +100,11 @@ def build_trade_decision_v2(
     no_chase = _no_chase_decision_type(basecalc, reversal, long_plan, short_plan)
     if no_chase:
         warning = '高値追い禁止' if no_chase == 'no_chase_long' else '突っ込み売り禁止'
-        return no_trade_decision(
+        reference_side = 'long' if no_chase == 'no_chase_long' else 'short'
+        reference_plan = long_plan if reference_side == 'long' else short_plan
+        return _no_trade_decision_with_plan(
+            reference_side,
+            reference_plan,
             decision_type=no_chase,
             current_price=current_price,
             confidence_score=confidence_score,
@@ -119,8 +123,11 @@ def build_trade_decision_v2(
         )
 
     likely_plan = long_plan if long_score >= short_score else short_plan
+    likely_side = 'long' if long_score >= short_score else 'short'
     if likely_plan.reward_risk is not None and likely_plan.reward_risk < 1.2:
-        return no_trade_decision(
+        return _no_trade_decision_with_plan(
+            likely_side,
+            likely_plan,
             decision_type='no_trade_conflict',
             current_price=current_price,
             confidence_score=confidence_score,
@@ -139,7 +146,9 @@ def build_trade_decision_v2(
 
     selected_side, selected_score, runner_up = _select_side(long_score, short_score, no_trade_score)
     if selected_side == 'no_trade' or selected_score < 65 or selected_score - runner_up < 8:
-        return no_trade_decision(
+        return _no_trade_decision_with_plan(
+            likely_side,
+            likely_plan,
             decision_type='no_trade_conflict',
             current_price=current_price,
             confidence_score=confidence_score,
@@ -158,7 +167,9 @@ def build_trade_decision_v2(
 
     plan = long_plan if selected_side == 'long' else short_plan
     if plan.blocked_reasons:
-        return no_trade_decision(
+        return _no_trade_decision_with_plan(
+            selected_side,
+            plan,
             decision_type='no_trade_conflict',
             current_price=current_price,
             confidence_score=confidence_score,
@@ -175,7 +186,9 @@ def build_trade_decision_v2(
             price_source=price_source,
         )
     if plan.reward_risk is None or plan.reward_risk < 1.2:
-        return no_trade_decision(
+        return _no_trade_decision_with_plan(
+            selected_side,
+            plan,
             decision_type='no_trade_conflict',
             current_price=current_price,
             confidence_score=confidence_score,
@@ -222,6 +235,24 @@ def build_trade_decision_v2(
         warnings=_decision_warnings(macro, basecalc, reversal),
         blocked_reasons=[],
         price_source=price_source,
+    )
+
+
+def _no_trade_decision_with_plan(side, plan, **kwargs):
+    if not plan or not plan.target_1 or plan.stop_price is None:
+        return no_trade_decision(**kwargs)
+    low, high = _entry_zone(kwargs.get('current_price'), side)
+    return no_trade_decision(
+        **kwargs,
+        entry_price=kwargs.get('current_price'),
+        entry_zone_low=low,
+        entry_zone_high=high,
+        target_1=plan.target_1,
+        target_2=plan.target_2,
+        stop_price=plan.stop_price,
+        invalidation_price=plan.invalidation_price,
+        reward_risk=plan.reward_risk,
+        probability=plan.probability,
     )
 
 
