@@ -24,6 +24,7 @@ from .status import (
 )
 from .views import (
     CACHE_KEY_PRICE,
+    _attach_practical_lines_from_latest_snapshot,
     get_cached_futures_snapshot,
     normalize_price,
     price_from_futures_snapshot,
@@ -131,6 +132,11 @@ def export_basecalc_snapshot(
         world_model,
         display_price=price,
         performance_by_horizon=backtest_performance_by_horizon,
+    )
+    _attach_practical_lines_from_latest_snapshot(
+        world_model,
+        futures_snapshot,
+        price_from_futures_snapshot(futures_snapshot) or price,
     )
     world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     decision = build_basecalc_decision_context(

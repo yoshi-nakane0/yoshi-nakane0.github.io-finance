@@ -506,6 +506,12 @@ class BasecalcUpdateSecurityTests(TestCase):
                     'fallback_used': False,
                 },
                 'data_quality_score': 90,
+                'source_status': {
+                    'source': '225navi',
+                    'symbol': 'NIY=F',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                },
                 'readiness_level': 'ready',
                 'readiness_display': {
                     'daily_bars': 80,
@@ -539,7 +545,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             high=42600,
             low=41900,
             close=42500,
-            source='225navi',
+            source='matsui',
             instrument_key='cme_nikkei_futures',
             instrument_type='futures',
             readiness_level='ready',
@@ -562,8 +568,166 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rendered_context['data']['world_model']['price'], 41000)
         self.assertEqual(rendered_context['decision']['price'], 42500)
         self.assertEqual(rendered_context['latest_price_display'], '42,500')
+        self.assertEqual(rendered_context['basecalc_status_rows'][0]['source'], 'matsui:NIY=F')
         self.assertEqual(rendered_context['price_param'], '41000')
         build_context.assert_not_called()
+
+    def test_low_confidence_saved_snapshot_rebuild_uses_newer_market_bar_price(self):
+        saved_at = timezone.localtime(timezone.now() - timezone.timedelta(days=1))
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': saved_at.strftime('%Y-%m-%d %H:%M JST'),
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Low',
+                'confidence_score': 10,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {
+                    'case_count': 0,
+                    'searched_case_count': 0,
+                    'is_statistically_valid': False,
+                },
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '41000',
+        }
+        start = timezone.now() - timezone.timedelta(days=99, minutes=5)
+        for index in range(100):
+            close = 42500 + index * 25
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=start + timezone.timedelta(days=index),
+                open=close - 20,
+                high=close + 80,
+                low=close - 80,
+                close=close,
+                volume=1000,
+                source='matsui',
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+            )
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 44975)
+        self.assertEqual(rendered_context['decision']['price'], 44975)
+        self.assertEqual(rendered_context['basecalc_top']['lines']['current_price'], 44975)
+        self.assertEqual(rendered_context['data']['price_display'], '44,975')
+        self.assertEqual(rendered_context['latest_price_display'], '44,975')
+        self.assertEqual(rendered_context['price_param'], '44975')
+
+    def test_saved_snapshot_mismatch_builds_practical_lines_from_latest_market_bar(self):
+        saved_at = timezone.localtime(timezone.now() - timezone.timedelta(days=1))
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': saved_at.strftime('%Y-%m-%d %H:%M JST'),
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'High',
+                'confidence_score': 82,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'source_status': {
+                    'source': '225navi',
+                    'symbol': 'NIY=F',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                },
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 80,
+                    'valid_major_indicators': 6,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {'is_statistically_valid': False},
+                'target_ranges': [{'low': 40500, 'high': 41500, 'label': '1日'}],
+                'upside_targets': [{'price': 41500, 'label': 'T1'}],
+                'downside_targets': [{'price': 40500, 'label': 'T1'}],
+                'near_levels': {
+                    'upside': [{'price': 41100, 'reason': '古い上値'}],
+                    'downside': [{'price': 40900, 'reason': '古い下値'}],
+                },
+                'market_context': {},
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '41000',
+        }
+        start = timezone.now() - timezone.timedelta(days=99, hours=2)
+        for index in range(100):
+            close = 42500 + index * 25
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=start + timezone.timedelta(days=index),
+                open=close - 20,
+                high=close + 80,
+                low=close - 80,
+                close=close,
+                volume=1000,
+                source='matsui',
+                instrument_key='cme_nikkei_futures',
+                instrument_type='futures',
+            )
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        rendered_context = render_mock.call_args.args[2]
+        lines = rendered_context['basecalc_top']['lines']
+        current_price = lines['current_price']
+        self.assertEqual(current_price, 44975)
+        self.assertGreater(lines['upside_resistance'], current_price)
+        self.assertLess(lines['downside_support'], current_price)
+        self.assertGreater(lines['near_upside'], current_price)
+        self.assertLess(lines['near_downside'], current_price)
+        self.assertNotEqual(rendered_context['world_model']['near_levels']['upside'][0]['price'], 41100)
+        self.assertNotEqual(rendered_context['world_model']['near_levels']['downside'][0]['price'], 40900)
 
     def test_get_keeps_saved_snapshot_price_when_market_snapshot_is_older(self):
         snapshot = {
@@ -2772,6 +2936,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertIn('world_model', payload)
         self.assertIn('data', payload)
         self.assertIn('performance_by_horizon', payload)
+        practical_lines = payload['world_model']['practical_lines']
+        self.assertEqual(practical_lines['current_price'], payload['world_model']['price'])
+        self.assertGreater(practical_lines['upside_resistance'], practical_lines['current_price'])
+        self.assertLess(practical_lines['downside_support'], practical_lines['current_price'])
+        self.assertGreater(practical_lines['near_upside'], practical_lines['current_price'])
+        self.assertLess(practical_lines['near_downside'], practical_lines['current_price'])
 
 
 class BasecalcMarketShockTest(TestCase):

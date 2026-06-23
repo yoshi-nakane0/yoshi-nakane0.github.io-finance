@@ -40,11 +40,12 @@ from .status import (
     price_status_entry,
 )
 from .validation_report import load_validation_report
-from .world_model import build_world_model
+from .world_model import build_features, build_world_model, _normalize_ohlcv
 from .data_quality import is_snapshot_stale
 from .github_actions import dispatch_refresh_workflow, get_refresh_workflow_state
 from .output_contract import apply_output_contract
 from .signal_contract import build_basecalc_signal_contract
+from .targets import build_targets
 
 logger = logging.getLogger(__name__)
 
@@ -532,7 +533,6 @@ def hydrate_saved_snapshot_context(context):
     hydrate_saved_snapshot_intermarket_context(context, world_model)
     world_model = hydrate_saved_snapshot_world_model(context, world_model)
     hydrate_saved_snapshot_current_price(context, world_model)
-    _refresh_saved_snapshot_status_rows(context, world_model)
     return context
 
 
@@ -540,26 +540,52 @@ def hydrate_saved_snapshot_world_model(context, world_model):
     if not _saved_world_model_needs_rebuild(world_model):
         return world_model
     model_price = normalize_price(world_model.get("price"))
-    if model_price is None:
+    latest_snapshot = get_stale_futures_snapshot()
+    latest_price = price_from_futures_snapshot(latest_snapshot)
+    use_latest_snapshot = (
+        latest_price is not None
+        and _market_snapshot_is_current_for_saved_snapshot(
+            latest_snapshot,
+            context,
+            world_model,
+        )
+    )
+    rebuild_price = latest_price if use_latest_snapshot else model_price
+    if rebuild_price is None:
         return world_model
-    snapshot = _saved_snapshot_rebuild_frame(context, world_model, model_price)
+    if use_latest_snapshot and isinstance(latest_snapshot, dict):
+        snapshot = dict(latest_snapshot)
+    else:
+        snapshot = _saved_snapshot_rebuild_frame(context, world_model, rebuild_price)
     snapshot = attach_saved_daily_bars(snapshot)
     if len(snapshot.get("closes") or []) < 100:
         return world_model
-    _apply_manual_price_to_snapshot_frame(snapshot, model_price)
+    _apply_rebuild_price_to_snapshot(snapshot, rebuild_price)
     intermarket_context = (
         world_model.get("us_index_confirmation")
         or world_model.get("intermarket_technicals")
         or {}
     )
-    rebuilt = build_world_model(model_price, snapshot, intermarket_context)
+    rebuilt = build_world_model(rebuild_price, snapshot, intermarket_context)
     if int(rebuilt.get("confidence_score") or 0) <= int(world_model.get("confidence_score") or 0):
         return world_model
     context["world_model"] = rebuilt
     data = context.setdefault("data", {})
+    data["price_display"] = format_price(rebuild_price, decimals=0)
     data["world_model"] = rebuilt
     data.update(rebuilt)
+    context["price_param"] = format_price_param(rebuild_price)
     return rebuilt
+
+
+def _apply_rebuild_price_to_snapshot(snapshot, price):
+    _apply_manual_price_to_snapshot_frame(snapshot, price)
+    timeframes = snapshot.get("timeframes")
+    if not isinstance(timeframes, dict):
+        return
+    for frame in timeframes.values():
+        if isinstance(frame, dict):
+            _apply_manual_price_to_snapshot_frame(frame, price)
 
 
 def _saved_world_model_needs_rebuild(world_model):
@@ -664,8 +690,45 @@ def hydrate_saved_snapshot_current_price(context, world_model):
         validation_report=_validation_report_for_saved_snapshot(context, world_model),
         performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
     )
+    _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, latest_price)
     world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     return context
+
+
+def _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, latest_price):
+    if not isinstance(world_model, dict) or not isinstance(latest_snapshot, dict):
+        return world_model
+    latest_price = normalize_price(latest_price)
+    if latest_price is None:
+        return world_model
+    snapshot = attach_saved_daily_bars(dict(latest_snapshot))
+    _apply_rebuild_price_to_snapshot(snapshot, latest_price)
+    daily_snapshot = (snapshot.get("timeframes") or {}).get("1d") or snapshot
+    ohlcv = _normalize_ohlcv(latest_price, daily_snapshot, allow_synthetic=False)
+    if len(ohlcv.get("closes") or []) < 20:
+        return world_model
+    features = build_features(latest_price, daily_snapshot, ohlcv)
+    targets = build_targets(features, {})
+    near_levels = targets.get("near_levels") or {}
+    practical_lines = {
+        "current_price": latest_price,
+        "upside_resistance": _first_target_price(targets.get("upside")),
+        "downside_support": _first_target_price(targets.get("downside")),
+        "near_upside": _first_target_price(near_levels.get("upside")),
+        "near_downside": _first_target_price(near_levels.get("downside")),
+        "source": latest_snapshot.get("source"),
+        "source_timestamp": latest_snapshot.get("fetched_at"),
+    }
+    world_model["practical_lines"] = practical_lines
+    world_model["near_levels"] = near_levels
+    return world_model
+
+
+def _first_target_price(rows):
+    first = (rows or [None])[0]
+    if isinstance(first, dict):
+        return first.get("price")
+    return None
 
 
 def _refresh_saved_snapshot_status_rows(context, world_model, latest_snapshot=None):
@@ -682,8 +745,26 @@ def _refresh_saved_snapshot_status_rows(context, world_model, latest_snapshot=No
     if isinstance(intermarket_context, dict) and intermarket_context:
         basecalc_status["intermarket"] = intermarket_status_entry(intermarket_context)
     context["basecalc_status"] = basecalc_status
-    context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    context["basecalc_status_rows"] = status_display_rows(
+        basecalc_status,
+        _world_model_for_status_rows(world_model, basecalc_status, latest_snapshot),
+    )
     return context
+
+
+def _world_model_for_status_rows(world_model, basecalc_status, latest_snapshot=None):
+    if not isinstance(world_model, dict) or not isinstance(latest_snapshot, dict):
+        return world_model
+    price_entry = (basecalc_status or {}).get("price_data") or {}
+    source_status = dict(world_model.get("source_status") or {})
+    for key in ("source", "symbol", "instrument_key", "instrument_type"):
+        if latest_snapshot.get(key):
+            source_status[key] = latest_snapshot.get(key)
+    return {
+        **world_model,
+        "source_status": source_status,
+        "stale_minutes": price_entry.get("age_minutes"),
+    }
 
 
 def _validation_report_for_saved_snapshot(context, world_model):
