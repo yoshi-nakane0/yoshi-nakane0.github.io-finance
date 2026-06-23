@@ -1318,6 +1318,44 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['external']['us_indices'], 'まちまち')
         self.assertEqual(result['confidence']['direction'], '低〜中')
 
+    def test_basecalc_top_uses_practical_lines_when_prediction_targets_are_empty(self):
+        world_model = {
+            'price': 69770,
+            'readiness_level': 'ready',
+            'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+            'output_contract': {'contract_status': 'ok'},
+            'upside_targets': [],
+            'downside_targets': [],
+            'near_levels': {
+                'upside': [{'price': 69800, 'reason': '100円刻み'}],
+                'downside': [{'price': 69700, 'reason': '100円刻み'}],
+            },
+            'practical_lines': {
+                'current_price': 69770,
+                'upside_resistance': 72090,
+                'downside_support': 67450,
+                'near_upside': 69800,
+                'near_downside': 69700,
+            },
+        }
+        decision = {
+            'price': 69770,
+            'readiness_label': '判定可能',
+            'data_quality_level': 'good',
+            'data_quality_score': 90,
+            'contract_status': 'ok',
+            'upside_target': None,
+            'downside_target': None,
+        }
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['lines']['current_price'], 69770)
+        self.assertEqual(result['lines']['upside_resistance'], 72090)
+        self.assertEqual(result['lines']['downside_support'], 67450)
+        self.assertEqual(result['lines']['near_upside'], 69800)
+        self.assertEqual(result['lines']['near_downside'], 69700)
+
     def test_basecalc_top_uses_range_only_action_when_direction_gate_stops_prediction(self):
         world_model = {
             'direction': 'up',
@@ -2890,6 +2928,7 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'prediction_saved': True,
                 'outcomes_created': 2,
                 'exported': True,
+                'snapshot_exported': True,
             },
         ) as refresh:
             call_command(
@@ -2907,6 +2946,8 @@ class BasecalcUpdateSecurityTests(TestCase):
             export_path='basecalc/data/test_history.json',
             export_snapshot_path='basecalc/data/latest_snapshot.json',
         )
+        self.assertIn('history_exported=True', out.getvalue())
+        self.assertIn('snapshot_exported=True', out.getvalue())
 
     def test_refresh_basecalc_data_exports_latest_snapshot(self):
         from .operations import refresh_basecalc_data
@@ -2942,6 +2983,10 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertLess(practical_lines['downside_support'], practical_lines['current_price'])
         self.assertGreater(practical_lines['near_upside'], practical_lines['current_price'])
         self.assertLess(practical_lines['near_downside'], practical_lines['current_price'])
+        top_lines = payload['basecalc_top']['lines']
+        self.assertEqual(top_lines['current_price'], practical_lines['current_price'])
+        self.assertEqual(top_lines['upside_resistance'], practical_lines['upside_resistance'])
+        self.assertEqual(top_lines['downside_support'], practical_lines['downside_support'])
 
 
 class BasecalcMarketShockTest(TestCase):
@@ -3823,6 +3868,32 @@ class BasecalcReliabilitySpecTests(TestCase):
 
         self.assertEqual(data_quality['source'], 'matsui')
         self.assertEqual(data_quality['score'], 90)
+        self.assertEqual(data_quality['level'], 'good')
+        self.assertEqual(readiness['level'], 'ready')
+
+    def test_matsui_niy_snapshot_after_japan_close_keeps_good_quality(self):
+        now = timezone.make_aware(datetime(2026, 6, 23, 9, 30))
+        fetched_at = timezone.make_aware(datetime(2026, 6, 23, 6, 45))
+        snapshot = _ready_snapshot(80, source='matsui', fetched_at=fetched_at)
+        snapshot['fallback_used'] = False
+
+        data_quality = evaluate_snapshot_quality(snapshot, now=now)
+        readiness = evaluate_world_model_readiness(
+            price=snapshot['price'],
+            snapshot=snapshot,
+            data_quality=data_quality,
+            daily_ohlcv={
+                'opens': snapshot['opens'],
+                'highs': snapshot['highs'],
+                'lows': snapshot['lows'],
+                'closes': snapshot['closes'],
+                'volumes': snapshot['volumes'],
+                'real_counts': {'opens': 80, 'highs': 80, 'lows': 80, 'closes': 80, 'volumes': 80},
+            },
+        )
+
+        self.assertFalse(data_quality['is_stale'])
+        self.assertGreaterEqual(data_quality['score'], 80)
         self.assertEqual(data_quality['level'], 'good')
         self.assertEqual(readiness['level'], 'ready')
 

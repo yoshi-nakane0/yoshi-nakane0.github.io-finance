@@ -197,18 +197,19 @@ def _top_lines(world_model, decision):
     near_levels = world_model.get("near_levels") or {}
     stopped = (world_model.get("output_contract") or {}).get("contract_status") == "error"
     practical_lines = world_model.get("practical_lines") or {}
-    if stopped and practical_lines:
-        upside_resistance = practical_lines.get("upside_resistance")
-        downside_support = practical_lines.get("downside_support")
-        near_upside = practical_lines.get("near_upside")
-        near_downside = practical_lines.get("near_downside")
-    else:
-        upside_resistance = None if stopped else _target_price(decision.get("upside_target"))
-        downside_support = None if stopped else _target_price(decision.get("downside_target"))
-        near_upside = None if stopped else _first_level_price(near_levels.get("upside"))
-        near_downside = None if stopped else _first_level_price(near_levels.get("downside"))
+    upside_resistance = None if stopped else _target_price(decision.get("upside_target"))
+    downside_support = None if stopped else _target_price(decision.get("downside_target"))
+    near_upside = None if stopped else _first_level_price(near_levels.get("upside"))
+    near_downside = None if stopped else _first_level_price(near_levels.get("downside"))
+    upside_resistance = _prefer_line_price(practical_lines.get("upside_resistance"), upside_resistance)
+    downside_support = _prefer_line_price(practical_lines.get("downside_support"), downside_support)
+    near_upside = _prefer_line_price(practical_lines.get("near_upside"), near_upside)
+    near_downside = _prefer_line_price(practical_lines.get("near_downside"), near_downside)
     return {
-        "current_price": practical_lines.get("current_price") or decision.get("price") or world_model.get("price"),
+        "current_price": _prefer_line_price(
+            practical_lines.get("current_price"),
+            decision.get("price") or world_model.get("price"),
+        ),
         "upside_resistance": upside_resistance,
         "downside_support": downside_support,
         "near_upside": near_upside,
@@ -221,6 +222,10 @@ def _top_lines(world_model, decision):
             downside_support,
         ),
     }
+
+
+def _prefer_line_price(primary, fallback):
+    return primary if primary is not None else fallback
 
 
 def _target_price(target):

@@ -12,7 +12,10 @@ from .outcomes import (
 from .persistence import export_basecalc_history
 from .intermarket_technicals import get_intermarket_technical_snapshot
 from .market_shock import build_market_shock_context
-from .services.decision_context import build_basecalc_decision_context
+from .services.decision_context import (
+    build_basecalc_decision_context,
+    build_basecalc_top_context,
+)
 from .output_contract import apply_output_contract
 from .signal_contract import build_basecalc_signal_contract
 from .snapshot import write_basecalc_snapshot
@@ -145,6 +148,12 @@ def export_basecalc_snapshot(
         basecalc_status_rows,
         backtest_performance_by_horizon.get("1d"),
     )
+    basecalc_top = build_basecalc_top_context(
+        world_model,
+        decision,
+        basecalc_status_rows,
+        backtest_performance_by_horizon.get("1d"),
+    )
     payload = {
         "generated_at": timezone.localtime().isoformat(),
         "source": "github_actions",
@@ -158,6 +167,7 @@ def export_basecalc_snapshot(
             "world_model": world_model,
         },
         "decision": decision,
+        "basecalc_top": basecalc_top,
         "world_model": world_model,
         "market_shock": market_shock_context,
         "intermarket_technicals": world_model.get("intermarket_technicals") or {},

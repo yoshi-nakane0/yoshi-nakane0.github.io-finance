@@ -31,6 +31,9 @@ def _latest_or_preview(price_override=None):
         )
         snapshot = None
     if snapshot is not None:
+        refresh_status = build_explanation_refresh_status(snapshot)
+        if refresh_status.get('needs_refresh'):
+            return build_explanation_snapshot(save=False), True
         return snapshot, False
     return build_explanation_snapshot(save=False), True
 

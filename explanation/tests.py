@@ -10,7 +10,7 @@ from basecalc.models import MarketBar
 
 from .models import ExplanationSnapshot, ExplanationTradeOutcome
 from .services.audit_engine import evaluate_audit
-from .services.basecalc_adapter import _near_level_price
+from .services.basecalc_adapter import _near_level_price, load_basecalc_signal
 from .services.contracts import BasecalcSignal, MacroSignal
 from .services.freshness import build_explanation_refresh_status
 from .services.fusion_engine import build_final_decision, build_trade_decision_v2
@@ -327,6 +327,93 @@ class ExplanationBasecalcAdapterTests(SimpleTestCase):
 
         self.assertEqual(_near_level_price(world_model, 'upside'), 66700)
         self.assertEqual(_near_level_price(world_model, 'downside'), 66600)
+
+    def test_load_basecalc_signal_ignores_validation_report_older_than_saved_snapshot(self):
+        snapshot = {
+            'generated_at': '2026-06-23T09:39:11+00:00',
+            'world_model': {
+                'direction': 'neutral',
+                'direction_label': '方向判断停止',
+                'price': 69770,
+                'last_updated_display': '2026-06-23 15:45 JST',
+                'state_key': 'bull_trend_continuation',
+                'state_label': '上昇継続',
+                'confidence': 'Middle',
+                'confidence_score': 69,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'similar_summary': {'case_count': 30, 'is_statistically_valid': True},
+                'horizons': {
+                    '1d': {'main_bias': 'range', 'expected_return_pct': -0.26},
+                    '3d': {'main_bias': 'range', 'expected_return_pct': -0.44},
+                    '5d': {'main_bias': 'range', 'expected_return_pct': -0.55},
+                },
+                'practical_lines': {
+                    'current_price': 69770,
+                    'upside_resistance': 72090,
+                    'downside_support': 67450,
+                    'near_upside': 69800,
+                    'near_downside': 69700,
+                },
+                'near_levels': {
+                    'upside': [{'price': 69800}],
+                    'downside': [{'price': 69700}],
+                },
+                'us_index_confirmation': {
+                    'readiness': {'usable': True},
+                    'components': {'nasdaq100_futures': {}, 'sp500_futures': {}, 'dow_futures': {}},
+                    'evidence': [],
+                },
+                'output_contract': {
+                    'contract_status': 'ok',
+                    'display_price': 69770,
+                    'generated_at': '2026-06-23T09:39:11+00:00',
+                    'directional_allowed': True,
+                    'allowed_horizons': {
+                        '1d': {'direction_allowed': True, 'target_probability_allowed': True},
+                        '3d': {'direction_allowed': True, 'target_probability_allowed': True},
+                        '5d': {'direction_allowed': True, 'target_probability_allowed': True},
+                    },
+                    'stop_reasons': [],
+                },
+            },
+            'decision': {
+                'confidence': 'Middle',
+                'confidence_score': 69,
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'can_show_prediction': False,
+            },
+            'basecalc_status_rows': [],
+            'market_shock': {'has_data': False},
+            'backtest_performance_by_horizon': {},
+        }
+        stale_validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'generated_at': '2026-06-23T07:22:57+00:00',
+            'horizons': {
+                '1d': {
+                    'state_summaries': [
+                        {
+                            'state_key': 'bull_trend_continuation',
+                            'directional_accuracy': 0.35,
+                            'avg_return_pct': -0.4,
+                        },
+                    ],
+                },
+            },
+        }
+
+        with (
+            mock.patch('explanation.services.basecalc_adapter.load_basecalc_snapshot', return_value=snapshot),
+            mock.patch('explanation.services.basecalc_adapter.load_validation_report', return_value=stale_validation_report),
+        ):
+            signal = load_basecalc_signal()
+
+        self.assertEqual(signal.confidence_score, 69)
+        self.assertEqual(signal.confidence_grade, 'Middle')
+        self.assertNotIn('局面別成績が弱いため信頼度を50未満に制限', signal.warnings)
 
 
 class ExplanationViewCompositionTests(SimpleTestCase):
@@ -775,6 +862,50 @@ class ExplanationMacroAdapterTests(SimpleTestCase):
 
 
 class ExplanationPrecomputeViewTests(TestCase):
+    def test_latest_or_preview_uses_current_preview_when_saved_snapshot_is_stale(self):
+        from explanation.views import _latest_or_preview
+
+        ExplanationSnapshot.objects.create(
+            as_of=timezone.now() - timedelta(hours=2),
+            final_label='古い判定',
+            final_stance='conditional_bullish',
+            action_posture='古い表示',
+            confidence_score=49,
+            confidence_grade='C',
+            macro_bias='positive',
+            basecalc_bias='bullish',
+            alignment_status='partial',
+            data_quality_score=70,
+            audit_level='warning',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+        fresh = ExplanationSnapshot(
+            as_of=timezone.now(),
+            final_label='最新判定',
+            final_stance='withhold',
+            action_posture='最新表示',
+            confidence_score=54,
+            confidence_grade='C+',
+            macro_bias='neutral',
+            basecalc_bias='range',
+            alignment_status='partial',
+            data_quality_score=80,
+            audit_level='warning',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+
+        with (
+            mock.patch('explanation.views.build_explanation_refresh_status', return_value={'needs_refresh': True}),
+            mock.patch('explanation.views.build_explanation_snapshot', return_value=fresh) as build_snapshot,
+        ):
+            snapshot, is_preview = _latest_or_preview()
+
+        self.assertTrue(is_preview)
+        self.assertEqual(snapshot.final_label, '最新判定')
+        build_snapshot.assert_called_once_with(save=False)
+
     def test_staff_user_can_precompute_explanation(self):
         user = get_user_model().objects.create_user(
             username='staff',

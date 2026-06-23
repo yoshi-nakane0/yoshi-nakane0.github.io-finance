@@ -58,7 +58,8 @@ class Command(BaseCommand):
                     f"direction={result.get('direction')}, "
                     f"prediction_saved={result.get('prediction_saved')}, "
                     f"outcomes={result.get('outcomes_created')}, "
-                    f"exported={result.get('exported')}"
+                    f"history_exported={result.get('exported')}, "
+                    f"snapshot_exported={result.get('snapshot_exported')}"
                 )
             )
         else:

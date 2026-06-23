@@ -1,9 +1,12 @@
 from datetime import datetime, timezone as dt_timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
 from .instrument import normalize_instrument
+
+JST = ZoneInfo("Asia/Tokyo")
 
 
 def evaluate_snapshot_quality(snapshot: Optional[dict], now=None) -> dict:
@@ -55,6 +58,8 @@ def is_snapshot_stale(snapshot: Optional[dict], max_age_minutes: int = 15, now=N
     now = now or timezone.now()
     if timezone.is_naive(now):
         now = timezone.make_aware(now, timezone=dt_timezone.utc)
+    if _same_jst_date_matsui_quote(source, fetched_at, now):
+        return False
     return (now - fetched_at).total_seconds() > max_age_minutes * 60
 
 
@@ -104,6 +109,14 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     if source == "cache":
         return 48
     return 42
+
+
+def _same_jst_date_matsui_quote(source, fetched_at, now):
+    if source != "matsui":
+        return False
+    fetched_local = timezone.localtime(fetched_at, JST)
+    now_local = timezone.localtime(now, JST)
+    return fetched_local.date() == now_local.date() and fetched_at <= now
 
 
 def _instrument_type(source, symbol, snapshot):

@@ -22,6 +22,8 @@ from basecalc.validation_report import load_validation_report
 from basecalc.views import (
     _manual_price_status_row,
     _manual_price_override_context,
+    _parse_saved_snapshot_timestamp,
+    _saved_world_model_timestamp,
     _snapshot_with_manual_price_override,
     get_stale_futures_snapshot,
 )
@@ -39,10 +41,11 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         context = enrich_basecalc_context(dict(snapshot)) if snapshot else {}
     world_model = context.get('world_model') or {}
     if isinstance(world_model, dict):
+        validation_report = _validation_report_for_basecalc_context(context, world_model)
         apply_output_contract(
             world_model,
             display_price=(world_model.get('output_contract') or {}).get('display_price') or world_model.get('price'),
-            validation_report=load_validation_report(),
+            validation_report=validation_report,
             performance_by_horizon=context.get('backtest_performance_by_horizon') or {},
         )
         world_model['basecalc_signal'] = build_basecalc_signal_contract(world_model)
@@ -129,6 +132,20 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         source=context,
         as_of=_parse_as_of(world_model.get('as_of') or snapshot.get('generated_at')),
     )
+
+
+def _validation_report_for_basecalc_context(context, world_model):
+    report = load_validation_report()
+    if not report:
+        return None
+    report_timestamp = _parse_saved_snapshot_timestamp(report.get('generated_at'))
+    saved_timestamp = (
+        _parse_saved_snapshot_timestamp((context or {}).get('generated_at'))
+        or _saved_world_model_timestamp(context, world_model)
+    )
+    if report_timestamp is not None and saved_timestamp is not None and report_timestamp < saved_timestamp:
+        return None
+    return report
 
 
 def _manual_price_context(saved_snapshot, price):
