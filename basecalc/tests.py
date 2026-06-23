@@ -1512,6 +1512,46 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['external']['us_indices'], 'まちまち')
         self.assertEqual(result['confidence']['direction'], '低〜中')
 
+    def test_basecalc_top_context_exposes_reorganized_ui_summary(self):
+        world_model = {
+            'direction': 'up',
+            'price': 71240,
+            'last_updated_display': '2026-06-18 09:00 JST',
+            'direction_label': '上昇優勢',
+            'state_label': '上昇トレンド継続',
+            'confidence_score': 80,
+            'data_quality': {'level': 'good', 'score': 96, 'fallback_used': False},
+            'readiness_level': 'ready',
+            'primary_setup_label': '押し目待ち',
+            'reversal_risk_score': 72,
+            'continuation_score': 68,
+            'chase_risk': 'medium',
+            'upside_targets': [{'label': 'T1', 'price': 72990, 'reason': '上値抵抗'}],
+            'downside_targets': [{'label': 'T1', 'price': 69490, 'reason': '下値支持'}],
+            'invalidation_display': '69,490',
+            'us_index_confirmation': {
+                'confirmation_label': 'confirm_up',
+                'confirmation_score': 67,
+                'components': {
+                    'nasdaq100_futures': {'symbol': 'NASDAQ', 'score': 42},
+                    'sp500_futures': {'symbol': 'S&P500', 'score': 35},
+                    'dow_futures': {'symbol': 'NYダウ', 'score': 28},
+                },
+            },
+        }
+        decision = build_basecalc_decision_context(world_model, {}, [], {})
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['final_judgment']['direction'], '上方向')
+        self.assertEqual(result['status']['judgment_state'], '判定可')
+        self.assertEqual(result['lines']['first_target'], 72990)
+        self.assertEqual(result['lines']['invalidation_line'], '69,490')
+        self.assertEqual(result['lines']['reversal_warning_line'], '前日安値・EMA20・VWAP割れ')
+        self.assertIn('順張り', result['behavior']['trend_pressure'])
+        self.assertIn('反転', result['behavior']['reversal_warning'])
+        self.assertIn('NASDAQ', result['external']['us_indices'])
+
     def test_basecalc_top_uses_practical_lines_when_prediction_targets_are_empty(self):
         world_model = {
             'price': 69770,
@@ -1652,7 +1692,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         result = build_basecalc_top_context(world_model, decision, [], {})
 
-        self.assertEqual(result['external']['us_indices'], '方向分裂（確認 7/100）')
+        self.assertEqual(result['external']['us_indices'], '方向分裂（確認 7/100） / NASDAQ -33 / S&P500 +31 / NYダウ +54')
         self.assertEqual(result['external']['us_reason'], 'NASDAQ -33 / S&P500 +31 / NYダウ +54')
         self.assertEqual(result['external']['market_stress'], '通常')
         self.assertEqual(result['external']['market_impact'], '警戒')
@@ -1842,16 +1882,16 @@ class BasecalcUpdateSecurityTests(TestCase):
             response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '判定ステータス')
+        self.assertContains(response, '日経先物テクニカル判定')
         self.assertContains(response, '判定作成日時')
-        self.assertContains(response, '最終テクニカル判断')
-        self.assertContains(response, '行動判断')
+        self.assertContains(response, 'セットアップ')
+        self.assertContains(response, '順張り・逆張り・警戒')
         self.assertContains(response, '実用ライン')
-        self.assertContains(response, '判定基準価格')
+        self.assertContains(response, '現在値')
         self.assertContains(response, '判断を変える条件')
         self.assertContains(response, '根拠3つ / 警戒3つ')
         self.assertContains(response, '1日・3日・5日の見通し')
-        self.assertContains(response, '米国3指数確認 / 市場ストレス')
+        self.assertContains(response, '米国3指数確認')
         self.assertContains(response, '信頼度・データ品質・検証リンク')
         self.assertNotContains(response, '日経先物テクニカル結論')
         self.assertNotContains(response, '現在のセットアップ')
@@ -2010,7 +2050,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '上値抵抗')
         self.assertContains(response, '下値支持')
-        self.assertContains(response, '短期判断を弱める価格')
+        self.assertContains(response, '反転警戒ライン')
         self.assertContains(response, '詳細ターゲット')
         self.assertContains(response, '第2候補')
         self.assertContains(response, '到達しやすさ')
@@ -2124,7 +2164,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         ):
             response = self.client.get(reverse('basecalc:index'))
 
-        self.assertContains(response, '米国3指数確認 / 市場ストレス')
+        self.assertContains(response, '米国3指数確認')
         self.assertContains(response, '追いかけリスク')
         self.assertContains(response, '1日・3日・5日の見通し')
         self.assertContains(response, '方向予測は停止')

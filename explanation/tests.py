@@ -534,6 +534,32 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         )
         self.assertEqual(context['world_model_predictions'][0]['expected_return'], '-0.02%')
 
+    def test_view_context_adds_integrated_decision_summary(self):
+        context = snapshot_to_view(self._snapshot())
+
+        self.assertEqual(context['integrated_decision']['posture'], 'ロング候補')
+        self.assertEqual(context['alignment_summary']['macro'], '追い風')
+        self.assertEqual(context['alignment_summary']['basecalc'], '上方向')
+        self.assertEqual(context['alignment_summary']['status'], '一致')
+        self.assertEqual(context['adoption_summary']['primary'], 'ロング候補')
+        self.assertLessEqual(len(context['adoption_summary']['reasons']), 3)
+        self.assertLessEqual(len(context['adoption_summary']['warnings']), 3)
+        self.assertIn('Long', context['adoption_summary']['long_condition'])
+        self.assertIn('Short', context['adoption_summary']['short_condition'])
+
+    def test_explanation_template_hides_detailed_source_sections_by_default(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertLess(html.index('最終統合判定'), html.index('統合判断の詳細'))
+        self.assertIn('<summary class="common-section-title">統合判断の詳細</summary>', html)
+        self.assertIn('<summary class="common-section-title">Macro / Basecalc 詳細</summary>', html)
+        self.assertIn('<summary class="common-section-title">world model 予測数値</summary>', html)
+
     def test_decision_card_shows_reference_levels_when_no_trade_has_candidate_plan(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({

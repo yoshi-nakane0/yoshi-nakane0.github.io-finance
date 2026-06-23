@@ -60,6 +60,24 @@
                         <strong>{{ top_decision.final_judgment.max_risk }}</strong>
                     </div>
                 </div>
+                <div class="macro-reliability-grid">
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">信頼度</span>
+                        <span class="macro-reliability-value">{{ top_decision.final_judgment.confidence }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">データ鮮度</span>
+                        <span class="macro-reliability-value">{{ top_decision.freshness.data_freshness }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">判定状態</span>
+                        <span class="macro-reliability-value">{{ top_decision.reliability.display_status|default:"参考" }}</span>
+                    </div>
+                    <div class="macro-reliability-item">
+                        <span class="macro-reliability-label">最終更新</span>
+                        <span class="macro-reliability-value">{{ top_decision.freshness.updated_at }}</span>
+                    </div>
+                </div>
                 {% if top_decision.axis_summary %}
                     <div class="macro-state-card-grid">
                         {% for row in top_decision.axis_summary %}
@@ -133,8 +151,12 @@
                 </div>
             </section>
 
-            <section class="macro-section">
-                <h2 class="macro-section-title">政策・金利圧力 / 市場ストレス</h2>
+            <details class="macro-section">
+                <summary class="macro-section-title macro-section-title--shield">詳細・監査・検証（信頼度・データ鮮度）</summary>
+                <div class="macro-section-headline">
+                    <h2 class="macro-section-title macro-section-title--shield">詳細・監査・検証（信頼度・データ鮮度）</h2>
+                    <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査へ</a>
+                </div>
                 <div class="macro-decision-grid">
                     <div class="macro-decision-card macro-decision-card--policy">
                         <span class="macro-decision-label">政策・金利圧力</span>
@@ -150,13 +172,30 @@
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <section class="macro-section">
-                <div class="macro-section-headline">
-                    <h2 class="macro-section-title macro-section-title--shield">信頼度・データ鮮度</h2>
-                    <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査へ</a>
-                </div>
+                {% if top_decision.good_points_detail or top_decision.bad_points_detail %}
+                    <div class="macro-regime-materials">
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-pos">良い材料の詳細</span>
+                            <ul>
+                                {% for point in top_decision.good_points_detail %}
+                                    <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
+                                {% empty %}
+                                    <li>追加の良い材料はありません。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="macro-regime-material">
+                            <span class="macro-regime-material-title macro-neg">悪い材料の詳細</span>
+                            <ul>
+                                {% for point in top_decision.bad_points_detail %}
+                                    <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
+                                {% empty %}
+                                    <li>追加の悪い材料はありません。</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="macro-reliability-grid">
                     <div class="macro-reliability-item">
                         <span class="macro-reliability-label">判断品質</span>
@@ -220,7 +259,7 @@
                         </form>
                     {% endif %}
                 </div>
-            </section>
+            </details>
         </div>
     </div>
 </body>

@@ -80,6 +80,7 @@ def build_basecalc_top_context(world_model, decision, status_rows=None, performa
         "final_judgment": _top_final_judgment(world_model, decision),
         "action": _top_action(world_model),
         "lines": _top_lines(world_model, decision),
+        "behavior": _top_behavior(world_model),
         "change_conditions": _top_change_conditions(world_model),
         "reasons": (decision.get("main_reason") or _top_evidence(world_model))[:3],
         "risks": _top_risks(world_model, decision),
@@ -95,14 +96,40 @@ def _top_status(decision, status_rows):
         attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or "出力整合性エラー"
     return {
         "readiness": "停止" if decision.get("contract_status") == "error" else decision.get("readiness_label") or "判定不可",
+        "judgment_state": _judgment_state(decision),
         "data_quality": (
             f"{str(decision.get('data_quality_level') or 'unknown').title()} "
             f"{decision.get('data_quality_score') or 0}/100"
         ),
+        "data_state": _data_state(decision),
         "fallback": "あり" if decision.get("fallback_used") else "なし",
         "attention": attention,
         "updated_at": decision.get("last_updated") or "—",
     }
+
+
+def _judgment_state(decision):
+    if decision.get("contract_status") == "error":
+        return "判定停止"
+    try:
+        score = int(decision.get("data_quality_score") or 0)
+    except (TypeError, ValueError):
+        score = 0
+    if score and score < 60:
+        return "参考"
+    return "判定可" if decision.get("readiness_label") else "参考"
+
+
+def _data_state(decision):
+    try:
+        score = int(decision.get("data_quality_score") or 0)
+    except (TypeError, ValueError):
+        score = 0
+    if score >= 80:
+        return "良好"
+    if score >= 60:
+        return "注意"
+    return "データ不足"
 
 
 def _top_final_judgment(world_model, decision):
@@ -135,10 +162,29 @@ def _top_final_judgment(world_model, decision):
         )
     )
     return {
+        "direction": _technical_direction_label(world_model, decision),
         "headline": headline,
         "setup": world_model.get("primary_setup_label") or decision.get("state_label") or "局面確認中",
         "supplement": _action_summary(world_model),
     }
+
+
+def _technical_direction_label(world_model, decision):
+    direction = world_model.get("direction") or decision.get("direction")
+    if direction == "up":
+        return "上方向"
+    if direction == "down":
+        return "下方向"
+    if direction in {"neutral", "range"}:
+        return "中立"
+    label = str(decision.get("direction_label") or "")
+    if "上" in label:
+        return "上方向"
+    if "下" in label:
+        return "下方向"
+    if "警戒" in label:
+        return "警戒"
+    return "中立"
 
 
 def _judgment_with_reversal(direction_label, reversal_score):
@@ -212,6 +258,9 @@ def _top_lines(world_model, decision):
         ),
         "upside_resistance": upside_resistance,
         "downside_support": downside_support,
+        "first_target": _first_target_line(world_model, upside_resistance, downside_support),
+        "invalidation_line": decision.get("invalidation") or world_model.get("invalidation_display") or "—",
+        "reversal_warning_line": "前日安値・EMA20・VWAP割れ",
         "near_upside": near_upside,
         "near_downside": near_downside,
         "short_term_weakening": "前日安値・EMA20・VWAP割れ",
@@ -221,6 +270,35 @@ def _top_lines(world_model, decision):
             upside_resistance,
             downside_support,
         ),
+    }
+
+
+def _first_target_line(world_model, upside_resistance, downside_support):
+    if world_model.get("direction") == "down":
+        return downside_support
+    if world_model.get("direction") == "up":
+        return upside_resistance
+    return upside_resistance or downside_support
+
+
+def _top_behavior(world_model):
+    continuation = _optional_int(world_model.get("continuation_score")) or 0
+    reversal = _optional_int(world_model.get("reversal_risk_score")) or 0
+    chase = _chase_risk_label(world_model.get("chase_risk"))
+    trend_text = "順張り圧力は強め。節目突破後も押し目確認を優先します。"
+    if continuation < 45:
+        trend_text = "順張り圧力は弱め。方向を決めつけずレンジ確認を優先します。"
+    elif continuation < 65:
+        trend_text = "順張り圧力は中程度。支持抵抗を確認してから判断します。"
+    reversal_text = "反転警戒は限定的です。"
+    if reversal >= 70:
+        reversal_text = "反転警戒が強いため、追いかけず失速確認を待ちます。"
+    elif reversal >= 45:
+        reversal_text = "反転警戒があります。高値追いは抑えます。"
+    return {
+        "trend_pressure": trend_text,
+        "reversal_warning": reversal_text,
+        "chase_risk": f"追いかけリスク: {chase}。新規判断は節目通過後に確認します。",
     }
 
 
@@ -345,8 +423,12 @@ def _top_external(world_model, decision):
     us = decision.get("us_index_confirmation") or {}
     market = decision.get("market_stress") or {}
     confirmation_score = (world_model.get("us_index_confirmation") or {}).get("confirmation_score")
+    component_summary = _us_component_score_summary(world_model)
+    us_label = _us_indices_label(us.get("label"), confirmation_score)
+    if component_summary:
+        us_label = f"{us_label} / {component_summary}"
     return {
-        "us_indices": _us_indices_label(us.get("label"), confirmation_score),
+        "us_indices": us_label,
         "chase_risk": _chase_risk_label(world_model.get("chase_risk")),
         "us_reason": _us_component_score_summary(world_model)
         or (us.get("reasons") or ["米国3指数データ待ち"])[0],

@@ -3455,6 +3455,26 @@ class DashboardFormatTest(TestCase):
         self.assertLessEqual(len(context['bad_points']), 3)
         self.assertEqual(context['freshness']['data_freshness'], '100%')
 
+    def test_top_decision_keeps_extra_materials_for_detail_section(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'house_view': {
+                'house_view': '景気判断は中立',
+                'confidence_grade': 'B',
+                'confidence_score': 74,
+            },
+            'macro_decision': {
+                'good_points': ['雇用が強い', '信用が安定', '生産が改善', '消費が底堅い'],
+                'bad_points': ['Core PCEが高い', '金利が上昇', '日経への追い風が弱い', 'イベント前で慎重'],
+                'confidence': {'grade': 'B', 'score_display': '74%'},
+            },
+        })
+
+        self.assertEqual(context['good_points'], ['雇用が強い', '信用が安定', '生産が改善'])
+        self.assertEqual(context['good_points_detail'], ['消費が底堅い'])
+        self.assertEqual(len(context['bad_points']), 3)
+        self.assertIn('イベント前で慎重', context['bad_points_detail'])
+
     def test_top_decision_uses_house_view_as_single_final_view(self):
         context = dashboard.build_top_decision_context({
             'last_updated': '2026-06-19',

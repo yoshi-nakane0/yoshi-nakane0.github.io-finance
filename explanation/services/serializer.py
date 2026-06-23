@@ -13,6 +13,17 @@ def snapshot_to_view(snapshot):
     scenario = snapshot.scenario or {}
     manual_price = _manual_price_from_basecalc(basecalc)
     trade_decision = _trade_decision(snapshot, world_model)
+    decision_card = _decision_card(trade_decision, snapshot)
+    long_judgment = _trade_judgment('long', snapshot, world_model, trade_decision)
+    short_judgment = _trade_judgment('short', snapshot, world_model, trade_decision)
+    alignment_summary = _alignment_summary(snapshot)
+    adoption_summary = _adoption_summary(
+        decision_card,
+        long_judgment,
+        short_judgment,
+        trade_decision,
+        snapshot,
+    )
     return {
         'snapshot': snapshot,
         'as_of_display': snapshot.as_of.astimezone(JST).strftime('%Y-%m-%d %H:%M JST'),
@@ -20,10 +31,14 @@ def snapshot_to_view(snapshot):
         'confidence_display': _confidence_display(snapshot, manual_price),
         'manual_price': manual_price,
         'trade_decision': trade_decision,
-        'decision_card': _decision_card(trade_decision, snapshot),
+        'decision_card': decision_card,
+        'integrated_decision': _integrated_decision(snapshot, decision_card, trade_decision, manual_price),
+        'alignment_summary': alignment_summary,
+        'adoption_summary': adoption_summary,
+        'validation_summary': _validation_summary_placeholder(snapshot),
         'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
-        'long_judgment': _trade_judgment('long', snapshot, world_model, trade_decision),
-        'short_judgment': _trade_judgment('short', snapshot, world_model, trade_decision),
+        'long_judgment': long_judgment,
+        'short_judgment': short_judgment,
         'world_model_predictions': _world_model_predictions(world_model),
         'macro': {
             'bias': snapshot.macro_bias,
@@ -43,6 +58,116 @@ def snapshot_to_view(snapshot):
             {'label': 'Basecalc', 'url': '/basecalc/'},
             {'label': 'Audit', 'url': '/explanation/audit/'},
         ],
+    }
+
+
+def _integrated_decision(snapshot, decision_card, trade_decision, manual_price):
+    posture = _integrated_posture(decision_card.get('label'), snapshot.final_stance)
+    return {
+        'posture': posture,
+        'current_price': decision_card.get('current_price') or 'N/A',
+        'entry': decision_card.get('entry') or '判定不可',
+        'target': decision_card.get('target') or 'N/A',
+        'stop_or_invalidation': (
+            decision_card.get('stop')
+            if decision_card.get('stop') != 'N/A'
+            else decision_card.get('invalidation')
+        ) or 'N/A',
+        'reward_risk': decision_card.get('reward_risk') or 'N/A',
+        'confidence': decision_card.get('confidence') or _confidence_display(snapshot, manual_price),
+        'judgment_state': _integrated_status(snapshot, trade_decision, manual_price),
+        'counter': decision_card.get('counter') or 'N/A',
+    }
+
+
+def _integrated_posture(label, final_stance):
+    if label == 'ロング':
+        return 'ロング候補'
+    if label == 'ショート':
+        return 'ショート候補'
+    if final_stance in {'neutral_wait', 'withhold'}:
+        return '待機'
+    return '見送り'
+
+
+def _integrated_status(snapshot, trade_decision, manual_price):
+    if snapshot.audit_level == 'blocked' or trade_decision.get('decision_type') == 'no_trade_data_blocked':
+        return '判定停止'
+    if manual_price.get('active') or _is_reference_decision(trade_decision):
+        return '参考'
+    return '判定可'
+
+
+def _alignment_summary(snapshot):
+    macro_label = _macro_impact_label(snapshot.macro_bias)
+    basecalc_label = _basecalc_state_label(snapshot.basecalc_bias)
+    return {
+        'macro': macro_label,
+        'basecalc': basecalc_label,
+        'status': _alignment_label(snapshot.alignment_status, macro_label, basecalc_label),
+        'action': _alignment_action(snapshot.alignment_status, macro_label, basecalc_label),
+    }
+
+
+def _macro_impact_label(value):
+    if value == 'positive':
+        return '追い風'
+    if value == 'negative':
+        return '逆風'
+    return '中立'
+
+
+def _basecalc_state_label(value):
+    if value == 'bullish':
+        return '上方向'
+    if value == 'bearish':
+        return '下方向'
+    if value in {'range', 'neutral'}:
+        return 'レンジ'
+    return '中立'
+
+
+def _alignment_label(alignment_status, macro_label, basecalc_label):
+    if alignment_status == 'aligned':
+        return '一致'
+    if alignment_status == 'conflict':
+        return '不一致'
+    if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
+        return '分裂'
+    return '不一致'
+
+
+def _alignment_action(alignment_status, macro_label, basecalc_label):
+    if alignment_status == 'aligned':
+        return '条件がそろえば採用候補。'
+    if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
+        return '待機。方向がそろうまで条件待ち。'
+    return '不一致。過剰な売買判断を避け、短期だけ注意。'
+
+
+def _adoption_summary(decision_card, long_judgment, short_judgment, trade_decision, snapshot):
+    reasons = list(decision_card.get('reasons') or snapshot.evidence or [])[:3]
+    warnings = list(decision_card.get('warnings') or trade_decision.get('warnings') or [])[:3]
+    if not warnings:
+        warnings = ['反対シナリオと無効化ラインを確認。']
+    return {
+        'primary': _integrated_posture(decision_card.get('label'), snapshot.final_stance),
+        'long_condition': f"Long: {long_judgment.get('stance')} / {long_judgment.get('setup')}",
+        'short_condition': f"Short: {short_judgment.get('stance')} / {short_judgment.get('setup')}",
+        'reasons': reasons,
+        'warnings': warnings,
+    }
+
+
+def _validation_summary_placeholder(snapshot):
+    if snapshot.confidence_score >= 70:
+        state = '十分'
+    elif snapshot.confidence_score >= 50:
+        state = '少ない'
+    else:
+        state = '未検証'
+    return {
+        'one_line': f"検証状態: {state} / 信頼度 {snapshot.confidence_grade} {snapshot.confidence_score}%",
     }
 
 

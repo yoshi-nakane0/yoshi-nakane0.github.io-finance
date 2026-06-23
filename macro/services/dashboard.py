@@ -1530,9 +1530,9 @@ def build_macro_decision_context(snapshot: Optional[RegimeSnapshot]) -> Dict:
 
 
 AXIS_SUMMARY_LABELS = {
-    'growth_momentum': '成長',
+    'growth_momentum': '景気',
     'inflation_pressure': '物価',
-    'financial_conditions': '金融環境',
+    'financial_conditions': '政策・金利',
     'nikkei_macro_bias': '日経影響',
 }
 HOUSE_VIEW_DIRECTION_LABELS = {
@@ -1756,6 +1756,18 @@ def _top_axis_summary(forecast: Dict) -> List[Dict]:
     return rows
 
 
+def _split_top_material_points(points: List[str], *, negative: bool) -> Dict[str, List[str]]:
+    visible = _compact_material_points(points, negative=negative)
+    detail = []
+    for point in points or []:
+        if point and point not in visible and point not in detail:
+            detail.append(point)
+    return {
+        'visible': visible[:3],
+        'detail': detail,
+    }
+
+
 def build_top_decision_context(context: Dict) -> Dict:
     """macroトップで使う、1つに統合した最終判断コンテキストを作る。"""
     house_view = context.get('house_view') or {}
@@ -1767,10 +1779,15 @@ def build_top_decision_context(context: Dict) -> Dict:
         forecast.get('nikkei_implication') or '',
         scenarios,
     )
-    risk_candidates = _compact_material_points(
+    good_materials = _split_top_material_points(
+        decision.get('good_points') or house_view.get('key_drivers') or [],
+        negative=False,
+    )
+    bad_materials = _split_top_material_points(
         decision.get('bad_points') or house_view.get('main_risks') or [],
         negative=True,
     )
+    risk_candidates = bad_materials['visible']
     reliability = _top_validation_reliability(context, house_view, decision)
 
     return {
@@ -1793,11 +1810,10 @@ def build_top_decision_context(context: Dict) -> Dict:
         'invalidation_triggers': _top_invalidation_triggers(house_view),
         'scenarios': scenarios,
         'axis_summary': _top_axis_summary(forecast),
-        'good_points': _compact_material_points(
-            decision.get('good_points') or house_view.get('key_drivers') or [],
-            negative=False,
-        ),
+        'good_points': good_materials['visible'],
+        'good_points_detail': good_materials['detail'],
         'bad_points': risk_candidates,
+        'bad_points_detail': bad_materials['detail'],
         'policy_pressure': decision.get('policy_pressure') or {},
         'market_stress': decision.get('market_stress') or {},
         'freshness': {
