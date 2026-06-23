@@ -15,6 +15,7 @@ from .market_shock import build_market_shock_context
 from .services.decision_context import (
     build_basecalc_decision_context,
     build_basecalc_top_context,
+    enrich_basecalc_context,
 )
 from .output_contract import apply_output_contract
 from .signal_contract import build_basecalc_signal_contract
@@ -29,6 +30,7 @@ from .views import (
     CACHE_KEY_PRICE,
     _attach_practical_lines_from_latest_snapshot,
     get_cached_futures_snapshot,
+    hydrate_saved_snapshot_context,
     normalize_price,
     price_from_futures_snapshot,
 )
@@ -182,6 +184,8 @@ def export_basecalc_snapshot(
         "updated": False,
         "price_param": f"{price:.0f}" if price else "",
     }
+    hydrate_saved_snapshot_context(payload)
+    enrich_basecalc_context(payload)
     write_basecalc_snapshot(payload, export_snapshot_path)
     return payload
 

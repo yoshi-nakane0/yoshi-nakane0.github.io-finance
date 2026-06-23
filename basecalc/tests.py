@@ -729,6 +729,103 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertNotEqual(rendered_context['world_model']['near_levels']['upside'][0]['price'], 41100)
         self.assertNotEqual(rendered_context['world_model']['near_levels']['downside'][0]['price'], 40900)
 
+    def test_get_keeps_hydrated_practical_lines_without_rebuilding_them(self):
+        saved_at = timezone.localtime(timezone.now())
+        snapshot = {
+            'data': {'price_display': '44,975', 'world_model': {'price': 44975}},
+            'world_model': {
+                'direction': 'up',
+                'price': 44975,
+                'last_updated_display': saved_at.strftime('%Y-%m-%d %H:%M JST'),
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'High',
+                'confidence_score': 82,
+                'data_quality': {
+                    'level': 'good',
+                    'score': 90,
+                    'fallback_used': False,
+                },
+                'data_quality_score': 90,
+                'source_status': {
+                    'source': '225navi',
+                    'symbol': 'NIY=F',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                },
+                'readiness_level': 'ready',
+                'readiness_display': {
+                    'daily_bars': 120,
+                    'valid_major_indicators': 10,
+                },
+                'readiness': {'reason_codes': [], 'warnings': []},
+                'similar_summary': {
+                    'case_count': 30,
+                    'searched_case_count': 120,
+                    'is_statistically_valid': True,
+                },
+                'us_index_confirmation': {
+                    'components': {
+                        'nasdaq100_futures': {'score': 10},
+                    },
+                },
+                'target_ranges': [{'low': 44000, 'high': 46000, 'label': '1日'}],
+                'upside_targets': [{'price': 46000, 'label': 'T1'}],
+                'downside_targets': [{'price': 44000, 'label': 'T1'}],
+                'practical_lines': {
+                    'current_price': 44975,
+                    'upside_resistance': 46000,
+                    'downside_support': 44000,
+                    'near_upside': 45200,
+                    'near_downside': 44700,
+                },
+                'near_levels': {
+                    'upside': [{'price': 45200, 'reason': '保存済み上値'}],
+                    'downside': [{'price': 44700, 'reason': '保存済み下値'}],
+                },
+                'market_context': {},
+            },
+            'market_shock': {'has_data': True},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '44975',
+            'generated_at': saved_at.isoformat(),
+        }
+        MarketSnapshot.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            fetched_at=saved_at,
+            price=44975,
+            open=44900,
+            high=45020,
+            low=44800,
+            close=44975,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+            readiness_level='ready',
+        )
+
+        from django.http import HttpResponse
+
+        with (
+            patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot),
+            patch('basecalc.views._attach_practical_lines_from_latest_snapshot') as attach_lines,
+            patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock,
+        ):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        attach_lines.assert_not_called()
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['basecalc_top']['lines']['current_price'], 44975)
+        self.assertEqual(rendered_context['basecalc_top']['lines']['upside_resistance'], 46000)
+        self.assertEqual(rendered_context['basecalc_top']['lines']['downside_support'], 44000)
+
     def test_get_keeps_saved_snapshot_price_when_market_snapshot_is_older(self):
         snapshot = {
             'data': {'price_display': '66,670', 'world_model': {'price': 66670}},
@@ -2987,6 +3084,107 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(top_lines['current_price'], practical_lines['current_price'])
         self.assertEqual(top_lines['upside_resistance'], practical_lines['upside_resistance'])
         self.assertEqual(top_lines['downside_support'], practical_lines['downside_support'])
+
+    def test_refresh_basecalc_data_exports_hydrated_snapshot(self):
+        from .operations import refresh_basecalc_data
+        from .views import _saved_world_model_needs_rebuild
+
+        low_confidence_world_model = {
+            'direction': 'up',
+            'price': 66670,
+            'last_updated_display': '2026-06-23 09:00 JST',
+            'direction_label': '上目線',
+            'state_label': '上昇継続',
+            'confidence': 'Low',
+            'confidence_score': 34,
+            'data_quality': {
+                'level': 'good',
+                'score': 96,
+                'fallback_used': False,
+                'source': '225navi',
+                'symbol': 'NIY=F',
+                'instrument_type': 'futures',
+            },
+            'data_quality_score': 96,
+            'source_status': {
+                'source': '225navi',
+                'symbol': 'NIY=F',
+                'instrument_key': 'cme_nikkei_futures',
+                'instrument_type': 'futures',
+            },
+            'readiness_level': 'ready',
+            'readiness': {'reason_codes': [], 'warnings': []},
+            'similar_summary': {
+                'case_count': 0,
+                'searched_case_count': 19,
+                'is_statistically_valid': False,
+            },
+            'us_index_confirmation': {
+                'components': {},
+                'readiness': {'usable': False},
+            },
+            'target_ranges': [],
+            'market_context': {},
+        }
+        hydrated_world_model = {
+            **low_confidence_world_model,
+            'confidence': 'Middle',
+            'confidence_score': 69,
+            'similar_summary': {
+                'case_count': 30,
+                'searched_case_count': 3276,
+                'is_statistically_valid': True,
+            },
+            'us_index_confirmation': {
+                'confirmation_score': 7,
+                'confirmation_label': 'divergent',
+                'components': {
+                    'nasdaq100_futures': {'score': -33},
+                    'sp500_futures': {'score': 31},
+                    'dow_futures': {'score': 54},
+                },
+                'readiness': {'usable': True},
+            },
+        }
+
+        with TemporaryDirectory() as tmpdir:
+            snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
+            with (
+                patch('basecalc.operations.get_cached_futures_snapshot', return_value=_ready_snapshot()),
+                patch('basecalc.operations.get_intermarket_technical_snapshot', return_value={}),
+                patch('basecalc.operations.build_world_model', return_value=low_confidence_world_model),
+                patch('basecalc.operations.write_basecalc_status'),
+                patch('basecalc.operations.save_prediction', return_value=None),
+                patch('basecalc.operations.evaluate_due_predictions', return_value=0),
+                patch('basecalc.operations.prune_prediction_history', return_value=0),
+                patch('basecalc.views.get_stale_futures_snapshot', return_value=None),
+                patch('basecalc.views.attach_saved_daily_bars') as attach_bars,
+                patch('basecalc.views.build_world_model', return_value=hydrated_world_model),
+                patch('basecalc.views.load_validation_report', return_value=None),
+            ):
+                attach_bars.return_value = {
+                    'symbol': 'NIY=F',
+                    'source': '225navi',
+                    'instrument_key': 'cme_nikkei_futures',
+                    'instrument_type': 'futures',
+                    'closes': [65000 + index for index in range(120)],
+                    'highs': [65100 + index for index in range(120)],
+                    'lows': [64900 + index for index in range(120)],
+                    'opens': [65000 + index for index in range(120)],
+                    'volumes': [0 for _ in range(120)],
+                    'timestamps': [1700000000 + index * 86400 for index in range(120)],
+                }
+                refresh_basecalc_data(
+                    save=False,
+                    use_lock=False,
+                    export_snapshot_path=str(snapshot_path),
+                )
+
+            payload = json.loads(snapshot_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(payload['world_model']['confidence_score'], 69)
+        self.assertEqual(payload['world_model']['similar_summary']['case_count'], 30)
+        self.assertFalse(_saved_world_model_needs_rebuild(payload['world_model']))
 
 
 class BasecalcMarketShockTest(TestCase):

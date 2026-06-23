@@ -690,9 +690,29 @@ def hydrate_saved_snapshot_current_price(context, world_model):
         validation_report=_validation_report_for_saved_snapshot(context, world_model),
         performance_by_horizon=context.get("backtest_performance_by_horizon") or {},
     )
-    _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, latest_price)
+    if not _practical_lines_match_latest_price(world_model, latest_price):
+        _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, latest_price)
     world_model["basecalc_signal"] = build_basecalc_signal_contract(world_model)
     return context
+
+
+def _practical_lines_match_latest_price(world_model, latest_price):
+    if not isinstance(world_model, dict):
+        return False
+    practical_lines = world_model.get("practical_lines")
+    if not isinstance(practical_lines, dict):
+        return False
+    current_price = normalize_price(practical_lines.get("current_price"))
+    latest_price = normalize_price(latest_price)
+    if current_price is None or latest_price is None or current_price != latest_price:
+        return False
+    required_keys = (
+        "upside_resistance",
+        "downside_support",
+        "near_upside",
+        "near_downside",
+    )
+    return all(normalize_price(practical_lines.get(key)) is not None for key in required_keys)
 
 
 def _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, latest_price):
