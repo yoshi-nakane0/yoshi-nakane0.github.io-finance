@@ -733,6 +733,18 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(context['basecalc_top']['status']['attention'], '主要データは判定可能')
         self.assertNotIn('米国3指数確認が不足', context['world_model']['stop_reasons'])
 
+    def test_status_summary_treats_intermarket_only_block_as_usable(self):
+        from basecalc.services.decision_context import build_basecalc_decision_context
+
+        decision = build_basecalc_decision_context(
+            {'price': 66670, 'confidence_score': 69},
+            {'has_data': False},
+            [{'label': '米国3指数確認', 'decision_level': 'blocked'}],
+            {},
+        )
+
+        self.assertEqual(decision['status_summary'], '主要データは判定可能')
+
     def test_saved_snapshot_ignores_older_validation_report_when_hydrating(self):
         context = {
             'data': {'price_display': '66,670', 'world_model': {'price': 66670}},

@@ -862,7 +862,12 @@ def _readiness_label(level):
 
 def _status_summary(status_rows):
     rows = status_rows or []
-    blocked = [row for row in rows if row.get("decision_level") == "blocked"]
+    blocked = [
+        row
+        for row in rows
+        if row.get("decision_level") == "blocked"
+        and row.get("label") != "米国3指数確認"
+    ]
     limited = [row for row in rows if row.get("decision_level") == "limited"]
     if blocked:
         return "要確認: " + "、".join(row.get("label", "") for row in blocked[:2])
