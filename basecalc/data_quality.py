@@ -47,6 +47,8 @@ def is_snapshot_stale(snapshot: Optional[dict], max_age_minutes: int = 15, now=N
     source = (snapshot or {}).get("source")
     if source in {"cme_daily_bulletin", "225navi"}:
         max_age_minutes = max(max_age_minutes, 96 * 60)
+    if source == "matsui":
+        max_age_minutes = max(max_age_minutes, 90)
     fetched_at = _parse_timestamp(snapshot.get("fetched_at"))
     if fetched_at is None:
         return True
@@ -85,6 +87,8 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     symbol = (symbol or "").lower()
     if source == "225navi" and symbol == "niy=f":
         return 96
+    if source == "matsui" and symbol == "niy=f":
+        return 90
     if source == "cme_daily_bulletin" and symbol == "niy=f":
         return 96
     if source == "yahoo" and symbol == "niy=f":

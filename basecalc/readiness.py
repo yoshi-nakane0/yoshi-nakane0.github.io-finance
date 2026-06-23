@@ -19,7 +19,7 @@ MIN_INDICATOR_BARS = {
     "bollinger": 25,
 }
 
-CANONICAL_FUTURES_SOURCES = {"225navi", "cme_daily_bulletin", "yahoo"}
+CANONICAL_FUTURES_SOURCES = {"225navi", "cme_daily_bulletin", "matsui", "yahoo"}
 
 
 def evaluate_world_model_readiness(

@@ -30,7 +30,10 @@ def export_basecalc_history(output_path: str, limit_predictions: int = 5000) -> 
         "market_snapshots": [serialize_market_snapshot(snapshot) for snapshot in snapshots],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
     return {
         "output_path": str(path),
         "predictions": len(payload["predictions"]),

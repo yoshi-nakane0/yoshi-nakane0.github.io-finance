@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime, time, timezone as dt_timezone
+from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,12 +14,16 @@ from .status import price_status_entry, write_basecalc_status
 from .world_model import build_world_model
 
 NAVI_DAILY_URL = "https://225navi.com/data/"
+MATSUI_FUTURES_URL = "https://finance.matsui.co.jp/future/3OSE11/index"
 DEFAULT_SYMBOL = "NIY=F"
 DEFAULT_TIMEFRAME = "1d"
 DEFAULT_INSTRUMENT_KEY = "cme_nikkei_futures"
 DEFAULT_INSTRUMENT_TYPE = "futures"
 SOURCE_225NAVI = "225navi"
+SOURCE_MATSUI = "matsui"
 _NAVI_DATE_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
+_MATSUI_DATETIME_RE = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}\s+\d{1,2}:\d{2}$")
+JST = dt_timezone(timedelta(hours=9))
 
 
 def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
@@ -63,17 +67,22 @@ def sync_nikkei_futures_daily(start=None, end=None, update_existing=False):
 
 
 def fetch_nikkei_futures_daily_rows(start=None, end=None):
-    fetchers = (
-        (SOURCE_225NAVI, fetch_225navi_daily_bars),
-    )
     attempts = []
-    for source_name, fetcher in fetchers:
-        attempt = {"source": source_name, "rows": 0, "details": []}
-        rows = fetcher(start=start, end=end, diagnostics=attempt)
-        attempt["rows"] = len(rows)
-        attempts.append(attempt)
-        if rows:
-            return rows, rows[0].get("source") or source_name, attempts
+    history_attempt = {"source": SOURCE_225NAVI, "rows": 0, "details": []}
+    rows = fetch_225navi_daily_bars(start=start, end=end, diagnostics=history_attempt)
+    history_attempt["rows"] = len(rows)
+    attempts.append(history_attempt)
+
+    if _should_fetch_intraday_quote(start=start, end=end):
+        intraday_attempt = {"source": SOURCE_MATSUI, "rows": 0, "details": []}
+        intraday_rows = fetch_matsui_futures_quote(diagnostics=intraday_attempt)
+        intraday_rows = filter_rows_by_date(intraday_rows, start, end)
+        intraday_attempt["rows"] = len(intraday_rows)
+        attempts.append(intraday_attempt)
+        rows = merge_price_rows(rows, intraday_rows)
+
+    if rows:
+        return rows, latest_row_source(rows), attempts
     return [], "", attempts
 
 
@@ -240,6 +249,19 @@ def fetch_225navi_daily_bars(start=None, end=None, diagnostics=None):
     return filter_rows_by_date(rows, start, end)
 
 
+def fetch_matsui_futures_quote(diagnostics=None):
+    text = _get_text(
+        MATSUI_FUTURES_URL,
+        diagnostics=diagnostics,
+        label="intraday",
+    )
+    if not text:
+        return []
+    soup = BeautifulSoup(text, "html.parser")
+    row = parse_matsui_futures_text(soup.get_text("\n", strip=True))
+    return [row] if row else []
+
+
 def parse_225navi_daily_text(text):
     if not text:
         return []
@@ -273,12 +295,37 @@ def parse_225navi_daily_text(text):
     return rows
 
 
+def parse_matsui_futures_text(text):
+    if not text:
+        return None
+    tokens = [line.strip() for line in text.splitlines() if line.strip()]
+    updated_at = next(
+        (_parse_datetime(token) for token in tokens if _MATSUI_DATETIME_RE.match(token)),
+        None,
+    )
+    current = _value_after_label(tokens, "現在値")
+    if updated_at is None or current is None:
+        return None
+    return {
+        "date": updated_at.date(),
+        "timestamp": updated_at,
+        "open": _value_after_label(tokens, "始値") or current,
+        "high": _value_after_label(tokens, "高値") or current,
+        "low": _value_after_label(tokens, "安値") or current,
+        "close": current,
+        "volume": _value_after_label(tokens, "出来高"),
+        "source": SOURCE_MATSUI,
+    }
+
+
 def normalize_bar_row(row):
-    parsed_date = _parse_date(row.get("date"))
+    timestamp = _parse_datetime(row.get("timestamp"))
+    parsed_date = _parse_date(row.get("date")) or (timestamp.date() if timestamp else None)
     close = _parse_number(row.get("close"))
     if parsed_date is None or close is None:
         return None
-    timestamp = datetime.combine(parsed_date, time.min, tzinfo=dt_timezone.utc)
+    if timestamp is None:
+        timestamp = datetime.combine(parsed_date, time.min, tzinfo=dt_timezone.utc)
     return {
         "timestamp": timestamp,
         "open": _parse_number(row.get("open")) or close,
@@ -302,6 +349,42 @@ def filter_rows_by_date(rows, start=None, end=None):
             continue
         result.append({**row, "date": parsed_date})
     return result
+
+
+def merge_price_rows(history_rows, intraday_rows):
+    rows_by_date = {}
+    for row in [*(history_rows or []), *(intraday_rows or [])]:
+        parsed_date = _parse_date(row.get("date"))
+        if parsed_date is None:
+            continue
+        existing = rows_by_date.get(parsed_date)
+        if existing is None or row_sort_timestamp(row) >= row_sort_timestamp(existing):
+            rows_by_date[parsed_date] = {**row, "date": parsed_date}
+    return sorted(rows_by_date.values(), key=row_sort_timestamp, reverse=True)
+
+
+def latest_row_source(rows):
+    latest = max((row for row in rows if row), key=row_sort_timestamp, default=None)
+    return (latest or {}).get("source") or SOURCE_225NAVI
+
+
+def row_sort_timestamp(row):
+    parsed = normalize_bar_row(row)
+    if parsed:
+        return parsed["timestamp"]
+    parsed_date = _parse_date((row or {}).get("date"))
+    if parsed_date:
+        return datetime.combine(parsed_date, time.min, tzinfo=dt_timezone.utc)
+    return datetime.min.replace(tzinfo=dt_timezone.utc)
+
+
+def _should_fetch_intraday_quote(start=None, end=None):
+    today = timezone.localdate()
+    if start and start > today:
+        return False
+    if end and end < today:
+        return False
+    return True
 
 
 def _get_text(url, params=None, diagnostics=None, label="http"):
@@ -341,6 +424,21 @@ def _parse_date(value):
     return None
 
 
+def _parse_datetime(value):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=JST)
+    if not value:
+        return None
+    text = str(value).strip()
+    for fmt in ("%Y/%m/%d %H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%S%z"):
+        try:
+            parsed = datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=JST)
+    return None
+
+
 def _parse_number(value):
     if value is None or value == "":
         return None
@@ -354,6 +452,18 @@ def _parse_number(value):
         return float(text)
     except ValueError:
         return None
+
+
+def _value_after_label(tokens, label):
+    try:
+        index = tokens.index(label)
+    except ValueError:
+        return None
+    for token in tokens[index + 1 : index + 6]:
+        value = _parse_number(token)
+        if value is not None:
+            return value
+    return None
 
 
 def _parse_volume(value):

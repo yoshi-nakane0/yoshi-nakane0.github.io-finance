@@ -1983,6 +1983,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows) as navi_fetch,
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily')
@@ -2014,6 +2015,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=[]),
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status') as status_write,
         ):
             from basecalc.daily_sync import sync_nikkei_futures_daily
@@ -2076,6 +2078,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily')
@@ -2109,6 +2112,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily', stdout=output)
@@ -2140,6 +2144,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             snapshot_path = Path(tmpdir) / 'latest_snapshot.json'
             with (
                 patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+                patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
                 patch('basecalc.daily_sync.write_basecalc_status'),
             ):
                 call_command(
@@ -2201,6 +2206,89 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rows[0]['low'], 65890)
         self.assertEqual(rows[0]['close'], 66670)
         self.assertEqual(rows[0]['source'], '225navi')
+
+    def test_matsui_parser_reads_intraday_current_quote(self):
+        from basecalc.daily_sync import parse_matsui_futures_text
+        text = """
+        日経225指数先物
+        指数
+        2026/6/23 14:54
+        更新
+        現在値
+        70,460.00
+        前日比
+        -2,400.00
+        (-3.29%)
+        始値
+        72,840.00
+        高値
+        73,760.00
+        安値
+        70,460.00
+        前日終値
+        72,860.00
+        出来高
+        37,529
+        """
+
+        row = parse_matsui_futures_text(text)
+
+        self.assertEqual(row['date'], date(2026, 6, 23))
+        self.assertEqual(row['open'], 72840)
+        self.assertEqual(row['high'], 73760)
+        self.assertEqual(row['low'], 70460)
+        self.assertEqual(row['close'], 70460)
+        self.assertEqual(row['volume'], 37529)
+        self.assertEqual(row['source'], 'matsui')
+
+    def test_sync_uses_matsui_intraday_quote_when_newer_than_225navi_daily(self):
+        _create_market_bar_series(
+            count=80,
+            start=timezone.make_aware(datetime(2026, 3, 1)),
+        )
+        rows = [
+            {
+                'date': date(2026, 6, 22),
+                'open': 71590,
+                'high': 73090,
+                'low': 71320,
+                'close': 72860,
+                'volume': None,
+                'source': '225navi',
+            },
+        ]
+        intraday_rows = [
+            {
+                'date': date(2026, 6, 23),
+                'timestamp': timezone.make_aware(datetime(2026, 6, 23, 14, 54)),
+                'open': 72840,
+                'high': 73760,
+                'low': 70460,
+                'close': 70460,
+                'volume': 37529,
+                'source': 'matsui',
+            },
+        ]
+
+        with (
+            patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=intraday_rows),
+            patch('basecalc.daily_sync.write_basecalc_status'),
+        ):
+            call_command(
+                'sync_nikkei_futures_daily',
+                '--end',
+                '2026-06-23',
+                stdout=StringIO(),
+            )
+
+        latest_bar = MarketBar.objects.order_by('-timestamp').first()
+        self.assertEqual(latest_bar.timestamp.date(), date(2026, 6, 23))
+        self.assertEqual(latest_bar.close, 70460)
+        self.assertEqual(latest_bar.source, 'matsui')
+        latest_snapshot = MarketSnapshot.objects.order_by('-fetched_at').first()
+        self.assertEqual(latest_snapshot.price, 70460)
+        self.assertEqual(latest_snapshot.source, 'matsui')
 
     def test_225navi_fetch_records_http_failure_diagnostics(self):
         from requests import RequestException
@@ -2271,6 +2359,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
+            patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=[]),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command('sync_nikkei_futures_daily', update_existing=True)
@@ -2371,6 +2460,39 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(snapshot['source'], '225navi')
         self.assertEqual(snapshot['price'], 66670)
         self.assertEqual(snapshot['closes'][-1], 66670)
+
+    def test_stale_futures_snapshot_prefers_newer_intraday_quote(self):
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 22)),
+            open=71590,
+            high=73090,
+            low=71320,
+            close=72860,
+            source='225navi',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+        MarketBar.objects.create(
+            symbol='NIY=F',
+            timeframe='1d',
+            timestamp=timezone.make_aware(datetime(2026, 6, 23, 14, 54)),
+            open=72840,
+            high=73760,
+            low=70460,
+            close=70460,
+            volume=37529,
+            source='matsui',
+            instrument_key='cme_nikkei_futures',
+            instrument_type='futures',
+        )
+
+        snapshot = get_stale_futures_snapshot()
+
+        self.assertEqual(snapshot['source'], 'matsui')
+        self.assertEqual(snapshot['price'], 70460)
+        self.assertEqual(snapshot['closes'][-1], 70460)
 
     def test_refresh_basecalc_data_uses_saved_225navi_without_live_futures_fetch(self):
         from .operations import refresh_basecalc_data
@@ -3482,6 +3604,29 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertEqual(data_quality['source'], '225navi')
         self.assertEqual(data_quality['score'], 96)
         self.assertEqual(data_quality['level'], 'good')
+
+    def test_matsui_niy_intraday_snapshot_is_ready_when_fresh(self):
+        snapshot = _ready_snapshot(80, source='matsui', fetched_at=timezone.now())
+        snapshot['fallback_used'] = False
+        data_quality = evaluate_snapshot_quality(snapshot)
+        readiness = evaluate_world_model_readiness(
+            price=snapshot['price'],
+            snapshot=snapshot,
+            data_quality=data_quality,
+            daily_ohlcv={
+                'opens': snapshot['opens'],
+                'highs': snapshot['highs'],
+                'lows': snapshot['lows'],
+                'closes': snapshot['closes'],
+                'volumes': snapshot['volumes'],
+                'real_counts': {'opens': 80, 'highs': 80, 'lows': 80, 'closes': 80, 'volumes': 80},
+            },
+        )
+
+        self.assertEqual(data_quality['source'], 'matsui')
+        self.assertEqual(data_quality['score'], 90)
+        self.assertEqual(data_quality['level'], 'good')
+        self.assertEqual(readiness['level'], 'ready')
 
     def test_status_rows_show_age_fallback_and_decision(self):
         rows = status_display_rows(

@@ -66,6 +66,7 @@ PER_FETCH_MIN_INTERVAL_SEC = 21600
 JGB_FETCH_MIN_INTERVAL_SEC = 3600
 FUTURES_FETCH_MIN_INTERVAL_SEC = 60
 BASECALC_HISTORY_PATH = Path(__file__).resolve().parent / "data" / "basecalc_history.json"
+TRUSTED_FUTURES_SOURCES = ("225navi", "matsui")
 
 
 @ensure_csrf_cookie
@@ -918,7 +919,7 @@ def get_stale_futures_snapshot():
         MarketBar.objects.filter(
             symbol="NIY=F",
             timeframe="1d",
-            source="225navi",
+            source__in=TRUSTED_FUTURES_SOURCES,
         )
         .order_by("-timestamp", "-created_at")
         .first()
@@ -926,7 +927,7 @@ def get_stale_futures_snapshot():
     if latest_bar is not None:
         return _snapshot_from_market_bar(latest_bar)
     latest_snapshot = (
-        MarketSnapshot.objects.filter(source="225navi")
+        MarketSnapshot.objects.filter(source__in=TRUSTED_FUTURES_SOURCES)
         .order_by("-fetched_at", "-created_at")
         .first()
     )
