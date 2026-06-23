@@ -10,7 +10,6 @@ from django.db import OperationalError, ProgrammingError
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.decorators.csrf import ensure_csrf_cookie
 from myproject.settings import is_serverless_runtime
 
 from .intermarket_technicals import get_intermarket_technical_snapshot
@@ -70,15 +69,14 @@ BASECALC_HISTORY_PATH = Path(__file__).resolve().parent / "data" / "basecalc_his
 TRUSTED_FUTURES_SOURCES = ("225navi", "matsui")
 
 
-@ensure_csrf_cookie
 def index(request):
-    ensure_runtime_basecalc_history()
     can_update_basecalc_data = request.user.is_authenticated and request.user.is_staff
     if request.method == "POST":
         if request.POST.get("action") != "update":
             return HttpResponseBadRequest("Invalid action")
         if not can_update_basecalc_data:
             return HttpResponseForbidden("Forbidden")
+        ensure_runtime_basecalc_history()
 
     force_update = request.method == "POST"
     manual_price = normalize_price(parse_float_param(request.GET.get("price"))) if not force_update else None
@@ -106,9 +104,10 @@ def index(request):
             if can_update_basecalc_data:
                 context["refresh_workflow_state"] = get_refresh_workflow_state()
             context["detail_mode"] = request.GET.get("detail") == "1"
-            hydrate_saved_snapshot_context(context)
+            if _should_hydrate_saved_snapshot_context(request):
+                hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
-            return render(request, "basecalc/index.html", context)
+            return _render_basecalc_index(request, context)
         return render(
             request,
             "basecalc/index.html",
@@ -130,7 +129,27 @@ def index(request):
         }
     if can_update_basecalc_data:
         context["refresh_workflow_state"] = get_refresh_workflow_state()
-    return render(request, "basecalc/index.html", context)
+    return _render_basecalc_index(request, context)
+
+
+def _should_hydrate_saved_snapshot_context(request):
+    return request.GET.get("detail") == "1" or request.GET.get("hydrate") == "1"
+
+
+def _render_basecalc_index(request, context):
+    response = render(request, "basecalc/index.html", context)
+    if _can_cache_basecalc_index(request, context):
+        response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
+    return response
+
+
+def _can_cache_basecalc_index(request, context):
+    return (
+        request.method == "GET"
+        and not request.user.is_authenticated
+        and not context.get("detail_mode")
+        and not context.get("error")
+    )
 
 
 def dispatch_basecalc_refresh_workflow(request):

@@ -433,6 +433,101 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertNotEqual(response.context['world_model']['price'], 41000)
         self.assertEqual(cache.get('nikkei_price'), 41000)
 
+    def test_anonymous_get_uses_saved_snapshot_without_runtime_hydration(self):
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00 JST',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Low',
+                'confidence_score': 34,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 80},
+                'similar_summary': {
+                    'case_count': 0,
+                    'searched_case_count': 0,
+                    'is_statistically_valid': False,
+                },
+                'us_index_confirmation': {
+                    'components': {},
+                    'readiness': {'level': 'blocked', 'usable': False},
+                },
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': False},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '41000',
+        }
+
+        from django.http import HttpResponse
+
+        with (
+            patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot),
+            patch('basecalc.views.ensure_runtime_basecalc_history') as runtime_history,
+            patch('basecalc.views.hydrate_saved_snapshot_context') as hydrate_context,
+            patch('basecalc.views.build_world_model') as build_model,
+            patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock,
+        ):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        runtime_history.assert_not_called()
+        hydrate_context.assert_not_called()
+        build_model.assert_not_called()
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 41000)
+        self.assertEqual(rendered_context['decision']['price'], 41000)
+
+    def test_anonymous_get_adds_short_cache_without_forcing_csrf_cookie(self):
+        snapshot = {
+            'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
+            'world_model': {
+                'direction': 'up',
+                'price': 41000,
+                'last_updated_display': '2026-06-17 09:00 JST',
+                'direction_label': '上目線',
+                'state_label': '押し目買い優勢',
+                'confidence': 'Middle',
+                'confidence_score': 58,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'readiness_display': {'daily_bars': 80},
+                'similar_summary': {'case_count': 30, 'is_statistically_valid': True},
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': False},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '41000',
+        }
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot):
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers['Cache-Control'],
+            'public, max-age=60, stale-while-revalidate=300',
+        )
+        self.assertNotIn('csrftoken', response.cookies)
+
     def test_get_uses_latest_snapshot_without_rebuilding_context(self):
         snapshot = {
             'data': {'price_display': '41,000'},
@@ -489,7 +584,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rendered_context['decision']['direction_label'], '上目線')
         build_context.assert_not_called()
 
-    def test_get_updates_saved_snapshot_current_price_from_newer_market_snapshot(self):
+    def test_get_keeps_saved_snapshot_current_price_when_market_snapshot_is_newer(self):
         snapshot = {
             'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
             'world_model': {
@@ -561,18 +656,14 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         rendered_context = render_mock.call_args.args[2]
         self.assertEqual(rendered_context['world_model']['price'], 41000)
-        self.assertEqual(rendered_context['world_model']['output_contract']['model_price'], 41000)
-        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 42500)
-        self.assertEqual(rendered_context['world_model']['contract_status'], 'error')
         self.assertEqual(rendered_context['data']['price_display'], '41,000')
         self.assertEqual(rendered_context['data']['world_model']['price'], 41000)
-        self.assertEqual(rendered_context['decision']['price'], 42500)
-        self.assertEqual(rendered_context['latest_price_display'], '42,500')
-        self.assertEqual(rendered_context['basecalc_status_rows'][0]['source'], 'matsui:NIY=F')
+        self.assertEqual(rendered_context['decision']['price'], 41000)
+        self.assertNotIn('latest_price_display', rendered_context)
         self.assertEqual(rendered_context['price_param'], '41000')
         build_context.assert_not_called()
 
-    def test_low_confidence_saved_snapshot_rebuild_uses_newer_market_bar_price(self):
+    def test_low_confidence_saved_snapshot_does_not_rebuild_on_anonymous_get(self):
         saved_at = timezone.localtime(timezone.now() - timezone.timedelta(days=1))
         snapshot = {
             'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
@@ -638,14 +729,14 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         rendered_context = render_mock.call_args.args[2]
-        self.assertEqual(rendered_context['world_model']['price'], 44975)
-        self.assertEqual(rendered_context['decision']['price'], 44975)
-        self.assertEqual(rendered_context['basecalc_top']['lines']['current_price'], 44975)
-        self.assertEqual(rendered_context['data']['price_display'], '44,975')
-        self.assertEqual(rendered_context['latest_price_display'], '44,975')
-        self.assertEqual(rendered_context['price_param'], '44975')
+        self.assertEqual(rendered_context['world_model']['price'], 41000)
+        self.assertEqual(rendered_context['decision']['price'], 41000)
+        self.assertEqual(rendered_context['basecalc_top']['lines']['current_price'], 41000)
+        self.assertEqual(rendered_context['data']['price_display'], '41,000')
+        self.assertNotIn('latest_price_display', rendered_context)
+        self.assertEqual(rendered_context['price_param'], '41000')
 
-    def test_saved_snapshot_mismatch_builds_practical_lines_from_latest_market_bar(self):
+    def test_saved_snapshot_mismatch_keeps_saved_practical_lines_on_anonymous_get(self):
         saved_at = timezone.localtime(timezone.now() - timezone.timedelta(days=1))
         snapshot = {
             'data': {'price_display': '41,000', 'world_model': {'price': 41000}},
@@ -721,13 +812,13 @@ class BasecalcUpdateSecurityTests(TestCase):
         rendered_context = render_mock.call_args.args[2]
         lines = rendered_context['basecalc_top']['lines']
         current_price = lines['current_price']
-        self.assertEqual(current_price, 44975)
+        self.assertEqual(current_price, 41000)
         self.assertGreater(lines['upside_resistance'], current_price)
         self.assertLess(lines['downside_support'], current_price)
         self.assertGreater(lines['near_upside'], current_price)
         self.assertLess(lines['near_downside'], current_price)
-        self.assertNotEqual(rendered_context['world_model']['near_levels']['upside'][0]['price'], 41100)
-        self.assertNotEqual(rendered_context['world_model']['near_levels']['downside'][0]['price'], 40900)
+        self.assertEqual(rendered_context['world_model']['near_levels']['upside'][0]['price'], 41100)
+        self.assertEqual(rendered_context['world_model']['near_levels']['downside'][0]['price'], 40900)
 
     def test_get_keeps_hydrated_practical_lines_without_rebuilding_them(self):
         saved_at = timezone.localtime(timezone.now())
@@ -892,12 +983,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         rendered_context = render_mock.call_args.args[2]
         self.assertEqual(rendered_context['world_model']['price'], 66670)
-        self.assertEqual(rendered_context['world_model']['output_contract']['model_price'], 66670)
-        self.assertEqual(rendered_context['world_model']['output_contract']['display_price'], 66670)
-        self.assertNotEqual(rendered_context['world_model']['contract_status'], 'error')
-        self.assertNotIn('現在値と計算基準価格が不一致', rendered_context['world_model']['stop_reasons'])
         self.assertEqual(rendered_context['data']['price_display'], '66,670')
-        self.assertEqual(rendered_context['latest_price_display'], '66,670')
+        self.assertNotIn('latest_price_display', rendered_context)
         self.assertEqual(rendered_context['decision']['price'], 66670)
         self.assertEqual(rendered_context['price_param'], '66670')
 
@@ -1320,6 +1407,16 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'expected_return_1d': 0.4,
                 'expected_return_5d': 1.2,
                 'expected_return_label': '過去類似',
+                'output_contract': {
+                    'contract_status': 'limited',
+                    'directional_allowed': False,
+                    'stop_reasons': ['信頼度不足'],
+                    'allowed_horizons': {
+                        '1d': {'direction_allowed': False},
+                        '3d': {'direction_allowed': False},
+                        '5d': {'direction_allowed': False},
+                    },
+                },
             },
             'market_shock': {'has_data': False},
             'market_context': {},
@@ -1966,6 +2063,16 @@ class BasecalcUpdateSecurityTests(TestCase):
                 'us_index_confirmation': {
                     'label': '上昇確認',
                     'reasons': ['米国3指数の価格テクニカルは上昇確認'],
+                },
+                'output_contract': {
+                    'contract_status': 'limited',
+                    'directional_allowed': False,
+                    'stop_reasons': ['ベースライン比較未達'],
+                    'allowed_horizons': {
+                        '1d': {'direction_allowed': False},
+                        '3d': {'direction_allowed': False},
+                        '5d': {'direction_allowed': False},
+                    },
                 },
             },
             'market_shock': {'has_data': False},
@@ -3280,7 +3387,7 @@ class BasecalcMarketShockTest(TestCase):
         self.assertContains(response, 'S&amp;P500の急落は継続寄りです。')
         self.assertContains(response, '急落 中 / 継続寄り')
 
-    def test_snapshot_view_hydrates_missing_stress_and_us_index_cards(self):
+    def test_detail_snapshot_view_hydrates_missing_stress_and_us_index_cards(self):
         from .snapshot import load_basecalc_snapshot
 
         self._create_price_action('PA_GSPC_MOM20', -7.0)
@@ -3309,7 +3416,7 @@ class BasecalcMarketShockTest(TestCase):
         }
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=payload):
-            response = self.client.get(reverse('basecalc:index'))
+            response = self.client.get(reverse('basecalc:index'), {'detail': '1'})
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, '米国3指数データなし')
