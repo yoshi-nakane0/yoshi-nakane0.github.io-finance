@@ -1,6 +1,6 @@
 {
   "schema": "basecalc_validation_report_v1",
-  "generated_at": "2026-06-23T07:22:57.511470+00:00",
+  "generated_at": "2026-06-25T13:25:11.981822+00:00",
   "filters": {
     "instrument_key": "cme_nikkei_futures",
     "readiness_level": "ready",
@@ -10,929 +10,457 @@
   "horizons": {
     "1d": {
       "summary": {
-        "total_predictions": 600,
-        "directional_accuracy": 0.43,
-        "model_directional_accuracy": 0.43,
-        "target_t1_hit_rate": 0.71,
-        "target_t2_hit_rate": 0.55,
-        "invalidation_rate": 0.03,
-        "avg_return_pct": 0.18,
+        "total_predictions": 4990,
+        "directional_accuracy": 0.39,
+        "model_directional_accuracy": 0.39,
+        "target_t1_hit_rate": 0.25,
+        "target_t2_hit_rate": 0.08,
+        "invalidation_rate": 0.1,
+        "avg_return_pct": 0.05,
         "median_return_pct": 0.0,
-        "avg_mfe_pct": 1.13,
-        "avg_mae_pct": -1.32,
-        "avg_confidence_score": 54.7,
-        "median_mae_pct": -1.0,
-        "median_mfe_pct": 0.86,
+        "avg_mfe_pct": 0.92,
+        "avg_mae_pct": -0.97,
+        "avg_confidence_score": 64.3,
+        "median_mae_pct": -0.75,
+        "median_mfe_pct": 0.69,
         "sample_quality": "reliable",
         "statistical_warning": "",
         "baseline_comparison": {
-          "sample_count": 600,
+          "sample_count": 4990,
           "rows": [
             {
               "key": "always_up",
               "label": "常に上昇",
-              "sample_count": 600,
-              "directional_accuracy": 0.36,
+              "sample_count": 4990,
+              "directional_accuracy": 0.33,
               "balanced_accuracy": 0.33,
               "brier_score": 0.2,
-              "avg_strategy_return_pct": 0.13,
-              "risk_adjusted_return_pct": 0.08,
-              "max_drawdown_pct": -10.55,
-              "model_mae": 0
-            },
-            {
-              "key": "always_down",
-              "label": "常に下落",
-              "sample_count": 600,
-              "directional_accuracy": 0.27,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.24,
-              "avg_strategy_return_pct": -0.23,
-              "risk_adjusted_return_pct": -0.28,
-              "max_drawdown_pct": -136.84,
-              "model_mae": 0
-            },
-            {
-              "key": "always_neutral",
-              "label": "常に中立",
-              "sample_count": 600,
-              "directional_accuracy": 0.37,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.16,
-              "avg_strategy_return_pct": -0.01,
-              "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
-              "model_mae": 0
-            },
-            {
-              "key": "continuation",
-              "label": "前日方向継続",
-              "sample_count": 600,
-              "directional_accuracy": 0.3,
-              "balanced_accuracy": 0.29,
-              "brier_score": 0.22,
-              "avg_strategy_return_pct": -0.14,
-              "risk_adjusted_return_pct": -0.19,
-              "max_drawdown_pct": -85.91,
-              "model_mae": 0
-            },
-            {
-              "key": "ema_cross",
-              "label": "EMAクロス",
-              "sample_count": 600,
-              "directional_accuracy": 0.34,
-              "balanced_accuracy": 0.32,
-              "brier_score": 0.21,
-              "avg_strategy_return_pct": 0.01,
-              "risk_adjusted_return_pct": -0.04,
-              "max_drawdown_pct": -38.6,
-              "model_mae": 0
-            },
-            {
-              "key": "vwap_side",
-              "label": "VWAP位置",
-              "sample_count": 600,
-              "directional_accuracy": 0.36,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.2,
-              "avg_strategy_return_pct": 0.13,
-              "risk_adjusted_return_pct": 0.08,
-              "max_drawdown_pct": -10.55,
-              "model_mae": 0
-            },
-            {
-              "key": "atr_range",
-              "label": "単純ATRレンジ",
-              "sample_count": 600,
-              "directional_accuracy": 0.37,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.16,
-              "avg_strategy_return_pct": -0.01,
-              "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
-              "model_mae": 0
-            },
-            {
-              "key": "random",
-              "label": "ランダム基準",
-              "sample_count": 600,
-              "directional_accuracy": 0.34,
-              "balanced_accuracy": 0.36,
-              "brier_score": 0.21,
-              "avg_strategy_return_pct": 0.02,
-              "risk_adjusted_return_pct": -0.03,
-              "max_drawdown_pct": -40.34,
-              "model_mae": 0
-            },
-            {
-              "key": "model",
-              "label": "現行モデル",
-              "sample_count": 600,
-              "directional_accuracy": 0.37,
-              "balanced_accuracy": 0.34,
-              "brier_score": 0.16,
               "avg_strategy_return_pct": 0.0,
               "risk_adjusted_return_pct": -0.05,
-              "max_drawdown_pct": -6.68,
-              "model_mae": 0.98
-            }
-          ],
-          "best_baseline": {
-            "key": "always_up",
-            "label": "常に上昇",
-            "sample_count": 600,
-            "directional_accuracy": 0.36,
-            "balanced_accuracy": 0.33,
-            "brier_score": 0.2,
-            "avg_strategy_return_pct": 0.13,
-            "risk_adjusted_return_pct": 0.08,
-            "max_drawdown_pct": -10.55,
-            "model_mae": 0
-          }
-        },
-        "continuation_directional_accuracy": 0.39,
-        "zero_prediction_mae": 0.9,
-        "model_mae": 0.98,
-        "mae_improvement_rate": -0.09
-      },
-      "state_summaries": [
-        {
-          "state_key": "bull_trend_continuation",
-          "state_label": "上昇継続",
-          "total_predictions": 416,
-          "directional_accuracy": 0.45,
-          "target_t1_hit_rate": 0.69,
-          "invalidation_rate": 0.04,
-          "avg_return_pct": 0.14,
-          "expected_return_pct": 0.15,
-          "avg_mfe_pct": 1.05,
-          "avg_mae_pct": -1.1
-        },
-        {
-          "state_key": "return_sell",
-          "state_label": "戻り売り",
-          "total_predictions": 47,
-          "directional_accuracy": 0.32,
-          "target_t1_hit_rate": 0.72,
-          "invalidation_rate": 0.02,
-          "avg_return_pct": 0.5,
-          "expected_return_pct": 0.17,
-          "avg_mfe_pct": 1.48,
-          "avg_mae_pct": -2.14
-        },
-        {
-          "state_key": "exhaustion_top",
-          "state_label": "過熱・反落警戒",
-          "total_predictions": 39,
-          "directional_accuracy": 0.31,
-          "target_t1_hit_rate": 0.9,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -0.39,
-          "expected_return_pct": 0.05,
-          "avg_mfe_pct": 0.88,
-          "avg_mae_pct": -1.77
-        },
-        {
-          "state_key": "range_neutral",
-          "state_label": "レンジ中立",
-          "total_predictions": 38,
-          "directional_accuracy": 0.39,
-          "target_t1_hit_rate": 0.76,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.18,
-          "expected_return_pct": 0.25,
-          "avg_mfe_pct": 1.31,
-          "avg_mae_pct": -1.39
-        },
-        {
-          "state_key": "breakout_pending",
-          "state_label": "ブレイク待ち",
-          "total_predictions": 18,
-          "directional_accuracy": 0.44,
-          "target_t1_hit_rate": 0.78,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.23,
-          "expected_return_pct": 0.13,
-          "avg_mfe_pct": 1.41,
-          "avg_mae_pct": -1.13
-        },
-        {
-          "state_key": "bear_trend_continuation",
-          "state_label": "下落継続",
-          "total_predictions": 15,
-          "directional_accuracy": 0.27,
-          "target_t1_hit_rate": 0.67,
-          "invalidation_rate": 0.07,
-          "avg_return_pct": 1.08,
-          "expected_return_pct": 0.15,
-          "avg_mfe_pct": 1.4,
-          "avg_mae_pct": -3.01
-        },
-        {
-          "state_key": "short_covering",
-          "state_label": "買い戻し",
-          "total_predictions": 15,
-          "directional_accuracy": 0.53,
-          "target_t1_hit_rate": 0.67,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.58,
-          "expected_return_pct": 0.25,
-          "avg_mfe_pct": 1.49,
-          "avg_mae_pct": -1.25
-        },
-        {
-          "state_key": "dip_buy",
-          "state_label": "押し目買い",
-          "total_predictions": 8,
-          "directional_accuracy": 0.75,
-          "target_t1_hit_rate": 0.5,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.59,
-          "expected_return_pct": 0.12,
-          "avg_mfe_pct": 1.76,
-          "avg_mae_pct": -2.08
-        },
-        {
-          "state_key": "bull_impulse",
-          "state_label": "突発上昇",
-          "total_predictions": 4,
-          "directional_accuracy": 0.5,
-          "target_t1_hit_rate": 0.75,
-          "invalidation_rate": 0.25,
-          "avg_return_pct": -0.41,
-          "expected_return_pct": 0.22,
-          "avg_mfe_pct": 0.99,
-          "avg_mae_pct": -2.39
-        },
-        {
-          "state_key": "bear_impulse",
-          "state_label": "突発下落",
-          "total_predictions": 3,
-          "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.67,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.79,
-          "expected_return_pct": -0.06,
-          "avg_mfe_pct": 2.76,
-          "avg_mae_pct": -1.63
-        },
-        {
-          "state_key": "limited_reference",
-          "state_label": "参考表示",
-          "total_predictions": 1,
-          "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -1.9,
-          "expected_return_pct": 0,
-          "avg_mfe_pct": 0,
-          "avg_mae_pct": -4.89
-        }
-      ],
-      "calibration_rows": [
-        {
-          "bucket": "-1.0%〜-0.5%",
-          "sample_count": 6,
-          "avg_expected_pct": -0.63,
-          "avg_realized_pct": 0.25,
-          "avg_error_pct": 0.88,
-          "sample_quality": "insufficient"
-        },
-        {
-          "bucket": "-0.5%〜0.0%",
-          "sample_count": 136,
-          "avg_expected_pct": -0.21,
-          "avg_realized_pct": 0.29,
-          "avg_error_pct": 0.5,
-          "sample_quality": "reliable"
-        },
-        {
-          "bucket": "0.0%〜0.5%",
-          "sample_count": 432,
-          "avg_expected_pct": 0.24,
-          "avg_realized_pct": 0.13,
-          "avg_error_pct": -0.11,
-          "sample_quality": "reliable"
-        },
-        {
-          "bucket": "0.5%〜1.0%",
-          "sample_count": 25,
-          "avg_expected_pct": 0.73,
-          "avg_realized_pct": 0.25,
-          "avg_error_pct": -0.48,
-          "sample_quality": "usable"
-        },
-        {
-          "bucket": "1.0%以上",
-          "sample_count": 1,
-          "avg_expected_pct": 1.1,
-          "avg_realized_pct": 3.08,
-          "avg_error_pct": 1.98,
-          "sample_quality": "insufficient"
-        }
-      ],
-      "confidence_calibration_rows": [
-        {
-          "bucket": "50未満",
-          "sample_count": 190,
-          "directional_accuracy": 0.43,
-          "target_t1_hit_rate": 0.93,
-          "avg_return_pct": 0.17,
-          "sample_quality": "reliable"
-        },
-        {
-          "bucket": "50台",
-          "sample_count": 211,
-          "directional_accuracy": 0.44,
-          "target_t1_hit_rate": 0.8,
-          "avg_return_pct": 0.23,
-          "sample_quality": "reliable"
-        },
-        {
-          "bucket": "60台",
-          "sample_count": 138,
-          "directional_accuracy": 0.39,
-          "target_t1_hit_rate": 0.46,
-          "avg_return_pct": 0.11,
-          "sample_quality": "reliable"
-        },
-        {
-          "bucket": "70台",
-          "sample_count": 61,
-          "directional_accuracy": 0.46,
-          "target_t1_hit_rate": 0.33,
-          "avg_return_pct": 0.17,
-          "sample_quality": "reliable"
-        }
-      ],
-      "validation_design": {
-        "walk_forward": [
-          {
-            "label": "WF1",
-            "sample_count": 200,
-            "directional_accuracy": 0.39,
-            "avg_return_pct": 0.14,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "WF2",
-            "sample_count": 200,
-            "directional_accuracy": 0.46,
-            "avg_return_pct": 0.1,
-            "target_t1_hit_rate": 0.7,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "WF3",
-            "sample_count": 200,
-            "directional_accuracy": 0.43,
-            "avg_return_pct": 0.29,
-            "target_t1_hit_rate": 0.69,
-            "sample_quality": "reliable"
-          }
-        ],
-        "period_splits": [
-          {
-            "label": "前半",
-            "sample_count": 300,
-            "directional_accuracy": 0.4,
-            "avg_return_pct": 0.13,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "後半",
-            "sample_count": 300,
-            "directional_accuracy": 0.45,
-            "avg_return_pct": 0.23,
-            "target_t1_hit_rate": 0.68,
-            "sample_quality": "reliable"
-          }
-        ],
-        "recent_window": {
-          "label": "直近60日",
-          "sample_count": 63,
-          "directional_accuracy": 0.35,
-          "avg_return_pct": 0.24,
-          "target_t1_hit_rate": 0.76,
-          "sample_quality": "reliable"
-        },
-        "volatility_regimes": [
-          {
-            "label": "低ボラ",
-            "sample_count": 4,
-            "directional_accuracy": 0.5,
-            "avg_return_pct": 0.13,
-            "target_t1_hit_rate": 0.25,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "通常",
-            "sample_count": 364,
-            "directional_accuracy": 0.43,
-            "avg_return_pct": 0.13,
-            "target_t1_hit_rate": 0.69,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "高ボラ",
-            "sample_count": 232,
-            "directional_accuracy": 0.42,
-            "avg_return_pct": 0.26,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "reliable"
-          }
-        ],
-        "market_regimes": [
-          {
-            "label": "ブレイク待ち",
-            "sample_count": 18,
-            "directional_accuracy": 0.44,
-            "avg_return_pct": 0.23,
-            "target_t1_hit_rate": 0.78,
-            "sample_quality": "usable"
-          },
-          {
-            "label": "レンジ中立",
-            "sample_count": 38,
-            "directional_accuracy": 0.39,
-            "avg_return_pct": 0.18,
-            "target_t1_hit_rate": 0.76,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "上昇継続",
-            "sample_count": 413,
-            "directional_accuracy": 0.45,
-            "avg_return_pct": 0.14,
-            "target_t1_hit_rate": 0.69,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "下落継続",
-            "sample_count": 15,
-            "directional_accuracy": 0.27,
-            "avg_return_pct": 1.08,
-            "target_t1_hit_rate": 0.67,
-            "sample_quality": "usable"
-          },
-          {
-            "label": "戻り売り",
-            "sample_count": 47,
-            "directional_accuracy": 0.32,
-            "avg_return_pct": 0.5,
-            "target_t1_hit_rate": 0.72,
-            "sample_quality": "reliable"
-          },
-          {
-            "label": "押し目買い",
-            "sample_count": 8,
-            "directional_accuracy": 0.75,
-            "avg_return_pct": 0.59,
-            "target_t1_hit_rate": 0.5,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "突発上昇",
-            "sample_count": 4,
-            "directional_accuracy": 0.5,
-            "avg_return_pct": -0.41,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "突発下落",
-            "sample_count": 3,
-            "directional_accuracy": 0.0,
-            "avg_return_pct": 0.79,
-            "target_t1_hit_rate": 0.67,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "買い戻し",
-            "sample_count": 15,
-            "directional_accuracy": 0.53,
-            "avg_return_pct": 0.58,
-            "target_t1_hit_rate": 0.67,
-            "sample_quality": "usable"
-          },
-          {
-            "label": "過熱・反落警戒",
-            "sample_count": 39,
-            "directional_accuracy": 0.31,
-            "avg_return_pct": -0.39,
-            "target_t1_hit_rate": 0.9,
-            "sample_quality": "reliable"
-          }
-        ]
-      },
-      "improvement_insights": [
-        {
-          "severity": "high",
-          "title": "戻り売りの方向判定を見直し",
-          "detail": "方向一致率が32%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 32%"
-        },
-        {
-          "severity": "high",
-          "title": "過熱・反落警戒の方向判定を見直し",
-          "detail": "方向一致率が31%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 31%"
-        },
-        {
-          "severity": "high",
-          "title": "レンジ中立の方向判定を見直し",
-          "detail": "方向一致率が39%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 39%"
-        },
-        {
-          "severity": "high",
-          "title": "ブレイク待ちの方向判定を見直し",
-          "detail": "方向一致率が44%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 44%"
-        },
-        {
-          "severity": "high",
-          "title": "下落継続の方向判定を見直し",
-          "detail": "方向一致率が27%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 27%"
-        },
-        {
-          "severity": "middle",
-          "title": "過熱・反落警戒の期待値を確認",
-          "detail": "平均損益が-0.39%です。",
-          "suggestion": "この局面では信頼度を下げるか、様子見に寄せる条件を追加してください。",
-          "metric": "平均 -0.39%"
-        }
-      ]
-    },
-    "3d": {
-      "summary": {
-        "total_predictions": 600,
-        "directional_accuracy": 0.53,
-        "model_directional_accuracy": 0.53,
-        "target_t1_hit_rate": 0.87,
-        "target_t2_hit_rate": 0.72,
-        "invalidation_rate": 0.07,
-        "avg_return_pct": 0.36,
-        "median_return_pct": 0.31,
-        "avg_mfe_pct": 1.86,
-        "avg_mae_pct": -2.26,
-        "avg_confidence_score": 54.7,
-        "median_mae_pct": -1.36,
-        "median_mfe_pct": 1.42,
-        "sample_quality": "reliable",
-        "statistical_warning": "",
-        "baseline_comparison": {
-          "sample_count": 600,
-          "rows": [
-            {
-              "key": "always_up",
-              "label": "常に上昇",
-              "sample_count": 600,
-              "directional_accuracy": 0.5,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.24,
-              "avg_strategy_return_pct": 0.31,
-              "risk_adjusted_return_pct": 0.26,
-              "max_drawdown_pct": -72.06,
+              "max_drawdown_pct": -81.23,
               "model_mae": 0
             },
             {
               "key": "always_down",
               "label": "常に下落",
-              "sample_count": 600,
-              "directional_accuracy": 0.35,
+              "sample_count": 4990,
+              "directional_accuracy": 0.27,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.31,
-              "avg_strategy_return_pct": -0.41,
-              "risk_adjusted_return_pct": -0.46,
-              "max_drawdown_pct": -253.91,
+              "brier_score": 0.23,
+              "avg_strategy_return_pct": -0.1,
+              "risk_adjusted_return_pct": -0.15,
+              "max_drawdown_pct": -521.56,
               "model_mae": 0
             },
             {
               "key": "always_neutral",
               "label": "常に中立",
-              "sample_count": 600,
-              "directional_accuracy": 0.15,
+              "sample_count": 4990,
+              "directional_accuracy": 0.4,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.21,
+              "brier_score": 0.15,
               "avg_strategy_return_pct": -0.01,
               "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
+              "max_drawdown_pct": -49.9,
               "model_mae": 0
             },
             {
               "key": "continuation",
               "label": "前日方向継続",
-              "sample_count": 600,
-              "directional_accuracy": 0.34,
-              "balanced_accuracy": 0.31,
-              "brier_score": 0.26,
-              "avg_strategy_return_pct": -0.21,
-              "risk_adjusted_return_pct": -0.26,
-              "max_drawdown_pct": -162.86,
+              "sample_count": 4990,
+              "directional_accuracy": 0.32,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.21,
+              "avg_strategy_return_pct": -0.08,
+              "risk_adjusted_return_pct": -0.13,
+              "max_drawdown_pct": -417.34,
               "model_mae": 0
             },
             {
               "key": "ema_cross",
               "label": "EMAクロス",
-              "sample_count": 600,
-              "directional_accuracy": 0.48,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.25,
-              "avg_strategy_return_pct": 0.18,
-              "risk_adjusted_return_pct": 0.13,
-              "max_drawdown_pct": -72.06,
+              "sample_count": 4990,
+              "directional_accuracy": 0.29,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.22,
+              "avg_strategy_return_pct": -0.07,
+              "risk_adjusted_return_pct": -0.12,
+              "max_drawdown_pct": -362.25,
               "model_mae": 0
             },
             {
               "key": "vwap_side",
               "label": "VWAP位置",
-              "sample_count": 600,
-              "directional_accuracy": 0.5,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.24,
-              "avg_strategy_return_pct": 0.31,
-              "risk_adjusted_return_pct": 0.26,
-              "max_drawdown_pct": -72.06,
+              "sample_count": 2376,
+              "directional_accuracy": 0.31,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.21,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -102.85,
               "model_mae": 0
             },
             {
               "key": "atr_range",
               "label": "単純ATRレンジ",
-              "sample_count": 600,
-              "directional_accuracy": 0.15,
+              "sample_count": 4990,
+              "directional_accuracy": 0.4,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.21,
+              "brier_score": 0.15,
               "avg_strategy_return_pct": -0.01,
               "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
+              "max_drawdown_pct": -49.9,
               "model_mae": 0
             },
             {
               "key": "random",
               "label": "ランダム基準",
-              "sample_count": 600,
-              "directional_accuracy": 0.43,
-              "balanced_accuracy": 0.34,
-              "brier_score": 0.27,
-              "avg_strategy_return_pct": -0.13,
-              "risk_adjusted_return_pct": -0.18,
-              "max_drawdown_pct": -110.74,
+              "sample_count": 4990,
+              "directional_accuracy": 0.3,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.21,
+              "avg_strategy_return_pct": -0.04,
+              "risk_adjusted_return_pct": -0.09,
+              "max_drawdown_pct": -301.97,
               "model_mae": 0
             },
             {
               "key": "model",
               "label": "現行モデル",
-              "sample_count": 600,
-              "directional_accuracy": 0.29,
-              "balanced_accuracy": 0.37,
-              "brier_score": 0.23,
-              "avg_strategy_return_pct": 0.07,
-              "risk_adjusted_return_pct": 0.02,
-              "max_drawdown_pct": -17.08,
-              "model_mae": 1.79
+              "sample_count": 4990,
+              "directional_accuracy": 0.39,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.16,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -136.87,
+              "model_mae": 0.84
             }
           ],
           "best_baseline": {
             "key": "always_up",
             "label": "常に上昇",
-            "sample_count": 600,
-            "directional_accuracy": 0.5,
+            "sample_count": 4990,
+            "directional_accuracy": 0.33,
             "balanced_accuracy": 0.33,
-            "brier_score": 0.24,
-            "avg_strategy_return_pct": 0.31,
-            "risk_adjusted_return_pct": 0.26,
-            "max_drawdown_pct": -72.06,
+            "brier_score": 0.2,
+            "avg_strategy_return_pct": 0.0,
+            "risk_adjusted_return_pct": -0.05,
+            "max_drawdown_pct": -81.23,
             "model_mae": 0
           }
         },
-        "continuation_directional_accuracy": 0.49,
-        "zero_prediction_mae": 1.77,
-        "model_mae": 1.79,
-        "mae_improvement_rate": -0.01
+        "continuation_directional_accuracy": 0.37,
+        "zero_prediction_mae": 0.74,
+        "model_mae": 0.84,
+        "mae_improvement_rate": -0.14
       },
       "state_summaries": [
         {
           "state_key": "bull_trend_continuation",
           "state_label": "上昇継続",
-          "total_predictions": 416,
-          "directional_accuracy": 0.59,
-          "target_t1_hit_rate": 0.86,
-          "invalidation_rate": 0.08,
-          "avg_return_pct": 0.36,
-          "expected_return_pct": 0.25,
-          "avg_mfe_pct": 1.8,
-          "avg_mae_pct": -2.04
-        },
-        {
-          "state_key": "return_sell",
-          "state_label": "戻り売り",
-          "total_predictions": 47,
-          "directional_accuracy": 0.4,
-          "target_t1_hit_rate": 0.89,
-          "invalidation_rate": 0.09,
-          "avg_return_pct": -0.02,
-          "expected_return_pct": 0.28,
-          "avg_mfe_pct": 2.38,
-          "avg_mae_pct": -2.73
-        },
-        {
-          "state_key": "exhaustion_top",
-          "state_label": "過熱・反落警戒",
-          "total_predictions": 39,
-          "directional_accuracy": 0.49,
-          "target_t1_hit_rate": 0.97,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -0.64,
-          "expected_return_pct": 0.08,
-          "avg_mfe_pct": 1.1,
-          "avg_mae_pct": -2.39
-        },
-        {
-          "state_key": "range_neutral",
-          "state_label": "レンジ中立",
-          "total_predictions": 38,
-          "directional_accuracy": 0.21,
-          "target_t1_hit_rate": 0.84,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.75,
-          "expected_return_pct": 0.41,
-          "avg_mfe_pct": 2.18,
-          "avg_mae_pct": -1.78
-        },
-        {
-          "state_key": "breakout_pending",
-          "state_label": "ブレイク待ち",
-          "total_predictions": 18,
-          "directional_accuracy": 0.17,
-          "target_t1_hit_rate": 1.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.6,
-          "expected_return_pct": 0.21,
-          "avg_mfe_pct": 2.12,
-          "avg_mae_pct": -1.44
+          "total_predictions": 2235,
+          "directional_accuracy": 0.41,
+          "target_t1_hit_rate": 0.25,
+          "invalidation_rate": 0.15,
+          "avg_return_pct": 0.01,
+          "expected_return_pct": 0.12,
+          "avg_mfe_pct": 0.75,
+          "avg_mae_pct": -0.91
         },
         {
           "state_key": "bear_trend_continuation",
           "state_label": "下落継続",
-          "total_predictions": 15,
-          "directional_accuracy": 0.4,
-          "target_t1_hit_rate": 0.87,
-          "invalidation_rate": 0.13,
-          "avg_return_pct": 1.51,
-          "expected_return_pct": 0.25,
-          "avg_mfe_pct": 2.07,
-          "avg_mae_pct": -4.36
+          "total_predictions": 781,
+          "directional_accuracy": 0.35,
+          "target_t1_hit_rate": 0.2,
+          "invalidation_rate": 0.06,
+          "avg_return_pct": 0.1,
+          "expected_return_pct": 0.26,
+          "avg_mfe_pct": 1.22,
+          "avg_mae_pct": -1.27
         },
         {
-          "state_key": "short_covering",
-          "state_label": "買い戻し",
-          "total_predictions": 15,
-          "directional_accuracy": 0.6,
-          "target_t1_hit_rate": 0.8,
-          "invalidation_rate": 0.2,
-          "avg_return_pct": 0.93,
-          "expected_return_pct": 0.41,
-          "avg_mfe_pct": 2.11,
-          "avg_mae_pct": -6.42
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "total_predictions": 570,
+          "directional_accuracy": 0.35,
+          "target_t1_hit_rate": 0.21,
+          "invalidation_rate": 0.06,
+          "avg_return_pct": 0.06,
+          "expected_return_pct": 0.23,
+          "avg_mfe_pct": 1.02,
+          "avg_mae_pct": -1.05
         },
         {
           "state_key": "dip_buy",
           "state_label": "押し目買い",
-          "total_predictions": 8,
-          "directional_accuracy": 0.88,
-          "target_t1_hit_rate": 0.75,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 2.45,
-          "expected_return_pct": 0.2,
-          "avg_mfe_pct": 3.27,
-          "avg_mae_pct": -2.08
+          "total_predictions": 514,
+          "directional_accuracy": 0.44,
+          "target_t1_hit_rate": 0.15,
+          "invalidation_rate": 0.11,
+          "avg_return_pct": 0.07,
+          "expected_return_pct": 0.07,
+          "avg_mfe_pct": 0.86,
+          "avg_mae_pct": -0.94
         },
         {
-          "state_key": "bull_impulse",
-          "state_label": "突発上昇",
-          "total_predictions": 4,
-          "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.75,
-          "invalidation_rate": 0.25,
-          "avg_return_pct": -0.86,
-          "expected_return_pct": 0.37,
-          "avg_mfe_pct": 0.99,
-          "avg_mae_pct": -2.45
+          "state_key": "range_neutral",
+          "state_label": "レンジ中立",
+          "total_predictions": 366,
+          "directional_accuracy": 0.42,
+          "target_t1_hit_rate": 0.34,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.11,
+          "expected_return_pct": 0.32,
+          "avg_mfe_pct": 0.92,
+          "avg_mae_pct": -1.0
+        },
+        {
+          "state_key": "breakout_pending",
+          "state_label": "ブレイク待ち",
+          "total_predictions": 297,
+          "directional_accuracy": 0.37,
+          "target_t1_hit_rate": 0.39,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.13,
+          "expected_return_pct": 0.12,
+          "avg_mfe_pct": 1.08,
+          "avg_mae_pct": -0.99
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "total_predictions": 124,
+          "directional_accuracy": 0.37,
+          "target_t1_hit_rate": 0.48,
+          "invalidation_rate": 0.1,
+          "avg_return_pct": -0.07,
+          "expected_return_pct": -0.01,
+          "avg_mfe_pct": 0.77,
+          "avg_mae_pct": -1.19
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "total_predictions": 58,
+          "directional_accuracy": 0.43,
+          "target_t1_hit_rate": 0.21,
+          "invalidation_rate": 0.16,
+          "avg_return_pct": 0.22,
+          "expected_return_pct": 0.21,
+          "avg_mfe_pct": 0.91,
+          "avg_mae_pct": -2.2
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "total_predictions": 34,
+          "directional_accuracy": 0.21,
+          "target_t1_hit_rate": 0.56,
+          "invalidation_rate": 0.12,
+          "avg_return_pct": 0.82,
+          "expected_return_pct": 0.39,
+          "avg_mfe_pct": 2.69,
+          "avg_mae_pct": -2.55
         },
         {
           "state_key": "bear_impulse",
           "state_label": "突発下落",
-          "total_predictions": 3,
-          "directional_accuracy": 0.33,
-          "target_t1_hit_rate": 1.0,
+          "total_predictions": 13,
+          "directional_accuracy": 0.46,
+          "target_t1_hit_rate": 0.46,
           "invalidation_rate": 0.0,
-          "avg_return_pct": 2.17,
-          "expected_return_pct": -0.09,
-          "avg_mfe_pct": 2.76,
-          "avg_mae_pct": -3.59
+          "avg_return_pct": -0.62,
+          "expected_return_pct": -0.06,
+          "avg_mfe_pct": 3.3,
+          "avg_mae_pct": -2.0
         },
         {
-          "state_key": "limited_reference",
-          "state_label": "参考表示",
-          "total_predictions": 1,
-          "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -3.52,
-          "expected_return_pct": 0,
-          "avg_mfe_pct": 0,
-          "avg_mae_pct": -6.48
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "total_predictions": 7,
+          "directional_accuracy": 0.29,
+          "target_t1_hit_rate": 0.43,
+          "invalidation_rate": 0.43,
+          "avg_return_pct": -0.56,
+          "expected_return_pct": 0.29,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -2.06
+        }
+      ],
+      "state_direction_summaries": [
+        {
+          "state_key": "bull_trend_continuation",
+          "state_label": "上昇継続",
+          "direction": "up",
+          "total_predictions": 1725,
+          "directional_accuracy": 0.4,
+          "avg_return_pct": -0.0,
+          "avg_mfe_pct": 0.76,
+          "avg_mae_pct": -0.82
+        },
+        {
+          "state_key": "bear_trend_continuation",
+          "state_label": "下落継続",
+          "direction": "down",
+          "total_predictions": 411,
+          "directional_accuracy": 0.36,
+          "avg_return_pct": 0.19,
+          "avg_mfe_pct": 1.26,
+          "avg_mae_pct": -1.32
+        },
+        {
+          "state_key": "dip_buy",
+          "state_label": "押し目買い",
+          "direction": "up",
+          "total_predictions": 383,
+          "directional_accuracy": 0.44,
+          "avg_return_pct": 0.1,
+          "avg_mfe_pct": 0.89,
+          "avg_mae_pct": -0.89
+        },
+        {
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "direction": "down",
+          "total_predictions": 296,
+          "directional_accuracy": 0.33,
+          "avg_return_pct": 0.06,
+          "avg_mfe_pct": 1.03,
+          "avg_mae_pct": -1.15
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "direction": "up",
+          "total_predictions": 93,
+          "directional_accuracy": 0.34,
+          "avg_return_pct": -0.13,
+          "avg_mfe_pct": 0.78,
+          "avg_mae_pct": -1.23
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "direction": "up",
+          "total_predictions": 52,
+          "directional_accuracy": 0.44,
+          "avg_return_pct": 0.22,
+          "avg_mfe_pct": 0.83,
+          "avg_mae_pct": -0.91
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "direction": "down",
+          "total_predictions": 21,
+          "directional_accuracy": 0.29,
+          "avg_return_pct": 0.33,
+          "avg_mfe_pct": 2.27,
+          "avg_mae_pct": -3.53
+        },
+        {
+          "state_key": "bear_impulse",
+          "state_label": "突発下落",
+          "direction": "down",
+          "total_predictions": 8,
+          "directional_accuracy": 0.62,
+          "avg_return_pct": -1.38,
+          "avg_mfe_pct": 3.69,
+          "avg_mae_pct": -1.94
+        },
+        {
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "direction": "up",
+          "total_predictions": 7,
+          "directional_accuracy": 0.29,
+          "avg_return_pct": -0.56,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -2.06
         }
       ],
       "calibration_rows": [
         {
           "bucket": "-1.0%未満",
-          "sample_count": 3,
-          "avg_expected_pct": -1.16,
-          "avg_realized_pct": 0.8,
-          "avg_error_pct": 1.96,
+          "sample_count": 2,
+          "avg_expected_pct": -1.2,
+          "avg_realized_pct": -1.62,
+          "avg_error_pct": -0.42,
           "sample_quality": "insufficient"
         },
         {
           "bucket": "-1.0%〜-0.5%",
-          "sample_count": 40,
-          "avg_expected_pct": -0.67,
-          "avg_realized_pct": 0.41,
-          "avg_error_pct": 1.07,
-          "sample_quality": "reliable"
+          "sample_count": 22,
+          "avg_expected_pct": -0.6,
+          "avg_realized_pct": 0.24,
+          "avg_error_pct": 0.84,
+          "sample_quality": "usable"
         },
         {
           "bucket": "-0.5%〜0.0%",
-          "sample_count": 99,
-          "avg_expected_pct": -0.24,
-          "avg_realized_pct": 0.45,
-          "avg_error_pct": 0.69,
+          "sample_count": 632,
+          "avg_expected_pct": -0.2,
+          "avg_realized_pct": 0.11,
+          "avg_error_pct": 0.31,
           "sample_quality": "reliable"
         },
         {
           "bucket": "0.0%〜0.5%",
-          "sample_count": 271,
-          "avg_expected_pct": 0.27,
-          "avg_realized_pct": 0.28,
-          "avg_error_pct": 0.0,
+          "sample_count": 1021,
+          "avg_expected_pct": 0.23,
+          "avg_realized_pct": 0.08,
+          "avg_error_pct": -0.15,
           "sample_quality": "reliable"
         },
         {
           "bucket": "0.5%〜1.0%",
-          "sample_count": 169,
-          "avg_expected_pct": 0.63,
-          "avg_realized_pct": 0.35,
-          "avg_error_pct": -0.28,
+          "sample_count": 296,
+          "avg_expected_pct": 0.65,
+          "avg_realized_pct": -0.12,
+          "avg_error_pct": -0.77,
           "sample_quality": "reliable"
         },
         {
           "bucket": "1.0%以上",
-          "sample_count": 18,
-          "avg_expected_pct": 1.37,
-          "avg_realized_pct": 1.11,
-          "avg_error_pct": -0.26,
+          "sample_count": 27,
+          "avg_expected_pct": 1.24,
+          "avg_realized_pct": 0.74,
+          "avg_error_pct": -0.5,
           "sample_quality": "usable"
         }
       ],
       "confidence_calibration_rows": [
         {
           "bucket": "50未満",
-          "sample_count": 190,
-          "directional_accuracy": 0.47,
-          "target_t1_hit_rate": 0.96,
-          "avg_return_pct": 0.12,
+          "sample_count": 272,
+          "directional_accuracy": 0.4,
+          "target_t1_hit_rate": 0.36,
+          "avg_return_pct": 0.18,
           "sample_quality": "reliable"
         },
         {
           "bucket": "50台",
-          "sample_count": 211,
-          "directional_accuracy": 0.54,
-          "target_t1_hit_rate": 0.95,
-          "avg_return_pct": 0.6,
+          "sample_count": 534,
+          "directional_accuracy": 0.41,
+          "target_t1_hit_rate": 0.35,
+          "avg_return_pct": 0.07,
           "sample_quality": "reliable"
         },
         {
           "bucket": "60台",
-          "sample_count": 138,
-          "directional_accuracy": 0.57,
-          "target_t1_hit_rate": 0.71,
-          "avg_return_pct": 0.44,
+          "sample_count": 1051,
+          "directional_accuracy": 0.38,
+          "target_t1_hit_rate": 0.33,
+          "avg_return_pct": 0.03,
           "sample_quality": "reliable"
         },
         {
           "bucket": "70台",
-          "sample_count": 61,
-          "directional_accuracy": 0.56,
-          "target_t1_hit_rate": 0.69,
+          "sample_count": 143,
+          "directional_accuracy": 0.42,
+          "target_t1_hit_rate": 0.35,
           "avg_return_pct": 0.09,
           "sample_quality": "reliable"
         }
@@ -941,160 +469,160 @@
         "walk_forward": [
           {
             "label": "WF1",
-            "sample_count": 200,
-            "directional_accuracy": 0.55,
-            "avg_return_pct": 0.51,
-            "target_t1_hit_rate": 0.92,
+            "sample_count": 1000,
+            "directional_accuracy": 0.4,
+            "avg_return_pct": 0.03,
+            "target_t1_hit_rate": 0.17,
             "sample_quality": "reliable"
           },
           {
             "label": "WF2",
-            "sample_count": 200,
-            "directional_accuracy": 0.51,
-            "avg_return_pct": 0.46,
-            "target_t1_hit_rate": 0.85,
+            "sample_count": 1000,
+            "directional_accuracy": 0.39,
+            "avg_return_pct": 0.02,
+            "target_t1_hit_rate": 0.24,
             "sample_quality": "reliable"
           },
           {
             "label": "WF3",
-            "sample_count": 200,
-            "directional_accuracy": 0.53,
-            "avg_return_pct": 0.11,
-            "target_t1_hit_rate": 0.84,
+            "sample_count": 1000,
+            "directional_accuracy": 0.39,
+            "avg_return_pct": 0.05,
+            "target_t1_hit_rate": 0.24,
             "sample_quality": "reliable"
           }
         ],
         "period_splits": [
           {
             "label": "前半",
-            "sample_count": 300,
-            "directional_accuracy": 0.52,
-            "avg_return_pct": 0.5,
-            "target_t1_hit_rate": 0.9,
+            "sample_count": 1500,
+            "directional_accuracy": 0.41,
+            "avg_return_pct": 0.03,
+            "target_t1_hit_rate": 0.18,
             "sample_quality": "reliable"
           },
           {
             "label": "後半",
-            "sample_count": 300,
-            "directional_accuracy": 0.53,
-            "avg_return_pct": 0.22,
-            "target_t1_hit_rate": 0.84,
+            "sample_count": 1500,
+            "directional_accuracy": 0.38,
+            "avg_return_pct": 0.04,
+            "target_t1_hit_rate": 0.25,
             "sample_quality": "reliable"
           }
         ],
         "recent_window": {
           "label": "直近60日",
-          "sample_count": 63,
-          "directional_accuracy": 0.44,
-          "avg_return_pct": -0.42,
-          "target_t1_hit_rate": 0.87,
+          "sample_count": 30,
+          "directional_accuracy": 0.47,
+          "avg_return_pct": 0.13,
+          "target_t1_hit_rate": 0.3,
           "sample_quality": "reliable"
         },
         "volatility_regimes": [
           {
             "label": "低ボラ",
-            "sample_count": 4,
-            "directional_accuracy": 1.0,
-            "avg_return_pct": 2.42,
-            "target_t1_hit_rate": 1.0,
-            "sample_quality": "insufficient"
+            "sample_count": 462,
+            "directional_accuracy": 0.44,
+            "avg_return_pct": -0.02,
+            "target_t1_hit_rate": 0.27,
+            "sample_quality": "reliable"
           },
           {
             "label": "通常",
-            "sample_count": 364,
-            "directional_accuracy": 0.53,
-            "avg_return_pct": 0.43,
-            "target_t1_hit_rate": 0.88,
+            "sample_count": 1867,
+            "directional_accuracy": 0.4,
+            "avg_return_pct": -0.01,
+            "target_t1_hit_rate": 0.21,
             "sample_quality": "reliable"
           },
           {
             "label": "高ボラ",
-            "sample_count": 232,
-            "directional_accuracy": 0.51,
-            "avg_return_pct": 0.22,
-            "target_t1_hit_rate": 0.86,
+            "sample_count": 671,
+            "directional_accuracy": 0.33,
+            "avg_return_pct": 0.18,
+            "target_t1_hit_rate": 0.19,
             "sample_quality": "reliable"
           }
         ],
         "market_regimes": [
           {
             "label": "ブレイク待ち",
-            "sample_count": 18,
-            "directional_accuracy": 0.17,
-            "avg_return_pct": 0.6,
-            "target_t1_hit_rate": 1.0,
-            "sample_quality": "usable"
+            "sample_count": 198,
+            "directional_accuracy": 0.38,
+            "avg_return_pct": 0.09,
+            "target_t1_hit_rate": 0.44,
+            "sample_quality": "reliable"
           },
           {
             "label": "レンジ中立",
-            "sample_count": 38,
-            "directional_accuracy": 0.21,
-            "avg_return_pct": 0.75,
-            "target_t1_hit_rate": 0.84,
+            "sample_count": 223,
+            "directional_accuracy": 0.39,
+            "avg_return_pct": 0.09,
+            "target_t1_hit_rate": 0.3,
             "sample_quality": "reliable"
           },
           {
             "label": "上昇継続",
-            "sample_count": 413,
-            "directional_accuracy": 0.59,
-            "avg_return_pct": 0.35,
-            "target_t1_hit_rate": 0.86,
+            "sample_count": 1244,
+            "directional_accuracy": 0.41,
+            "avg_return_pct": -0.01,
+            "target_t1_hit_rate": 0.2,
             "sample_quality": "reliable"
           },
           {
             "label": "下落継続",
-            "sample_count": 15,
-            "directional_accuracy": 0.4,
-            "avg_return_pct": 1.51,
-            "target_t1_hit_rate": 0.87,
+            "sample_count": 590,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": 0.06,
+            "target_t1_hit_rate": 0.19,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "売られすぎ・反発警戒",
+            "sample_count": 21,
+            "directional_accuracy": 0.19,
+            "avg_return_pct": 0.2,
+            "target_t1_hit_rate": 0.52,
             "sample_quality": "usable"
           },
           {
             "label": "戻り売り",
-            "sample_count": 47,
-            "directional_accuracy": 0.4,
-            "avg_return_pct": -0.02,
-            "target_t1_hit_rate": 0.89,
+            "sample_count": 324,
+            "directional_accuracy": 0.36,
+            "avg_return_pct": 0.03,
+            "target_t1_hit_rate": 0.18,
             "sample_quality": "reliable"
           },
           {
             "label": "押し目買い",
-            "sample_count": 8,
-            "directional_accuracy": 0.88,
-            "avg_return_pct": 2.45,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "突発上昇",
-            "sample_count": 4,
-            "directional_accuracy": 0.0,
-            "avg_return_pct": -0.86,
-            "target_t1_hit_rate": 0.75,
-            "sample_quality": "insufficient"
+            "sample_count": 326,
+            "directional_accuracy": 0.43,
+            "avg_return_pct": 0.06,
+            "target_t1_hit_rate": 0.14,
+            "sample_quality": "reliable"
           },
           {
             "label": "突発下落",
-            "sample_count": 3,
-            "directional_accuracy": 0.33,
-            "avg_return_pct": 2.17,
-            "target_t1_hit_rate": 1.0,
+            "sample_count": 2,
+            "directional_accuracy": 0.0,
+            "avg_return_pct": 0.64,
+            "target_t1_hit_rate": 0.0,
             "sample_quality": "insufficient"
           },
           {
             "label": "買い戻し",
-            "sample_count": 15,
-            "directional_accuracy": 0.6,
-            "avg_return_pct": 0.93,
-            "target_t1_hit_rate": 0.8,
+            "sample_count": 26,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": 0.08,
+            "target_t1_hit_rate": 0.27,
             "sample_quality": "usable"
           },
           {
             "label": "過熱・反落警戒",
-            "sample_count": 39,
-            "directional_accuracy": 0.49,
-            "avg_return_pct": -0.64,
-            "target_t1_hit_rate": 0.97,
+            "sample_count": 46,
+            "directional_accuracy": 0.5,
+            "avg_return_pct": 0.02,
+            "target_t1_hit_rate": 0.24,
             "sample_quality": "reliable"
           }
         ]
@@ -1102,410 +630,502 @@
       "improvement_insights": [
         {
           "severity": "high",
-          "title": "戻り売りの方向判定を見直し",
-          "detail": "方向一致率が40%で低めです。",
+          "title": "上昇継続の方向判定を見直し",
+          "detail": "方向一致率が41%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 40%"
-        },
-        {
-          "severity": "high",
-          "title": "レンジ中立の方向判定を見直し",
-          "detail": "方向一致率が21%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 21%"
-        },
-        {
-          "severity": "high",
-          "title": "ブレイク待ちの方向判定を見直し",
-          "detail": "方向一致率が17%で低めです。",
-          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 17%"
+          "metric": "方向 41%"
         },
         {
           "severity": "high",
           "title": "下落継続の方向判定を見直し",
-          "detail": "方向一致率が40%で低めです。",
+          "detail": "方向一致率が35%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 40%"
+          "metric": "方向 35%"
         },
         {
-          "severity": "middle",
-          "title": "過熱・反落警戒の期待値を確認",
-          "detail": "平均損益が-0.64%です。",
-          "suggestion": "この局面では信頼度を下げるか、様子見に寄せる条件を追加してください。",
-          "metric": "平均 -0.64%"
+          "severity": "high",
+          "title": "戻り売りの方向判定を見直し",
+          "detail": "方向一致率が35%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 35%"
         },
         {
-          "severity": "info",
-          "title": "突発上昇は件数不足",
-          "detail": "検証数が4件で、まだ判断がぶれやすい状態です。",
-          "suggestion": "この局面は配点変更より、先にサンプルを増やしてください。",
-          "metric": "4件"
+          "severity": "high",
+          "title": "押し目買いの方向判定を見直し",
+          "detail": "方向一致率が44%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 44%"
+        },
+        {
+          "severity": "high",
+          "title": "レンジ中立の方向判定を見直し",
+          "detail": "方向一致率が42%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 42%"
+        },
+        {
+          "severity": "high",
+          "title": "ブレイク待ちの方向判定を見直し",
+          "detail": "方向一致率が37%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 37%"
         }
       ]
     },
-    "5d": {
+    "3d": {
       "summary": {
-        "total_predictions": 600,
-        "directional_accuracy": 0.49,
-        "model_directional_accuracy": 0.49,
-        "target_t1_hit_rate": 0.93,
-        "target_t2_hit_rate": 0.81,
-        "invalidation_rate": 0.1,
-        "avg_return_pct": 0.6,
-        "median_return_pct": 0.52,
-        "avg_mfe_pct": 2.54,
-        "avg_mae_pct": -3.19,
-        "avg_confidence_score": 54.7,
-        "median_mae_pct": -1.69,
-        "median_mfe_pct": 1.82,
+        "total_predictions": 4980,
+        "directional_accuracy": 0.36,
+        "model_directional_accuracy": 0.36,
+        "target_t1_hit_rate": 0.47,
+        "target_t2_hit_rate": 0.25,
+        "invalidation_rate": 0.17,
+        "avg_return_pct": 0.09,
+        "median_return_pct": 0.18,
+        "avg_mfe_pct": 1.4,
+        "avg_mae_pct": -1.46,
+        "avg_confidence_score": 64.3,
+        "median_mae_pct": -1.08,
+        "median_mfe_pct": 1.08,
         "sample_quality": "reliable",
         "statistical_warning": "",
         "baseline_comparison": {
-          "sample_count": 600,
+          "sample_count": 4980,
           "rows": [
             {
               "key": "always_up",
               "label": "常に上昇",
-              "sample_count": 600,
-              "directional_accuracy": 0.54,
+              "sample_count": 4980,
+              "directional_accuracy": 0.46,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.24,
-              "avg_strategy_return_pct": 0.55,
-              "risk_adjusted_return_pct": 0.5,
-              "max_drawdown_pct": -78.85,
+              "brier_score": 0.25,
+              "avg_strategy_return_pct": 0.04,
+              "risk_adjusted_return_pct": -0.01,
+              "max_drawdown_pct": -126.82,
               "model_mae": 0
             },
             {
               "key": "always_down",
               "label": "常に下落",
-              "sample_count": 600,
-              "directional_accuracy": 0.36,
+              "sample_count": 4980,
+              "directional_accuracy": 0.38,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.33,
-              "avg_strategy_return_pct": -0.65,
-              "risk_adjusted_return_pct": -0.7,
-              "max_drawdown_pct": -402.13,
+              "brier_score": 0.29,
+              "avg_strategy_return_pct": -0.14,
+              "risk_adjusted_return_pct": -0.19,
+              "max_drawdown_pct": -778.93,
               "model_mae": 0
             },
             {
               "key": "always_neutral",
               "label": "常に中立",
-              "sample_count": 600,
-              "directional_accuracy": 0.1,
+              "sample_count": 4980,
+              "directional_accuracy": 0.17,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.22,
+              "brier_score": 0.21,
               "avg_strategy_return_pct": -0.01,
               "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
+              "max_drawdown_pct": -49.8,
               "model_mae": 0
             },
             {
               "key": "continuation",
               "label": "前日方向継続",
-              "sample_count": 600,
-              "directional_accuracy": 0.34,
-              "balanced_accuracy": 0.31,
-              "brier_score": 0.28,
-              "avg_strategy_return_pct": -0.01,
-              "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -76.87,
+              "sample_count": 4980,
+              "directional_accuracy": 0.36,
+              "balanced_accuracy": 0.34,
+              "brier_score": 0.26,
+              "avg_strategy_return_pct": -0.05,
+              "risk_adjusted_return_pct": -0.1,
+              "max_drawdown_pct": -315.52,
               "model_mae": 0
             },
             {
               "key": "ema_cross",
               "label": "EMAクロス",
-              "sample_count": 600,
-              "directional_accuracy": 0.5,
+              "sample_count": 4980,
+              "directional_accuracy": 0.42,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.26,
-              "avg_strategy_return_pct": 0.3,
-              "risk_adjusted_return_pct": 0.25,
-              "max_drawdown_pct": -78.85,
+              "brier_score": 0.27,
+              "avg_strategy_return_pct": -0.05,
+              "risk_adjusted_return_pct": -0.1,
+              "max_drawdown_pct": -383.44,
               "model_mae": 0
             },
             {
               "key": "vwap_side",
               "label": "VWAP位置",
-              "sample_count": 600,
-              "directional_accuracy": 0.54,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.24,
-              "avg_strategy_return_pct": 0.55,
-              "risk_adjusted_return_pct": 0.5,
-              "max_drawdown_pct": -78.85,
+              "sample_count": 2376,
+              "directional_accuracy": 0.43,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.26,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -182.95,
               "model_mae": 0
             },
             {
               "key": "atr_range",
               "label": "単純ATRレンジ",
-              "sample_count": 600,
-              "directional_accuracy": 0.1,
+              "sample_count": 4980,
+              "directional_accuracy": 0.17,
               "balanced_accuracy": 0.33,
-              "brier_score": 0.22,
+              "brier_score": 0.21,
               "avg_strategy_return_pct": -0.01,
               "risk_adjusted_return_pct": -0.06,
-              "max_drawdown_pct": -6.0,
+              "max_drawdown_pct": -49.8,
               "model_mae": 0
             },
             {
               "key": "random",
               "label": "ランダム基準",
-              "sample_count": 600,
-              "directional_accuracy": 0.46,
+              "sample_count": 4980,
+              "directional_accuracy": 0.43,
               "balanced_accuracy": 0.34,
-              "brier_score": 0.28,
-              "avg_strategy_return_pct": -0.18,
-              "risk_adjusted_return_pct": -0.23,
-              "max_drawdown_pct": -112.18,
+              "brier_score": 0.26,
+              "avg_strategy_return_pct": -0.02,
+              "risk_adjusted_return_pct": -0.07,
+              "max_drawdown_pct": -143.75,
               "model_mae": 0
             },
             {
               "key": "model",
               "label": "現行モデル",
-              "sample_count": 600,
+              "sample_count": 4980,
               "directional_accuracy": 0.28,
-              "balanced_accuracy": 0.33,
-              "brier_score": 0.26,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.23,
               "avg_strategy_return_pct": -0.03,
               "risk_adjusted_return_pct": -0.08,
-              "max_drawdown_pct": -77.81,
-              "model_mae": 2.33
+              "max_drawdown_pct": -167.36,
+              "model_mae": 1.46
             }
           ],
           "best_baseline": {
             "key": "always_up",
             "label": "常に上昇",
-            "sample_count": 600,
-            "directional_accuracy": 0.54,
+            "sample_count": 4980,
+            "directional_accuracy": 0.46,
             "balanced_accuracy": 0.33,
-            "brier_score": 0.24,
-            "avg_strategy_return_pct": 0.55,
-            "risk_adjusted_return_pct": 0.5,
-            "max_drawdown_pct": -78.85,
+            "brier_score": 0.25,
+            "avg_strategy_return_pct": 0.04,
+            "risk_adjusted_return_pct": -0.01,
+            "max_drawdown_pct": -126.82,
             "model_mae": 0
           }
         },
         "continuation_directional_accuracy": 0.48,
-        "zero_prediction_mae": 2.28,
-        "model_mae": 2.33,
-        "mae_improvement_rate": -0.02
+        "zero_prediction_mae": 1.37,
+        "model_mae": 1.46,
+        "mae_improvement_rate": -0.07
       },
       "state_summaries": [
         {
           "state_key": "bull_trend_continuation",
           "state_label": "上昇継続",
-          "total_predictions": 416,
-          "directional_accuracy": 0.61,
-          "target_t1_hit_rate": 0.92,
-          "invalidation_rate": 0.12,
-          "avg_return_pct": 0.85,
-          "expected_return_pct": 0.31,
-          "avg_mfe_pct": 2.38,
-          "avg_mae_pct": -2.64
-        },
-        {
-          "state_key": "return_sell",
-          "state_label": "戻り売り",
-          "total_predictions": 47,
-          "directional_accuracy": 0.32,
-          "target_t1_hit_rate": 0.98,
-          "invalidation_rate": 0.13,
-          "avg_return_pct": 0.77,
-          "expected_return_pct": 0.35,
-          "avg_mfe_pct": 4.4,
-          "avg_mae_pct": -3.21
-        },
-        {
-          "state_key": "exhaustion_top",
-          "state_label": "過熱・反落警戒",
-          "total_predictions": 39,
-          "directional_accuracy": 0.15,
-          "target_t1_hit_rate": 0.97,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -1.66,
-          "expected_return_pct": 0.1,
-          "avg_mfe_pct": 1.26,
-          "avg_mae_pct": -3.33
-        },
-        {
-          "state_key": "range_neutral",
-          "state_label": "レンジ中立",
-          "total_predictions": 38,
-          "directional_accuracy": 0.03,
-          "target_t1_hit_rate": 0.92,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 1.25,
-          "expected_return_pct": 0.52,
-          "avg_mfe_pct": 3.0,
-          "avg_mae_pct": -3.94
-        },
-        {
-          "state_key": "breakout_pending",
-          "state_label": "ブレイク待ち",
-          "total_predictions": 18,
-          "directional_accuracy": 0.22,
-          "target_t1_hit_rate": 1.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -3.4,
-          "expected_return_pct": 0.26,
-          "avg_mfe_pct": 2.91,
-          "avg_mae_pct": -5.91
+          "total_predictions": 2224,
+          "directional_accuracy": 0.45,
+          "target_t1_hit_rate": 0.5,
+          "invalidation_rate": 0.25,
+          "avg_return_pct": 0.06,
+          "expected_return_pct": 0.19,
+          "avg_mfe_pct": 1.17,
+          "avg_mae_pct": -1.25
         },
         {
           "state_key": "bear_trend_continuation",
           "state_label": "下落継続",
-          "total_predictions": 15,
-          "directional_accuracy": 0.33,
-          "target_t1_hit_rate": 1.0,
-          "invalidation_rate": 0.13,
-          "avg_return_pct": 1.3,
-          "expected_return_pct": 0.31,
-          "avg_mfe_pct": 2.58,
-          "avg_mae_pct": -4.58
+          "total_predictions": 780,
+          "directional_accuracy": 0.28,
+          "target_t1_hit_rate": 0.36,
+          "invalidation_rate": 0.11,
+          "avg_return_pct": 0.13,
+          "expected_return_pct": 0.43,
+          "avg_mfe_pct": 1.79,
+          "avg_mae_pct": -1.86
         },
         {
-          "state_key": "short_covering",
-          "state_label": "買い戻し",
-          "total_predictions": 15,
-          "directional_accuracy": 0.47,
-          "target_t1_hit_rate": 0.93,
-          "invalidation_rate": 0.27,
-          "avg_return_pct": 1.1,
-          "expected_return_pct": 0.51,
-          "avg_mfe_pct": 2.63,
-          "avg_mae_pct": -12.04
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "total_predictions": 569,
+          "directional_accuracy": 0.29,
+          "target_t1_hit_rate": 0.37,
+          "invalidation_rate": 0.11,
+          "avg_return_pct": 0.09,
+          "expected_return_pct": 0.39,
+          "avg_mfe_pct": 1.54,
+          "avg_mae_pct": -1.54
         },
         {
           "state_key": "dip_buy",
           "state_label": "押し目買い",
-          "total_predictions": 8,
-          "directional_accuracy": 0.88,
-          "target_t1_hit_rate": 0.88,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 3.03,
-          "expected_return_pct": 0.25,
-          "avg_mfe_pct": 3.81,
-          "avg_mae_pct": -2.08
+          "total_predictions": 513,
+          "directional_accuracy": 0.49,
+          "target_t1_hit_rate": 0.35,
+          "invalidation_rate": 0.17,
+          "avg_return_pct": 0.14,
+          "expected_return_pct": 0.12,
+          "avg_mfe_pct": 1.37,
+          "avg_mae_pct": -1.34
         },
         {
-          "state_key": "bull_impulse",
-          "state_label": "突発上昇",
-          "total_predictions": 4,
-          "directional_accuracy": 0.25,
-          "target_t1_hit_rate": 1.0,
-          "invalidation_rate": 0.5,
-          "avg_return_pct": -1.18,
-          "expected_return_pct": 0.46,
-          "avg_mfe_pct": 0.99,
-          "avg_mae_pct": -3.25
+          "state_key": "range_neutral",
+          "state_label": "レンジ中立",
+          "total_predictions": 365,
+          "directional_accuracy": 0.15,
+          "target_t1_hit_rate": 0.62,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.21,
+          "expected_return_pct": 0.53,
+          "avg_mfe_pct": 1.47,
+          "avg_mae_pct": -1.4
+        },
+        {
+          "state_key": "breakout_pending",
+          "state_label": "ブレイク待ち",
+          "total_predictions": 296,
+          "directional_accuracy": 0.13,
+          "target_t1_hit_rate": 0.71,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.09,
+          "expected_return_pct": 0.19,
+          "avg_mfe_pct": 1.5,
+          "avg_mae_pct": -1.47
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "total_predictions": 124,
+          "directional_accuracy": 0.4,
+          "target_t1_hit_rate": 0.6,
+          "invalidation_rate": 0.14,
+          "avg_return_pct": -0.11,
+          "expected_return_pct": -0.01,
+          "avg_mfe_pct": 1.15,
+          "avg_mae_pct": -1.56
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "total_predictions": 57,
+          "directional_accuracy": 0.53,
+          "target_t1_hit_rate": 0.61,
+          "invalidation_rate": 0.39,
+          "avg_return_pct": 0.47,
+          "expected_return_pct": 0.35,
+          "avg_mfe_pct": 1.51,
+          "avg_mae_pct": -2.78
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "total_predictions": 34,
+          "directional_accuracy": 0.24,
+          "target_t1_hit_rate": 0.62,
+          "invalidation_rate": 0.15,
+          "avg_return_pct": 0.61,
+          "expected_return_pct": 0.66,
+          "avg_mfe_pct": 3.77,
+          "avg_mae_pct": -3.55
         },
         {
           "state_key": "bear_impulse",
           "state_label": "突発下落",
-          "total_predictions": 3,
-          "directional_accuracy": 0.33,
-          "target_t1_hit_rate": 1.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": 0.14,
-          "expected_return_pct": -0.12,
-          "avg_mfe_pct": 2.76,
-          "avg_mae_pct": -3.65
+          "total_predictions": 13,
+          "directional_accuracy": 0.31,
+          "target_t1_hit_rate": 0.62,
+          "invalidation_rate": 0.08,
+          "avg_return_pct": -0.92,
+          "expected_return_pct": -0.1,
+          "avg_mfe_pct": 4.69,
+          "avg_mae_pct": -4.43
         },
         {
-          "state_key": "limited_reference",
-          "state_label": "参考表示",
-          "total_predictions": 1,
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "total_predictions": 7,
           "directional_accuracy": 0.0,
-          "target_t1_hit_rate": 0.0,
-          "invalidation_rate": 0.0,
-          "avg_return_pct": -0.82,
-          "expected_return_pct": 0,
-          "avg_mfe_pct": 0.78,
-          "avg_mae_pct": -6.48
+          "target_t1_hit_rate": 0.43,
+          "invalidation_rate": 0.43,
+          "avg_return_pct": -0.89,
+          "expected_return_pct": 0.48,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -2.14
+        }
+      ],
+      "state_direction_summaries": [
+        {
+          "state_key": "bull_trend_continuation",
+          "state_label": "上昇継続",
+          "direction": "up",
+          "total_predictions": 1720,
+          "directional_accuracy": 0.51,
+          "avg_return_pct": 0.04,
+          "avg_mfe_pct": 1.18,
+          "avg_mae_pct": -1.29
+        },
+        {
+          "state_key": "bear_trend_continuation",
+          "state_label": "下落継続",
+          "direction": "down",
+          "total_predictions": 411,
+          "directional_accuracy": 0.42,
+          "avg_return_pct": 0.21,
+          "avg_mfe_pct": 1.88,
+          "avg_mae_pct": -1.9
+        },
+        {
+          "state_key": "dip_buy",
+          "state_label": "押し目買い",
+          "direction": "up",
+          "total_predictions": 382,
+          "directional_accuracy": 0.6,
+          "avg_return_pct": 0.18,
+          "avg_mfe_pct": 1.43,
+          "avg_mae_pct": -1.31
+        },
+        {
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "direction": "down",
+          "total_predictions": 296,
+          "directional_accuracy": 0.42,
+          "avg_return_pct": 0.06,
+          "avg_mfe_pct": 1.57,
+          "avg_mae_pct": -1.61
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "direction": "up",
+          "total_predictions": 93,
+          "directional_accuracy": 0.46,
+          "avg_return_pct": -0.1,
+          "avg_mfe_pct": 1.17,
+          "avg_mae_pct": -1.6
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "direction": "up",
+          "total_predictions": 52,
+          "directional_accuracy": 0.58,
+          "avg_return_pct": 0.39,
+          "avg_mfe_pct": 1.42,
+          "avg_mae_pct": -2.96
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "direction": "down",
+          "total_predictions": 21,
+          "directional_accuracy": 0.38,
+          "avg_return_pct": -0.07,
+          "avg_mfe_pct": 3.4,
+          "avg_mae_pct": -4.54
+        },
+        {
+          "state_key": "bear_impulse",
+          "state_label": "突発下落",
+          "direction": "down",
+          "total_predictions": 8,
+          "directional_accuracy": 0.5,
+          "avg_return_pct": -0.79,
+          "avg_mfe_pct": 5.59,
+          "avg_mae_pct": -3.98
+        },
+        {
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "direction": "up",
+          "total_predictions": 7,
+          "directional_accuracy": 0.0,
+          "avg_return_pct": -0.89,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -2.14
         }
       ],
       "calibration_rows": [
         {
           "bucket": "-1.0%未満",
-          "sample_count": 6,
-          "avg_expected_pct": -1.31,
-          "avg_realized_pct": 3.58,
-          "avg_error_pct": 4.89,
-          "sample_quality": "insufficient"
+          "sample_count": 10,
+          "avg_expected_pct": -1.34,
+          "avg_realized_pct": 1.17,
+          "avg_error_pct": 2.51,
+          "sample_quality": "usable"
         },
         {
           "bucket": "-1.0%〜-0.5%",
-          "sample_count": 54,
-          "avg_expected_pct": -0.72,
-          "avg_realized_pct": 0.98,
-          "avg_error_pct": 1.7,
+          "sample_count": 190,
+          "avg_expected_pct": -0.65,
+          "avg_realized_pct": 0.06,
+          "avg_error_pct": 0.72,
           "sample_quality": "reliable"
         },
         {
           "bucket": "-0.5%〜0.0%",
-          "sample_count": 82,
-          "avg_expected_pct": -0.26,
-          "avg_realized_pct": 0.73,
-          "avg_error_pct": 0.98,
+          "sample_count": 457,
+          "avg_expected_pct": -0.22,
+          "avg_realized_pct": 0.22,
+          "avg_error_pct": 0.44,
           "sample_quality": "reliable"
         },
         {
           "bucket": "0.0%〜0.5%",
-          "sample_count": 206,
-          "avg_expected_pct": 0.28,
-          "avg_realized_pct": 0.7,
-          "avg_error_pct": 0.43,
+          "sample_count": 724,
+          "avg_expected_pct": 0.27,
+          "avg_realized_pct": 0.14,
+          "avg_error_pct": -0.13,
           "sample_quality": "reliable"
         },
         {
           "bucket": "0.5%〜1.0%",
-          "sample_count": 225,
-          "avg_expected_pct": 0.7,
-          "avg_realized_pct": 0.19,
-          "avg_error_pct": -0.52,
+          "sample_count": 385,
+          "avg_expected_pct": 0.71,
+          "avg_realized_pct": 0.04,
+          "avg_error_pct": -0.68,
           "sample_quality": "reliable"
         },
         {
           "bucket": "1.0%以上",
-          "sample_count": 27,
-          "avg_expected_pct": 1.53,
-          "avg_realized_pct": 1.54,
-          "avg_error_pct": 0.01,
-          "sample_quality": "usable"
+          "sample_count": 234,
+          "avg_expected_pct": 1.26,
+          "avg_realized_pct": 0.07,
+          "avg_error_pct": -1.2,
+          "sample_quality": "reliable"
         }
       ],
       "confidence_calibration_rows": [
         {
           "bucket": "50未満",
-          "sample_count": 190,
-          "directional_accuracy": 0.42,
-          "target_t1_hit_rate": 0.98,
-          "avg_return_pct": 0.62,
+          "sample_count": 270,
+          "directional_accuracy": 0.26,
+          "target_t1_hit_rate": 0.67,
+          "avg_return_pct": 0.27,
           "sample_quality": "reliable"
         },
         {
           "bucket": "50台",
-          "sample_count": 211,
-          "directional_accuracy": 0.49,
-          "target_t1_hit_rate": 0.99,
-          "avg_return_pct": 0.7,
+          "sample_count": 536,
+          "directional_accuracy": 0.47,
+          "target_t1_hit_rate": 0.68,
+          "avg_return_pct": 0.25,
           "sample_quality": "reliable"
         },
         {
           "bucket": "60台",
-          "sample_count": 138,
-          "directional_accuracy": 0.57,
-          "target_t1_hit_rate": 0.83,
-          "avg_return_pct": 0.71,
+          "sample_count": 1051,
+          "directional_accuracy": 0.49,
+          "target_t1_hit_rate": 0.63,
+          "avg_return_pct": 0.07,
           "sample_quality": "reliable"
         },
         {
           "bucket": "70台",
-          "sample_count": 61,
-          "directional_accuracy": 0.56,
-          "target_t1_hit_rate": 0.82,
-          "avg_return_pct": -0.03,
+          "sample_count": 143,
+          "directional_accuracy": 0.5,
+          "target_t1_hit_rate": 0.66,
+          "avg_return_pct": -0.16,
           "sample_quality": "reliable"
         }
       ],
@@ -1513,160 +1133,160 @@
         "walk_forward": [
           {
             "label": "WF1",
-            "sample_count": 200,
-            "directional_accuracy": 0.49,
-            "avg_return_pct": 0.73,
-            "target_t1_hit_rate": 0.96,
+            "sample_count": 1000,
+            "directional_accuracy": 0.3,
+            "avg_return_pct": 0.11,
+            "target_t1_hit_rate": 0.33,
             "sample_quality": "reliable"
           },
           {
             "label": "WF2",
-            "sample_count": 200,
-            "directional_accuracy": 0.49,
-            "avg_return_pct": 0.77,
-            "target_t1_hit_rate": 0.91,
+            "sample_count": 1000,
+            "directional_accuracy": 0.33,
+            "avg_return_pct": -0.07,
+            "target_t1_hit_rate": 0.43,
             "sample_quality": "reliable"
           },
           {
             "label": "WF3",
-            "sample_count": 200,
-            "directional_accuracy": 0.5,
-            "avg_return_pct": 0.31,
-            "target_t1_hit_rate": 0.93,
+            "sample_count": 1000,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": 0.11,
+            "target_t1_hit_rate": 0.44,
             "sample_quality": "reliable"
           }
         ],
         "period_splits": [
           {
             "label": "前半",
-            "sample_count": 300,
-            "directional_accuracy": 0.48,
-            "avg_return_pct": 0.69,
-            "target_t1_hit_rate": 0.96,
+            "sample_count": 1500,
+            "directional_accuracy": 0.3,
+            "avg_return_pct": 0.08,
+            "target_t1_hit_rate": 0.34,
             "sample_quality": "reliable"
           },
           {
             "label": "後半",
-            "sample_count": 300,
-            "directional_accuracy": 0.51,
-            "avg_return_pct": 0.51,
-            "target_t1_hit_rate": 0.91,
+            "sample_count": 1500,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": 0.02,
+            "target_t1_hit_rate": 0.46,
             "sample_quality": "reliable"
           }
         ],
         "recent_window": {
           "label": "直近60日",
-          "sample_count": 63,
-          "directional_accuracy": 0.48,
-          "avg_return_pct": -0.02,
-          "target_t1_hit_rate": 0.94,
+          "sample_count": 30,
+          "directional_accuracy": 0.5,
+          "avg_return_pct": 0.36,
+          "target_t1_hit_rate": 0.73,
           "sample_quality": "reliable"
         },
         "volatility_regimes": [
           {
             "label": "低ボラ",
-            "sample_count": 4,
-            "directional_accuracy": 1.0,
-            "avg_return_pct": 2.18,
-            "target_t1_hit_rate": 1.0,
-            "sample_quality": "insufficient"
+            "sample_count": 460,
+            "directional_accuracy": 0.36,
+            "avg_return_pct": -0.07,
+            "target_t1_hit_rate": 0.44,
+            "sample_quality": "reliable"
           },
           {
             "label": "通常",
-            "sample_count": 364,
-            "directional_accuracy": 0.49,
-            "avg_return_pct": 0.66,
-            "target_t1_hit_rate": 0.93,
+            "sample_count": 1869,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": -0.01,
+            "target_t1_hit_rate": 0.42,
             "sample_quality": "reliable"
           },
           {
             "label": "高ボラ",
-            "sample_count": 232,
-            "directional_accuracy": 0.49,
-            "avg_return_pct": 0.49,
-            "target_t1_hit_rate": 0.94,
+            "sample_count": 671,
+            "directional_accuracy": 0.24,
+            "avg_return_pct": 0.32,
+            "target_t1_hit_rate": 0.33,
             "sample_quality": "reliable"
           }
         ],
         "market_regimes": [
           {
             "label": "ブレイク待ち",
-            "sample_count": 18,
-            "directional_accuracy": 0.22,
-            "avg_return_pct": -3.4,
-            "target_t1_hit_rate": 1.0,
-            "sample_quality": "usable"
+            "sample_count": 197,
+            "directional_accuracy": 0.14,
+            "avg_return_pct": 0.2,
+            "target_t1_hit_rate": 0.69,
+            "sample_quality": "reliable"
           },
           {
             "label": "レンジ中立",
-            "sample_count": 38,
-            "directional_accuracy": 0.03,
-            "avg_return_pct": 1.25,
-            "target_t1_hit_rate": 0.92,
+            "sample_count": 222,
+            "directional_accuracy": 0.13,
+            "avg_return_pct": 0.09,
+            "target_t1_hit_rate": 0.58,
             "sample_quality": "reliable"
           },
           {
             "label": "上昇継続",
-            "sample_count": 413,
-            "directional_accuracy": 0.61,
-            "avg_return_pct": 0.84,
-            "target_t1_hit_rate": 0.92,
+            "sample_count": 1249,
+            "directional_accuracy": 0.41,
+            "avg_return_pct": -0.05,
+            "target_t1_hit_rate": 0.4,
             "sample_quality": "reliable"
           },
           {
             "label": "下落継続",
-            "sample_count": 15,
-            "directional_accuracy": 0.33,
-            "avg_return_pct": 1.3,
-            "target_t1_hit_rate": 1.0,
+            "sample_count": 589,
+            "directional_accuracy": 0.25,
+            "avg_return_pct": 0.06,
+            "target_t1_hit_rate": 0.33,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "売られすぎ・反発警戒",
+            "sample_count": 21,
+            "directional_accuracy": 0.29,
+            "avg_return_pct": 0.21,
+            "target_t1_hit_rate": 0.57,
             "sample_quality": "usable"
           },
           {
             "label": "戻り売り",
-            "sample_count": 47,
-            "directional_accuracy": 0.32,
-            "avg_return_pct": 0.77,
-            "target_t1_hit_rate": 0.98,
+            "sample_count": 323,
+            "directional_accuracy": 0.24,
+            "avg_return_pct": 0.21,
+            "target_t1_hit_rate": 0.28,
             "sample_quality": "reliable"
           },
           {
             "label": "押し目買い",
-            "sample_count": 8,
-            "directional_accuracy": 0.88,
-            "avg_return_pct": 3.03,
-            "target_t1_hit_rate": 0.88,
-            "sample_quality": "insufficient"
-          },
-          {
-            "label": "突発上昇",
-            "sample_count": 4,
-            "directional_accuracy": 0.25,
-            "avg_return_pct": -1.18,
-            "target_t1_hit_rate": 1.0,
-            "sample_quality": "insufficient"
+            "sample_count": 325,
+            "directional_accuracy": 0.45,
+            "avg_return_pct": 0.09,
+            "target_t1_hit_rate": 0.32,
+            "sample_quality": "reliable"
           },
           {
             "label": "突発下落",
-            "sample_count": 3,
-            "directional_accuracy": 0.33,
-            "avg_return_pct": 0.14,
-            "target_t1_hit_rate": 1.0,
+            "sample_count": 2,
+            "directional_accuracy": 0.0,
+            "avg_return_pct": 3.05,
+            "target_t1_hit_rate": 0.0,
             "sample_quality": "insufficient"
           },
           {
             "label": "買い戻し",
-            "sample_count": 15,
-            "directional_accuracy": 0.47,
-            "avg_return_pct": 1.1,
-            "target_t1_hit_rate": 0.93,
+            "sample_count": 26,
+            "directional_accuracy": 0.54,
+            "avg_return_pct": 0.36,
+            "target_t1_hit_rate": 0.62,
             "sample_quality": "usable"
           },
           {
             "label": "過熱・反落警戒",
-            "sample_count": 39,
-            "directional_accuracy": 0.15,
-            "avg_return_pct": -1.66,
-            "target_t1_hit_rate": 0.97,
+            "sample_count": 46,
+            "directional_accuracy": 0.37,
+            "avg_return_pct": 0.09,
+            "target_t1_hit_rate": 0.37,
             "sample_quality": "reliable"
           }
         ]
@@ -1674,45 +1294,709 @@
       "improvement_insights": [
         {
           "severity": "high",
-          "title": "戻り売りの方向判定を見直し",
-          "detail": "方向一致率が32%で低めです。",
+          "title": "下落継続の方向判定を見直し",
+          "detail": "方向一致率が28%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 32%"
+          "metric": "方向 28%"
         },
         {
           "severity": "high",
-          "title": "過熱・反落警戒の方向判定を見直し",
+          "title": "戻り売りの方向判定を見直し",
+          "detail": "方向一致率が29%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 29%"
+        },
+        {
+          "severity": "high",
+          "title": "レンジ中立の方向判定を見直し",
           "detail": "方向一致率が15%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
           "metric": "方向 15%"
         },
         {
           "severity": "high",
-          "title": "レンジ中立の方向判定を見直し",
-          "detail": "方向一致率が3%で低めです。",
+          "title": "ブレイク待ちの方向判定を見直し",
+          "detail": "方向一致率が13%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 3%"
+          "metric": "方向 13%"
         },
         {
           "severity": "high",
-          "title": "ブレイク待ちの方向判定を見直し",
-          "detail": "方向一致率が22%で低めです。",
+          "title": "過熱・反落警戒の方向判定を見直し",
+          "detail": "方向一致率が40%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 22%"
+          "metric": "方向 40%"
+        },
+        {
+          "severity": "high",
+          "title": "買い戻しの無効化ラインを見直し",
+          "detail": "無効化到達率が39%で高めです。",
+          "suggestion": "ATRや直近高安値を使った無効化ラインが近すぎないか確認してください。",
+          "metric": "無効化 39%"
+        }
+      ]
+    },
+    "5d": {
+      "summary": {
+        "total_predictions": 4980,
+        "directional_accuracy": 0.34,
+        "model_directional_accuracy": 0.34,
+        "target_t1_hit_rate": 0.59,
+        "target_t2_hit_rate": 0.38,
+        "invalidation_rate": 0.2,
+        "avg_return_pct": 0.19,
+        "median_return_pct": 0.27,
+        "avg_mfe_pct": 1.76,
+        "avg_mae_pct": -1.82,
+        "avg_confidence_score": 64.3,
+        "median_mae_pct": -1.27,
+        "median_mfe_pct": 1.31,
+        "sample_quality": "reliable",
+        "statistical_warning": "",
+        "baseline_comparison": {
+          "sample_count": 4980,
+          "rows": [
+            {
+              "key": "always_up",
+              "label": "常に上昇",
+              "sample_count": 4980,
+              "directional_accuracy": 0.49,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.25,
+              "avg_strategy_return_pct": 0.14,
+              "risk_adjusted_return_pct": 0.09,
+              "max_drawdown_pct": -151.96,
+              "model_mae": 0
+            },
+            {
+              "key": "always_down",
+              "label": "常に下落",
+              "sample_count": 4980,
+              "directional_accuracy": 0.38,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.31,
+              "avg_strategy_return_pct": -0.24,
+              "risk_adjusted_return_pct": -0.29,
+              "max_drawdown_pct": -1291.1,
+              "model_mae": 0
+            },
+            {
+              "key": "always_neutral",
+              "label": "常に中立",
+              "sample_count": 4980,
+              "directional_accuracy": 0.13,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.22,
+              "avg_strategy_return_pct": -0.01,
+              "risk_adjusted_return_pct": -0.06,
+              "max_drawdown_pct": -49.8,
+              "model_mae": 0
+            },
+            {
+              "key": "continuation",
+              "label": "前日方向継続",
+              "sample_count": 4980,
+              "directional_accuracy": 0.35,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.27,
+              "avg_strategy_return_pct": -0.08,
+              "risk_adjusted_return_pct": -0.13,
+              "max_drawdown_pct": -489.59,
+              "model_mae": 0
+            },
+            {
+              "key": "ema_cross",
+              "label": "EMAクロス",
+              "sample_count": 4980,
+              "directional_accuracy": 0.43,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.28,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -380.91,
+              "model_mae": 0
+            },
+            {
+              "key": "vwap_side",
+              "label": "VWAP位置",
+              "sample_count": 2376,
+              "directional_accuracy": 0.45,
+              "balanced_accuracy": 0.32,
+              "brier_score": 0.28,
+              "avg_strategy_return_pct": 0.04,
+              "risk_adjusted_return_pct": -0.01,
+              "max_drawdown_pct": -182.65,
+              "model_mae": 0
+            },
+            {
+              "key": "atr_range",
+              "label": "単純ATRレンジ",
+              "sample_count": 4980,
+              "directional_accuracy": 0.13,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.22,
+              "avg_strategy_return_pct": -0.01,
+              "risk_adjusted_return_pct": -0.06,
+              "max_drawdown_pct": -49.8,
+              "model_mae": 0
+            },
+            {
+              "key": "random",
+              "label": "ランダム基準",
+              "sample_count": 4980,
+              "directional_accuracy": 0.44,
+              "balanced_accuracy": 0.34,
+              "brier_score": 0.28,
+              "avg_strategy_return_pct": -0.03,
+              "risk_adjusted_return_pct": -0.08,
+              "max_drawdown_pct": -181.95,
+              "model_mae": 0
+            },
+            {
+              "key": "model",
+              "label": "現行モデル",
+              "sample_count": 4980,
+              "directional_accuracy": 0.3,
+              "balanced_accuracy": 0.33,
+              "brier_score": 0.25,
+              "avg_strategy_return_pct": -0.06,
+              "risk_adjusted_return_pct": -0.11,
+              "max_drawdown_pct": -335.92,
+              "model_mae": 1.86
+            }
+          ],
+          "best_baseline": {
+            "key": "always_up",
+            "label": "常に上昇",
+            "sample_count": 4980,
+            "directional_accuracy": 0.49,
+            "balanced_accuracy": 0.33,
+            "brier_score": 0.25,
+            "avg_strategy_return_pct": 0.14,
+            "risk_adjusted_return_pct": 0.09,
+            "max_drawdown_pct": -151.96,
+            "model_mae": 0
+          }
+        },
+        "continuation_directional_accuracy": 0.48,
+        "zero_prediction_mae": 1.74,
+        "model_mae": 1.86,
+        "mae_improvement_rate": -0.07
+      },
+      "state_summaries": [
+        {
+          "state_key": "bull_trend_continuation",
+          "state_label": "上昇継続",
+          "total_predictions": 2223,
+          "directional_accuracy": 0.42,
+          "target_t1_hit_rate": 0.61,
+          "invalidation_rate": 0.3,
+          "avg_return_pct": 0.1,
+          "expected_return_pct": 0.24,
+          "avg_mfe_pct": 1.46,
+          "avg_mae_pct": -1.56
+        },
+        {
+          "state_key": "bear_trend_continuation",
+          "state_label": "下落継続",
+          "total_predictions": 780,
+          "directional_accuracy": 0.26,
+          "target_t1_hit_rate": 0.45,
+          "invalidation_rate": 0.13,
+          "avg_return_pct": 0.23,
+          "expected_return_pct": 0.53,
+          "avg_mfe_pct": 2.2,
+          "avg_mae_pct": -2.25
+        },
+        {
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "total_predictions": 569,
+          "directional_accuracy": 0.25,
+          "target_t1_hit_rate": 0.44,
+          "invalidation_rate": 0.14,
+          "avg_return_pct": 0.17,
+          "expected_return_pct": 0.48,
+          "avg_mfe_pct": 2.01,
+          "avg_mae_pct": -1.94
+        },
+        {
+          "state_key": "dip_buy",
+          "state_label": "押し目買い",
+          "total_predictions": 514,
+          "directional_accuracy": 0.54,
+          "target_t1_hit_rate": 0.51,
+          "invalidation_rate": 0.2,
+          "avg_return_pct": 0.48,
+          "expected_return_pct": 0.15,
+          "avg_mfe_pct": 1.86,
+          "avg_mae_pct": -1.54
+        },
+        {
+          "state_key": "range_neutral",
+          "state_label": "レンジ中立",
+          "total_predictions": 365,
+          "directional_accuracy": 0.1,
+          "target_t1_hit_rate": 0.8,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.43,
+          "expected_return_pct": 0.67,
+          "avg_mfe_pct": 1.88,
+          "avg_mae_pct": -1.91
+        },
+        {
+          "state_key": "breakout_pending",
+          "state_label": "ブレイク待ち",
+          "total_predictions": 296,
+          "directional_accuracy": 0.08,
+          "target_t1_hit_rate": 0.85,
+          "invalidation_rate": 0.0,
+          "avg_return_pct": 0.06,
+          "expected_return_pct": 0.24,
+          "avg_mfe_pct": 1.83,
+          "avg_mae_pct": -1.87
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "total_predictions": 124,
+          "directional_accuracy": 0.3,
+          "target_t1_hit_rate": 0.68,
+          "invalidation_rate": 0.17,
+          "avg_return_pct": -0.27,
+          "expected_return_pct": -0.01,
+          "avg_mfe_pct": 1.41,
+          "avg_mae_pct": -1.92
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "total_predictions": 57,
+          "directional_accuracy": 0.6,
+          "target_t1_hit_rate": 0.67,
+          "invalidation_rate": 0.44,
+          "avg_return_pct": 0.72,
+          "expected_return_pct": 0.43,
+          "avg_mfe_pct": 1.86,
+          "avg_mae_pct": -4.25
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "total_predictions": 34,
+          "directional_accuracy": 0.21,
+          "target_t1_hit_rate": 0.62,
+          "invalidation_rate": 0.15,
+          "avg_return_pct": 0.7,
+          "expected_return_pct": 0.82,
+          "avg_mfe_pct": 4.45,
+          "avg_mae_pct": -4.25
+        },
+        {
+          "state_key": "bear_impulse",
+          "state_label": "突発下落",
+          "total_predictions": 13,
+          "directional_accuracy": 0.31,
+          "target_t1_hit_rate": 0.62,
+          "invalidation_rate": 0.08,
+          "avg_return_pct": 0.92,
+          "expected_return_pct": -0.12,
+          "avg_mfe_pct": 4.7,
+          "avg_mae_pct": -4.43
+        },
+        {
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "total_predictions": 7,
+          "directional_accuracy": 0.29,
+          "target_t1_hit_rate": 1.0,
+          "invalidation_rate": 0.86,
+          "avg_return_pct": -1.4,
+          "expected_return_pct": 0.59,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -3.86
+        }
+      ],
+      "state_direction_summaries": [
+        {
+          "state_key": "bull_trend_continuation",
+          "state_label": "上昇継続",
+          "direction": "up",
+          "total_predictions": 1720,
+          "directional_accuracy": 0.5,
+          "avg_return_pct": 0.05,
+          "avg_mfe_pct": 1.46,
+          "avg_mae_pct": -1.62
+        },
+        {
+          "state_key": "bear_trend_continuation",
+          "state_label": "下落継続",
+          "direction": "down",
+          "total_predictions": 411,
+          "directional_accuracy": 0.4,
+          "avg_return_pct": 0.27,
+          "avg_mfe_pct": 2.32,
+          "avg_mae_pct": -2.31
+        },
+        {
+          "state_key": "dip_buy",
+          "state_label": "押し目買い",
+          "direction": "up",
+          "total_predictions": 383,
+          "directional_accuracy": 0.66,
+          "avg_return_pct": 0.55,
+          "avg_mfe_pct": 1.94,
+          "avg_mae_pct": -1.5
+        },
+        {
+          "state_key": "return_sell",
+          "state_label": "戻り売り",
+          "direction": "down",
+          "total_predictions": 296,
+          "directional_accuracy": 0.4,
+          "avg_return_pct": 0.21,
+          "avg_mfe_pct": 2.17,
+          "avg_mae_pct": -1.97
+        },
+        {
+          "state_key": "exhaustion_top",
+          "state_label": "過熱・反落警戒",
+          "direction": "up",
+          "total_predictions": 93,
+          "directional_accuracy": 0.37,
+          "avg_return_pct": -0.31,
+          "avg_mfe_pct": 1.41,
+          "avg_mae_pct": -1.96
+        },
+        {
+          "state_key": "short_covering",
+          "state_label": "買い戻し",
+          "direction": "up",
+          "total_predictions": 52,
+          "directional_accuracy": 0.63,
+          "avg_return_pct": 0.55,
+          "avg_mfe_pct": 1.74,
+          "avg_mae_pct": -4.58
+        },
+        {
+          "state_key": "exhaustion_bottom",
+          "state_label": "売られすぎ・反発警戒",
+          "direction": "down",
+          "total_predictions": 21,
+          "directional_accuracy": 0.33,
+          "avg_return_pct": 0.09,
+          "avg_mfe_pct": 4.4,
+          "avg_mae_pct": -5.31
+        },
+        {
+          "state_key": "bear_impulse",
+          "state_label": "突発下落",
+          "direction": "down",
+          "total_predictions": 8,
+          "directional_accuracy": 0.5,
+          "avg_return_pct": 0.91,
+          "avg_mfe_pct": 5.59,
+          "avg_mae_pct": -3.98
+        },
+        {
+          "state_key": "bull_impulse",
+          "state_label": "突発上昇",
+          "direction": "up",
+          "total_predictions": 7,
+          "directional_accuracy": 0.29,
+          "avg_return_pct": -1.4,
+          "avg_mfe_pct": 1.19,
+          "avg_mae_pct": -3.86
+        }
+      ],
+      "calibration_rows": [
+        {
+          "bucket": "-1.0%未満",
+          "sample_count": 33,
+          "avg_expected_pct": -1.27,
+          "avg_realized_pct": 0.87,
+          "avg_error_pct": 2.14,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "-1.0%〜-0.5%",
+          "sample_count": 203,
+          "avg_expected_pct": -0.74,
+          "avg_realized_pct": 0.35,
+          "avg_error_pct": 1.1,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "-0.5%〜0.0%",
+          "sample_count": 421,
+          "avg_expected_pct": -0.25,
+          "avg_realized_pct": 0.41,
+          "avg_error_pct": 0.65,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "0.0%〜0.5%",
+          "sample_count": 535,
+          "avg_expected_pct": 0.25,
+          "avg_realized_pct": 0.31,
+          "avg_error_pct": 0.06,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "0.5%〜1.0%",
+          "sample_count": 446,
+          "avg_expected_pct": 0.69,
+          "avg_realized_pct": 0.04,
+          "avg_error_pct": -0.65,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "1.0%以上",
+          "sample_count": 362,
+          "avg_expected_pct": 1.41,
+          "avg_realized_pct": 0.11,
+          "avg_error_pct": -1.3,
+          "sample_quality": "reliable"
+        }
+      ],
+      "confidence_calibration_rows": [
+        {
+          "bucket": "50未満",
+          "sample_count": 270,
+          "directional_accuracy": 0.22,
+          "target_t1_hit_rate": 0.84,
+          "avg_return_pct": 0.55,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "50台",
+          "sample_count": 534,
+          "directional_accuracy": 0.44,
+          "target_t1_hit_rate": 0.83,
+          "avg_return_pct": 0.44,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "60台",
+          "sample_count": 1053,
+          "directional_accuracy": 0.5,
+          "target_t1_hit_rate": 0.77,
+          "avg_return_pct": 0.14,
+          "sample_quality": "reliable"
+        },
+        {
+          "bucket": "70台",
+          "sample_count": 143,
+          "directional_accuracy": 0.46,
+          "target_t1_hit_rate": 0.81,
+          "avg_return_pct": -0.26,
+          "sample_quality": "reliable"
+        }
+      ],
+      "validation_design": {
+        "walk_forward": [
+          {
+            "label": "WF1",
+            "sample_count": 1000,
+            "directional_accuracy": 0.29,
+            "avg_return_pct": 0.16,
+            "target_t1_hit_rate": 0.44,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "WF2",
+            "sample_count": 1000,
+            "directional_accuracy": 0.3,
+            "avg_return_pct": 0.07,
+            "target_t1_hit_rate": 0.55,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "WF3",
+            "sample_count": 1000,
+            "directional_accuracy": 0.33,
+            "avg_return_pct": 0.14,
+            "target_t1_hit_rate": 0.55,
+            "sample_quality": "reliable"
+          }
+        ],
+        "period_splits": [
+          {
+            "label": "前半",
+            "sample_count": 1500,
+            "directional_accuracy": 0.28,
+            "avg_return_pct": 0.14,
+            "target_t1_hit_rate": 0.45,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "後半",
+            "sample_count": 1500,
+            "directional_accuracy": 0.33,
+            "avg_return_pct": 0.11,
+            "target_t1_hit_rate": 0.57,
+            "sample_quality": "reliable"
+          }
+        ],
+        "recent_window": {
+          "label": "直近60日",
+          "sample_count": 30,
+          "directional_accuracy": 0.27,
+          "avg_return_pct": 0.07,
+          "target_t1_hit_rate": 0.77,
+          "sample_quality": "reliable"
+        },
+        "volatility_regimes": [
+          {
+            "label": "低ボラ",
+            "sample_count": 457,
+            "directional_accuracy": 0.28,
+            "avg_return_pct": -0.04,
+            "target_t1_hit_rate": 0.56,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "通常",
+            "sample_count": 1873,
+            "directional_accuracy": 0.33,
+            "avg_return_pct": -0.0,
+            "target_t1_hit_rate": 0.52,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "高ボラ",
+            "sample_count": 670,
+            "directional_accuracy": 0.24,
+            "avg_return_pct": 0.59,
+            "target_t1_hit_rate": 0.44,
+            "sample_quality": "reliable"
+          }
+        ],
+        "market_regimes": [
+          {
+            "label": "ブレイク待ち",
+            "sample_count": 197,
+            "directional_accuracy": 0.08,
+            "avg_return_pct": 0.02,
+            "target_t1_hit_rate": 0.85,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "レンジ中立",
+            "sample_count": 222,
+            "directional_accuracy": 0.11,
+            "avg_return_pct": 0.4,
+            "target_t1_hit_rate": 0.76,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "上昇継続",
+            "sample_count": 1248,
+            "directional_accuracy": 0.38,
+            "avg_return_pct": -0.08,
+            "target_t1_hit_rate": 0.52,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "下落継続",
+            "sample_count": 589,
+            "directional_accuracy": 0.24,
+            "avg_return_pct": 0.18,
+            "target_t1_hit_rate": 0.4,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "売られすぎ・反発警戒",
+            "sample_count": 21,
+            "directional_accuracy": 0.24,
+            "avg_return_pct": -0.6,
+            "target_t1_hit_rate": 0.57,
+            "sample_quality": "usable"
+          },
+          {
+            "label": "戻り売り",
+            "sample_count": 323,
+            "directional_accuracy": 0.18,
+            "avg_return_pct": 0.3,
+            "target_t1_hit_rate": 0.31,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "押し目買い",
+            "sample_count": 326,
+            "directional_accuracy": 0.48,
+            "avg_return_pct": 0.42,
+            "target_t1_hit_rate": 0.47,
+            "sample_quality": "reliable"
+          },
+          {
+            "label": "突発下落",
+            "sample_count": 2,
+            "directional_accuracy": 0.0,
+            "avg_return_pct": 2.1,
+            "target_t1_hit_rate": 0.0,
+            "sample_quality": "insufficient"
+          },
+          {
+            "label": "買い戻し",
+            "sample_count": 26,
+            "directional_accuracy": 0.65,
+            "avg_return_pct": 0.43,
+            "target_t1_hit_rate": 0.62,
+            "sample_quality": "usable"
+          },
+          {
+            "label": "過熱・反落警戒",
+            "sample_count": 46,
+            "directional_accuracy": 0.35,
+            "avg_return_pct": 0.55,
+            "target_t1_hit_rate": 0.46,
+            "sample_quality": "reliable"
+          }
+        ]
+      },
+      "improvement_insights": [
+        {
+          "severity": "high",
+          "title": "上昇継続の方向判定を見直し",
+          "detail": "方向一致率が42%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 42%"
         },
         {
           "severity": "high",
           "title": "下落継続の方向判定を見直し",
-          "detail": "方向一致率が33%で低めです。",
+          "detail": "方向一致率が26%で低めです。",
           "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
-          "metric": "方向 33%"
+          "metric": "方向 26%"
         },
         {
-          "severity": "middle",
-          "title": "過熱・反落警戒の期待値を確認",
-          "detail": "平均損益が-1.66%です。",
-          "suggestion": "この局面では信頼度を下げるか、様子見に寄せる条件を追加してください。",
-          "metric": "平均 -1.66%"
+          "severity": "high",
+          "title": "戻り売りの方向判定を見直し",
+          "detail": "方向一致率が25%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 25%"
+        },
+        {
+          "severity": "high",
+          "title": "レンジ中立の方向判定を見直し",
+          "detail": "方向一致率が10%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 10%"
+        },
+        {
+          "severity": "high",
+          "title": "ブレイク待ちの方向判定を見直し",
+          "detail": "方向一致率が8%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 8%"
+        },
+        {
+          "severity": "high",
+          "title": "過熱・反落警戒の方向判定を見直し",
+          "detail": "方向一致率が30%で低めです。",
+          "suggestion": "EMA・VWAP・値動きの重みがこの局面に合っているか確認してください。",
+          "metric": "方向 30%"
         }
       ]
     }

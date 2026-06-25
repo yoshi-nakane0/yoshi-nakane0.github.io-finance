@@ -74,11 +74,16 @@ def evaluate_world_model_readiness(
 
     level = "blocked" if reason_codes else "ready"
     if level == "ready":
+        quality_allows_ready = _quality_allows_ready(
+            quality_score,
+            quality_level,
+            source_name,
+            symbol_name,
+        )
         ready_requirements = [
             source_name in CANONICAL_FUTURES_SOURCES,
             symbol_name == "NIY=F",
-            quality_score >= 80,
-            quality_level == "good",
+            quality_allows_ready,
             not fallback_used,
             not stale,
             instrument.get("instrument_type") == "futures",
@@ -100,6 +105,9 @@ def evaluate_world_model_readiness(
                     indicator_validity,
                 )
             )
+
+    if level == "ready" and 50 <= quality_score <= 79:
+        reason_codes.append("quality_50_79")
 
     if level == "limited" and quality_score < 50:
         level = "blocked"
@@ -185,6 +193,17 @@ def _limited_reason_codes(quality_score, fallback_used, source, symbol, bar_coun
     if not all(indicator_validity.get(key) for key in ("ema20", "ema60", "rsi14", "atr14")):
         codes.append("major_indicator_missing")
     return codes or ["not_all_ready_conditions_met"]
+
+
+def _quality_allows_ready(quality_score, quality_level, source, symbol):
+    if quality_score >= 80 and quality_level == "good":
+        return True
+    return (
+        source == "matsui"
+        and symbol == "NIY=F"
+        and quality_score >= 70
+        and quality_level == "warning"
+    )
 
 
 def _reason_texts(reason_codes):

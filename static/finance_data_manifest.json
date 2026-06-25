@@ -1,22 +1,22 @@
 {
-  "basecalc_as_of": "2026-06-25T06:45:00+00:00",
-  "basecalc_status": "blocked",
+  "basecalc_as_of": "2026-06-25T13:10:00+00:00",
+  "basecalc_status": "limited",
   "blocking_reasons": [
-    "判定可能なデータ状態ではありません",
-    "類似事例不足のため信頼度を50未満に制限",
-    "basecalcの方向判断は停止",
-    "basecalcの判定状態が限定的",
+    "現行モデルがATRベースラインを下回るため",
+    "上昇継続の過去成績が弱いため",
+    "信頼度が未較正です",
+    "局面別成績が弱いため信頼度を50未満に制限",
     "予測ゲート停止中",
     "重要指標の発表前後のため一段階下げます。"
   ],
   "data_freshness": {
-    "basecalc": "blocked",
-    "explanation": "blocked",
+    "basecalc": "usable_with_warning",
+    "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-25T07:52:35.154835+00:00",
-  "explanation_status": "blocked",
-  "generated_at": "2026-06-25T11:42:49.317220+00:00",
+  "explanation_as_of": "2026-06-25T13:25:40.469454+00:00",
+  "explanation_status": "limited",
+  "generated_at": "2026-06-25T13:25:41.528583+00:00",
   "macro_as_of": "2026-06-24T08:43:04.098830+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",

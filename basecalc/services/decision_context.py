@@ -147,9 +147,9 @@ def _top_final_judgment(world_model, decision):
     if _directional_display_blocked(world_model):
         reasons = world_model.get("stop_reasons") or ["検証ゲート停止中"]
         return {
-            "direction": "判断保留",
-            "headline": "方向判断：参考",
-            "setup": "方向判断停止・レンジ確認",
+            "direction": "中立",
+            "headline": "方向予測は使わずレンジ確認",
+            "setup": "検証上はATRレンジ優先",
             "supplement": f"理由: {reasons[0]}",
         }
     headline = (
@@ -188,7 +188,7 @@ def _technical_direction_label(world_model, decision):
 def _directional_display_blocked(world_model):
     output_contract = (world_model or {}).get("output_contract") or {}
     contract_status = output_contract.get("contract_status")
-    if contract_status and contract_status != "ok":
+    if contract_status == "error":
         return True
     return output_contract.get("directional_allowed") is False
 
@@ -197,10 +197,9 @@ def _target_display_allowed(world_model):
     output_contract = (world_model or {}).get("output_contract") or {}
     if not output_contract.get("contract_status"):
         return True
-    return (
-        output_contract.get("contract_status") == "ok"
-        and output_contract.get("target_display_allowed") is not False
-    )
+    if output_contract.get("contract_status") == "error":
+        return False
+    return output_contract.get("target_display_allowed") is not False
 
 
 def _judgment_with_reversal(direction_label, reversal_score):
@@ -228,9 +227,9 @@ def _top_action(world_model):
         return {
             "judgment": "レンジ・節目確認",
             "prohibited": "方向の断定・高値追い・追撃買い",
-            "allowed": "支持抵抗・ATRレンジ確認のみ",
+            "allowed": "支持抵抗・ATRレンジ・反転警戒",
             "caution": reason,
-            "note": "方向予測は使わず、現在値に近い支持抵抗とATRレンジだけを確認します。",
+            "note": "方向予測は使わず、現在値に近い支持抵抗、ATRレンジ、反転警戒を確認します。",
         }
     note = str(world_model.get("action_note") or "")
     if "押し目" in note or "追撃" in note:
@@ -403,7 +402,20 @@ def _top_horizons(world_model, performance):
         return [{"label": "停止", "summary": "方向予測は停止", "note": reason or "出力整合性を確認中"}]
     if _directional_display_blocked(world_model):
         reason = " / ".join((output_contract.get("stop_reasons") or [])[:2])
-        return [{"label": "参考", "summary": "方向予測は停止。ATRレンジ・支持抵抗のみ確認", "note": reason}]
+        rows = []
+        labels = (("1d", "1日"), ("3d", "3日"), ("5d", "5日"))
+        allowed_horizons = output_contract.get("allowed_horizons") or {}
+        for horizon, label in labels:
+            gate = allowed_horizons.get(horizon) or {}
+            note = " / ".join((gate.get("reasons") or [])[:2]) or reason
+            rows.append(
+                {
+                    "label": label,
+                    "summary": "方向予測停止。ATRレンジ・支持抵抗を確認",
+                    "note": note or "方向予測の検証条件が未達",
+                }
+            )
+        return rows
     allowed_horizons = output_contract.get("allowed_horizons") or {}
     direction = world_model.get("direction")
     if direction == "down":

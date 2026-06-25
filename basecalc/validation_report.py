@@ -8,6 +8,7 @@ from .outcomes import (
     calibration_summary,
     improvement_insights,
     performance_summary,
+    state_direction_performance_summary,
     state_performance_summary,
 )
 from .validation import validation_design_summary
@@ -88,6 +89,12 @@ def _horizon_report(
             is_backtest=is_backtest,
         ),
         "state_summaries": state_performance_summary(horizon),
+        "state_direction_summaries": state_direction_performance_summary(
+            horizon,
+            instrument_key=instrument_key,
+            readiness_level=readiness_level,
+            is_backtest=is_backtest,
+        ),
         "calibration_rows": calibration_summary(
             horizon,
             instrument_key=instrument_key,

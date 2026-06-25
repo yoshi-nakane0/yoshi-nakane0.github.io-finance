@@ -1156,7 +1156,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             if row.get('key') == 'intermarket' or row.get('label') == '米国3指数確認'
         )
         self.assertEqual(intermarket_row['decision_level'], 'ready')
-        self.assertEqual(context['basecalc_top']['status']['attention'], '信頼度が未較正です')
+        self.assertIn('信頼度が未較正です', context['basecalc_top']['status']['attention'])
         self.assertNotIn('米国3指数確認が不足', context['world_model']['stop_reasons'])
 
     def test_status_summary_treats_intermarket_only_block_as_usable(self):
@@ -1263,7 +1263,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
 
-        self.assertFalse(context['world_model']['output_contract']['directional_allowed'])
+        self.assertTrue(context['world_model']['output_contract']['directional_allowed'])
         self.assertNotIn('現行モデルがATRベースラインを下回るため', context['world_model']['stop_reasons'])
         self.assertEqual(context['basecalc_top']['confidence']['direction'], '参考（信頼度 34/100）')
 
@@ -1680,9 +1680,17 @@ class BasecalcUpdateSecurityTests(TestCase):
             'output_contract': {
                 'contract_status': 'limited',
                 'directional_allowed': False,
-                'available_display': '支持抵抗・ATRレンジのみ',
+                'target_display_allowed': True,
+                'probability_display_allowed': True,
+                'available_display': 'ATRレンジ・支持抵抗・反転警戒',
                 'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
+                'allowed_horizons': {
+                    '1d': {'direction_allowed': False, 'target_probability_allowed': True},
+                    '3d': {'direction_allowed': False, 'target_probability_allowed': True},
+                    '5d': {'direction_allowed': False, 'target_probability_allowed': True},
+                },
             },
+            'target_ranges': [{'horizon': '1d', 'low': 64770, 'high': 68570}],
             'upside_targets': [{'label': 'T1', 'price': 68570, 'reason': 'ATR 1.0'}],
             'downside_targets': [{'label': 'T1', 'price': 64770, 'reason': 'ATR 1.0'}],
             'near_levels': {
@@ -1711,12 +1719,16 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         result = build_basecalc_top_context(world_model, decision, [], {})
 
-        self.assertEqual(result['final_judgment']['headline'], '方向判断：参考')
-        self.assertEqual(result['final_judgment']['setup'], '方向判断停止・レンジ確認')
+        self.assertEqual(result['final_judgment']['direction'], '中立')
+        self.assertEqual(result['final_judgment']['headline'], '方向予測は使わずレンジ確認')
+        self.assertEqual(result['final_judgment']['setup'], '検証上はATRレンジ優先')
         self.assertEqual(result['action']['judgment'], 'レンジ・節目確認')
-        self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ確認のみ')
+        self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ・反転警戒')
         self.assertIn('現行モデルがATRベースラインを下回るため', result['action']['caution'])
+        self.assertEqual(result['lines']['first_target'], 68570)
         self.assertEqual(result['lines']['structural_break'], '64,770')
+        self.assertEqual([row['label'] for row in result['horizons']], ['1日', '3日', '5日'])
+        self.assertEqual(result['horizons'][0]['summary'], '方向予測停止。ATRレンジ・支持抵抗を確認')
 
     def test_basecalc_top_risks_do_not_duplicate_reversal_warning(self):
         world_model = {
@@ -1790,10 +1802,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         world_model = {
             'output_contract': {
                 'directional_allowed': False,
+                'target_display_allowed': True,
+                'probability_display_allowed': True,
                 'allowed_horizons': {
-                    '1d': {'target_probability_allowed': False},
-                    '3d': {'target_probability_allowed': False},
-                    '5d': {'target_probability_allowed': False},
+                    '1d': {'direction_allowed': False, 'target_probability_allowed': True},
+                    '3d': {'direction_allowed': False, 'target_probability_allowed': True},
+                    '5d': {'direction_allowed': False, 'target_probability_allowed': True},
                 },
                 'stop_reasons': ['現行モデルがATRベースラインを下回るため'],
             }
@@ -1803,7 +1817,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         self.assertEqual(result['confidence']['data_quality'], 'データ高 96/100 / 信頼度低 34/100')
         self.assertEqual(result['confidence']['direction'], '停止（検証未達）')
-        self.assertEqual(result['confidence']['range'], '参考（到達確率停止）')
+        self.assertEqual(result['confidence']['range'], '中')
         self.assertEqual(
             result['confidence']['validation_note'],
             '方向予測停止: 現行モデルがATRベースラインを下回るため。検証ページで詳細確認。',
@@ -1844,7 +1858,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             '参考扱い: 米国3指数確認が不足 / 類似事例不足のため信頼度を50未満に制限。検証ページで詳細確認。',
         )
 
-    def test_limited_contract_suppresses_top_direction_and_first_target(self):
+    def test_limited_contract_keeps_top_direction_when_direction_is_allowed(self):
         world_model = {
             'direction': 'up',
             'direction_label': '上昇優勢',
@@ -1871,9 +1885,9 @@ class BasecalcUpdateSecurityTests(TestCase):
         result = build_basecalc_top_context(world_model, decision, [], {})
 
         self.assertEqual(result['status']['judgment_state'], '参考')
-        self.assertEqual(result['final_judgment']['direction'], '判断保留')
-        self.assertEqual(result['final_judgment']['setup'], '方向判断停止・レンジ確認')
-        self.assertIsNone(result['lines']['first_target'])
+        self.assertEqual(result['final_judgment']['direction'], '上方向')
+        self.assertEqual(result['final_judgment']['setup'], '押し目買い')
+        self.assertEqual(result['lines']['first_target'], 71390)
         self.assertIn('米国3指数確認が不足', result['status']['attention'])
 
     def test_saved_snapshot_newer_price_status_marks_judgment_stale(self):
@@ -2317,8 +2331,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '米国3指数確認')
         self.assertContains(response, '追いかけリスク')
         self.assertContains(response, '1日・3日・5日の見通し')
-        self.assertContains(response, '方向予測は停止')
-        self.assertContains(response, 'ATRレンジ・支持抵抗のみ確認')
+        self.assertContains(response, '方向予測は使わずレンジ確認')
+        self.assertContains(response, 'ATRレンジ・支持抵抗を確認')
         self.assertNotContains(response, '追いかけリスク: low')
         self.assertNotContains(response, '1d の方向')
         self.assertNotContains(response, '>up<', html=True)
@@ -3214,8 +3228,9 @@ class BasecalcUpdateSecurityTests(TestCase):
         cached_snapshot.assert_not_called()
         self.assertTrue(result['updated'])
         self.assertEqual(result['price'], 69770)
-        self.assertEqual(result['readiness_level'], 'limited')
-        self.assertEqual(result['state_key'], 'limited_reference')
+        self.assertEqual(result['readiness_level'], 'ready')
+        self.assertNotEqual(result['state_key'], 'limited_reference')
+        self.assertIn(result['direction'], {'up', 'down', 'neutral'})
         self.assertEqual(result['source_status']['source'], 'matsui')
         self.assertEqual(result['market_bars_saved'], 2)
         self.assertEqual(payload['decision_base_price'], 69770)
@@ -4394,7 +4409,7 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertEqual(data_quality['level'], 'warning')
         self.assertIn('無料公開ソースのため公式価格と同じ重みでは扱いません', data_quality['warnings'])
 
-    def test_matsui_niy_intraday_snapshot_is_reference_when_fresh(self):
+    def test_matsui_niy_intraday_snapshot_is_ready_with_warning_when_fresh(self):
         snapshot = _ready_snapshot(80, source='matsui', fetched_at=timezone.now())
         snapshot['fallback_used'] = False
         data_quality = evaluate_snapshot_quality(snapshot)
@@ -4415,8 +4430,9 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertEqual(data_quality['source'], 'matsui')
         self.assertEqual(data_quality['score'], 76)
         self.assertEqual(data_quality['level'], 'warning')
-        self.assertEqual(readiness['level'], 'limited')
-        self.assertFalse(readiness['directional_allowed'])
+        self.assertEqual(readiness['level'], 'ready')
+        self.assertTrue(readiness['directional_allowed'])
+        self.assertIn('quality_50_79', readiness['reason_codes'])
 
     def test_matsui_niy_snapshot_after_japan_close_keeps_reference_quality(self):
         now = timezone.make_aware(datetime(2026, 6, 23, 9, 30))
@@ -4442,7 +4458,8 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertFalse(data_quality['is_stale'])
         self.assertEqual(data_quality['score'], 76)
         self.assertEqual(data_quality['level'], 'warning')
-        self.assertEqual(readiness['level'], 'limited')
+        self.assertEqual(readiness['level'], 'ready')
+        self.assertTrue(readiness['directional_allowed'])
 
     def test_status_rows_show_age_fallback_and_decision(self):
         rows = status_display_rows(
@@ -4758,6 +4775,42 @@ class BasecalcReliabilitySpecTests(TestCase):
 
         outcome = PredictionOutcome.objects.get(prediction=prediction, horizon='1d')
         self.assertEqual(outcome.price_at_evaluation, 41050)
+
+    def test_evaluate_due_predictions_can_process_all_due_predictions(self):
+        base_time = timezone.now() - timezone.timedelta(days=10)
+        for index in range(305):
+            prediction_time = base_time + timezone.timedelta(minutes=index)
+            WorldModelPrediction.objects.create(
+                prediction_timestamp=prediction_time,
+                price=41000 + index,
+                state_key='range_neutral',
+                state_label='レンジ中立',
+                direction='neutral',
+                sentiment_score=0,
+                continuation_score=30,
+                shock_score=0,
+                confidence='Low',
+                main_scenario='test',
+                evidence=[],
+                features={'symbol': 'NIY=F'},
+                instrument_key='cme_nikkei_futures',
+                readiness_level='ready',
+            )
+            MarketBar.objects.create(
+                symbol='NIY=F',
+                timeframe='1d',
+                timestamp=prediction_time + timezone.timedelta(days=1),
+                close=41050 + index,
+                source='test',
+                instrument_key='cme_nikkei_futures',
+            )
+
+        limited_created = evaluate_due_predictions(now=timezone.now())
+        remaining_created = evaluate_due_predictions(now=timezone.now(), max_predictions=None)
+
+        self.assertEqual(limited_created, 300)
+        self.assertEqual(remaining_created, 5)
+        self.assertEqual(PredictionOutcome.objects.filter(horizon='1d').count(), 305)
 
     def test_export_import_v2_preserves_reliability_fields(self):
         prediction = WorldModelPrediction.objects.create(
@@ -5895,6 +5948,14 @@ class BasecalcWorldModelTests(TestCase):
         self.assertEqual(payload['schema'], 'basecalc_validation_report_v1')
         self.assertEqual(payload['filters']['is_backtest'], True)
         self.assertEqual(payload['horizons']['1d']['summary']['total_predictions'], 1)
+        self.assertEqual(
+            payload['horizons']['1d']['state_direction_summaries'][0]['direction'],
+            'up',
+        )
+        self.assertEqual(
+            payload['horizons']['1d']['state_direction_summaries'][0]['directional_accuracy'],
+            1.0,
+        )
         self.assertIn('validation_design', payload['horizons']['1d'])
 
     def test_backtest_command_dry_run_uses_saved_market_bars(self):

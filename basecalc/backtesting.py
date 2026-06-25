@@ -66,7 +66,7 @@ def run_basecalc_backtest(
                 created += 1
 
     if write:
-        evaluate_due_predictions()
+        evaluate_due_predictions(max_predictions=None)
     return _result(evaluated, created, evaluated - created, skip_reasons, model_version=model_version)
 
 

@@ -56,7 +56,19 @@ def apply_output_contract(
     if readiness_level != "ready":
         errors.append("判定可能なデータ状態ではありません")
 
-    status = "error" if errors else "limited" if warnings else "ok"
+    status = "error" if errors else "limited" if warnings or gate_reasons else "ok"
+    direction = world_model.get("direction")
+    model_horizon_keys = set((world_model.get("horizons") or {}).keys()) or set(allowed_horizons.keys())
+    directional_allowed = status != "error" and direction in {"up", "down"} and any(
+        item.get("direction_allowed")
+        for horizon, item in allowed_horizons.items()
+        if horizon in model_horizon_keys
+    )
+    target_display_allowed = status != "error"
+    probability_display_allowed = target_display_allowed and not _probability_display_restricted(world_model)
+    available_display = "停止"
+    if status != "error":
+        available_display = "方向・目標・レンジ" if directional_allowed else "ATRレンジ・支持抵抗・反転警戒"
     contract = {
         "snapshot_id": world_model.get("snapshot_id") or str(uuid4()),
         "model_version": world_model.get("model_version") or BASECALC_MODEL_VERSION,
@@ -70,9 +82,7 @@ def apply_output_contract(
         "ohlcv_bar_count": _ohlcv_bar_count(world_model),
         "data_quality_score": world_model.get("data_quality_score"),
         "readiness_level": readiness_level,
-        "directional_allowed": status == "ok" and all(
-            item.get("direction_allowed") for item in allowed_horizons.values()
-        ),
+        "directional_allowed": directional_allowed,
         "target_calculated_from_price": model_price,
         "range_calculated_from_price": model_price,
         "confidence_calculated_from_snapshot_id": world_model.get("snapshot_id") or "",
@@ -81,16 +91,16 @@ def apply_output_contract(
         "validation_report_version": (validation_report or {}).get("schema") or "",
         "validation_gate_status": validation_gate,
         "allowed_horizons": allowed_horizons,
-        "allowed_direction": world_model.get("direction") if status == "ok" else "stopped",
+        "allowed_direction": world_model.get("direction") if directional_allowed else "stopped",
         "validated_targets": _validated_targets(world_model, status),
         "invalidated_targets": _invalidated_targets(world_model),
         "us_index_status": us_index_status,
         "contract_status": status,
         "stop_reasons": _dedupe(errors + gate_reasons + warnings),
-        "target_display_allowed": status == "ok",
-        "probability_display_allowed": status == "ok",
-        "explanation_allowed": status == "ok",
-        "available_display": "支持抵抗・ATRレンジのみ" if status != "ok" else "方向・目標・レンジ",
+        "target_display_allowed": target_display_allowed,
+        "probability_display_allowed": probability_display_allowed,
+        "explanation_allowed": directional_allowed,
+        "available_display": available_display,
     }
     _apply_contract_to_world_model(world_model, contract)
     return contract
@@ -169,7 +179,7 @@ def _audit_horizons(world_model, validation_gate, errors, gate_reasons):
             gate_reasons.extend(gate.get("reasons") or [])
         allowed[horizon] = {
             "direction_allowed": direction_allowed,
-            "target_probability_allowed": direction_allowed,
+            "target_probability_allowed": True,
             "display_mode": "directional" if direction_allowed else "range_only",
             "reasons": _dedupe(reasons),
         }
@@ -243,6 +253,13 @@ def _current_state_is_weak(validation_gate):
         state_gate = row.get("state_gate") if isinstance(row, dict) else {}
         if isinstance(state_gate, dict) and not state_gate.get("direction_allowed", True):
             return True
+        state_direction_gate = row.get("state_direction_gate") if isinstance(row, dict) else {}
+        if (
+            isinstance(state_direction_gate, dict)
+            and state_direction_gate.get("has_direction_signal")
+            and not state_direction_gate.get("direction_allowed", True)
+        ):
+            return True
     return False
 
 
@@ -268,6 +285,14 @@ def _invalidated_targets(world_model):
         "upside": deepcopy(world_model.get("upside_targets") or []),
         "downside": deepcopy(world_model.get("downside_targets") or []),
     }
+
+
+def _probability_display_restricted(world_model):
+    similar = world_model.get("similar_summary") or {}
+    return (
+        int(similar.get("case_count") or 0) < LOW_SAMPLE_THRESHOLD
+        or similar.get("is_statistically_valid") is not True
+    )
 
 
 def _ohlcv_bar_count(world_model):

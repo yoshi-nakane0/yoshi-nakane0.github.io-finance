@@ -151,7 +151,7 @@ def prune_prediction_history(max_predictions=MAX_STORED_PREDICTIONS):
         return 0
 
 
-def evaluate_due_predictions(current_price=None, now=None):
+def evaluate_due_predictions(current_price=None, now=None, max_predictions=300):
     now = now or timezone.now()
     created = 0
     try:
@@ -159,7 +159,9 @@ def evaluate_due_predictions(current_price=None, now=None):
         predictions = WorldModelPrediction.objects.filter(
             Q(prediction_timestamp__lte=oldest_due)
             | Q(prediction_timestamp__isnull=True, created_at__lte=oldest_due)
-        ).order_by("-created_at")[:300]
+        ).order_by("-created_at")
+        if max_predictions is not None:
+            predictions = predictions[: int(max_predictions)]
         for prediction in predictions:
             base_time = _prediction_base_time(prediction)
             for horizon, delta in HORIZONS.items():
@@ -451,6 +453,66 @@ def state_performance_summary(horizon="1d", limit=12):
         return result
     except DatabaseError:
         logger.exception("Failed to read basecalc state performance")
+        return []
+
+
+def state_direction_performance_summary(
+    horizon="1d",
+    *,
+    limit=24,
+    instrument_key="cme_nikkei_futures",
+    readiness_level="ready",
+    is_backtest=True,
+):
+    try:
+        outcomes = PredictionOutcome.objects.filter(
+            horizon=horizon,
+            prediction__direction__in=["up", "down"],
+        )
+        if instrument_key:
+            outcomes = outcomes.filter(prediction__instrument_key=instrument_key)
+        if readiness_level:
+            outcomes = outcomes.filter(prediction__readiness_level=readiness_level)
+        if is_backtest is not None:
+            outcomes = outcomes.filter(prediction__is_backtest=is_backtest)
+        rows = (
+            outcomes.values(
+                "prediction__state_key",
+                "prediction__state_label",
+                "prediction__direction",
+            )
+            .annotate(
+                total_predictions=Count("id"),
+                avg_return_pct=Avg("realized_return_pct"),
+                avg_mfe_pct=Avg("mfe_pct"),
+                avg_mae_pct=Avg("mae_pct"),
+            )
+            .order_by("-total_predictions")[:limit]
+        )
+        result = []
+        for row in rows:
+            total = row["total_predictions"] or 0
+            if total == 0:
+                continue
+            scoped = outcomes.filter(
+                prediction__state_key=row["prediction__state_key"],
+                prediction__direction=row["prediction__direction"],
+            )
+            result.append(
+                {
+                    "state_key": row["prediction__state_key"],
+                    "state_label": row["prediction__state_label"],
+                    "direction": row["prediction__direction"],
+                    "total_predictions": total,
+                    "directional_accuracy": round(scoped.filter(direction_hit=True).count() / total, 2),
+                    "avg_return_pct": round(row["avg_return_pct"] or 0, 2),
+                    "avg_mfe_pct": round(row["avg_mfe_pct"] or 0, 2),
+                    "avg_mae_pct": round(row["avg_mae_pct"] or 0, 2),
+                }
+            )
+        return result
+    except DatabaseError:
+        logger.exception("Failed to read basecalc state direction performance")
         return []
 
 
