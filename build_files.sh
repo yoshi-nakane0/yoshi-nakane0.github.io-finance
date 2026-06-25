@@ -45,8 +45,6 @@ else
   echo "Skip data refresh in Vercel build"
 fi
 
-$PYTHON_BIN manage.py precompute_explanation || true
-
 if [ -z "${DATABASE_URL:-}" ]; then
   cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"
 fi

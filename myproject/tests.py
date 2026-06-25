@@ -99,6 +99,9 @@ class VercelFunctionPackagingTests(SimpleTestCase):
         self.assertIn('runtime/db.sqlite3', include_files)
         self.assertIn('basecalc/data/latest_snapshot.json', include_files)
         self.assertIn('basecalc/data/basecalc_status.json', include_files)
+        self.assertIn('explanation/data/latest_snapshot.json', include_files)
+        self.assertIn('explanation/data/trade_outcomes.json', include_files)
+        self.assertIn('static/finance_data_manifest.json', include_files)
 
 
 class ExplanationRoutingTests(TestCase):
@@ -122,9 +125,12 @@ class ExplanationRoutingTests(TestCase):
         self.assertIn('audit', payload)
 
     def test_explanation_page_falls_back_when_snapshot_table_is_missing(self):
-        with mock.patch(
-            'explanation.views.ExplanationSnapshot.objects.order_by',
-            side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+        with (
+            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
+            mock.patch(
+                'explanation.views.ExplanationSnapshot.objects.order_by',
+                side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+            ),
         ):
             response = self.client.get('/explanation/')
 
@@ -133,9 +139,12 @@ class ExplanationRoutingTests(TestCase):
         self.assertContains(response, '最終判断')
 
     def test_explanation_api_falls_back_when_snapshot_table_is_missing(self):
-        with mock.patch(
-            'explanation.views.ExplanationSnapshot.objects.order_by',
-            side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+        with (
+            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
+            mock.patch(
+                'explanation.views.ExplanationSnapshot.objects.order_by',
+                side_effect=OperationalError('no such table: explanation_explanationsnapshot'),
+            ),
         ):
             response = self.client.get('/explanation/api/latest/')
 

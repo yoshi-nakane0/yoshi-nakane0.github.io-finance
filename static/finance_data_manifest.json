@@ -1,0 +1,28 @@
+{
+  "basecalc_as_of": "2026-06-25T06:45:00+00:00",
+  "basecalc_status": "blocked",
+  "blocking_reasons": [
+    "判定可能なデータ状態ではありません",
+    "類似事例不足のため信頼度を50未満に制限",
+    "basecalcの方向判断は停止",
+    "basecalcの判定状態が限定的",
+    "予測ゲート停止中",
+    "重要指標の発表前後のため一段階下げます。"
+  ],
+  "data_freshness": {
+    "basecalc": "blocked",
+    "explanation": "blocked",
+    "macro": "current"
+  },
+  "explanation_as_of": "2026-06-25T07:52:35.154835+00:00",
+  "explanation_status": "blocked",
+  "generated_at": "2026-06-25T07:52:49.926190+00:00",
+  "macro_as_of": "2026-06-24T08:43:04.098830+00:00",
+  "macro_status": "ok",
+  "schema": "finance_data_manifest_v1",
+  "source_versions": {
+    "basecalc": "wm_v2.0.0",
+    "explanation": "explanation_v2",
+    "macro": "regime_v2_score"
+  }
+}

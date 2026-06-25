@@ -39,18 +39,20 @@ jobs:
         run: python manage.py precompute_explanation
       - name: Evaluate Explanation outcomes
         run: python manage.py evaluate_explanation_outcomes
+      - name: Export finance data manifest
+        run: python manage.py export_finance_data_manifest --output static/finance_data_manifest.json
       - name: Output contract check
         run: python manage.py check_basecalc_output_contract --snapshot basecalc/data/latest_snapshot.json
       - name: Data integrity check
         run: python manage.py check_basecalc_data_integrity
       - name: Commit updated history
         run: |
-          if git diff --quiet -- basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json; then
+          if git diff --quiet -- basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json explanation/data/latest_snapshot.json explanation/data/trade_outcomes.json static/finance_data_manifest.json; then
             echo "No basecalc data changes"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json
+          git add basecalc/data/basecalc_history.json basecalc/data/basecalc_status.json basecalc/data/latest_snapshot.json explanation/data/latest_snapshot.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
           git commit -m "Update basecalc data"
           git push

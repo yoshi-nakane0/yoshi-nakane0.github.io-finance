@@ -1,0 +1,3630 @@
+{
+  "alignment_status": "aligned",
+  "as_of": "2026-06-25T07:52:35.154835+00:00",
+  "audit": {
+    "items": [
+      "basecalcの方向判断は停止",
+      "判定可能なデータ状態ではありません",
+      "類似事例不足のため信頼度を50未満に制限",
+      "basecalcの判定状態が限定的",
+      "予測ゲート停止中",
+      "重要指標の発表前後のため一段階下げます。"
+    ],
+    "level": "blocked"
+  },
+  "basecalc": {
+    "bias": "neutral"
+  },
+  "data_quality_score": 76,
+  "evidence": [
+    "basecalcは方向を強く示していない。",
+    "macroは景気判断が中立だが、物価再加速リスクと金利上昇リスクが残る。",
+    "basecalcの方向判断は停止、判定可能なデータ状態ではありません、類似事例不足のため信頼度を50未満に制限のため、強い判断にはしない。"
+  ],
+  "final": {
+    "action_posture": "主要データがそろうまで判断を保留。",
+    "confidence_grade": "D",
+    "confidence_score": 0,
+    "label": "判定保留",
+    "stance": "withhold",
+    "status": "blocked"
+  },
+  "generated_at": "2026-06-25T07:52:42.942904+00:00",
+  "macro": {
+    "bias": "neutral_inflation_risk"
+  },
+  "scenario": {
+    "baseline": {
+      "text": "basecalcの方向判断は停止。理由：判定可能なデータ状態ではありません",
+      "title": "基本シナリオ"
+    },
+    "change_condition": "再計算後、価格・ターゲット・レンジの時点が一致した場合のみ再開。",
+    "downside": {
+      "text": "下値確認は支持抵抗とATRレンジのみ参考。",
+      "title": "下振れシナリオ"
+    },
+    "levels": {
+      "invalidation": null,
+      "invalidation_display": "N/A",
+      "resistance": null,
+      "resistance_display": "N/A",
+      "support": null,
+      "support_display": "N/A"
+    },
+    "upside": {
+      "text": "上値拡張は再計算と米国3指数確認がそろうまで表示停止。",
+      "title": "上振れシナリオ"
+    }
+  },
+  "schema": "explanation_snapshot_v1",
+  "score_breakdown": {
+    "alignment_bonus": 5,
+    "alignment_status": "aligned",
+    "audit_penalty": 41,
+    "base_confidence": 20,
+    "basecalc_confidence": 20,
+    "confidence_cap": "D",
+    "macro_confidence": 91
+  },
+  "source_snapshots": {
+    "basecalc": {
+      "allowed_direction": "stopped",
+      "allowed_horizons": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "reasons": [],
+          "target_probability_allowed": true
+        }
+      },
+      "as_of": "2026-06-25T07:52:35.154835+00:00",
+      "bearish_invalidation": null,
+      "bias": "neutral",
+      "bullish_invalidation": null,
+      "can_show_prediction": false,
+      "confidence_calibrated": false,
+      "confidence_grade": "Low",
+      "confidence_score": 20,
+      "continuation_score": 0,
+      "contract_status": "error",
+      "counter_bias": {},
+      "current_price": 72570.0,
+      "data_quality_score": 76,
+      "expected_return_1d": 0.0,
+      "expected_return_3d": 0.0,
+      "expected_return_5d": 0.0,
+      "horizons": {
+        "1d": {
+          "display_allowed": false,
+          "horizon_label": "1営業日後の方向",
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "参考表示",
+          "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+        },
+        "3d": {
+          "display_allowed": false,
+          "horizon_label": "3営業日後の方向",
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "参考表示",
+          "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+        },
+        "5d": {
+          "display_allowed": false,
+          "horizon_label": "5営業日後の方向",
+          "main_bias": "range",
+          "main_bias_label": "方向感なし",
+          "setup_label": "参考表示",
+          "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+        }
+      },
+      "invalidated_targets": {
+        "downside": [],
+        "upside": []
+      },
+      "model_version": "wm_v2.0.0",
+      "price_source": "market_data",
+      "primary_direction": "range",
+      "primary_setup": "range_wait",
+      "raw": {
+        "backtest_performance_by_horizon": {
+          "1d": {
+            "avg_confidence_score": 64.6,
+            "avg_mae_pct": -1.05,
+            "avg_mfe_pct": 1.0,
+            "avg_return_pct": 0.15,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 0.1,
+                "balanced_accuracy": 0.33,
+                "brier_score": 0.2,
+                "directional_accuracy": 0.35,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": -16.91,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 0.05,
+                "sample_count": 600
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 0.1,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.2,
+                  "directional_accuracy": 0.35,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": -16.91,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.05,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.2,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.24,
+                  "directional_accuracy": 0.27,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -120.74,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.25,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.15,
+                  "directional_accuracy": 0.39,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.13,
+                  "balanced_accuracy": 0.3,
+                  "brier_score": 0.21,
+                  "directional_accuracy": 0.31,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -86.98,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.18,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.04,
+                  "balanced_accuracy": 0.31,
+                  "brier_score": 0.21,
+                  "directional_accuracy": 0.31,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": -40.92,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.09,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.07,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.2,
+                  "directional_accuracy": 0.35,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": -27.3,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.02,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.15,
+                  "directional_accuracy": 0.39,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.02,
+                  "balanced_accuracy": 0.35,
+                  "brier_score": 0.21,
+                  "directional_accuracy": 0.32,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -40.34,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.07,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.0,
+                  "balanced_accuracy": 0.34,
+                  "brier_score": 0.16,
+                  "directional_accuracy": 0.39,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -12.79,
+                  "model_mae": 0.89,
+                  "risk_adjusted_return_pct": -0.05,
+                  "sample_count": 600
+                }
+              ],
+              "sample_count": 600
+            },
+            "continuation_directional_accuracy": 0.36,
+            "directional_accuracy": 0.39,
+            "invalidation_rate": 0.12,
+            "mae_improvement_rate": -0.1,
+            "median_mae_pct": -0.77,
+            "median_mfe_pct": 0.78,
+            "median_return_pct": 0.0,
+            "model_directional_accuracy": 0.39,
+            "model_mae": 0.89,
+            "sample_quality": "reliable",
+            "statistical_warning": "",
+            "target_t1_hit_rate": 0.34,
+            "target_t2_hit_rate": 0.1,
+            "total_predictions": 600,
+            "zero_prediction_mae": 0.81
+          },
+          "3d": {
+            "avg_confidence_score": 64.6,
+            "avg_mae_pct": -1.79,
+            "avg_mfe_pct": 1.69,
+            "avg_return_pct": 0.38,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 0.33,
+                "balanced_accuracy": 0.33,
+                "brier_score": 0.23,
+                "directional_accuracy": 0.48,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": -66.26,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 0.28,
+                "sample_count": 600
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 0.33,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.23,
+                  "directional_accuracy": 0.48,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": -66.26,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.28,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.43,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.3,
+                  "directional_accuracy": 0.34,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -262.55,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.48,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.21,
+                  "directional_accuracy": 0.18,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.35,
+                  "brier_score": 0.24,
+                  "directional_accuracy": 0.37,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -72.67,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.18,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.45,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": -42.14,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.13,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.28,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.23,
+                  "directional_accuracy": 0.48,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": -80.82,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.23,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.21,
+                  "directional_accuracy": 0.18,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.35,
+                  "brier_score": 0.26,
+                  "directional_accuracy": 0.43,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -44.98,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.02,
+                  "balanced_accuracy": 0.34,
+                  "brier_score": 0.22,
+                  "directional_accuracy": 0.26,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -32.4,
+                  "model_mae": 1.61,
+                  "risk_adjusted_return_pct": -0.03,
+                  "sample_count": 600
+                }
+              ],
+              "sample_count": 600
+            },
+            "continuation_directional_accuracy": 0.51,
+            "directional_accuracy": 0.46,
+            "invalidation_rate": 0.19,
+            "mae_improvement_rate": -0.05,
+            "median_mae_pct": -1.13,
+            "median_mfe_pct": 1.25,
+            "median_return_pct": 0.26,
+            "model_directional_accuracy": 0.46,
+            "model_mae": 1.61,
+            "sample_quality": "reliable",
+            "statistical_warning": "",
+            "target_t1_hit_rate": 0.63,
+            "target_t2_hit_rate": 0.36,
+            "total_predictions": 600,
+            "zero_prediction_mae": 1.54
+          },
+          "5d": {
+            "avg_confidence_score": 64.6,
+            "avg_mae_pct": -2.48,
+            "avg_mfe_pct": 2.34,
+            "avg_return_pct": 0.51,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 0.46,
+                "balanced_accuracy": 0.33,
+                "brier_score": 0.25,
+                "directional_accuracy": 0.51,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": -109.56,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 0.41,
+                "sample_count": 600
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 0.46,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.51,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": -109.56,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.41,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.56,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.32,
+                  "directional_accuracy": 0.38,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -356.6,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.61,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.22,
+                  "directional_accuracy": 0.11,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.07,
+                  "balanced_accuracy": 0.32,
+                  "brier_score": 0.27,
+                  "directional_accuracy": 0.34,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -88.25,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.12,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.28,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.27,
+                  "directional_accuracy": 0.47,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": -61.03,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.23,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": 0.41,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.51,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": -125.96,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 0.36,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.33,
+                  "brier_score": 0.22,
+                  "directional_accuracy": 0.11,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -6.0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.03,
+                  "balanced_accuracy": 0.35,
+                  "brier_score": 0.28,
+                  "directional_accuracy": 0.46,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -33.17,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.08,
+                  "sample_count": 600
+                },
+                {
+                  "avg_strategy_return_pct": -0.15,
+                  "balanced_accuracy": 0.36,
+                  "brier_score": 0.26,
+                  "directional_accuracy": 0.26,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -102.25,
+                  "model_mae": 2.14,
+                  "risk_adjusted_return_pct": -0.2,
+                  "sample_count": 600
+                }
+              ],
+              "sample_count": 600
+            },
+            "continuation_directional_accuracy": 0.49,
+            "directional_accuracy": 0.41,
+            "invalidation_rate": 0.25,
+            "mae_improvement_rate": -0.05,
+            "median_mae_pct": -1.4,
+            "median_mfe_pct": 1.63,
+            "median_return_pct": 0.38,
+            "model_directional_accuracy": 0.41,
+            "model_mae": 2.14,
+            "sample_quality": "reliable",
+            "statistical_warning": "",
+            "target_t1_hit_rate": 0.74,
+            "target_t2_hit_rate": 0.52,
+            "total_predictions": 600,
+            "zero_prediction_mae": 2.03
+          }
+        },
+        "basecalc_status": {
+          "intermarket": {
+            "age_minutes": 0,
+            "asset_count": 3,
+            "decision_label": "判定可能",
+            "decision_level": "ready",
+            "fallback_used": false,
+            "last_failed_at": null,
+            "last_success_at": "2026-06-25T07:52:32.494790+00:00",
+            "source": "NQ=F / ES=F / YM=F"
+          },
+          "price_data": {
+            "age_minutes": 67,
+            "decision_label": "参考",
+            "decision_level": "limited",
+            "fallback_used": false,
+            "last_failed_at": null,
+            "last_success_at": "2026-06-25T06:45:00+00:00",
+            "source": "matsui:NIY=F"
+          }
+        },
+        "basecalc_status_rows": [
+          {
+            "age_display": "1時間前",
+            "decision_label": "参考",
+            "decision_level": "limited",
+            "fallback_display": "なし",
+            "key": "price_data",
+            "label": "価格データ",
+            "last_failed_at": "",
+            "last_success_at": "2026-06-25T06:45:00+00:00",
+            "source": "matsui:NIY=F"
+          },
+          {
+            "age_display": "0分前",
+            "decision_label": "判定可能",
+            "decision_level": "ready",
+            "fallback_display": "なし",
+            "key": "intermarket",
+            "label": "米国3指数確認",
+            "last_failed_at": "",
+            "last_success_at": "2026-06-25T07:52:32.494790+00:00",
+            "source": "NQ=F / ES=F / YM=F"
+          }
+        ],
+        "basecalc_top": {
+          "action": {
+            "allowed": "支持抵抗・ATRレンジ確認のみ",
+            "caution": "再計算後に判断",
+            "judgment": "様子見",
+            "note": "価格、ターゲット、レンジの時点がそろうまで判断を止めます。",
+            "prohibited": "強いロング・ショート"
+          },
+          "behavior": {
+            "chase_risk": "追いかけリスク: 判定不可。新規判断は節目通過後に確認します。",
+            "reversal_warning": "反転警戒は限定的です。",
+            "trend_pressure": "順張り圧力は弱め。方向を決めつけずレンジ確認を優先します。"
+          },
+          "change_conditions": [
+            {
+              "detail": "上値目標を拡張",
+              "label": "高値終値突破＋米国3指数確認"
+            },
+            {
+              "detail": "上昇失敗として扱う",
+              "label": "EMA20・前日安値割れ"
+            },
+            {
+              "detail": "短期需給悪化",
+              "label": "VWAP割れ"
+            },
+            {
+              "detail": "追撃買い禁止を強化",
+              "label": "米国3指数が同時失速"
+            }
+          ],
+          "confidence": {
+            "data_quality": "確認中",
+            "direction": "停止",
+            "range": "参考",
+            "validation_note": "出力契約エラーのため、信頼度を強調しません。"
+          },
+          "external": {
+            "chase_risk": "判定不可",
+            "market_impact": "警戒",
+            "market_stress": "通常",
+            "us_indices": "方向分裂（確認 7/100） / NASDAQ -33 / S&P500 +31 / NYダウ +54",
+            "us_reason": "NASDAQ -33 / S&P500 +31 / NYダウ +54"
+          },
+          "final_judgment": {
+            "headline": "方向判断：停止",
+            "setup": "再計算待ち",
+            "supplement": "理由: 判定可能なデータ状態ではありません"
+          },
+          "horizons": [
+            {
+              "label": "停止",
+              "note": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限",
+              "summary": "方向予測は停止"
+            }
+          ],
+          "lines": {
+            "current_price": 72570,
+            "downside_support": 65770,
+            "first_target": null,
+            "invalidation_line": "—",
+            "near_downside": 72500,
+            "near_upside": 72600,
+            "reversal_warning_line": "前日安値・EMA20・VWAP割れ",
+            "short_term_weakening": "前日安値・EMA20・VWAP割れ",
+            "structural_break": "—",
+            "upside_resistance": 79370
+          },
+          "reasons": [
+            "無料公開ソースのため公式価格と同じ重みでは扱いません",
+            "データ品質が限定的です",
+            "データ品質はwarning（76/100）"
+          ],
+          "risks": [
+            "米国3指数確認が弱い",
+            "米国3指数確認が不十分"
+          ],
+          "status": {
+            "attention": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限",
+            "data_quality": "Warning 76/100",
+            "data_state": "注意",
+            "fallback": "なし",
+            "judgment_state": "判定停止",
+            "readiness": "停止",
+            "updated_at": "2026-06-25 15:45 JST"
+          }
+        },
+        "data": {
+          "price_display": "72,570",
+          "world_model": {
+            "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+            "basecalc_signal": {
+              "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+              "allowed_direction": "stopped",
+              "allowed_horizons": {
+                "1d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                },
+                "3d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                },
+                "5d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                }
+              },
+              "as_of": "2026-06-25 15:45 JST",
+              "confidence_calibrated": false,
+              "confidence_label": "Low",
+              "confidence_score": 20,
+              "contract_status": "error",
+              "counter_bias": {},
+              "directional_allowed": false,
+              "display_price": 72570.0,
+              "excluded_inputs": [
+                "macro",
+                "valuation",
+                "fx",
+                "rates",
+                "vix",
+                "sox",
+                "oil",
+                "news"
+              ],
+              "horizons": {},
+              "included_inputs": [
+                "nikkei_futures_ohlcv",
+                "nikkei_futures_indicators",
+                "nasdaq100_futures_price_action",
+                "sp500_futures_price_action",
+                "dow_futures_price_action"
+              ],
+              "instrument": "nikkei_futures",
+              "invalidated_targets": {
+                "downside": [],
+                "upside": []
+              },
+              "levels": {
+                "invalidation": {},
+                "resistance_zones": [],
+                "support_zones": []
+              },
+              "model_price": 72570.0,
+              "nikkei_technical_score": 0,
+              "price": 72570.0,
+              "primary_direction": "neutral",
+              "primary_setup": "range_wait",
+              "readiness_level": "limited",
+              "scenario_probabilities": {},
+              "scenarios": {
+                "baseline": {
+                  "label": "基本シナリオ",
+                  "text": "参考表示。上下どちらかの重要価格帯を終値で抜けるまで待ちます。 米国3指数確認は分裂しており、追いかけは避けます。"
+                },
+                "downside": {
+                  "label": "下振れシナリオ",
+                  "path": {
+                    "adjusted_probability": 0.0,
+                    "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                    "base_probability": 0.0,
+                    "direction": "down",
+                    "target_label": "T1",
+                    "target_price": null
+                  },
+                  "targets": [],
+                  "text": "米国3指数が下落確認となり、日経先物が安値を終値で割る場合だけ下振れを見ます。"
+                },
+                "invalidation": {
+                  "label": "無効化ライン",
+                  "level": {},
+                  "path": {
+                    "adjusted_probability": 0.0,
+                    "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                    "base_probability": 0.0,
+                    "direction": "invalidation",
+                    "target_label": "無効化",
+                    "target_price": null
+                  },
+                  "text": "方向判定停止中"
+                },
+                "price_paths": {
+                  "downside": {
+                    "adjusted_probability": 0.0,
+                    "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                    "base_probability": 0.0,
+                    "direction": "down",
+                    "target_label": "T1",
+                    "target_price": null
+                  },
+                  "invalidation": {
+                    "adjusted_probability": 0.0,
+                    "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                    "base_probability": 0.0,
+                    "direction": "invalidation",
+                    "target_label": "無効化",
+                    "target_price": null
+                  },
+                  "upside": {
+                    "adjusted_probability": 0.02,
+                    "assumption": "米国3指数の確認が上値到達を補助します。",
+                    "base_probability": 0.0,
+                    "direction": "up",
+                    "target_label": "T1",
+                    "target_price": null
+                  }
+                },
+                "upside": {
+                  "label": "上振れシナリオ",
+                  "path": {
+                    "adjusted_probability": 0.02,
+                    "assumption": "米国3指数の確認が上値到達を補助します。",
+                    "base_probability": 0.0,
+                    "direction": "up",
+                    "target_label": "T1",
+                    "target_price": null
+                  },
+                  "targets": [],
+                  "text": "米国3指数が上昇確認となり、日経先物が高値を終値で抜ける場合だけ上振れを見ます。"
+                }
+              },
+              "scope": "technical_with_us_index_confirmation",
+              "source": "basecalc",
+              "stop_reasons": [
+                "判定可能なデータ状態ではありません",
+                "類似事例不足のため信頼度を50未満に制限"
+              ],
+              "technical_regime": "limited",
+              "us_index_confirmation_score": 7,
+              "validated_targets": {
+                "downside": [],
+                "upside": []
+              },
+              "validation_gate_status": {
+                "1d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.66,
+                    "direction_allowed": true,
+                    "model_score": 0.68,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                },
+                "3d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.45,
+                    "direction_allowed": true,
+                    "model_score": 0.5700000000000001,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                },
+                "5d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.38,
+                    "direction_allowed": true,
+                    "model_score": 0.42,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                }
+              }
+            },
+            "chase_risk": "unknown",
+            "chase_risk_label": "判定不可",
+            "chase_risk_sentence": "追いかけリスクは判定不可（米国3指数データ不足）",
+            "components": {},
+            "confidence": "Low",
+            "confidence_components": {},
+            "confidence_score": 20,
+            "confidence_warnings": [
+              "無料公開ソースのため公式価格と同じ重みでは扱いません",
+              "データ品質が限定的です",
+              "データ品質はwarning（76/100）",
+              "無料公開ソースのため公式価格と同じ重みでは扱いません"
+            ],
+            "continuation_score": 0,
+            "contract_status": "error",
+            "counter_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+            "data_quality": {
+              "fallback_used": false,
+              "instrument_type": "futures",
+              "is_stale": false,
+              "level": "warning",
+              "score": 76,
+              "source": "matsui",
+              "symbol": "NIY=F",
+              "warnings": [
+                "無料公開ソースのため公式価格と同じ重みでは扱いません"
+              ]
+            },
+            "data_quality_level": "warning",
+            "data_quality_score": 76,
+            "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
+            "direction": "neutral",
+            "direction_label": "方向判断停止",
+            "directional_allowed": false,
+            "display_price": 72570.0,
+            "downside_targets": [],
+            "evidence": [
+              "無料公開ソースのため公式価格と同じ重みでは扱いません",
+              "データ品質が限定的です",
+              "データ品質はwarning（76/100）",
+              "無料公開ソースのため公式価格と同じ重みでは扱いません"
+            ],
+            "expected_return_1d": 0,
+            "expected_return_3d": 0,
+            "expected_return_5d": 0,
+            "expected_return_label": "方向判定停止",
+            "expected_return_source": "",
+            "expected_returns": {},
+            "external_context_score": 0,
+            "features": {
+              "adx14": 19.0774,
+              "atr14": 6801.4476,
+              "atr_ratio": 0.5684,
+              "bar_counts": {
+                "1d": 3437.0
+              },
+              "bb_lower": 56369.4606,
+              "bb_mid": 68905.75,
+              "bb_upper": 81442.0394,
+              "bb_width_pct": 36.3868,
+              "change_1d_pct": 1.8383,
+              "change_20d_pct": 72.9917,
+              "change_3d_pct": 4.3272,
+              "change_5d_pct": 4.9913,
+              "close": 72570.0,
+              "daily_change_pct": 1.8383,
+              "daily_change_z": -0.1104,
+              "data_quality": {
+                "fallback_used": false,
+                "instrument_type": "futures",
+                "is_stale": false,
+                "level": "warning",
+                "score": 76.0,
+                "source": "matsui",
+                "symbol": "NIY=F"
+              },
+              "data_quality_level": "warning",
+              "data_quality_score": 76.0,
+              "directional_allowed": false,
+              "distance_recent_high_pct": -1.6133,
+              "distance_recent_low_pct": 6.0965,
+              "dmi_minus": 9.6539,
+              "dmi_plus": 12.1147,
+              "ema20": 67337.3528,
+              "ema200": 53652.9628,
+              "ema20_gap_pct": 7.7708,
+              "ema5": 70907.5923,
+              "ema5_gap_pct": 2.3445,
+              "ema60": 59960.2726,
+              "ema60_gap_pct": 21.0301,
+              "fallback_used": false,
+              "gap_key": "gap_down",
+              "gap_pct": -2.7084,
+              "high": 72700.0,
+              "high_20d": 73760.0,
+              "high_5d": 72700.0,
+              "indicator_validity": {
+                "adx14": true,
+                "atr14": true,
+                "bollinger": true,
+                "ema20": true,
+                "ema200": true,
+                "ema5": true,
+                "ema60": true,
+                "gap": true,
+                "macd": true,
+                "pivot": true,
+                "rsi14": true,
+                "vwap": true
+              },
+              "instrument_key": "cme_nikkei_futures",
+              "instrument_type": "futures",
+              "is_canonical_instrument": true,
+              "low": 68930.0,
+              "low_20d": 41895.0,
+              "low_5d": 68400.0,
+              "macd": 3804.8046,
+              "macd_histogram": -326.9534,
+              "macd_signal": 4131.7579,
+              "open": 69330.0,
+              "pivots": {
+                "pivot": 70560.0,
+                "r1": 72190.0,
+                "r2": 73120.0,
+                "r3": 74750.0,
+                "s1": 69630.0,
+                "s2": 68000.0,
+                "s3": 67070.0
+              },
+              "previous_close": 71260.0,
+              "previous_high": 71490.0,
+              "previous_low": 68930.0,
+              "price": 72570.0,
+              "readiness_level": "limited",
+              "recent_high": 73760.0,
+              "recent_low": 68400.0,
+              "rsi14": 54.9931,
+              "shock_candidate": false,
+              "source": "matsui",
+              "source_name": "matsui",
+              "source_symbol": "NIY=F",
+              "structure_bias": 0.0,
+              "structure_key": "range",
+              "structure_label": "レンジ内",
+              "symbol": "NIY=F",
+              "us_index_components": {},
+              "us_index_confirmation_label": "divergent",
+              "us_index_confirmation_score": 7.0,
+              "volume": 42115.0,
+              "vwap": 46472.0992,
+              "vwap_gap_pct": 56.1582
+            },
+            "horizons": {
+              "1d": {
+                "horizon_label": "1営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示"
+              },
+              "3d": {
+                "horizon_label": "3営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示"
+              },
+              "5d": {
+                "horizon_label": "5営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示"
+              }
+            },
+            "intermarket_technicals": {
+              "components": {
+                "dow_futures": {
+                  "atr_ratio": 1.0063,
+                  "change_pct": 2.84,
+                  "close_position": 0.9337,
+                  "direction": "up",
+                  "high_breakout": true,
+                  "low_breakdown": false,
+                  "momentum_20d_pct": 2.8379,
+                  "momentum_5d_pct": 0.6947,
+                  "price": 102.8379,
+                  "score": 54,
+                  "symbol": "NYダウ"
+                },
+                "nasdaq100_futures": {
+                  "atr_ratio": 0.9988,
+                  "change_pct": -0.48,
+                  "close_position": 0.2325,
+                  "direction": "down",
+                  "high_breakout": false,
+                  "low_breakdown": true,
+                  "momentum_20d_pct": -0.4811,
+                  "momentum_5d_pct": -0.1207,
+                  "price": 99.5189,
+                  "score": -33,
+                  "symbol": "NASDAQ"
+                },
+                "sp500_futures": {
+                  "atr_ratio": 1.0008,
+                  "change_pct": 0.36,
+                  "close_position": 0.731,
+                  "direction": "up",
+                  "high_breakout": true,
+                  "low_breakdown": false,
+                  "momentum_20d_pct": 0.3636,
+                  "momentum_5d_pct": 0.0907,
+                  "price": 100.3636,
+                  "score": 31,
+                  "symbol": "S&P500"
+                }
+              },
+              "confirmation_label": "divergent",
+              "confirmation_score": 7,
+              "direction_agreement": 0.667,
+              "evidence": [
+                "米国3指数の方向が分裂",
+                "S&P500、NYダウが上向き",
+                "NASDAQ100が下向き"
+              ],
+              "fetched_at": "2026-06-25T07:52:32.494790+00:00",
+              "readiness": {
+                "level": "ready",
+                "missing": [],
+                "reason": "米国3指数確認可",
+                "usable": true
+              },
+              "risk_label": "technical_confirm"
+            },
+            "invalidation": {},
+            "invalidation_display": "",
+            "invalidation_price": null,
+            "invalidation_reason": "",
+            "invalidation_text": "方向判定停止中",
+            "is_ready": true,
+            "is_stale": false,
+            "last_updated_display": "2026-06-25 15:45 JST",
+            "main_scenario": "データ品質が限定的なため方向判定は停止しています",
+            "model_price": 72570.0,
+            "model_version": "wm_v2.0.0",
+            "momentum_score": 0,
+            "near_levels": {
+              "downside": [
+                {
+                  "distance_abs": 70,
+                  "distance_atr": 0.01,
+                  "distance_label": "-0.10%",
+                  "distance_pct": -0.1,
+                  "price": 72500,
+                  "reason": "100円刻み",
+                  "source": "round_100"
+                },
+                {
+                  "distance_abs": 570,
+                  "distance_atr": 0.08,
+                  "distance_label": "-0.79%",
+                  "distance_pct": -0.79,
+                  "price": 72000,
+                  "reason": "1000円刻み",
+                  "source": "round_1000"
+                },
+                {
+                  "distance_abs": 2940,
+                  "distance_atr": 0.43,
+                  "distance_label": "-4.05%",
+                  "distance_pct": -4.05,
+                  "price": 69630,
+                  "reason": "Pivot S1",
+                  "source": "pivot_s1"
+                }
+              ],
+              "upside": [
+                {
+                  "distance_abs": 30,
+                  "distance_atr": 0.0,
+                  "distance_label": "0.04%",
+                  "distance_pct": 0.04,
+                  "price": 72600,
+                  "reason": "100円刻み",
+                  "source": "round_100"
+                },
+                {
+                  "distance_abs": 130,
+                  "distance_atr": 0.02,
+                  "distance_label": "0.18%",
+                  "distance_pct": 0.18,
+                  "price": 72700,
+                  "reason": "5日高値",
+                  "source": "high_5d"
+                },
+                {
+                  "distance_abs": 430,
+                  "distance_atr": 0.06,
+                  "distance_label": "0.59%",
+                  "distance_pct": 0.59,
+                  "price": 73000,
+                  "reason": "500円刻み",
+                  "source": "round_500"
+                },
+                {
+                  "distance_abs": 550,
+                  "distance_atr": 0.08,
+                  "distance_label": "0.76%",
+                  "distance_pct": 0.76,
+                  "price": 73120,
+                  "reason": "Pivot R2",
+                  "source": "pivot_r2"
+                }
+              ]
+            },
+            "nikkei_technical_score": 0,
+            "output_contract": {
+              "allowed_direction": "stopped",
+              "allowed_horizons": {
+                "1d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                },
+                "3d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                },
+                "5d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "reasons": [],
+                  "target_probability_allowed": true
+                }
+              },
+              "available_display": "支持抵抗・ATRレンジのみ",
+              "confidence_calculated_from_snapshot_id": "",
+              "confidence_calibrated": false,
+              "confidence_status": "未較正",
+              "contract_status": "error",
+              "data_quality_score": 76,
+              "directional_allowed": false,
+              "display_price": 72570.0,
+              "explanation_allowed": false,
+              "generated_at": "2026-06-25T07:52:35.214376+00:00",
+              "invalidated_targets": {
+                "downside": [],
+                "upside": []
+              },
+              "latest_price": 72570.0,
+              "model_price": 72570.0,
+              "model_version": "wm_v2.0.0",
+              "ohlcv_bar_count": null,
+              "price_age_minutes": 67,
+              "price_source": "matsui",
+              "probability_display_allowed": false,
+              "range_calculated_from_price": 72570.0,
+              "readiness_level": "limited",
+              "snapshot_id": "5eb0e0bf-1d9e-4e3a-ba41-096a84d573b2",
+              "source_timestamp": "2026-06-25 15:45 JST",
+              "stop_reasons": [
+                "判定可能なデータ状態ではありません",
+                "類似事例不足のため信頼度を50未満に制限"
+              ],
+              "target_calculated_from_price": 72570.0,
+              "target_display_allowed": false,
+              "us_index_status": "confirmed",
+              "validated_targets": {
+                "downside": [],
+                "upside": []
+              },
+              "validation_gate_status": {
+                "1d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.66,
+                    "direction_allowed": true,
+                    "model_score": 0.68,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                },
+                "3d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.45,
+                    "direction_allowed": true,
+                    "model_score": 0.5700000000000001,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                },
+                "5d": {
+                  "direction_allowed": true,
+                  "display_mode": "directional",
+                  "model_vs_baseline": {
+                    "atr_score": 0.38,
+                    "direction_allowed": true,
+                    "model_score": 0.42,
+                    "reasons": [],
+                    "sample_count": 600
+                  },
+                  "reasons": [],
+                  "state_gate": {
+                    "direction_allowed": true,
+                    "reasons": []
+                  },
+                  "target_probability_allowed": true
+                }
+              },
+              "validation_report_version": ""
+            },
+            "performance_adjustment": {
+              "applied": false
+            },
+            "phase_label": "方向判定停止",
+            "practical_lines": {
+              "current_price": 72570,
+              "downside_support": 65770,
+              "near_downside": 72500,
+              "near_upside": 72600,
+              "source": "matsui",
+              "source_timestamp": "2026-06-25T06:45:00+00:00",
+              "upside_resistance": 79370
+            },
+            "price": 72570.0,
+            "primary_direction": "range",
+            "primary_scenario": "方向判断停止",
+            "primary_setup": "range_wait",
+            "primary_setup_label": "参考表示",
+            "readiness": {
+              "bar_counts": {
+                "1d": 3437
+              },
+              "directional_allowed": false,
+              "indicator_validity": {
+                "adx14": true,
+                "atr14": true,
+                "bollinger": true,
+                "ema20": true,
+                "ema200": true,
+                "ema5": true,
+                "ema60": true,
+                "gap": true,
+                "macd": true,
+                "pivot": true,
+                "rsi14": true,
+                "vwap": true
+              },
+              "instrument_key": "cme_nikkei_futures",
+              "instrument_label": "CME日経先物",
+              "instrument_type": "futures",
+              "level": "limited",
+              "reason_codes": [
+                "quality_50_79"
+              ],
+              "score": 76,
+              "source": "matsui",
+              "symbol": "NIY=F",
+              "warnings": [
+                "無料公開ソースのため公式価格と同じ重みでは扱いません",
+                "データ品質が限定的です"
+              ]
+            },
+            "readiness_display": {
+              "daily_bars": 3437,
+              "valid_major_indicators": 6
+            },
+            "readiness_level": "limited",
+            "rebound_improvement_score": 0,
+            "reversal_risk_score": 0,
+            "scenario_label": "判定停止",
+            "scenarios": {
+              "baseline": {
+                "label": "基本シナリオ",
+                "text": "参考表示。上下どちらかの重要価格帯を終値で抜けるまで待ちます。 米国3指数確認は分裂しており、追いかけは避けます。"
+              },
+              "downside": {
+                "label": "下振れシナリオ",
+                "path": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                  "base_probability": 0.0,
+                  "direction": "down",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "targets": [],
+                "text": "米国3指数が下落確認となり、日経先物が安値を終値で割る場合だけ下振れを見ます。"
+              },
+              "invalidation": {
+                "label": "無効化ライン",
+                "level": {},
+                "path": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                  "base_probability": 0.0,
+                  "direction": "invalidation",
+                  "target_label": "無効化",
+                  "target_price": null
+                },
+                "text": "方向判定停止中"
+              },
+              "price_paths": {
+                "downside": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                  "base_probability": 0.0,
+                  "direction": "down",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "invalidation": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                  "base_probability": 0.0,
+                  "direction": "invalidation",
+                  "target_label": "無効化",
+                  "target_price": null
+                },
+                "upside": {
+                  "adjusted_probability": 0.02,
+                  "assumption": "米国3指数の確認が上値到達を補助します。",
+                  "base_probability": 0.0,
+                  "direction": "up",
+                  "target_label": "T1",
+                  "target_price": null
+                }
+              },
+              "upside": {
+                "label": "上振れシナリオ",
+                "path": {
+                  "adjusted_probability": 0.02,
+                  "assumption": "米国3指数の確認が上値到達を補助します。",
+                  "base_probability": 0.0,
+                  "direction": "up",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "targets": [],
+                "text": "米国3指数が上昇確認となり、日経先物が高値を終値で抜ける場合だけ上振れを見ます。"
+              }
+            },
+            "sentiment_key": "neutral",
+            "sentiment_label": "参考表示",
+            "sentiment_score": 0,
+            "sentiment_score_abs": 0,
+            "shock_label": "N/A",
+            "shock_score": 0,
+            "similar_summary": {
+              "average_return_pct": 0,
+              "case_count": 0,
+              "cases": [],
+              "directional_accuracy": 0,
+              "down_rate": 0,
+              "downside_t1_hit_rate": 0,
+              "invalidation_rate": 0,
+              "is_statistically_valid": false,
+              "range_rate": 0,
+              "sample_warning": "類似局面の件数が不足しています",
+              "searched_case_count": 0,
+              "target_t1_hit_rate": 0,
+              "up_rate": 0,
+              "upside_t1_hit_rate": 0,
+              "used_case_count": 0
+            },
+            "source_status": {
+              "fallback_used": false,
+              "instrument_key": "cme_nikkei_futures",
+              "instrument_type": "futures",
+              "is_stale": false,
+              "source": "matsui",
+              "symbol": "NIY=F"
+            },
+            "stale_minutes": 67,
+            "state_key": "limited_reference",
+            "state_label": "参考表示",
+            "stop_reasons": [
+              "判定可能なデータ状態ではありません",
+              "類似事例不足のため信頼度を50未満に制限"
+            ],
+            "strength_label": "弱い",
+            "sub_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+            "target_1_display": "",
+            "target_2_display": "",
+            "target_ranges": [],
+            "technical_regime": "limited",
+            "transition_probs": [
+              {
+                "label": "レンジ中立",
+                "probability": 0.72,
+                "sample_count": 0,
+                "source": "rule",
+                "state_key": "range_neutral"
+              },
+              {
+                "label": "データ不足",
+                "probability": 0.28,
+                "sample_count": 0,
+                "source": "rule",
+                "state_key": "data_unavailable"
+              }
+            ],
+            "trend_score": 0,
+            "upside_targets": [],
+            "us_index_confirmation": {
+              "components": {
+                "dow_futures": {
+                  "atr_ratio": 1.0063,
+                  "change_pct": 2.84,
+                  "close_position": 0.9337,
+                  "direction": "up",
+                  "high_breakout": true,
+                  "low_breakdown": false,
+                  "momentum_20d_pct": 2.8379,
+                  "momentum_5d_pct": 0.6947,
+                  "price": 102.8379,
+                  "score": 54,
+                  "symbol": "NYダウ"
+                },
+                "nasdaq100_futures": {
+                  "atr_ratio": 0.9988,
+                  "change_pct": -0.48,
+                  "close_position": 0.2325,
+                  "direction": "down",
+                  "high_breakout": false,
+                  "low_breakdown": true,
+                  "momentum_20d_pct": -0.4811,
+                  "momentum_5d_pct": -0.1207,
+                  "price": 99.5189,
+                  "score": -33,
+                  "symbol": "NASDAQ"
+                },
+                "sp500_futures": {
+                  "atr_ratio": 1.0008,
+                  "change_pct": 0.36,
+                  "close_position": 0.731,
+                  "direction": "up",
+                  "high_breakout": true,
+                  "low_breakdown": false,
+                  "momentum_20d_pct": 0.3636,
+                  "momentum_5d_pct": 0.0907,
+                  "price": 100.3636,
+                  "score": 31,
+                  "symbol": "S&P500"
+                }
+              },
+              "confirmation_label": "divergent",
+              "confirmation_score": 7,
+              "direction_agreement": 0.667,
+              "evidence": [
+                "米国3指数の方向が分裂",
+                "S&P500、NYダウが上向き",
+                "NASDAQ100が下向き"
+              ],
+              "fetched_at": "2026-06-25T07:52:32.494790+00:00",
+              "readiness": {
+                "level": "ready",
+                "missing": [],
+                "reason": "米国3指数確認可",
+                "usable": true
+              },
+              "risk_label": "technical_confirm"
+            },
+            "us_index_confirmation_label": "divergent",
+            "us_index_confirmation_score": 7
+          }
+        },
+        "data_quality": 76,
+        "decision": {
+          "can_show_prediction": false,
+          "confidence": "Low",
+          "confidence_score": 20,
+          "contract_status": "error",
+          "daily_bars": 3437,
+          "data_quality_level": "warning",
+          "data_quality_score": 76,
+          "direction": "neutral",
+          "direction_label": "方向判断停止",
+          "downside_target": null,
+          "fallback_used": false,
+          "invalidation": "",
+          "last_updated": "2026-06-25 15:45 JST",
+          "main_reason": [
+            "無料公開ソースのため公式価格と同じ重みでは扱いません",
+            "データ品質が限定的です",
+            "データ品質はwarning（76/100）"
+          ],
+          "market_stress": {
+            "impact": "警戒",
+            "label": "通常",
+            "reasons": [
+              "主要3指数に急変判定は出ていません。",
+              "米国3指数の方向が分裂"
+            ]
+          },
+          "prediction_stop_reasons": [
+            "判定可能なデータ状態ではありません",
+            "類似事例不足のため信頼度を50未満に制限",
+            "判定状態が未達",
+            "信頼度不足",
+            "類似局面不足",
+            "検証件数不足"
+          ],
+          "price": 72570.0,
+          "range_1d": null,
+          "readiness_label": "参考表示",
+          "readiness_level": "limited",
+          "risk_reason": [
+            "米国3指数確認が弱い"
+          ],
+          "state_label": "参考表示",
+          "status_summary": "一部参考: 価格データ",
+          "stop_reasons": [
+            "判定可能なデータ状態ではありません",
+            "類似事例不足のため信頼度を50未満に制限"
+          ],
+          "upside_target": null,
+          "us_index_confirmation": {
+            "label": "方向分裂",
+            "reasons": [
+              "米国3指数の方向が分裂",
+              "S&P500、NYダウが上向き"
+            ]
+          }
+        },
+        "decision_base_price": 72570,
+        "decision_price": {
+          "as_of": "2026-06-25T06:45:00+00:00",
+          "source": "matsui",
+          "symbol": "NIY=F",
+          "value": 72570
+        },
+        "decision_price_as_of": "2026-06-25T06:45:00+00:00",
+        "decision_price_source": "matsui",
+        "decision_price_symbol": "NIY=F",
+        "detail_mode": false,
+        "generated_at": "2026-06-25T07:52:35.154835+00:00",
+        "intermarket_technicals": {
+          "components": {
+            "dow_futures": {
+              "atr_ratio": 1.0063,
+              "change_pct": 2.84,
+              "close_position": 0.9337,
+              "direction": "up",
+              "high_breakout": true,
+              "low_breakdown": false,
+              "momentum_20d_pct": 2.8379,
+              "momentum_5d_pct": 0.6947,
+              "price": 102.8379,
+              "score": 54,
+              "symbol": "NYダウ"
+            },
+            "nasdaq100_futures": {
+              "atr_ratio": 0.9988,
+              "change_pct": -0.48,
+              "close_position": 0.2325,
+              "direction": "down",
+              "high_breakout": false,
+              "low_breakdown": true,
+              "momentum_20d_pct": -0.4811,
+              "momentum_5d_pct": -0.1207,
+              "price": 99.5189,
+              "score": -33,
+              "symbol": "NASDAQ"
+            },
+            "sp500_futures": {
+              "atr_ratio": 1.0008,
+              "change_pct": 0.36,
+              "close_position": 0.731,
+              "direction": "up",
+              "high_breakout": true,
+              "low_breakdown": false,
+              "momentum_20d_pct": 0.3636,
+              "momentum_5d_pct": 0.0907,
+              "price": 100.3636,
+              "score": 31,
+              "symbol": "S&P500"
+            }
+          },
+          "confirmation_label": "divergent",
+          "confirmation_score": 7,
+          "direction_agreement": 0.667,
+          "evidence": [
+            "米国3指数の方向が分裂",
+            "S&P500、NYダウが上向き",
+            "NASDAQ100が下向き"
+          ],
+          "fetched_at": "2026-06-25T07:52:32.494790+00:00",
+          "readiness": {
+            "level": "ready",
+            "missing": [],
+            "reason": "米国3指数確認可",
+            "usable": true
+          },
+          "risk_label": "technical_confirm"
+        },
+        "job_duration_sec": 7.793,
+        "latest_price": 72570,
+        "latest_price_display": "72,570",
+        "market_shock": {
+          "as_of": "2026-06-25",
+          "has_data": true,
+          "rows": [
+            {
+              "continuation_label": "通常変動",
+              "continuation_score": null,
+              "continuation_score_display": "—",
+              "dd200_display": "—",
+              "dd52w_display": "—",
+              "direction": "calm",
+              "headline": "急変なし",
+              "label": "日経先物",
+              "momentum_20d": 1.8383384788099915,
+              "momentum_20d_display": "+1.8%",
+              "observation_date": "—",
+              "reason": "日経先物本体の直近変化率を確認しています。",
+              "symbol": "NIY=F",
+              "tone": "neutral"
+            },
+            {
+              "continuation_label": "通常変動",
+              "continuation_score": null,
+              "continuation_score_display": "—",
+              "dd200_display": "+8.2%",
+              "dd52w_display": "-1.8%",
+              "direction": "calm",
+              "futures": {
+                "continuation_score_display": "—",
+                "direction": "calm",
+                "headline": "急変なし",
+                "label": "S&P500先物",
+                "momentum_20d_display": "+0.4%",
+                "reason": "basecalc内の補助市場データから急変を確認しています。"
+              },
+              "headline": "急変なし",
+              "label": "S&P500",
+              "momentum_20d": 0.36356219999757355,
+              "momentum_20d_display": "+0.4%",
+              "observation_date": "2026-06-22",
+              "reason": "直近20営業日の変化は急変判定の範囲外です。",
+              "symbol": "GSPC",
+              "tone": "neutral"
+            },
+            {
+              "continuation_label": "通常変動",
+              "continuation_score": null,
+              "continuation_score_display": "—",
+              "dd200_display": "+7.3%",
+              "dd52w_display": "-0.6%",
+              "direction": "calm",
+              "futures": {
+                "continuation_score_display": "50%",
+                "direction": "surge",
+                "headline": "急騰 小",
+                "label": "NYダウ先物",
+                "momentum_20d_display": "+2.8%",
+                "reason": "basecalc内の補助市場データから急変を確認しています。"
+              },
+              "headline": "急変なし",
+              "label": "NYダウ",
+              "momentum_20d": 2.8378881311606525,
+              "momentum_20d_display": "+2.8%",
+              "observation_date": "2026-06-22",
+              "reason": "直近20営業日の変化は急変判定の範囲外です。",
+              "symbol": "DJI",
+              "tone": "neutral"
+            },
+            {
+              "continuation_label": "通常変動",
+              "continuation_score": null,
+              "continuation_score_display": "—",
+              "dd200_display": "+11.1%",
+              "dd52w_display": "-3.4%",
+              "direction": "calm",
+              "futures": {
+                "continuation_score_display": "—",
+                "direction": "calm",
+                "headline": "急変なし",
+                "label": "NASDAQ100先物",
+                "momentum_20d_display": "-0.5%",
+                "reason": "basecalc内の補助市場データから急変を確認しています。"
+              },
+              "headline": "急変なし",
+              "label": "NASDAQ",
+              "momentum_20d": -0.48111482434309677,
+              "momentum_20d_display": "-0.5%",
+              "observation_date": "2026-06-22",
+              "reason": "直近20営業日の変化は急変判定の範囲外です。",
+              "symbol": "IXIC",
+              "tone": "neutral"
+            }
+          ],
+          "summary": "主要3指数に急変判定は出ていません。",
+          "tone": "neutral"
+        },
+        "model_price_display": "72,570",
+        "model_version": "wm_v2.0.0",
+        "performance": {
+          "avg_confidence_score": 68.8,
+          "avg_mae_pct": -0.72,
+          "avg_mfe_pct": 2.24,
+          "avg_return_pct": 1.78,
+          "baseline_comparison": {
+            "best_baseline": {
+              "avg_strategy_return_pct": 1.73,
+              "balanced_accuracy": 0.5,
+              "brier_score": 0.06,
+              "directional_accuracy": 0.6,
+              "key": "always_up",
+              "label": "常に上昇",
+              "max_drawdown_pct": -0.05,
+              "model_mae": 0,
+              "risk_adjusted_return_pct": 1.68,
+              "sample_count": 5
+            },
+            "rows": [
+              {
+                "avg_strategy_return_pct": 1.73,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.06,
+                "directional_accuracy": 0.6,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 1.68,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -1.83,
+                "balanced_accuracy": 0.0,
+                "brier_score": 0.36,
+                "directional_accuracy": 0.0,
+                "key": "always_down",
+                "label": "常に下落",
+                "max_drawdown_pct": -9.15,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": -1.88,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -0.01,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.15,
+                "directional_accuracy": 0.4,
+                "key": "always_neutral",
+                "label": "常に中立",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": -0.06,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -0.06,
+                "balanced_accuracy": 0.25,
+                "brier_score": 0.16,
+                "directional_accuracy": 0.2,
+                "key": "continuation",
+                "label": "前日方向継続",
+                "max_drawdown_pct": -0.29,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": -0.11,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": 1.73,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.06,
+                "directional_accuracy": 0.6,
+                "key": "ema_cross",
+                "label": "EMAクロス",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 1.68,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": 1.73,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.06,
+                "directional_accuracy": 0.6,
+                "key": "vwap_side",
+                "label": "VWAP位置",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 1.68,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -0.01,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.15,
+                "directional_accuracy": 0.4,
+                "key": "atr_range",
+                "label": "単純ATRレンジ",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": -0.06,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -0.57,
+                "balanced_accuracy": 0.17,
+                "brier_score": 0.26,
+                "directional_accuracy": 0.2,
+                "key": "random",
+                "label": "ランダム基準",
+                "max_drawdown_pct": -3.15,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": -0.62,
+                "sample_count": 5
+              },
+              {
+                "avg_strategy_return_pct": -0.01,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.15,
+                "directional_accuracy": 0.4,
+                "key": "model",
+                "label": "現行モデル",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 1.77,
+                "risk_adjusted_return_pct": -0.06,
+                "sample_count": 5
+              }
+            ],
+            "sample_count": 5
+          },
+          "continuation_directional_accuracy": 0.6,
+          "directional_accuracy": 0.8,
+          "invalidation_rate": 0.0,
+          "mae_improvement_rate": 0.01,
+          "median_mae_pct": -1.04,
+          "median_mfe_pct": 3.07,
+          "median_return_pct": 2.65,
+          "model_directional_accuracy": 0.8,
+          "model_mae": 1.77,
+          "sample_quality": "insufficient",
+          "statistical_warning": "サンプル数が不足しています",
+          "target_t1_hit_rate": 0.6,
+          "target_t2_hit_rate": 0.0,
+          "total_predictions": 5,
+          "zero_prediction_mae": 1.78
+        },
+        "performance_by_horizon": {
+          "1d": {
+            "avg_confidence_score": 68.8,
+            "avg_mae_pct": -0.72,
+            "avg_mfe_pct": 2.24,
+            "avg_return_pct": 1.78,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 1.73,
+                "balanced_accuracy": 0.5,
+                "brier_score": 0.06,
+                "directional_accuracy": 0.6,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": -0.05,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 1.68,
+                "sample_count": 5
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 1.73,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 0.6,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 1.68,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -1.83,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.36,
+                  "directional_accuracy": 0.0,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -9.15,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -1.88,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.15,
+                  "directional_accuracy": 0.4,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -0.06,
+                  "balanced_accuracy": 0.25,
+                  "brier_score": 0.16,
+                  "directional_accuracy": 0.2,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -0.29,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.11,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": 1.73,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 0.6,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 1.68,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": 1.73,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 0.6,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 1.68,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.15,
+                  "directional_accuracy": 0.4,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -0.57,
+                  "balanced_accuracy": 0.17,
+                  "brier_score": 0.26,
+                  "directional_accuracy": 0.2,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -3.15,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.62,
+                  "sample_count": 5
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.15,
+                  "directional_accuracy": 0.4,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -0.05,
+                  "model_mae": 1.77,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 5
+                }
+              ],
+              "sample_count": 5
+            },
+            "continuation_directional_accuracy": 0.6,
+            "directional_accuracy": 0.8,
+            "invalidation_rate": 0.0,
+            "mae_improvement_rate": 0.01,
+            "median_mae_pct": -1.04,
+            "median_mfe_pct": 3.07,
+            "median_return_pct": 2.65,
+            "model_directional_accuracy": 0.8,
+            "model_mae": 1.77,
+            "sample_quality": "insufficient",
+            "statistical_warning": "サンプル数が不足しています",
+            "target_t1_hit_rate": 0.6,
+            "target_t2_hit_rate": 0.0,
+            "total_predictions": 5,
+            "zero_prediction_mae": 1.78
+          },
+          "3d": {
+            "avg_confidence_score": 68.5,
+            "avg_mae_pct": -0.38,
+            "avg_mfe_pct": 4.19,
+            "avg_return_pct": 3.82,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 3.77,
+                "balanced_accuracy": 1.0,
+                "brier_score": 0.06,
+                "directional_accuracy": 1.0,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": 0,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 3.72,
+                "sample_count": 2
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 3.77,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.72,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -3.87,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.56,
+                  "directional_accuracy": 0.0,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -7.74,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -3.92,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 3.77,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.72,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 3.77,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.72,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -1.22,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.31,
+                  "directional_accuracy": 0.5,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -5.04,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -1.27,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 3.63,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                }
+              ],
+              "sample_count": 2
+            },
+            "continuation_directional_accuracy": 0.5,
+            "directional_accuracy": 1.0,
+            "invalidation_rate": 0.0,
+            "mae_improvement_rate": 0.05,
+            "median_mae_pct": -0.38,
+            "median_mfe_pct": 4.19,
+            "median_return_pct": 3.82,
+            "model_directional_accuracy": 1.0,
+            "model_mae": 3.63,
+            "sample_quality": "insufficient",
+            "statistical_warning": "サンプル数が不足しています",
+            "target_t1_hit_rate": 1.0,
+            "target_t2_hit_rate": 0.5,
+            "total_predictions": 2,
+            "zero_prediction_mae": 3.82
+          },
+          "5d": {
+            "avg_confidence_score": 68.5,
+            "avg_mae_pct": -0.38,
+            "avg_mfe_pct": 5.8,
+            "avg_return_pct": 3.17,
+            "baseline_comparison": {
+              "best_baseline": {
+                "avg_strategy_return_pct": 3.12,
+                "balanced_accuracy": 1.0,
+                "brier_score": 0.06,
+                "directional_accuracy": 1.0,
+                "key": "always_up",
+                "label": "常に上昇",
+                "max_drawdown_pct": 0,
+                "model_mae": 0,
+                "risk_adjusted_return_pct": 3.07,
+                "sample_count": 2
+              },
+              "rows": [
+                {
+                  "avg_strategy_return_pct": 3.12,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "always_up",
+                  "label": "常に上昇",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.07,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -3.22,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.56,
+                  "directional_accuracy": 0.0,
+                  "key": "always_down",
+                  "label": "常に下落",
+                  "max_drawdown_pct": -6.44,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -3.27,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "always_neutral",
+                  "label": "常に中立",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "continuation",
+                  "label": "前日方向継続",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 3.12,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "ema_cross",
+                  "label": "EMAクロス",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.07,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 3.12,
+                  "balanced_accuracy": 1.0,
+                  "brier_score": 0.06,
+                  "directional_accuracy": 1.0,
+                  "key": "vwap_side",
+                  "label": "VWAP位置",
+                  "max_drawdown_pct": 0,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 3.07,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": -0.01,
+                  "balanced_accuracy": 0.0,
+                  "brier_score": 0.25,
+                  "directional_accuracy": 0.0,
+                  "key": "atr_range",
+                  "label": "単純ATRレンジ",
+                  "max_drawdown_pct": -0.02,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": -0.06,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 1.77,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.31,
+                  "directional_accuracy": 0.5,
+                  "key": "random",
+                  "label": "ランダム基準",
+                  "max_drawdown_pct": -1.4,
+                  "model_mae": 0,
+                  "risk_adjusted_return_pct": 1.72,
+                  "sample_count": 2
+                },
+                {
+                  "avg_strategy_return_pct": 2.46,
+                  "balanced_accuracy": 0.5,
+                  "brier_score": 0.16,
+                  "directional_accuracy": 0.5,
+                  "key": "model",
+                  "label": "現行モデル",
+                  "max_drawdown_pct": -0.01,
+                  "model_mae": 2.94,
+                  "risk_adjusted_return_pct": 2.41,
+                  "sample_count": 2
+                }
+              ],
+              "sample_count": 2
+            },
+            "continuation_directional_accuracy": 0.5,
+            "directional_accuracy": 1.0,
+            "invalidation_rate": 0.0,
+            "mae_improvement_rate": 0.07,
+            "median_mae_pct": -0.38,
+            "median_mfe_pct": 5.8,
+            "median_return_pct": 3.17,
+            "model_directional_accuracy": 1.0,
+            "model_mae": 2.94,
+            "sample_quality": "insufficient",
+            "statistical_warning": "サンプル数が不足しています",
+            "target_t1_hit_rate": 1.0,
+            "target_t2_hit_rate": 1.0,
+            "total_predictions": 2,
+            "zero_prediction_mae": 3.17
+          }
+        },
+        "price_param": "72570",
+        "source": "github_actions",
+        "stale": false,
+        "updated": false,
+        "warnings": [],
+        "world_model": {
+          "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+          "basecalc_signal": {
+            "action_note": "矛盾があるため、強いロング・ショートは出しません。",
+            "allowed_direction": "stopped",
+            "allowed_horizons": {
+              "1d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              },
+              "3d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              },
+              "5d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              }
+            },
+            "as_of": "2026-06-25 15:45 JST",
+            "confidence_calibrated": false,
+            "confidence_label": "Low",
+            "confidence_score": 20,
+            "contract_status": "error",
+            "counter_bias": {},
+            "directional_allowed": false,
+            "display_price": 72570.0,
+            "excluded_inputs": [
+              "macro",
+              "valuation",
+              "fx",
+              "rates",
+              "vix",
+              "sox",
+              "oil",
+              "news"
+            ],
+            "horizons": {
+              "1d": {
+                "display_allowed": false,
+                "horizon_label": "1営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示",
+                "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+              },
+              "3d": {
+                "display_allowed": false,
+                "horizon_label": "3営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示",
+                "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+              },
+              "5d": {
+                "display_allowed": false,
+                "horizon_label": "5営業日後の方向",
+                "main_bias": "range",
+                "main_bias_label": "方向感なし",
+                "setup_label": "参考表示",
+                "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+              }
+            },
+            "included_inputs": [
+              "nikkei_futures_ohlcv",
+              "nikkei_futures_indicators",
+              "nasdaq100_futures_price_action",
+              "sp500_futures_price_action",
+              "dow_futures_price_action"
+            ],
+            "instrument": "nikkei_futures",
+            "invalidated_targets": {
+              "downside": [],
+              "upside": []
+            },
+            "levels": {
+              "invalidation": {},
+              "resistance_zones": [],
+              "support_zones": []
+            },
+            "model_price": 72570.0,
+            "nikkei_technical_score": 0,
+            "price": 72570.0,
+            "primary_direction": "neutral",
+            "primary_setup": "range_wait",
+            "readiness_level": "limited",
+            "scenario_probabilities": {},
+            "scenarios": {
+              "baseline": {
+                "label": "基本シナリオ",
+                "text": "参考表示。上下どちらかの重要価格帯を終値で抜けるまで待ちます。 米国3指数確認は分裂しており、追いかけは避けます。"
+              },
+              "downside": {
+                "label": "下振れシナリオ",
+                "path": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                  "base_probability": 0.0,
+                  "direction": "down",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "targets": [],
+                "text": "米国3指数が下落確認となり、日経先物が安値を終値で割る場合だけ下振れを見ます。"
+              },
+              "invalidation": {
+                "label": "無効化ライン",
+                "level": {},
+                "path": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                  "base_probability": 0.0,
+                  "direction": "invalidation",
+                  "target_label": "無効化",
+                  "target_price": null
+                },
+                "text": "方向判定停止中"
+              },
+              "price_paths": {
+                "downside": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                  "base_probability": 0.0,
+                  "direction": "down",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "invalidation": {
+                  "adjusted_probability": 0.0,
+                  "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                  "base_probability": 0.0,
+                  "direction": "invalidation",
+                  "target_label": "無効化",
+                  "target_price": null
+                },
+                "upside": {
+                  "adjusted_probability": 0.02,
+                  "assumption": "米国3指数の確認が上値到達を補助します。",
+                  "base_probability": 0.0,
+                  "direction": "up",
+                  "target_label": "T1",
+                  "target_price": null
+                }
+              },
+              "upside": {
+                "label": "上振れシナリオ",
+                "path": {
+                  "adjusted_probability": 0.02,
+                  "assumption": "米国3指数の確認が上値到達を補助します。",
+                  "base_probability": 0.0,
+                  "direction": "up",
+                  "target_label": "T1",
+                  "target_price": null
+                },
+                "targets": [],
+                "text": "米国3指数が上昇確認となり、日経先物が高値を終値で抜ける場合だけ上振れを見ます。"
+              }
+            },
+            "scope": "technical_with_us_index_confirmation",
+            "source": "basecalc",
+            "stop_reasons": [
+              "判定可能なデータ状態ではありません",
+              "類似事例不足のため信頼度を50未満に制限"
+            ],
+            "technical_regime": "limited",
+            "us_index_confirmation_score": 7,
+            "validated_targets": {
+              "downside": [],
+              "upside": []
+            },
+            "validation_gate_status": {
+              "1d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.66,
+                  "direction_allowed": true,
+                  "model_score": 0.68,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              },
+              "3d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.45,
+                  "direction_allowed": true,
+                  "model_score": 0.5700000000000001,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              },
+              "5d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.38,
+                  "direction_allowed": true,
+                  "model_score": 0.42,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              }
+            }
+          },
+          "chase_risk": "unknown",
+          "chase_risk_label": "判定不可",
+          "chase_risk_sentence": "追いかけリスクは判定不可（米国3指数データ不足）",
+          "components": {},
+          "confidence": "Low",
+          "confidence_components": {},
+          "confidence_score": 20,
+          "confidence_warnings": [
+            "無料公開ソースのため公式価格と同じ重みでは扱いません",
+            "データ品質が限定的です",
+            "データ品質はwarning（76/100）",
+            "無料公開ソースのため公式価格と同じ重みでは扱いません"
+          ],
+          "continuation_score": 0,
+          "contract_status": "error",
+          "counter_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+          "data_quality": {
+            "fallback_used": false,
+            "instrument_type": "futures",
+            "is_stale": false,
+            "level": "warning",
+            "score": 76,
+            "source": "matsui",
+            "symbol": "NIY=F",
+            "warnings": [
+              "無料公開ソースのため公式価格と同じ重みでは扱いません"
+            ]
+          },
+          "data_quality_level": "warning",
+          "data_quality_score": 76,
+          "data_warning": "現在のデータは判定条件を満たしていないため、方向予測を停止しています。",
+          "direction": "neutral",
+          "direction_label": "方向判断停止",
+          "directional_allowed": false,
+          "display_price": 72570.0,
+          "downside_targets": [],
+          "evidence": [
+            "無料公開ソースのため公式価格と同じ重みでは扱いません",
+            "データ品質が限定的です",
+            "データ品質はwarning（76/100）",
+            "無料公開ソースのため公式価格と同じ重みでは扱いません"
+          ],
+          "expected_return_1d": 0,
+          "expected_return_3d": 0,
+          "expected_return_5d": 0,
+          "expected_return_label": "方向判定停止",
+          "expected_return_source": "",
+          "expected_returns": {},
+          "external_context_score": 0,
+          "features": {
+            "adx14": 19.0774,
+            "atr14": 6801.4476,
+            "atr_ratio": 0.5684,
+            "bar_counts": {
+              "1d": 3437.0
+            },
+            "bb_lower": 56369.4606,
+            "bb_mid": 68905.75,
+            "bb_upper": 81442.0394,
+            "bb_width_pct": 36.3868,
+            "change_1d_pct": 1.8383,
+            "change_20d_pct": 72.9917,
+            "change_3d_pct": 4.3272,
+            "change_5d_pct": 4.9913,
+            "close": 72570.0,
+            "daily_change_pct": 1.8383,
+            "daily_change_z": -0.1104,
+            "data_quality": {
+              "fallback_used": false,
+              "instrument_type": "futures",
+              "is_stale": false,
+              "level": "warning",
+              "score": 76.0,
+              "source": "matsui",
+              "symbol": "NIY=F"
+            },
+            "data_quality_level": "warning",
+            "data_quality_score": 76.0,
+            "directional_allowed": false,
+            "distance_recent_high_pct": -1.6133,
+            "distance_recent_low_pct": 6.0965,
+            "dmi_minus": 9.6539,
+            "dmi_plus": 12.1147,
+            "ema20": 67337.3528,
+            "ema200": 53652.9628,
+            "ema20_gap_pct": 7.7708,
+            "ema5": 70907.5923,
+            "ema5_gap_pct": 2.3445,
+            "ema60": 59960.2726,
+            "ema60_gap_pct": 21.0301,
+            "fallback_used": false,
+            "gap_key": "gap_down",
+            "gap_pct": -2.7084,
+            "high": 72700.0,
+            "high_20d": 73760.0,
+            "high_5d": 72700.0,
+            "indicator_validity": {
+              "adx14": true,
+              "atr14": true,
+              "bollinger": true,
+              "ema20": true,
+              "ema200": true,
+              "ema5": true,
+              "ema60": true,
+              "gap": true,
+              "macd": true,
+              "pivot": true,
+              "rsi14": true,
+              "vwap": true
+            },
+            "instrument_key": "cme_nikkei_futures",
+            "instrument_type": "futures",
+            "is_canonical_instrument": true,
+            "low": 68930.0,
+            "low_20d": 41895.0,
+            "low_5d": 68400.0,
+            "macd": 3804.8046,
+            "macd_histogram": -326.9534,
+            "macd_signal": 4131.7579,
+            "open": 69330.0,
+            "pivots": {
+              "pivot": 70560.0,
+              "r1": 72190.0,
+              "r2": 73120.0,
+              "r3": 74750.0,
+              "s1": 69630.0,
+              "s2": 68000.0,
+              "s3": 67070.0
+            },
+            "previous_close": 71260.0,
+            "previous_high": 71490.0,
+            "previous_low": 68930.0,
+            "price": 72570.0,
+            "readiness_level": "limited",
+            "recent_high": 73760.0,
+            "recent_low": 68400.0,
+            "rsi14": 54.9931,
+            "shock_candidate": false,
+            "source": "matsui",
+            "source_name": "matsui",
+            "source_symbol": "NIY=F",
+            "structure_bias": 0.0,
+            "structure_key": "range",
+            "structure_label": "レンジ内",
+            "symbol": "NIY=F",
+            "us_index_components": {},
+            "us_index_confirmation_label": "divergent",
+            "us_index_confirmation_score": 7.0,
+            "volume": 42115.0,
+            "vwap": 46472.0992,
+            "vwap_gap_pct": 56.1582
+          },
+          "horizons": {
+            "1d": {
+              "display_allowed": false,
+              "horizon_label": "1営業日後の方向",
+              "main_bias": "range",
+              "main_bias_label": "方向感なし",
+              "setup_label": "参考表示",
+              "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+            },
+            "3d": {
+              "display_allowed": false,
+              "horizon_label": "3営業日後の方向",
+              "main_bias": "range",
+              "main_bias_label": "方向感なし",
+              "setup_label": "参考表示",
+              "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+            },
+            "5d": {
+              "display_allowed": false,
+              "horizon_label": "5営業日後の方向",
+              "main_bias": "range",
+              "main_bias_label": "方向感なし",
+              "setup_label": "参考表示",
+              "stop_reason": "判定可能なデータ状態ではありません / 類似事例不足のため信頼度を50未満に制限"
+            }
+          },
+          "intermarket_technicals": {
+            "components": {
+              "dow_futures": {
+                "atr_ratio": 1.0063,
+                "change_pct": 2.84,
+                "close_position": 0.9337,
+                "direction": "up",
+                "high_breakout": true,
+                "low_breakdown": false,
+                "momentum_20d_pct": 2.8379,
+                "momentum_5d_pct": 0.6947,
+                "price": 102.8379,
+                "score": 54,
+                "symbol": "NYダウ"
+              },
+              "nasdaq100_futures": {
+                "atr_ratio": 0.9988,
+                "change_pct": -0.48,
+                "close_position": 0.2325,
+                "direction": "down",
+                "high_breakout": false,
+                "low_breakdown": true,
+                "momentum_20d_pct": -0.4811,
+                "momentum_5d_pct": -0.1207,
+                "price": 99.5189,
+                "score": -33,
+                "symbol": "NASDAQ"
+              },
+              "sp500_futures": {
+                "atr_ratio": 1.0008,
+                "change_pct": 0.36,
+                "close_position": 0.731,
+                "direction": "up",
+                "high_breakout": true,
+                "low_breakdown": false,
+                "momentum_20d_pct": 0.3636,
+                "momentum_5d_pct": 0.0907,
+                "price": 100.3636,
+                "score": 31,
+                "symbol": "S&P500"
+              }
+            },
+            "confirmation_label": "divergent",
+            "confirmation_score": 7,
+            "direction_agreement": 0.667,
+            "evidence": [
+              "米国3指数の方向が分裂",
+              "S&P500、NYダウが上向き",
+              "NASDAQ100が下向き"
+            ],
+            "fetched_at": "2026-06-25T07:52:32.494790+00:00",
+            "readiness": {
+              "level": "ready",
+              "missing": [],
+              "reason": "米国3指数確認可",
+              "usable": true
+            },
+            "risk_label": "technical_confirm"
+          },
+          "invalidation": {},
+          "invalidation_display": "",
+          "invalidation_price": null,
+          "invalidation_reason": "",
+          "invalidation_text": "方向判定停止中",
+          "is_ready": true,
+          "is_stale": false,
+          "last_updated_display": "2026-06-25 15:45 JST",
+          "main_scenario": "データ品質が限定的なため方向判定は停止しています",
+          "model_price": 72570.0,
+          "model_version": "wm_v2.0.0",
+          "momentum_score": 0,
+          "near_levels": {
+            "downside": [
+              {
+                "distance_abs": 70,
+                "distance_atr": 0.01,
+                "distance_label": "-0.10%",
+                "distance_pct": -0.1,
+                "price": 72500,
+                "reason": "100円刻み",
+                "source": "round_100"
+              },
+              {
+                "distance_abs": 570,
+                "distance_atr": 0.08,
+                "distance_label": "-0.79%",
+                "distance_pct": -0.79,
+                "price": 72000,
+                "reason": "1000円刻み",
+                "source": "round_1000"
+              },
+              {
+                "distance_abs": 2940,
+                "distance_atr": 0.43,
+                "distance_label": "-4.05%",
+                "distance_pct": -4.05,
+                "price": 69630,
+                "reason": "Pivot S1",
+                "source": "pivot_s1"
+              }
+            ],
+            "upside": [
+              {
+                "distance_abs": 30,
+                "distance_atr": 0.0,
+                "distance_label": "0.04%",
+                "distance_pct": 0.04,
+                "price": 72600,
+                "reason": "100円刻み",
+                "source": "round_100"
+              },
+              {
+                "distance_abs": 130,
+                "distance_atr": 0.02,
+                "distance_label": "0.18%",
+                "distance_pct": 0.18,
+                "price": 72700,
+                "reason": "5日高値",
+                "source": "high_5d"
+              },
+              {
+                "distance_abs": 430,
+                "distance_atr": 0.06,
+                "distance_label": "0.59%",
+                "distance_pct": 0.59,
+                "price": 73000,
+                "reason": "500円刻み",
+                "source": "round_500"
+              },
+              {
+                "distance_abs": 550,
+                "distance_atr": 0.08,
+                "distance_label": "0.76%",
+                "distance_pct": 0.76,
+                "price": 73120,
+                "reason": "Pivot R2",
+                "source": "pivot_r2"
+              }
+            ]
+          },
+          "nikkei_technical_score": 0,
+          "output_contract": {
+            "allowed_direction": "stopped",
+            "allowed_horizons": {
+              "1d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              },
+              "3d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              },
+              "5d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "reasons": [],
+                "target_probability_allowed": true
+              }
+            },
+            "available_display": "支持抵抗・ATRレンジのみ",
+            "confidence_calculated_from_snapshot_id": "",
+            "confidence_calibrated": false,
+            "confidence_status": "未較正",
+            "contract_status": "error",
+            "data_quality_score": 76,
+            "directional_allowed": false,
+            "display_price": 72570.0,
+            "explanation_allowed": false,
+            "generated_at": "2026-06-25T07:52:42.937924+00:00",
+            "invalidated_targets": {
+              "downside": [],
+              "upside": []
+            },
+            "latest_price": null,
+            "model_price": 72570.0,
+            "model_version": "wm_v2.0.0",
+            "ohlcv_bar_count": null,
+            "price_age_minutes": 67,
+            "price_source": "matsui",
+            "probability_display_allowed": false,
+            "range_calculated_from_price": 72570.0,
+            "readiness_level": "limited",
+            "snapshot_id": "ebfa8471-ad40-4bfe-8ff4-758f30367af1",
+            "source_timestamp": "2026-06-25 15:45 JST",
+            "stop_reasons": [
+              "判定可能なデータ状態ではありません",
+              "類似事例不足のため信頼度を50未満に制限"
+            ],
+            "target_calculated_from_price": 72570.0,
+            "target_display_allowed": false,
+            "us_index_status": "confirmed",
+            "validated_targets": {
+              "downside": [],
+              "upside": []
+            },
+            "validation_gate_status": {
+              "1d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.66,
+                  "direction_allowed": true,
+                  "model_score": 0.68,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              },
+              "3d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.45,
+                  "direction_allowed": true,
+                  "model_score": 0.5700000000000001,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              },
+              "5d": {
+                "direction_allowed": true,
+                "display_mode": "directional",
+                "model_vs_baseline": {
+                  "atr_score": 0.38,
+                  "direction_allowed": true,
+                  "model_score": 0.42,
+                  "reasons": [],
+                  "sample_count": 600
+                },
+                "reasons": [],
+                "state_gate": {
+                  "direction_allowed": true,
+                  "reasons": []
+                },
+                "target_probability_allowed": true
+              }
+            },
+            "validation_report_version": ""
+          },
+          "performance_adjustment": {
+            "applied": false
+          },
+          "phase_label": "方向判定停止",
+          "practical_lines": {
+            "current_price": 72570,
+            "downside_support": 65770,
+            "near_downside": 72500,
+            "near_upside": 72600,
+            "source": "matsui",
+            "source_timestamp": "2026-06-25T06:45:00+00:00",
+            "upside_resistance": 79370
+          },
+          "price": 72570.0,
+          "primary_direction": "range",
+          "primary_scenario": "方向判断停止",
+          "primary_setup": "range_wait",
+          "primary_setup_label": "参考表示",
+          "readiness": {
+            "bar_counts": {
+              "1d": 3437
+            },
+            "directional_allowed": false,
+            "indicator_validity": {
+              "adx14": true,
+              "atr14": true,
+              "bollinger": true,
+              "ema20": true,
+              "ema200": true,
+              "ema5": true,
+              "ema60": true,
+              "gap": true,
+              "macd": true,
+              "pivot": true,
+              "rsi14": true,
+              "vwap": true
+            },
+            "instrument_key": "cme_nikkei_futures",
+            "instrument_label": "CME日経先物",
+            "instrument_type": "futures",
+            "level": "limited",
+            "reason_codes": [
+              "quality_50_79"
+            ],
+            "score": 76,
+            "source": "matsui",
+            "symbol": "NIY=F",
+            "warnings": [
+              "無料公開ソースのため公式価格と同じ重みでは扱いません",
+              "データ品質が限定的です"
+            ]
+          },
+          "readiness_display": {
+            "daily_bars": 3437,
+            "valid_major_indicators": 6
+          },
+          "readiness_level": "limited",
+          "rebound_improvement_score": 0,
+          "reversal_risk_score": 0,
+          "scenario_label": "判定停止",
+          "scenarios": {
+            "baseline": {
+              "label": "基本シナリオ",
+              "text": "参考表示。上下どちらかの重要価格帯を終値で抜けるまで待ちます。 米国3指数確認は分裂しており、追いかけは避けます。"
+            },
+            "downside": {
+              "label": "下振れシナリオ",
+              "path": {
+                "adjusted_probability": 0.0,
+                "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                "base_probability": 0.0,
+                "direction": "down",
+                "target_label": "T1",
+                "target_price": null
+              },
+              "targets": [],
+              "text": "米国3指数が下落確認となり、日経先物が安値を終値で割る場合だけ下振れを見ます。"
+            },
+            "invalidation": {
+              "label": "無効化ライン",
+              "level": {},
+              "path": {
+                "adjusted_probability": 0.0,
+                "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                "base_probability": 0.0,
+                "direction": "invalidation",
+                "target_label": "無効化",
+                "target_price": null
+              },
+              "text": "方向判定停止中"
+            },
+            "price_paths": {
+              "downside": {
+                "adjusted_probability": 0.0,
+                "assumption": "米国3指数の確認が弱い場合、下値到達は参考値に下げます。",
+                "base_probability": 0.0,
+                "direction": "down",
+                "target_label": "T1",
+                "target_price": null
+              },
+              "invalidation": {
+                "adjusted_probability": 0.0,
+                "assumption": "この価格を終値で抜ける場合は、現在の方向判定を弱めます。",
+                "base_probability": 0.0,
+                "direction": "invalidation",
+                "target_label": "無効化",
+                "target_price": null
+              },
+              "upside": {
+                "adjusted_probability": 0.02,
+                "assumption": "米国3指数の確認が上値到達を補助します。",
+                "base_probability": 0.0,
+                "direction": "up",
+                "target_label": "T1",
+                "target_price": null
+              }
+            },
+            "upside": {
+              "label": "上振れシナリオ",
+              "path": {
+                "adjusted_probability": 0.02,
+                "assumption": "米国3指数の確認が上値到達を補助します。",
+                "base_probability": 0.0,
+                "direction": "up",
+                "target_label": "T1",
+                "target_price": null
+              },
+              "targets": [],
+              "text": "米国3指数が上昇確認となり、日経先物が高値を終値で抜ける場合だけ上振れを見ます。"
+            }
+          },
+          "sentiment_key": "neutral",
+          "sentiment_label": "参考表示",
+          "sentiment_score": 0,
+          "sentiment_score_abs": 0,
+          "shock_label": "N/A",
+          "shock_score": 0,
+          "similar_summary": {
+            "average_return_pct": 0,
+            "case_count": 0,
+            "cases": [],
+            "directional_accuracy": 0,
+            "down_rate": 0,
+            "downside_t1_hit_rate": 0,
+            "invalidation_rate": 0,
+            "is_statistically_valid": false,
+            "range_rate": 0,
+            "sample_warning": "類似局面の件数が不足しています",
+            "searched_case_count": 0,
+            "target_t1_hit_rate": 0,
+            "up_rate": 0,
+            "upside_t1_hit_rate": 0,
+            "used_case_count": 0
+          },
+          "source_status": {
+            "fallback_used": false,
+            "instrument_key": "cme_nikkei_futures",
+            "instrument_type": "futures",
+            "is_stale": false,
+            "source": "matsui",
+            "symbol": "NIY=F"
+          },
+          "stale_minutes": 67,
+          "state_key": "limited_reference",
+          "state_label": "参考表示",
+          "stop_reasons": [
+            "判定可能なデータ状態ではありません",
+            "類似事例不足のため信頼度を50未満に制限"
+          ],
+          "strength_label": "弱い",
+          "sub_scenario": "価格、取得元、足数、フォールバック有無を確認してください",
+          "target_1_display": "",
+          "target_2_display": "",
+          "target_ranges": [],
+          "technical_regime": "limited",
+          "transition_probs": [
+            {
+              "label": "レンジ中立",
+              "probability": 0.72,
+              "sample_count": 0,
+              "source": "rule",
+              "state_key": "range_neutral"
+            },
+            {
+              "label": "データ不足",
+              "probability": 0.28,
+              "sample_count": 0,
+              "source": "rule",
+              "state_key": "data_unavailable"
+            }
+          ],
+          "trend_score": 0,
+          "upside_targets": [],
+          "us_index_confirmation": {
+            "components": {
+              "dow_futures": {
+                "atr_ratio": 1.0063,
+                "change_pct": 2.84,
+                "close_position": 0.9337,
+                "direction": "up",
+                "high_breakout": true,
+                "low_breakdown": false,
+                "momentum_20d_pct": 2.8379,
+                "momentum_5d_pct": 0.6947,
+                "price": 102.8379,
+                "score": 54,
+                "symbol": "NYダウ"
+              },
+              "nasdaq100_futures": {
+                "atr_ratio": 0.9988,
+                "change_pct": -0.48,
+                "close_position": 0.2325,
+                "direction": "down",
+                "high_breakout": false,
+                "low_breakdown": true,
+                "momentum_20d_pct": -0.4811,
+                "momentum_5d_pct": -0.1207,
+                "price": 99.5189,
+                "score": -33,
+                "symbol": "NASDAQ"
+              },
+              "sp500_futures": {
+                "atr_ratio": 1.0008,
+                "change_pct": 0.36,
+                "close_position": 0.731,
+                "direction": "up",
+                "high_breakout": true,
+                "low_breakdown": false,
+                "momentum_20d_pct": 0.3636,
+                "momentum_5d_pct": 0.0907,
+                "price": 100.3636,
+                "score": 31,
+                "symbol": "S&P500"
+              }
+            },
+            "confirmation_label": "divergent",
+            "confirmation_score": 7,
+            "direction_agreement": 0.667,
+            "evidence": [
+              "米国3指数の方向が分裂",
+              "S&P500、NYダウが上向き",
+              "NASDAQ100が下向き"
+            ],
+            "fetched_at": "2026-06-25T07:52:32.494790+00:00",
+            "readiness": {
+              "level": "ready",
+              "missing": [],
+              "reason": "米国3指数確認可",
+              "usable": true
+            },
+            "risk_label": "technical_confirm"
+          },
+          "us_index_confirmation_label": "divergent",
+          "us_index_confirmation_score": 7
+        }
+      },
+      "readiness_level": "limited",
+      "rebound_improvement_score": 0,
+      "reversal_risk_score": 0,
+      "scenario_probabilities": {},
+      "shock_score": 0,
+      "stop_reasons": [
+        "判定可能なデータ状態ではありません",
+        "類似事例不足のため信頼度を50未満に制限"
+      ],
+      "summary": "basecalcの方向判断は停止。理由：判定可能なデータ状態ではありません",
+      "validated_targets": {
+        "downside": [],
+        "upside": []
+      },
+      "validation_gate_status": {
+        "1d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.66,
+            "direction_allowed": true,
+            "model_score": 0.68,
+            "reasons": [],
+            "sample_count": 600
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "3d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.45,
+            "direction_allowed": true,
+            "model_score": 0.5700000000000001,
+            "reasons": [],
+            "sample_count": 600
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        },
+        "5d": {
+          "direction_allowed": true,
+          "display_mode": "directional",
+          "model_vs_baseline": {
+            "atr_score": 0.38,
+            "direction_allowed": true,
+            "model_score": 0.42,
+            "reasons": [],
+            "sample_count": 600
+          },
+          "reasons": [],
+          "state_gate": {
+            "direction_allowed": true,
+            "reasons": []
+          },
+          "target_probability_allowed": true
+        }
+      },
+      "warnings": [
+        "判定可能なデータ状態ではありません",
+        "類似事例不足のため信頼度を50未満に制限",
+        "無料公開ソースのため公式価格と同じ重みでは扱いません",
+        "データ品質が限定的です",
+        "データ品質はwarning（76/100）",
+        "判定状態が未達",
+        "信頼度不足",
+        "類似局面不足"
+      ]
+    },
+    "macro": {
+      "as_of": "2026-06-24T08:43:04.098830+00:00",
+      "bias": "neutral_inflation_risk",
+      "confidence_grade": "B",
+      "confidence_score": 91,
+      "data_quality_score": 100,
+      "factor_vector": {
+        "credit_stress_score": 19,
+        "event_risk_score": 0,
+        "fx_support_score": 50,
+        "growth_score": 50,
+        "inflation_risk_score": 82,
+        "macro_long_filter": 0.82,
+        "macro_short_filter": 1.1,
+        "macro_stale": false,
+        "macro_volatility_filter": 1.06,
+        "policy_uncertainty_score": 0,
+        "rates_pressure_score": 82,
+        "risk_appetite_score": 50
+      },
+      "model_version": "",
+      "raw": {
+        "as_of": "2026-06-23",
+        "blocking_issues": [],
+        "confidence_grade": "B",
+        "confidence_limit_reasons": [
+          "重要指標の発表前後のため一段階下げます。"
+        ],
+        "confidence_score": 91,
+        "data_quality_report": {
+          "as_of": "2026-06-25",
+          "blocking_issues": [],
+          "confidence_cap": "A",
+          "display_allowed": true,
+          "freshness_score": 100.0,
+          "missing_required_count": 0,
+          "required_count": 8,
+          "stale_required_count": 0,
+          "usable_for_decision": true,
+          "warnings": []
+        },
+        "display_allowed": true,
+        "display_status": "reference",
+        "generated_at": "2026-06-24T08:43:04.098830+00:00",
+        "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
+        "invalidation_status_notes": [
+          {
+            "detail": "直近0/3か月連続で上昇（2026-05-01: 4.30%、前月比 +0.00pt）",
+            "label": "失業率"
+          },
+          {
+            "detail": "直近2/2か月連続で再加速（2026-04-01: 3.29%、前月比 +0.05pt）",
+            "label": "Core PCE"
+          },
+          {
+            "detail": "現状 4.46%（2026-06-18）。判断変更目安 4.50%以上、あと +0.04pt",
+            "label": "米10年金利"
+          },
+          {
+            "detail": "現状 2.66%（2026-06-19）。判断変更目安 5.00%以上、あと +2.34pt",
+            "label": "信用スプレッド"
+          }
+        ],
+        "invalidation_triggers": [
+          "失業率が3か月連続で上昇",
+          "Core PCEが2か月連続で再加速",
+          "米10年金利が急上昇",
+          "信用スプレッドが急拡大"
+        ],
+        "key_drivers": [
+          "失業率が低い",
+          "HYスプレッドが低い",
+          "鉱工業生産が前年比で増加",
+          "雇用はまだ強い",
+          "インフレ再加速リスクが高い"
+        ],
+        "main_risks": [
+          "重要指標の発表前後のため一段階下げます。",
+          "金利再上昇時に株価先物へ逆風"
+        ],
+        "model_audit": {
+          "external_context": {
+            "consensus_source": "fred_market_implied_proxy",
+            "display_status": "reference",
+            "downgrade_steps": 1,
+            "grade_cap": "A",
+            "market_consensus_proxies": [
+              {
+                "age_days": 3,
+                "label": "5年期待インフレ率",
+                "observation_date": "2026-06-22",
+                "proxy_type": "market_implied_inflation_expectation",
+                "series_id": "T5YIE",
+                "source": "FRED",
+                "value": 2.28
+              },
+              {
+                "age_days": 3,
+                "label": "10年期待インフレ率",
+                "observation_date": "2026-06-22",
+                "proxy_type": "market_implied_inflation_expectation",
+                "series_id": "T10YIE",
+                "source": "FRED",
+                "value": 2.23
+              }
+            ],
+            "reasons": [
+              "重要指標の発表前後のため一段階下げます。"
+            ],
+            "upcoming_high_impact_events": [
+              {
+                "currency": "USD",
+                "date": "2026-06-25",
+                "event": "GDP（確報値）（前期比）",
+                "impact": "★★★",
+                "time": "21:30"
+              },
+              {
+                "currency": "USD",
+                "date": "2026-06-25",
+                "event": "コアPCE価格指数（前月比）",
+                "impact": "★★★",
+                "time": "21:30"
+              }
+            ]
+          },
+          "forecast_ledger": {
+            "display_status": "show",
+            "grade_cap": "A",
+            "reasons": []
+          },
+          "validation": {
+            "display_status": "show",
+            "grade_cap": "A",
+            "live_sample_count": 20,
+            "reasons": [],
+            "validation_source": "house_view_validation:pseudo_live"
+          }
+        },
+        "probabilities": {
+          "contraction": 0.02018798202221658,
+          "expansion": 0.6568708855634098,
+          "financial_stress": 0.19316101651728157,
+          "inflation_reacceleration": 0.8233758532469887,
+          "recovery": 0.17495960104105565,
+          "slowdown": 0.147981531373318
+        },
+        "publish_status": "reference",
+        "regime_label": "inflation_risk",
+        "upcoming_high_impact_events": [
+          {
+            "currency": "USD",
+            "date": "2026-06-25",
+            "event": "GDP（確報値）（前期比）",
+            "impact": "★★★",
+            "time": "21:30"
+          },
+          {
+            "currency": "USD",
+            "date": "2026-06-25",
+            "event": "コアPCE価格指数（前月比）",
+            "impact": "★★★",
+            "time": "21:30"
+          }
+        ]
+      },
+      "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
+      "warnings": [
+        "重要指標の発表前後のため一段階下げます。",
+        "金利再上昇時に株価先物へ逆風"
+      ]
+    }
+  },
+  "trade_decision": {
+    "blocked_reasons": [
+      "判定可能なデータ状態ではありません",
+      "類似事例不足のため信頼度を50未満に制限"
+    ],
+    "confidence_grade": "D",
+    "confidence_score": 0,
+    "counter_scenario": {},
+    "current_price": 72570.0,
+    "decision_type": "no_trade_data_blocked",
+    "entry_price": null,
+    "entry_zone_high": null,
+    "entry_zone_low": null,
+    "expected_return_pct": null,
+    "horizon": "3d",
+    "invalidation_price": null,
+    "long_score": 0,
+    "model_version": "explanation_v2",
+    "no_trade_score": 100,
+    "price_source": "market_data",
+    "probability": null,
+    "reasons": [
+      "データ整合性を確認するまで売買判断を停止。"
+    ],
+    "reversal_score": 0,
+    "reversal_watch": {},
+    "reward_risk": null,
+    "selected_side": "no_trade",
+    "short_score": 0,
+    "stop_price": null,
+    "target_1": null,
+    "target_2": null,
+    "trend_follow_score": 0,
+    "warnings": []
+  },
+  "version": "explanation_v2"
+}

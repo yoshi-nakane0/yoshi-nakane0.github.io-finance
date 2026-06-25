@@ -1,3 +1,6 @@
+import json
+from datetime import date, datetime
+
 from django.utils import timezone
 
 from ..models import ExplanationSnapshot
@@ -31,11 +34,11 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
         alignment_status=audit.alignment_status,
         data_quality_score=audit.data_quality_score,
         audit_level=audit.level,
-        audit_items=audit.items,
-        scenario=scenario,
-        trade_decision=trade_decision.to_dict(),
-        evidence=fusion.evidence,
-        source_snapshots={
+        audit_items=_json_safe(audit.items),
+        scenario=_json_safe(scenario),
+        trade_decision=_json_safe(trade_decision.to_dict()),
+        evidence=_json_safe(fusion.evidence),
+        source_snapshots=_json_safe({
             'macro': {
                 'bias': macro.bias,
                 'summary': macro.summary,
@@ -85,10 +88,20 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
                 'warnings': basecalc.warnings,
                 'raw': basecalc.source,
             },
-        },
-        score_breakdown=fusion.score_breakdown,
+        }),
+        score_breakdown=_json_safe(fusion.score_breakdown),
         version='explanation_v2',
     )
     if save:
         snapshot.save()
     return snapshot
+
+
+def _json_safe(value):
+    return json.loads(json.dumps(value, default=_json_default))
+
+
+def _json_default(value):
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    raise TypeError(f'Object of type {type(value).__name__} is not JSON serializable')

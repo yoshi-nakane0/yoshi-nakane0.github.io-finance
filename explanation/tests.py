@@ -1,4 +1,6 @@
 from datetime import timedelta, timezone as dt_timezone
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -663,6 +665,22 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(payload['trade_decision']['selected_side'], 'long')
         self.assertEqual(payload['trade_decision']['target_1']['price'], 71180)
 
+    def test_static_snapshot_round_trips_for_json_artifact(self):
+        from .services.static_snapshot import (
+            load_static_explanation_snapshot,
+            write_static_explanation_snapshot,
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'latest_snapshot.json'
+
+            write_static_explanation_snapshot(self._snapshot(), output)
+            loaded = load_static_explanation_snapshot(output)
+
+        self.assertEqual(loaded.final_label, '条件付き上昇優勢')
+        self.assertEqual(loaded.trade_decision['selected_side'], 'long')
+        self.assertEqual(loaded.source_snapshots['macro']['summary'], 'Macroは支援的。')
+
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())
         context['is_preview'] = False
@@ -875,6 +893,47 @@ class ExplanationTradeOutcomeValidationTests(TestCase):
         self.assertEqual(outcome.sample_count_at_decision, 24)
 
 
+class ExplanationSnapshotFactoryPersistenceTests(TestCase):
+    def test_build_snapshot_serializes_date_values_before_saving_json_fields(self):
+        from datetime import date
+
+        from .services.contracts import BasecalcSignal, MacroSignal
+        from .services.factory import build_explanation_snapshot
+
+        macro = MacroSignal(
+            bias='positive',
+            summary='Macroは支援的。',
+            confidence_score=78,
+            confidence_grade='B',
+            data_quality_score=82,
+            source={'generated_on': date(2026, 6, 25)},
+            as_of=timezone.now(),
+        )
+        basecalc = BasecalcSignal(
+            bias='bullish',
+            summary='日経先物は上昇優勢。',
+            confidence_score=72,
+            confidence_grade='B',
+            data_quality_score=86,
+            readiness_level='ready',
+            can_show_prediction=True,
+            source={'world_model': {'model_version': 'wm_test', 'session_date': date(2026, 6, 25)}},
+            as_of=timezone.now(),
+        )
+
+        with (
+            mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
+            mock.patch('explanation.services.factory.load_basecalc_signal', return_value=basecalc),
+        ):
+            snapshot = build_explanation_snapshot(save=True)
+
+        self.assertEqual(ExplanationSnapshot.objects.count(), 1)
+        self.assertEqual(
+            snapshot.source_snapshots['macro']['raw']['generated_on'],
+            '2026-06-25',
+        )
+
+
 class ExplanationMacroAdapterTests(SimpleTestCase):
     def test_macro_signal_keeps_static_payload_generated_at(self):
         with mock.patch(
@@ -937,6 +996,7 @@ class ExplanationPrecomputeViewTests(TestCase):
         )
 
         with (
+            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
             mock.patch('explanation.views.build_explanation_refresh_status', return_value={'needs_refresh': True}),
             mock.patch('explanation.views.build_explanation_snapshot', return_value=fresh) as build_snapshot,
         ):

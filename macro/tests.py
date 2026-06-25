@@ -104,6 +104,21 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertLess(test_index, migrate_index)
         self.assertLess(test_index, import_index)
 
+    def test_refresh_basecalc_commits_explanation_json_and_manifest(self):
+        workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'refresh-basecalc.yml'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('python manage.py precompute_explanation', workflow)
+        self.assertIn('python manage.py evaluate_explanation_outcomes', workflow)
+        self.assertIn('python manage.py export_finance_data_manifest --output static/finance_data_manifest.json', workflow)
+        self.assertIn('explanation/data/latest_snapshot.json', workflow)
+        self.assertIn('explanation/data/trade_outcomes.json', workflow)
+        self.assertIn('static/finance_data_manifest.json', workflow)
+
     def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
         workflow = (
@@ -313,6 +328,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('manage.py run_macro_forecast', build_script)
         self.assertIn('manage.py settle_forecast_snapshots', build_script)
         self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertNotIn('$PYTHON_BIN manage.py precompute_explanation || true', build_script)
         self.assertNotIn('FRED_API_KEY is not set; skipping macro data refresh', build_script)
         self.assertNotIn('refresh_macro_data failed during Vercel build', build_script)
         self.assertIn('cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"', build_script)
@@ -1565,6 +1581,52 @@ class ProductionDataSyncTest(SimpleTestCase):
                 '{"version":"prod-basecalc"}',
             )
             self.assertEqual(result['updated_count'], 2)
+
+    def test_sync_discovers_manifest_and_explanation_data_paths(self):
+        from macro.services.production_data_sync import discover_data_paths, source_url_for_path
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            (base_dir / 'static').mkdir(parents=True)
+            (base_dir / 'explanation' / 'data').mkdir(parents=True)
+            (base_dir / 'static' / 'finance_data_manifest.json').write_text('{}', encoding='utf-8')
+            (base_dir / 'explanation' / 'data' / 'latest_snapshot.json').write_text('{}', encoding='utf-8')
+
+            paths = discover_data_paths(base_dir)
+
+        self.assertIn('static/finance_data_manifest.json', paths)
+        self.assertIn('explanation/data/latest_snapshot.json', paths)
+        self.assertIn('explanation/data/trade_outcomes.json', paths)
+        self.assertIn(
+            '/explanation/data/latest_snapshot.json',
+            source_url_for_path('explanation/data/latest_snapshot.json'),
+        )
+
+    def test_finance_manifest_export_combines_macro_basecalc_and_explanation_status(self):
+        from macro.services.finance_manifest import build_finance_data_manifest, write_finance_data_manifest
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            macro_path = base_dir / 'static' / 'macro' / 'latest_dashboard.json'
+            basecalc_path = base_dir / 'basecalc' / 'data' / 'latest_snapshot.json'
+            explanation_path = base_dir / 'explanation' / 'data' / 'latest_snapshot.json'
+            output_path = base_dir / 'static' / 'finance_data_manifest.json'
+            macro_path.parent.mkdir(parents=True)
+            basecalc_path.parent.mkdir(parents=True)
+            explanation_path.parent.mkdir(parents=True)
+            macro_path.write_text('{"generated_at":"2026-06-25T00:00:00+00:00","stale":false,"model_version":"macro_v1"}', encoding='utf-8')
+            basecalc_path.write_text('{"decision_price_as_of":"2026-06-25T01:15:00+00:00","world_model":{"output_contract":{"contract_status":"limited","stop_reasons":["米国3指数確認が不足"]},"model_version":"wm_v2.0.0"}}', encoding='utf-8')
+            explanation_path.write_text('{"as_of":"2026-06-25T01:15:00+00:00","final":{"status":"reference"},"version":"explanation_v2"}', encoding='utf-8')
+
+            manifest = build_finance_data_manifest(base_dir=base_dir)
+            write_finance_data_manifest(manifest, output_path)
+
+            saved = json.loads(output_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(saved['macro_as_of'], '2026-06-25T00:00:00+00:00')
+        self.assertEqual(saved['basecalc_status'], 'limited')
+        self.assertEqual(saved['explanation_status'], 'reference')
+        self.assertIn('米国3指数確認が不足', saved['blocking_reasons'])
 
     def test_sync_mirrors_static_data_to_existing_staticfiles_alias(self):
         from macro.services.production_data_sync import sync_production_data

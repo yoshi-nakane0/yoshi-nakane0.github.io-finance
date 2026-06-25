@@ -11,6 +11,7 @@ from .models import ExplanationSnapshot
 from .services.factory import build_explanation_snapshot
 from .services.freshness import build_explanation_refresh_status
 from .services.serializer import snapshot_to_api, snapshot_to_view
+from .services.static_snapshot import load_static_explanation_snapshot
 from .services.validation_engine import build_trade_validation_summary
 
 
@@ -23,6 +24,9 @@ def _latest_or_preview(price_override=None):
             save=False,
             basecalc_price_override=price_override,
         ), True
+    static_snapshot = load_static_explanation_snapshot()
+    if static_snapshot is not None:
+        return static_snapshot, False
     try:
         snapshot = ExplanationSnapshot.objects.order_by('-as_of', '-created_at').first()
     except (OperationalError, ProgrammingError):

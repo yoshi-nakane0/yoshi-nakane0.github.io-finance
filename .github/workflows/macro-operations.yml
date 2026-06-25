@@ -73,12 +73,13 @@ jobs:
           python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json --source-payload static/macro/latest_dashboard.json
           python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json
           python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
+          python manage.py export_finance_data_manifest --output static/finance_data_manifest.json
 
       - name: Commit generated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/*.json
+          git add static/macro/*.json static/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No generated data changes."
             exit 0
@@ -187,13 +188,14 @@ jobs:
           python manage.py export_macro_model_cards --output static/macro/model_cards.json
           python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json
           python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
+          python manage.py export_finance_data_manifest --output static/finance_data_manifest.json
 
       - name: Commit weekly forecast ledger
         if: ${{ env.DATABASE_URL != '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/*.json
+          git add static/macro/*.json static/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No weekly forecast ledger changes."
             exit 0
