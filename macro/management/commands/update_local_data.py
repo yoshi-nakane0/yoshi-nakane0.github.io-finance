@@ -23,6 +23,9 @@ class Command(BaseCommand):
         parser.add_argument('--events', action='store_true', help='経済イベントCSVを更新する')
         parser.add_argument('--earnings', action='store_true', help='決算CSVを更新する')
         parser.add_argument('--macro', action='store_true', help='マクロ指標と価格データをDBへ更新する')
+        parser.add_argument('--basecalc', action='store_true', help='basecalc履歴と表示用JSONを更新する')
+        parser.add_argument('--explanation', action='store_true', help='Explanation表示用JSONと検証結果を更新する')
+        parser.add_argument('--sync-production', action='store_true', help='本番保存済みJSONをローカルへ同期する')
         parser.add_argument('--gdelt', action='store_true', help='ニュース感情データをDBへ更新する')
         parser.add_argument(
             '--events-months',
@@ -69,7 +72,17 @@ class Command(BaseCommand):
     def _has_task(self, options):
         return any(
             options[name]
-            for name in ('all', 'nikkei_per', 'events', 'earnings', 'macro', 'gdelt')
+            for name in (
+                'all',
+                'nikkei_per',
+                'events',
+                'earnings',
+                'macro',
+                'basecalc',
+                'explanation',
+                'sync_production',
+                'gdelt',
+            )
         )
 
     def _validate_options(self, options):
@@ -81,6 +94,8 @@ class Command(BaseCommand):
     def _build_tasks(self, options):
         run_all = options['all']
         tasks = []
+        if options['sync_production']:
+            tasks.append(('本番保存済みデータ同期', self._run_sync_production))
         if run_all or options['nikkei_per']:
             tasks.append(('日経PER・配当利回り', self._run_nikkei_per))
         if run_all or options['events']:
@@ -101,6 +116,10 @@ class Command(BaseCommand):
                     full_history=options['macro_full_history'],
                 ),
             ))
+        if run_all or options['basecalc']:
+            tasks.append(('basecalc表示データ', self._run_basecalc))
+        if run_all or options['explanation']:
+            tasks.append(('Explanation表示データ', self._run_explanation))
         if run_all or options['gdelt']:
             tasks.append((
                 'ニュース感情データ',
@@ -114,6 +133,9 @@ class Command(BaseCommand):
         self.stdout.write('  python manage.py update_local_data --events --events-months 5,6')
         self.stdout.write('  python manage.py update_local_data --earnings --earnings-count 10')
         self.stdout.write('  python manage.py update_local_data --macro')
+        self.stdout.write('  python manage.py update_local_data --basecalc')
+        self.stdout.write('  python manage.py update_local_data --explanation')
+        self.stdout.write('  python manage.py update_local_data --sync-production')
         self.stdout.write('  python manage.py update_local_data --gdelt')
         self.stdout.write('  python manage.py update_local_data --all --earnings-count 10')
 
@@ -151,6 +173,24 @@ class Command(BaseCommand):
             kwargs['full_history'] = True
         call_command('refresh_macro_data', **kwargs)
         call_command('precompute_dashboard')
+
+    def _run_basecalc(self):
+        history_path = BASE_DIR / 'basecalc' / 'data' / 'basecalc_history.json'
+        if history_path.exists():
+            call_command('import_basecalc_history', input=str(history_path))
+        call_command(
+            'refresh_basecalc_data',
+            no_lock=True,
+            export_history=True,
+            export_path='basecalc/data/basecalc_history.json',
+            export_snapshot_path='basecalc/data/latest_snapshot.json',
+        )
+
+    def _run_explanation(self):
+        call_command('finalize_finance_display_data', evaluate_outcomes=True)
+
+    def _run_sync_production(self):
+        call_command('sync_production_data')
 
     def _run_gdelt(self, *, force):
         call_command('refresh_gdelt', force=force)

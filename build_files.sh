@@ -33,17 +33,7 @@ if [ -f static/earning/data/eps_sales.csv ]; then
   $PYTHON_BIN manage.py import_eps_sales_csv static/earning/data/eps_sales.csv
 fi
 
-if [ "${RUN_DATA_REFRESH_IN_BUILD:-0}" = "1" ]; then
-  $PYTHON_BIN manage.py refresh_macro_data
-  $PYTHON_BIN manage.py compute_world_state
-  $PYTHON_BIN manage.py run_macro_forecast
-  $PYTHON_BIN manage.py purge_old_data
-  $PYTHON_BIN manage.py settle_forecast_snapshots || true
-  $PYTHON_BIN manage.py precompute_dashboard
-  $PYTHON_BIN manage.py precompute_explanation
-else
-  echo "Skip data refresh in Vercel build"
-fi
+echo "Vercel build uses committed finance data only"
 
 if [ -z "${DATABASE_URL:-}" ]; then
   cp "$SQLITE_DB_PATH" "$BUNDLED_SQLITE_PATH"

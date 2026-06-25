@@ -72,7 +72,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             with self.subTest(workflow=workflow_path.name):
                 yaml.safe_load(workflow_path.read_text(encoding='utf-8'))
 
-    def test_basecalc_futures_sync_does_not_export_display_snapshot(self):
+    def test_basecalc_futures_sync_exports_display_snapshot_and_finalize_data(self):
         workflow = (
             Path(settings.BASE_DIR)
             / '.github'
@@ -84,8 +84,10 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('--export-history', workflow)
         self.assertIn('basecalc/data/basecalc_history.json', workflow)
         self.assertIn('basecalc/data/basecalc_status.json', workflow)
-        self.assertNotIn('--export-snapshot-path', workflow)
-        self.assertNotIn('basecalc/data/latest_snapshot.json', workflow)
+        self.assertIn('--export-snapshot-path basecalc/data/latest_snapshot.json', workflow)
+        self.assertIn('basecalc/data/latest_snapshot.json', workflow)
+        self.assertIn('explanation/data/latest_snapshot.json', workflow)
+        self.assertIn('static/finance_data_manifest.json', workflow)
 
     def test_refresh_basecalc_tests_run_before_runtime_history_import(self):
         workflow = (
@@ -112,12 +114,23 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             / 'refresh-basecalc.yml'
         ).read_text(encoding='utf-8')
 
-        self.assertIn('python manage.py precompute_explanation', workflow)
-        self.assertIn('python manage.py evaluate_explanation_outcomes', workflow)
-        self.assertIn('python manage.py export_finance_data_manifest --output static/finance_data_manifest.json', workflow)
+        self.assertIn('python manage.py finalize_finance_display_data', workflow)
         self.assertIn('explanation/data/latest_snapshot.json', workflow)
-        self.assertIn('explanation/data/trade_outcomes.json', workflow)
         self.assertIn('static/finance_data_manifest.json', workflow)
+
+    def test_lightweight_update_workflows_call_shared_finance_finalize(self):
+        workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
+
+        expected = {
+            'macro-operations.yml': 'python manage.py finalize_finance_display_data',
+            'refresh-basecalc.yml': 'python manage.py finalize_finance_display_data',
+            'sync-basecalc-futures.yml': 'python manage.py finalize_finance_display_data',
+            'update_nikkei_per_data.yml': 'python manage.py finalize_finance_display_data',
+        }
+        for filename, command in expected.items():
+            with self.subTest(workflow=filename):
+                workflow = (workflows_dir / filename).read_text(encoding='utf-8')
+                self.assertIn(command, workflow)
 
     def test_macro_operations_daily_job_generates_payload_before_deploy(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -313,7 +326,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('python manage.py sync_production_data', script)
         self.assertIn('sync_choice', script)
 
-    def test_vercel_build_skips_macro_refresh_unless_explicitly_enabled(self):
+    def test_vercel_build_never_refreshes_finance_data(self):
         build_script = (
             Path(settings.BASE_DIR)
             / 'build_files.sh'
@@ -321,13 +334,14 @@ class MacroRuntimeConfigTest(SimpleTestCase):
 
         self.assertIn('Running finance production build bootstrap', build_script)
         self.assertIn('BUNDLED_SQLITE_PATH', build_script)
-        self.assertIn('RUN_DATA_REFRESH_IN_BUILD', build_script)
-        self.assertIn('Skip data refresh in Vercel build', build_script)
-        self.assertIn('manage.py refresh_macro_data', build_script)
-        self.assertIn('manage.py compute_world_state', build_script)
-        self.assertIn('manage.py run_macro_forecast', build_script)
-        self.assertIn('manage.py settle_forecast_snapshots', build_script)
-        self.assertIn('manage.py precompute_dashboard', build_script)
+        self.assertIn('Vercel build uses committed finance data only', build_script)
+        self.assertNotIn('RUN_DATA_REFRESH_IN_BUILD', build_script)
+        self.assertNotIn('manage.py refresh_macro_data', build_script)
+        self.assertNotIn('manage.py compute_world_state', build_script)
+        self.assertNotIn('manage.py run_macro_forecast', build_script)
+        self.assertNotIn('manage.py settle_forecast_snapshots', build_script)
+        self.assertNotIn('manage.py precompute_dashboard', build_script)
+        self.assertNotIn('manage.py precompute_explanation', build_script)
         self.assertNotIn('$PYTHON_BIN manage.py precompute_explanation || true', build_script)
         self.assertNotIn('FRED_API_KEY is not set; skipping macro data refresh', build_script)
         self.assertNotIn('refresh_macro_data failed during Vercel build', build_script)
@@ -353,6 +367,37 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('"outputDirectory": "staticfiles"', vercel_config)
         self.assertIn('name = "yoshi-nakane-finance"', python_project)
         self.assertIn('"Django==5.2.14"', python_project)
+
+    def test_finalize_finance_display_data_runs_light_shared_outputs(self):
+        with mock.patch('macro.management.commands.finalize_finance_display_data.call_command') as mocked:
+            call_command('finalize_finance_display_data', stdout=StringIO())
+
+        calls = [call.args[0] for call in mocked.call_args_list]
+        self.assertEqual(calls, [
+            'precompute_explanation',
+            'export_finance_data_manifest',
+        ])
+
+    def test_finalize_finance_display_data_can_update_outcomes(self):
+        with mock.patch('macro.management.commands.finalize_finance_display_data.call_command') as mocked:
+            call_command('finalize_finance_display_data', evaluate_outcomes=True, stdout=StringIO())
+
+        calls = [call.args[0] for call in mocked.call_args_list]
+        self.assertEqual(calls, [
+            'precompute_explanation',
+            'evaluate_explanation_outcomes',
+            'export_finance_data_manifest',
+        ])
+
+    def test_update_local_data_includes_basecalc_and_explanation_entrypoints(self):
+        with (
+            mock.patch('macro.management.commands.update_local_data.Command._run_basecalc') as basecalc,
+            mock.patch('macro.management.commands.update_local_data.Command._run_explanation') as explanation,
+        ):
+            call_command('update_local_data', basecalc=True, explanation=True, stdout=StringIO())
+
+        basecalc.assert_called_once()
+        explanation.assert_called_once()
 
     def test_macro_audit_template_displays_backtest_and_live_accuracy(self):
         index_template = (

@@ -1,6 +1,32 @@
 {
-  "generated_at": "2026-06-25T07:52:42.907958+00:00",
+  "generated_at": "2026-06-25T08:56:48.334690+00:00",
   "outcomes": [
+    {
+      "confidence_bucket": "middle",
+      "decision_type": "no_trade_conflict",
+      "direction_hit": false,
+      "entry_price": 69220.0,
+      "evaluated_at": "2026-06-25T06:45:00+00:00",
+      "exit_price": 72570.0,
+      "exit_reason": "no_trade_observed",
+      "expected_rr": 1.43,
+      "explanation_as_of": "2026-06-24T08:43:04.098830+00:00",
+      "horizon": "1d",
+      "macro_regime": "neutral_inflation_risk",
+      "max_adverse_excursion": null,
+      "max_favorable_excursion": null,
+      "realized_rr": null,
+      "sample_count_at_decision": 30,
+      "selected_side": "no_trade",
+      "stop_hit": false,
+      "stop_price": 67700.0,
+      "target_1_hit": false,
+      "target_1_price": 71390.0,
+      "target_2_hit": false,
+      "target_2_price": 72470.0,
+      "technical_regime": "bullish",
+      "trend_or_reversal": "no_trade"
+    },
     {
       "confidence_bucket": "middle",
       "decision_type": "no_trade_conflict",
