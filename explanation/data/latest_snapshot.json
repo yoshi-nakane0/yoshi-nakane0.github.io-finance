@@ -29,7 +29,7 @@
     "stance": "withhold",
     "status": "blocked"
   },
-  "generated_at": "2026-06-25T08:56:48.286506+00:00",
+  "generated_at": "2026-06-25T11:42:49.303184+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -3002,7 +3002,7 @@
             "directional_allowed": false,
             "display_price": 72570.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-25T08:56:48.276868+00:00",
+            "generated_at": "2026-06-25T11:42:49.297819+00:00",
             "invalidated_targets": {
               "downside": [],
               "upside": []
@@ -3016,7 +3016,7 @@
             "probability_display_allowed": false,
             "range_calculated_from_price": 72570.0,
             "readiness_level": "limited",
-            "snapshot_id": "f0d6dbc2-ce92-4490-8198-5319a1790b7f",
+            "snapshot_id": "6db48772-80dd-4a6a-8603-a4cda71a48ff",
             "source_timestamp": "2026-06-25 15:45 JST",
             "stop_reasons": [
               "判定可能なデータ状態ではありません",
@@ -3425,7 +3425,7 @@
       "confidence_score": 91,
       "data_quality_score": 100,
       "factor_vector": {
-        "credit_stress_score": 19,
+        "credit_stress_score": 20,
         "event_risk_score": 0,
         "fx_support_score": 50,
         "growth_score": 50,
@@ -3433,14 +3433,14 @@
         "macro_long_filter": 0.82,
         "macro_short_filter": 1.1,
         "macro_stale": false,
-        "macro_volatility_filter": 1.06,
+        "macro_volatility_filter": 1.07,
         "policy_uncertainty_score": 0,
         "rates_pressure_score": 82,
         "risk_appetite_score": 50
       },
       "model_version": "",
       "raw": {
-        "as_of": "2026-06-23",
+        "as_of": "2026-06-24",
         "blocking_issues": [],
         "confidence_grade": "B",
         "confidence_limit_reasons": [
@@ -3448,7 +3448,7 @@
         ],
         "confidence_score": 91,
         "data_quality_report": {
-          "as_of": "2026-06-25",
+          "as_of": "2026-06-24",
           "blocking_issues": [],
           "confidence_cap": "A",
           "display_allowed": true,
@@ -3473,11 +3473,11 @@
             "label": "Core PCE"
           },
           {
-            "detail": "現状 4.46%（2026-06-18）。判断変更目安 4.50%以上、あと +0.04pt",
+            "detail": "現状 4.51%（2026-06-22）。判断変更目安 4.50%以上、超過 +0.01pt",
             "label": "米10年金利"
           },
           {
-            "detail": "現状 2.66%（2026-06-19）。判断変更目安 5.00%以上、あと +2.34pt",
+            "detail": "現状 2.65%（2026-06-22）。判断変更目安 5.00%以上、あと +2.35pt",
             "label": "信用スプレッド"
           }
         ],
@@ -3506,22 +3506,22 @@
             "grade_cap": "A",
             "market_consensus_proxies": [
               {
-                "age_days": 3,
+                "age_days": 1,
                 "label": "5年期待インフレ率",
-                "observation_date": "2026-06-22",
+                "observation_date": "2026-06-23",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T5YIE",
                 "source": "FRED",
-                "value": 2.28
+                "value": 2.24
               },
               {
-                "age_days": 3,
+                "age_days": 1,
                 "label": "10年期待インフレ率",
-                "observation_date": "2026-06-22",
+                "observation_date": "2026-06-23",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T10YIE",
                 "source": "FRED",
-                "value": 2.23
+                "value": 2.21
               }
             ],
             "reasons": [
@@ -3560,7 +3560,7 @@
         "probabilities": {
           "contraction": 0.02018798202221658,
           "expansion": 0.6568708855634098,
-          "financial_stress": 0.19316101651728157,
+          "financial_stress": 0.198594818914059,
           "inflation_reacceleration": 0.8233758532469887,
           "recovery": 0.17495960104105565,
           "slowdown": 0.147981531373318
