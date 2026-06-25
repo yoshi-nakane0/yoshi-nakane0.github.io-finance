@@ -99,6 +99,18 @@ def index(request):
     if not force_update:
         snapshot = load_basecalc_snapshot()
         if snapshot:
+            basecalc_status = load_basecalc_status()
+            if _saved_snapshot_should_use_runtime_context(snapshot, basecalc_status):
+                try:
+                    context = build_context(request, force_update=False)
+                except Exception as exc:
+                    context = {
+                        "error": str(exc),
+                        "can_update_basecalc_data": can_update_basecalc_data,
+                    }
+                if can_update_basecalc_data:
+                    context["refresh_workflow_state"] = get_refresh_workflow_state()
+                return _render_basecalc_index(request, context)
             context = dict(snapshot)
             context["can_update_basecalc_data"] = can_update_basecalc_data
             if can_update_basecalc_data:
@@ -106,7 +118,7 @@ def index(request):
             context["detail_mode"] = request.GET.get("detail") == "1"
             if _should_hydrate_saved_snapshot_context(request):
                 hydrate_saved_snapshot_context(context)
-            apply_saved_snapshot_status_context(context)
+            apply_saved_snapshot_status_context(context, basecalc_status)
             enrich_basecalc_context(context)
             return _render_basecalc_index(request, context)
         return render(
@@ -142,6 +154,24 @@ def _render_basecalc_index(request, context):
     if _can_cache_basecalc_index(request, context):
         response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
     return response
+
+
+def _saved_snapshot_should_use_runtime_context(snapshot, basecalc_status):
+    if not isinstance(snapshot, dict):
+        return False
+    world_model = snapshot.get("world_model") or {}
+    if not isinstance(world_model, dict):
+        return False
+    if not _saved_snapshot_price_status_is_newer(snapshot, world_model, basecalc_status):
+        return False
+    latest_snapshot = get_stale_futures_snapshot()
+    if not isinstance(latest_snapshot, dict):
+        return False
+    return _market_snapshot_is_current_for_saved_snapshot(
+        latest_snapshot,
+        snapshot,
+        world_model,
+    )
 
 
 def _can_cache_basecalc_index(request, context):

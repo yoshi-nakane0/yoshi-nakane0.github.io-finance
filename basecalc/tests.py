@@ -573,6 +573,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         from django.http import HttpResponse
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.load_basecalc_status', return_value=snapshot['basecalc_status']), \
              patch('basecalc.views.build_context') as build_context, \
              patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
             response = self.client.get(reverse('basecalc:index'))
@@ -583,6 +584,79 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(rendered_context['decision']['price'], 41000)
         self.assertEqual(rendered_context['decision']['direction_label'], '上目線')
         build_context.assert_not_called()
+
+    def test_get_rebuilds_context_when_saved_snapshot_is_older_than_price_status(self):
+        snapshot = {
+            'generated_at': '2026-06-23T20:21:48+00:00',
+            'decision_price_as_of': '2026-06-23T20:05:00+00:00',
+            'data': {'price_display': '69,220', 'world_model': {'price': 69220}},
+            'world_model': {
+                'direction': 'up',
+                'price': 69220,
+                'last_updated_display': '2026-06-24 05:05 JST',
+                'direction_label': '上目線',
+                'state_label': '上昇継続',
+                'confidence': 'Low',
+                'confidence_score': 49,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'target_ranges': [],
+                'market_context': {},
+            },
+            'market_shock': {'has_data': False},
+            'basecalc_status': {},
+            'basecalc_status_rows': [],
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'updated': False,
+            'price_param': '69220',
+        }
+        current_status = {
+            'updated_at': '2026-06-25T01:30:51+00:00',
+            'price_data': {
+                'last_success_at': '2026-06-25T01:15:00+00:00',
+                'source': 'matsui:NIY=F',
+            },
+        }
+        rebuilt_context = {
+            'data': {'price_display': '71,260', 'world_model': {'price': 71260}},
+            'world_model': {'price': 71260, 'direction': 'neutral'},
+            'decision': {'price': 71260},
+            'basecalc_top': {'lines': {'current_price': 71260}},
+            'basecalc_status': current_status,
+            'basecalc_status_rows': [],
+            'manual_price_override': {'active': False},
+            'performance': {},
+            'performance_by_horizon': {},
+            'backtest_performance_by_horizon': {},
+            'detail_mode': False,
+            'updated': False,
+            'price_param': '71260',
+            'can_update_basecalc_data': False,
+        }
+
+        from django.http import HttpResponse
+
+        with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.load_basecalc_status', return_value=current_status), \
+             patch('basecalc.views.get_stale_futures_snapshot', return_value={
+                 'symbol': 'NIY=F',
+                 'source': 'matsui',
+                 'price': 71260,
+                 'fetched_at': '2026-06-25T01:15:00+00:00',
+             }), \
+             patch('basecalc.views.build_context', return_value=rebuilt_context) as build_context, \
+             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
+            response = self.client.get(reverse('basecalc:index'))
+
+        self.assertEqual(response.status_code, 200)
+        build_context.assert_called_once()
+        rendered_context = render_mock.call_args.args[2]
+        self.assertEqual(rendered_context['world_model']['price'], 71260)
+        self.assertEqual(rendered_context['decision']['price'], 71260)
+        self.assertEqual(rendered_context['price_param'], '71260')
 
     def test_get_keeps_saved_snapshot_current_price_when_market_snapshot_is_newer(self):
         snapshot = {
@@ -649,6 +723,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         from django.http import HttpResponse
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.load_basecalc_status', return_value=snapshot['basecalc_status']), \
              patch('basecalc.views.build_context') as build_context, \
              patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
             response = self.client.get(reverse('basecalc:index'))
@@ -724,6 +799,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         from django.http import HttpResponse
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.load_basecalc_status', return_value={}), \
              patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
             response = self.client.get(reverse('basecalc:index'))
 
@@ -805,6 +881,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         from django.http import HttpResponse
 
         with patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot), \
+             patch('basecalc.views.load_basecalc_status', return_value={}), \
              patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock:
             response = self.client.get(reverse('basecalc:index'))
 
@@ -905,6 +982,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         with (
             patch('basecalc.views.load_basecalc_snapshot', return_value=snapshot),
+            patch('basecalc.views.load_basecalc_status', return_value={}),
             patch('basecalc.views._attach_practical_lines_from_latest_snapshot') as attach_lines,
             patch('basecalc.views.render', return_value=HttpResponse('ok')) as render_mock,
         ):
