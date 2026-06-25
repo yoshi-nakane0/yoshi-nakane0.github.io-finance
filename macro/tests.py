@@ -15,6 +15,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import IntegrityError, connection, transaction
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext, override_settings
@@ -3567,6 +3568,84 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['bad_points'][0], 'インフレ再加速リスクが高い')
         self.assertLessEqual(len(context['bad_points']), 3)
         self.assertEqual(context['freshness']['data_freshness'], '100%')
+
+    def test_top_decision_context_adds_long_short_permission_filter(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'house_view': {
+                'house_view': '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
+                'confidence_grade': 'B',
+                'confidence_score': 74,
+            },
+            'macro_forecast_report': {
+                'nikkei_implication': '日経先物へのmacroバイアスは上昇支援。',
+            },
+            'macro_decision': {
+                'bad_points': ['Core PCEが高い', '米金利が上昇', '重要イベント前で慎重'],
+                'confidence': {'grade': 'B', 'score_display': '74%'},
+                'policy_pressure': {'label': '強い逆風', 'score': 78},
+                'market_stress': {'level_label': '平常', 'score': 22},
+            },
+        })
+
+        self.assertEqual(context['entry_filter']['long_permission'], '条件付き')
+        self.assertEqual(context['entry_filter']['short_permission'], '抑制')
+        self.assertEqual(context['entry_filter']['role_note'], '短期エントリーはbasecalcを優先')
+        self.assertIn('米金利上昇', context['entry_filter']['max_risk'])
+
+    def test_macro_template_shows_entry_filter_before_details(self):
+        context = {
+            'messages': [],
+            'dashboard_cache_missing': False,
+            'generated_payload_meta': None,
+            'can_refresh_macro_data': False,
+            'top_decision': {
+                'final_judgment': {
+                    'direction': '中立（物価警戒）',
+                    'summary': '景気判断は中立だが、物価再加速リスクが高い。',
+                    'confidence': '判断品質 B / 74%',
+                    'nikkei_impact': '上昇支援',
+                    'max_risk': '米金利上昇',
+                },
+                'entry_filter': {
+                    'long_permission': '条件付き',
+                    'short_permission': '抑制',
+                    'role_note': '短期エントリーはbasecalcを優先',
+                    'max_risk': '米金利上昇',
+                },
+                'freshness': {
+                    'confidence': '判断品質 B / 74%',
+                    'data_freshness': '90%',
+                    'updated_at': '2026-06-25',
+                },
+                'reliability': {'display_status': '参考'},
+                'axis_summary': [],
+                'invalidation_triggers': [
+                    {'label': 'Core PCE', 'detail': '再加速で警戒'},
+                ],
+                'scenarios': [
+                    {'name': '基本', 'probability_display': '59%', 'nikkei_bias': '上昇支援', 'reason': '成長は底堅い'},
+                ],
+                'good_points': ['雇用が強い'],
+                'bad_points': ['米金利上昇'],
+                'good_points_detail': [],
+                'bad_points_detail': [],
+                'policy_pressure': {},
+                'market_stress': {},
+                'driver_cards': [],
+            },
+        }
+
+        html = render_to_string('macro/index.html', context)
+        top_html = html.split('詳細・監査・検証', 1)[0]
+
+        self.assertIn('ロング許可度', top_html)
+        self.assertIn('条件付き', top_html)
+        self.assertIn('ショート許可度', top_html)
+        self.assertIn('抑制', top_html)
+        self.assertIn('短期エントリーはbasecalcを優先', top_html)
+        self.assertNotIn('基本・上振れ・下振れシナリオ', top_html)
+        self.assertIn('基本・上振れ・下振れシナリオ', html)
 
     def test_top_decision_keeps_extra_materials_for_detail_section(self):
         context = dashboard.build_top_decision_context({

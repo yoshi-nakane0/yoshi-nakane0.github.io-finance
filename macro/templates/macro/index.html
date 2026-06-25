@@ -59,6 +59,16 @@
                         <span class="macro-decision-label">最大リスク</span>
                         <strong>{{ top_decision.final_judgment.max_risk }}</strong>
                     </div>
+                    <div class="macro-decision-card macro-decision-card--confidence">
+                        <span class="macro-decision-label">ロング許可度</span>
+                        <strong>{{ top_decision.entry_filter.long_permission }}</strong>
+                        <p>{{ top_decision.entry_filter.role_note }}</p>
+                    </div>
+                    <div class="macro-decision-card macro-decision-card--stress">
+                        <span class="macro-decision-label">ショート許可度</span>
+                        <strong>{{ top_decision.entry_filter.short_permission }}</strong>
+                        <p>最大リスク: {{ top_decision.entry_filter.max_risk }}</p>
+                    </div>
                 </div>
                 <div class="macro-reliability-grid">
                     <div class="macro-reliability-item">
@@ -108,23 +118,6 @@
                 </div>
             </section>
 
-            <section class="macro-section macro-scenarios">
-                <h2 class="macro-section-title macro-section-title--brain">基本・上振れ・下振れシナリオ</h2>
-                <div class="macro-scenario-grid">
-                    {% for item in top_decision.scenarios %}
-                        <article class="macro-scenario-card">
-                            <div class="macro-state-section-head">
-                                <span class="macro-state-section-title">{{ item.name }} {{ item.probability_display }}</span>
-                                <span class="macro-state-section-note">日経: {{ item.nikkei_bias }}</span>
-                            </div>
-                            <p>{{ item.reason }}</p>
-                        </article>
-                    {% empty %}
-                        <p class="macro-placeholder">シナリオは更新データ待ちです。</p>
-                    {% endfor %}
-                </div>
-            </section>
-
             <section class="macro-section">
                 <h2 class="macro-section-title">良い材料 / 悪い材料</h2>
                 <div class="macro-regime-materials">
@@ -157,6 +150,22 @@
                     <h2 class="macro-section-title macro-section-title--shield">詳細・監査・検証（信頼度・データ鮮度）</h2>
                     <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査へ</a>
                 </div>
+                <section class="macro-scenarios">
+                    <h2 class="macro-section-title macro-section-title--brain">基本・上振れ・下振れシナリオ</h2>
+                    <div class="macro-scenario-grid">
+                        {% for item in top_decision.scenarios %}
+                            <article class="macro-scenario-card">
+                                <div class="macro-state-section-head">
+                                    <span class="macro-state-section-title">{{ item.name }} {{ item.probability_display }}</span>
+                                    <span class="macro-state-section-note">日経: {{ item.nikkei_bias }}</span>
+                                </div>
+                                <p>{{ item.reason }}</p>
+                            </article>
+                        {% empty %}
+                            <p class="macro-placeholder">シナリオは更新データ待ちです。</p>
+                        {% endfor %}
+                    </div>
+                </section>
                 <div class="macro-decision-grid">
                     <div class="macro-decision-card macro-decision-card--policy">
                         <span class="macro-decision-label">政策・金利圧力</span>

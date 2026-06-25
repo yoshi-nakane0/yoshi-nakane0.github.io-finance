@@ -30,8 +30,7 @@
             <section class="wm-dashboard wm-{{ decision.direction }}" data-field="wm_hero">
                 <article class="wm-purpose-card wm-purpose-card--technical wm-purpose-card--lead">
                     <div class="wm-purpose-card__head">
-                        <span class="wm-purpose-card__number">01</span>
-                        <span class="wm-purpose-card__label">日経先物テクニカル判定</span>
+                        <span class="wm-purpose-card__label">テクニカル最終判定</span>
                     </div>
                     <div class="wm-purpose-card__main">
                         <h1 class="wm-dashboard__title">{{ basecalc_top.final_judgment.direction }}</h1>
@@ -48,21 +47,22 @@
                 <div class="wm-purpose-grid">
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">02</span>
-                            <span class="wm-purpose-card__label">セットアップ</span>
+                            <span class="wm-purpose-card__label">実行可否と重要ライン</span>
                         </div>
                         <div class="wm-purpose-card__main">
-                            <h2 data-field="direction_label">{{ basecalc_top.final_judgment.headline }}</h2>
-                            <div class="wm-purpose-card__badge">{{ basecalc_top.final_judgment.supplement }}</div>
+                            <h2 data-field="direction_label">{{ basecalc_top.action.judgment }}</h2>
+                            <div class="wm-purpose-card__badge">{{ basecalc_top.final_judgment.headline }}</div>
                         </div>
                         <div class="wm-purpose-card__facts">
-                            <span>注意 <strong>{{ basecalc_top.status.attention }}</strong></span>
+                            <span>上値抵抗 <strong>{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}</strong></span>
+                            <span>下値支持 <strong>{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}</strong></span>
+                            <span>無効化 <strong>{{ basecalc_top.lines.invalidation_line }}</strong></span>
+                            <span>反転警戒ライン <strong>{{ basecalc_top.lines.reversal_warning_line }}</strong></span>
                         </div>
                     </article>
 
                     <article class="wm-purpose-card wm-purpose-card--stress">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">03</span>
                             <span class="wm-purpose-card__label">順張り・逆張り・警戒</span>
                         </div>
                         <div class="wm-purpose-card__main">
@@ -76,38 +76,9 @@
                     </article>
                 </div>
 
-                <article class="wm-purpose-card wm-purpose-card--forecast">
-                    <div class="wm-purpose-card__head">
-                        <span class="wm-purpose-card__number">04</span>
-                        <span class="wm-purpose-card__label">実用ライン</span>
-                    </div>
-                    <div class="wm-purpose-targets">
-                        <span class="wm-purpose-targets__item">上値抵抗 <strong>{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}</strong></span>
-                        <span class="wm-purpose-targets__item">下値支持 <strong>{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}</strong></span>
-                        <span class="wm-purpose-targets__item">第1目標 <strong>{{ basecalc_top.lines.first_target|floatformat:0|intcomma|default:"N/A" }}</strong></span>
-                        <span class="wm-purpose-targets__item is-warning">無効化ライン <strong>{{ basecalc_top.lines.invalidation_line }}</strong></span>
-                        <span class="wm-purpose-targets__item is-warning">反転警戒ライン <strong>{{ basecalc_top.lines.reversal_warning_line }}</strong></span>
-                    </div>
-                </article>
-
-                <div class="data-list auxiliary-list">
-                    <div class="data-row">
-                        <div class="label-group">
-                            <span class="label-main">判断を変える条件</span>
-                            <span class="label-sub">上位条件</span>
-                        </div>
-                        <span class="data-value">
-                            {% for item in basecalc_top.change_conditions %}
-                                {{ item.label }}：{{ item.detail }}{% if not forloop.last %} / {% endif %}
-                            {% endfor %}
-                        </span>
-                    </div>
-                </div>
-
                 <div class="wm-purpose-grid">
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">06</span>
                             <span class="wm-purpose-card__label">根拠3つ / 警戒3つ</span>
                         </div>
                         <div class="wm-purpose-card__facts">
@@ -122,34 +93,45 @@
 
                     <article class="wm-purpose-card wm-purpose-card--forecast">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">07</span>
-                            <span class="wm-purpose-card__label">1日・3日・5日の見通し</span>
+                            <span class="wm-purpose-card__label">判断変更条件</span>
                         </div>
                         <div class="wm-purpose-card__facts">
-                            {% for item in basecalc_top.horizons %}
-                            <span>{{ item.label }} <strong>{{ item.summary }}</strong></span>
+                            {% for item in basecalc_top.change_conditions %}
+                            <span>{{ item.label }} <strong>{{ item.detail }}</strong></span>
                             {% endfor %}
                         </div>
                     </article>
                 </div>
 
-                <div class="wm-purpose-grid">
-                    <article class="wm-purpose-card wm-purpose-card--stress">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">08</span>
-                            <span class="wm-purpose-card__label">米国3指数確認</span>
-                        </div>
-                        <div class="wm-purpose-card__facts">
-                            <span>米国3指数 <strong>{{ basecalc_top.external.us_indices }}</strong></span>
-                            <span>理由 <strong>{{ basecalc_top.external.us_reason }}</strong></span>
-                            <span>市場ストレス <strong>{{ basecalc_top.external.market_stress }}</strong></span>
-                            <span>日経先物への影響 <strong>{{ basecalc_top.external.market_impact }}</strong></span>
-                        </div>
-                    </article>
+                <details class="wm-purpose-card wm-purpose-card--forecast">
+                    <summary class="wm-purpose-card__label">詳細を表示</summary>
+                    <div class="wm-purpose-grid">
+                        <article class="wm-purpose-card wm-purpose-card--forecast">
+                            <div class="wm-purpose-card__head">
+                                <span class="wm-purpose-card__label">1日・3日・5日の見通し</span>
+                            </div>
+                            <div class="wm-purpose-card__facts">
+                                {% for item in basecalc_top.horizons %}
+                                <span>{{ item.label }} <strong>{{ item.summary }}</strong></span>
+                                {% endfor %}
+                            </div>
+                        </article>
+
+                        <article class="wm-purpose-card wm-purpose-card--stress">
+                            <div class="wm-purpose-card__head">
+                                <span class="wm-purpose-card__label">米国3指数確認</span>
+                            </div>
+                            <div class="wm-purpose-card__facts">
+                                <span>米国3指数 <strong>{{ basecalc_top.external.us_indices }}</strong></span>
+                                <span>理由 <strong>{{ basecalc_top.external.us_reason }}</strong></span>
+                                <span>市場ストレス <strong>{{ basecalc_top.external.market_stress }}</strong></span>
+                                <span>日経先物への影響 <strong>{{ basecalc_top.external.market_impact }}</strong></span>
+                            </div>
+                        </article>
+                    </div>
 
                     <article class="wm-purpose-card wm-purpose-card--forecast">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__number">09</span>
                             <span class="wm-purpose-card__label">信頼度・データ品質・検証リンク</span>
                         </div>
                         <div class="wm-purpose-card__facts">
@@ -159,7 +141,7 @@
                             <span>検証 <strong>{{ basecalc_top.confidence.validation_note }}</strong></span>
                         </div>
                     </article>
-                </div>
+                </details>
             </section>
 
             <div class="action-row top-actions">

@@ -9,6 +9,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
+from django.template.loader import render_to_string
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1590,6 +1591,75 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['external']['us_indices'], 'まちまち')
         self.assertEqual(result['confidence']['direction'], '低〜中')
 
+    def test_basecalc_template_keeps_detailed_forecasts_inside_details(self):
+        context = {
+            'error': None,
+            'can_update_basecalc_data': False,
+            'refresh_workflow_state': {},
+            'detail_mode': False,
+            'decision': {'direction': 'up'},
+            'world_model': {'data_quality': {'level': 'good'}},
+            'basecalc_top': {
+                'status': {
+                    'judgment_state': '判定可',
+                    'data_state': '良好',
+                    'updated_at': '2026-06-25 09:00 JST',
+                },
+                'final_judgment': {
+                    'direction': '上方向',
+                    'headline': '上昇優勢',
+                    'setup': '押し目待ち',
+                    'supplement': '節目確認を優先',
+                },
+                'action': {
+                    'judgment': '押し目確認待ち',
+                    'caution': '高値追い禁止',
+                },
+                'lines': {
+                    'current_price': 72430,
+                    'upside_resistance': 77240,
+                    'downside_support': 67620,
+                    'invalidation_line': '69,060',
+                    'first_target': 77240,
+                },
+                'behavior': {
+                    'trend_pressure': '順張り圧力は中程度。',
+                    'reversal_warning': '反転警戒があります。',
+                    'chase_risk': '追いかけリスク: 高い。',
+                },
+                'change_conditions': [
+                    {'label': '上値突破', 'detail': '77,240円超え'},
+                    {'label': '下値割れ', 'detail': '67,620円割れ'},
+                ],
+                'reasons': ['現在値が主要線を上回る', '市場ストレスは通常', '押し目確認優先'],
+                'risks': ['R/R不足', '米国3指数が分裂', '反転警戒'],
+                'horizons': [{'label': '1日', 'summary': '参考予測'}],
+                'external': {
+                    'us_indices': 'まちまち',
+                    'us_reason': 'NASDAQのみ弱い',
+                    'market_stress': '通常',
+                    'market_impact': '中立',
+                },
+                'confidence': {
+                    'data_quality': 'Good 96/100',
+                    'direction': '参考',
+                    'range': '通常',
+                    'validation_note': '検証ページで詳細確認。',
+                },
+            },
+        }
+
+        html = render_to_string('basecalc/index.html', context)
+        top_html = html.split('詳細を表示', 1)[0]
+
+        self.assertIn('テクニカル最終判定', top_html)
+        self.assertIn('実行可否と重要ライン', top_html)
+        self.assertNotIn('wm-purpose-card__number', top_html)
+        self.assertNotIn('1日・3日・5日の見通し', top_html)
+        self.assertNotIn('信頼度・データ品質・検証リンク', top_html)
+        self.assertIn('1日・3日・5日の見通し', html)
+        self.assertIn('信頼度・データ品質・検証リンク', html)
+
     def test_basecalc_top_context_exposes_reorganized_ui_summary(self):
         world_model = {
             'direction': 'up',
@@ -2046,13 +2116,12 @@ class BasecalcUpdateSecurityTests(TestCase):
             response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '日経先物テクニカル判定')
+        self.assertContains(response, 'テクニカル最終判定')
         self.assertContains(response, '判定作成日時')
-        self.assertContains(response, 'セットアップ')
+        self.assertContains(response, '実行可否と重要ライン')
         self.assertContains(response, '順張り・逆張り・警戒')
-        self.assertContains(response, '実用ライン')
         self.assertContains(response, '現在値')
-        self.assertContains(response, '判断を変える条件')
+        self.assertContains(response, '判断変更条件')
         self.assertContains(response, '根拠3つ / 警戒3つ')
         self.assertContains(response, '1日・3日・5日の見通し')
         self.assertContains(response, '米国3指数確認')

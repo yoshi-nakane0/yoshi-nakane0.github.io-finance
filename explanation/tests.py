@@ -559,10 +559,14 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         html = render_to_string('explanation/index.html', context)
 
-        self.assertLess(html.index('最終統合判定'), html.index('統合判断の詳細'))
-        self.assertIn('<summary class="common-section-title">統合判断の詳細</summary>', html)
-        self.assertIn('<summary class="common-section-title">Macro / Basecalc 詳細</summary>', html)
-        self.assertIn('<summary class="common-section-title">world model 予測数値</summary>', html)
+        self.assertLess(html.index('最終判断'), html.index('詳細を表示'))
+        self.assertIn('<summary class="common-section-title">詳細を表示</summary>', html)
+        top_html = html.split('詳細を表示', 1)[0]
+        self.assertNotIn('world model 予測数値', top_html)
+        self.assertNotIn('ロング条件詳細', top_html)
+        self.assertNotIn('ショート条件詳細', top_html)
+        self.assertIn('Macro / Basecalc 詳細', html)
+        self.assertIn('world model 予測数値', html)
 
     def test_explanation_template_top_validation_says_unverified_when_no_trade_outcomes(self):
         context = snapshot_to_view(self._snapshot())
@@ -576,7 +580,43 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('実運用結果はまだ0件です。', html)
         self.assertNotIn('検証状態: 少ない', html)
 
-    def test_decision_card_shows_reference_levels_when_no_trade_has_candidate_plan(self):
+    def test_explanation_template_top_uses_beginner_decision_and_hides_no_trade_execution_prices(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 72400, 'probability': 0.21},
+            'stop_price': 75800,
+            'reward_risk': 0.01,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'blocked_reasons': ['R/R不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        top_html = html.split('詳細を表示', 1)[0]
+
+        self.assertIn('日経先物 1日〜5日 最終判断', top_html)
+        self.assertIn('最終判断：見送り', top_html)
+        self.assertIn('エントリー', top_html)
+        self.assertIn('なし', top_html)
+        self.assertIn('第1目標', top_html)
+        self.assertIn('—', top_html)
+        self.assertIn('R/R', top_html)
+        self.assertIn('不採用（1.2未満）', top_html)
+        self.assertNotIn('参考 72,376〜72,539円', top_html)
+        self.assertNotIn('72,400円', top_html)
+        self.assertNotIn('75,800円', top_html)
+
+    def test_decision_card_hides_reference_levels_when_no_trade_has_candidate_plan(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
             'selected_side': 'no_trade',
@@ -594,11 +634,93 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
 
         self.assertEqual(context['decision_card']['label'], '見送り')
-        self.assertEqual(context['decision_card']['entry'], '参考 42,336〜42,432円')
-        self.assertEqual(context['decision_card']['target'], '42,550円')
-        self.assertEqual(context['decision_card']['stop'], '42,290円')
-        self.assertEqual(context['decision_card']['invalidation'], '42,290円')
+        self.assertEqual(context['decision_card']['entry'], 'なし')
+        self.assertEqual(context['decision_card']['target'], 'N/A')
+        self.assertEqual(context['decision_card']['stop'], 'N/A')
+        self.assertEqual(context['decision_card']['invalidation'], 'N/A')
         self.assertEqual(context['decision_card']['confidence'], '参考判定（B- / 68%）')
+
+    def test_beginner_decision_hides_execution_prices_when_no_trade_has_candidate_plan(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 72400, 'probability': 0.21},
+            'stop_price': 75800,
+            'invalidation_price': 75800,
+            'reward_risk': 0.01,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'blocked_reasons': ['R/R不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertFalse(beginner['tradable'])
+        self.assertIn(beginner['status'], {'wait', 'no_trade'})
+        self.assertEqual(beginner['entry_display'], 'なし')
+        self.assertEqual(beginner['target_1_display'], '—')
+        self.assertEqual(beginner['stop_display'], '—')
+        self.assertEqual(beginner['reward_risk_display'], '不採用（1.2未満）')
+        self.assertIn('R/R不足', beginner['warnings'])
+
+    def test_beginner_decision_blocks_invalid_long_target_direction(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72300,
+            'entry_zone_high': 72450,
+            'target_1': {'label': 'T1', 'price': 72400, 'probability': 0.62},
+            'stop_price': 71900,
+            'reward_risk': 1.65,
+            'confidence_score': 72,
+            'confidence_grade': 'B',
+            'blocked_reasons': [],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertFalse(beginner['tradable'])
+        self.assertEqual(beginner['status'], 'wait')
+        self.assertEqual(beginner['target_1_display'], '—')
+        self.assertIn('target/stop が現在値と整合していません', beginner['warnings'])
+
+    def test_beginner_decision_allows_valid_sell_candidate(self):
+        snapshot = self._snapshot()
+        snapshot.macro_bias = 'negative'
+        snapshot.basecalc_bias = 'bearish'
+        snapshot.alignment_status = 'aligned'
+        snapshot.trade_decision.update({
+            'selected_side': 'short',
+            'decision_type': 'trend_follow',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72500,
+            'entry_zone_high': 72650,
+            'target_1': {'label': 'T1', 'price': 71800, 'probability': 0.62},
+            'stop_price': 72950,
+            'reward_risk': 1.55,
+            'confidence_score': 64,
+            'confidence_grade': 'B-',
+            'blocked_reasons': [],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertTrue(beginner['tradable'])
+        self.assertEqual(beginner['status'], 'sell_candidate')
+        self.assertEqual(beginner['label'], '売り候補')
+        self.assertEqual(beginner['target_1_display'], '71,800円')
+        self.assertEqual(beginner['stop_display'], '72,950円')
 
     def test_decision_card_marks_low_confidence_blocked_trade_as_reference(self):
         snapshot = self._snapshot()
@@ -647,16 +769,20 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         html = render_to_string('explanation/index.html', context)
 
-        decision_index = html.index('最終判定')
-        long_index = html.index('ロング判断')
-        short_index = html.index('ショート判断')
+        decision_index = html.index('最終判断')
+        trigger_index = html.index('次に見る条件')
+        alignment_index = html.index('macro × basecalc')
+        detail_index = html.index('詳細を表示')
+        long_index = html.index('ロング条件詳細')
+        short_index = html.index('ショート条件詳細')
         world_index = html.index('world model 予測数値')
-        final_index = html.index('最終判断')
 
-        self.assertLess(decision_index, long_index)
+        self.assertLess(decision_index, trigger_index)
+        self.assertLess(trigger_index, alignment_index)
+        self.assertLess(alignment_index, detail_index)
+        self.assertLess(detail_index, long_index)
         self.assertLess(long_index, short_index)
         self.assertLess(short_index, world_index)
-        self.assertLess(world_index, final_index)
 
     def test_api_includes_trade_decision_selected_side(self):
         payload = snapshot_to_api(self._snapshot())

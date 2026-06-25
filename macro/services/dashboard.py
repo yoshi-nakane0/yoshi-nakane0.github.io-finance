@@ -1813,6 +1813,11 @@ def build_top_decision_context(context: Dict) -> Dict:
     )
     risk_candidates = bad_materials['visible']
     reliability = _top_validation_reliability(context, house_view, decision)
+    entry_filter = _top_entry_filter(
+        nikkei_impact=nikkei_impact,
+        risk_candidates=risk_candidates,
+        decision=decision,
+    )
 
     return {
         'final_judgment': {
@@ -1831,6 +1836,7 @@ def build_top_decision_context(context: Dict) -> Dict:
             'bias': nikkei_impact,
             'role_note': '短期エントリーはbasecalcを優先',
         },
+        'entry_filter': entry_filter,
         'invalidation_triggers': _top_invalidation_triggers(house_view),
         'scenarios': scenarios,
         'axis_summary': _top_axis_summary(forecast),
@@ -1847,6 +1853,42 @@ def build_top_decision_context(context: Dict) -> Dict:
         },
         'reliability': reliability,
         'driver_cards': (context.get('top_driver_cards') or context.get('indicator_cards') or [])[:5],
+    }
+
+
+def _top_entry_filter(nikkei_impact: str, risk_candidates: List[str], decision: Dict) -> Dict:
+    risk_text = ' / '.join(risk_candidates[:3]) if risk_candidates else '主要リスクを確認中'
+    pressure = decision.get('policy_pressure') or {}
+    stress = decision.get('market_stress') or {}
+    pressure_text = str(pressure.get('label') or '')
+    try:
+        pressure_score = float(pressure.get('score') or 0)
+    except (TypeError, ValueError):
+        pressure_score = 0
+    try:
+        stress_score = float(stress.get('score') or 0)
+    except (TypeError, ValueError):
+        stress_score = 0
+
+    high_rate_pressure = pressure_score >= 75 or '逆風' in pressure_text or '金利' in risk_text
+    high_stress = stress_score >= 70 or '信用' in risk_text
+
+    if nikkei_impact == '上昇支援':
+        long_permission = '条件付き' if high_rate_pressure or high_stress else '強い'
+        short_permission = '抑制'
+    elif nikkei_impact == '下落圧力':
+        long_permission = '抑制'
+        short_permission = '強い' if not high_stress else '条件付き'
+    else:
+        long_permission = '条件付き'
+        short_permission = '条件付き'
+
+    return {
+        'nikkei_impact': nikkei_impact,
+        'max_risk': risk_text,
+        'long_permission': long_permission,
+        'short_permission': short_permission,
+        'role_note': '短期エントリーはbasecalcを優先',
     }
 
 

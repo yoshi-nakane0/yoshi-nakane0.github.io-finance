@@ -1,6 +1,8 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from .beginner_decision import build_beginner_decision
+
 
 JST = ZoneInfo('Asia/Tokyo')
 
@@ -13,6 +15,14 @@ def snapshot_to_view(snapshot):
     scenario = snapshot.scenario or {}
     manual_price = _manual_price_from_basecalc(basecalc)
     trade_decision = _trade_decision(snapshot, world_model)
+    beginner_decision = build_beginner_decision(
+        snapshot,
+        macro,
+        basecalc,
+        world_model,
+        trade_decision,
+        manual_price,
+    )
     decision_card = _decision_card(trade_decision, snapshot)
     long_judgment = _trade_judgment('long', snapshot, world_model, trade_decision)
     short_judgment = _trade_judgment('short', snapshot, world_model, trade_decision)
@@ -31,11 +41,27 @@ def snapshot_to_view(snapshot):
         'confidence_display': _confidence_display(snapshot, manual_price),
         'manual_price': manual_price,
         'trade_decision': trade_decision,
+        'beginner_decision': beginner_decision,
+        'next_action': beginner_decision.get('next_triggers') or {},
         'decision_card': decision_card,
         'integrated_decision': _integrated_decision(snapshot, decision_card, trade_decision, manual_price),
         'alignment_summary': alignment_summary,
         'adoption_summary': adoption_summary,
         'validation_summary': _validation_summary_placeholder(snapshot),
+        'advanced_detail': {
+            'legacy_final': {
+                'label': snapshot.final_label,
+                'stance': snapshot.final_stance,
+                'action_posture': snapshot.action_posture,
+                'confidence': _confidence_display(snapshot, manual_price),
+                'status': _status_label(snapshot.audit_level),
+            },
+            'long_judgment': long_judgment,
+            'short_judgment': short_judgment,
+            'world_model_predictions': _world_model_predictions(world_model),
+            'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
+            'audit_items': snapshot.audit_items or [],
+        },
         'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
         'long_judgment': long_judgment,
         'short_judgment': short_judgment,
@@ -475,15 +501,16 @@ def _legacy_selected_side(final_stance):
 
 def _decision_card(trade_decision, snapshot):
     selected = trade_decision.get('selected_side') or 'no_trade'
+    is_reference = _is_reference_decision(trade_decision)
     return {
         'label': _selected_side_label(selected),
         'decision_type': _decision_type_label(trade_decision.get('decision_type')),
         'current_price': _price_with_suffix(trade_decision.get('current_price')),
         'entry': _entry_display(trade_decision),
-        'target': _target_display(trade_decision.get('target_1')),
-        'stop': _price_with_suffix(trade_decision.get('stop_price')),
-        'invalidation': _price_with_suffix(trade_decision.get('invalidation_price')),
-        'reward_risk': _rr_display(trade_decision.get('reward_risk')),
+        'target': 'N/A' if is_reference else _target_display(trade_decision.get('target_1')),
+        'stop': 'N/A' if is_reference else _price_with_suffix(trade_decision.get('stop_price')),
+        'invalidation': 'N/A' if is_reference else _price_with_suffix(trade_decision.get('invalidation_price')),
+        'reward_risk': _blocked_rr_display(trade_decision) if is_reference else _rr_display(trade_decision.get('reward_risk')),
         'confidence': _decision_confidence_display(trade_decision, snapshot),
         'counter': _counter_display(trade_decision),
         'reasons': list(trade_decision.get('reasons') or [])[:3],
@@ -533,8 +560,8 @@ def _decision_type_label(value):
 
 
 def _entry_display(decision):
-    is_reference = decision.get('selected_side') == 'no_trade'
-    if is_reference and not decision.get('entry_price') and decision.get('entry_zone_low') is None:
+    is_reference = _is_reference_decision(decision)
+    if is_reference:
         return 'なし'
     low = _format_price(decision.get('entry_zone_low'))
     high = _format_price(decision.get('entry_zone_high'))
@@ -542,7 +569,18 @@ def _entry_display(decision):
         value = f'{low}〜{high}円'
     else:
         value = _price_with_suffix(decision.get('entry_price'))
-    return f'参考 {value}' if is_reference and value != 'N/A' else value
+    return value
+
+
+def _blocked_rr_display(decision):
+    value = decision.get('reward_risk')
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return '不採用'
+    if number < 1.2:
+        return '不採用（1.2未満）'
+    return '不採用'
 
 
 def _counter_display(decision):

@@ -37,54 +37,91 @@
       {% endif %}
 
       <section class="common-section">
-        <p class="common-kicker">日経先物 1日〜5日</p>
-        <h1 class="common-title">最終統合判定：{{ integrated_decision.posture }}</h1>
+        <p class="common-kicker">日経先物 1日〜5日 最終判断</p>
+        <h1 class="common-title">最終判断：{{ beginner_decision.label }}</h1>
+        <p class="common-muted">{{ beginner_decision.headline }}</p>
         <div class="common-list">
           <div class="common-row">
             <span>現在値</span>
-            <strong>{{ integrated_decision.current_price }}</strong>
+            <strong>{{ beginner_decision.current_price_display }}</strong>
           </div>
           <div class="common-row">
-            <span>エントリー条件</span>
-            <strong>{{ integrated_decision.entry }}</strong>
+            <span>実行可否</span>
+            <strong>{{ beginner_decision.plain_action }}</strong>
+          </div>
+          <div class="common-row">
+            <span>エントリー</span>
+            <strong>{{ beginner_decision.entry_display }}</strong>
           </div>
           <div class="common-row">
             <span>第1目標</span>
-            <strong>{{ integrated_decision.target }}</strong>
+            <strong>{{ beginner_decision.target_1_display }}</strong>
           </div>
           <div class="common-row">
-            <span>損切り・無効化</span>
-            <strong>{{ integrated_decision.stop_or_invalidation }}</strong>
+            <span>損切り</span>
+            <strong>{{ beginner_decision.stop_display }}</strong>
           </div>
           <div class="common-row">
             <span>R/R</span>
-            <strong>{{ integrated_decision.reward_risk }}</strong>
+            <strong>{{ beginner_decision.reward_risk_display }}</strong>
           </div>
           <div class="common-row">
             <span>信頼度</span>
-            <strong>{{ integrated_decision.confidence }}</strong>
+            <strong>{{ beginner_decision.confidence_display }}</strong>
           </div>
           <div class="common-row">
-            <span>判定状態</span>
-            <strong>{{ integrated_decision.judgment_state }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>反対シナリオ</span>
-            <strong>{{ integrated_decision.counter }}</strong>
+            <span>データ状態</span>
+            <strong>{{ beginner_decision.data_state }}</strong>
           </div>
         </div>
       </section>
 
       <section class="common-section">
-        <h2 class="common-section-title">macro × basecalc 一致度</h2>
+        <h2 class="common-section-title">次に見る条件</h2>
+        <h3 class="common-subtitle">ロング</h3>
+        <ul class="common-bullet-list">
+          {% for item in beginner_decision.next_triggers.long %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+        <h3 class="common-subtitle">ショート</h3>
+        <ul class="common-bullet-list">
+          {% for item in beginner_decision.next_triggers.short %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+        <h3 class="common-subtitle">待機継続</h3>
+        <ul class="common-bullet-list">
+          {% for item in beginner_decision.next_triggers.wait %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">採用理由 / 警戒理由</h2>
+        <ol class="common-ordered-list">
+          {% for reason in beginner_decision.reasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ol>
+        <ul class="common-bullet-list">
+          {% for warning in beginner_decision.warnings %}
+            <li>{{ warning }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="common-section">
+        <h2 class="common-section-title">macro × basecalc</h2>
         <div class="common-list">
-          <div class="common-row">
-            <span>macro影響</span>
-            <strong>{{ alignment_summary.macro }}</strong>
+          <div class="common-row common-row--stack">
+            <span>macro</span>
+            <strong>{{ beginner_decision.macro_summary }}</strong>
           </div>
-          <div class="common-row">
-            <span>basecalc状態</span>
-            <strong>{{ alignment_summary.basecalc }}</strong>
+          <div class="common-row common-row--stack">
+            <span>basecalc</span>
+            <strong>{{ beginner_decision.basecalc_summary }}</strong>
           </div>
           <div class="common-row">
             <span>一致度</span>
@@ -93,60 +130,6 @@
           <div class="common-row common-row--stack">
             <span>扱い</span>
             <strong>{{ alignment_summary.action }}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="common-section">
-        <h2 class="common-section-title">採用判断</h2>
-        <div class="common-list">
-          <div class="common-row">
-            <span>採用</span>
-            <strong>{{ adoption_summary.primary }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>ロング条件</span>
-            <strong>{{ adoption_summary.long_condition }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>ショート条件</span>
-            <strong>{{ adoption_summary.short_condition }}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="common-section">
-        <h2 class="common-section-title">採用理由 / 警戒理由</h2>
-        <ol class="common-ordered-list">
-          {% for reason in adoption_summary.reasons %}
-            <li>{{ reason }}</li>
-          {% endfor %}
-        </ol>
-        <ul class="common-bullet-list">
-          {% for warning in adoption_summary.warnings %}
-            <li>{{ warning }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-
-      <section class="common-section">
-        <h2 class="common-section-title">シナリオ</h2>
-        <div class="common-list">
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.baseline.title }}</span>
-            <strong>{{ scenario.baseline.text }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.upside.title }}</span>
-            <strong>{{ scenario.upside.text }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.downside.title }}</span>
-            <strong>{{ scenario.downside.text }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>反対シナリオ</span>
-            <strong>{{ integrated_decision.counter }}</strong>
           </div>
         </div>
       </section>
@@ -179,10 +162,10 @@
       </section>
 
       <details class="common-section">
-        <summary class="common-section-title">統合判断の詳細</summary>
+        <summary class="common-section-title">詳細を表示</summary>
         <h2 class="common-section-title">最終判定に使った材料一覧</h2>
         <div class="common-list">
-          {% for row in decision_inputs.rows %}
+          {% for row in advanced_detail.decision_inputs.rows %}
             <div class="common-row">
               <span>{{ row.label }}</span>
               <strong>{{ row.value }}</strong>
@@ -190,80 +173,70 @@
           {% endfor %}
         </div>
         <ol class="common-ordered-list">
-          {% for item in decision_inputs.materials %}
+          {% for item in advanced_detail.decision_inputs.materials %}
             <li>{{ item }}</li>
           {% endfor %}
         </ol>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">ロング条件詳細</summary>
-        <p class="common-kicker">Entry</p>
-        <h1 class="common-title">{{ long_judgment.label }}</h1>
+        <h2 class="common-section-title">ロング条件詳細</h2>
         <div class="common-list">
           <div class="common-row">
             <span>判断</span>
-            <strong>{{ long_judgment.stance }}</strong>
+            <strong>{{ advanced_detail.long_judgment.stance }}</strong>
           </div>
           <div class="common-row">
             <span>目標</span>
-            <strong>{{ long_judgment.price }}</strong>
+            <strong>{{ advanced_detail.long_judgment.price }}</strong>
           </div>
           <div class="common-row">
             <span>到達確率</span>
-            <strong>{{ long_judgment.probability }}</strong>
+            <strong>{{ advanced_detail.long_judgment.probability }}</strong>
           </div>
           <div class="common-row common-row--stack">
             <span>セットアップ</span>
-            <strong>{{ long_judgment.setup }}</strong>
+            <strong>{{ advanced_detail.long_judgment.setup }}</strong>
           </div>
           <div class="common-row">
             <span>損切り</span>
-            <strong>{{ long_judgment.stop }}</strong>
+            <strong>{{ advanced_detail.long_judgment.stop }}</strong>
           </div>
           <div class="common-row">
             <span>R/R</span>
-            <strong>{{ long_judgment.reward_risk }}</strong>
+            <strong>{{ advanced_detail.long_judgment.reward_risk }}</strong>
           </div>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">ショート条件詳細</summary>
-        <p class="common-kicker">Entry</p>
-        <h1 class="common-title">{{ short_judgment.label }}</h1>
+        <h2 class="common-section-title">ショート条件詳細</h2>
         <div class="common-list">
           <div class="common-row">
             <span>判断</span>
-            <strong>{{ short_judgment.stance }}</strong>
+            <strong>{{ advanced_detail.short_judgment.stance }}</strong>
           </div>
           <div class="common-row">
             <span>目標</span>
-            <strong>{{ short_judgment.price }}</strong>
+            <strong>{{ advanced_detail.short_judgment.price }}</strong>
           </div>
           <div class="common-row">
             <span>到達確率</span>
-            <strong>{{ short_judgment.probability }}</strong>
+            <strong>{{ advanced_detail.short_judgment.probability }}</strong>
           </div>
           <div class="common-row common-row--stack">
             <span>セットアップ</span>
-            <strong>{{ short_judgment.setup }}</strong>
+            <strong>{{ advanced_detail.short_judgment.setup }}</strong>
           </div>
           <div class="common-row">
             <span>損切り</span>
-            <strong>{{ short_judgment.stop }}</strong>
+            <strong>{{ advanced_detail.short_judgment.stop }}</strong>
           </div>
           <div class="common-row">
             <span>R/R</span>
-            <strong>{{ short_judgment.reward_risk }}</strong>
+            <strong>{{ advanced_detail.short_judgment.reward_risk }}</strong>
           </div>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">world model 予測数値</summary>
+        <h2 class="common-section-title">world model 予測数値</h2>
         <div class="common-list">
-          {% for item in world_model_predictions %}
+          {% for item in advanced_detail.world_model_predictions %}
             <div class="common-row">
               <span>{{ item.horizon }} / {{ item.bias }}</span>
               <strong>{{ item.expected_return }}</strong>
@@ -274,34 +247,28 @@
             </div>
           {% endfor %}
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">従来の統合ラベル</summary>
-        <p class="common-kicker">日経先物 1日〜5日</p>
-        <h1 class="common-title">最終判断：{{ snapshot.final_label }}</h1>
+        <h2 class="common-section-title">従来の統合ラベル</h2>
         <div class="common-list">
           <div class="common-row">
+            <span>最終判断</span>
+            <strong>{{ advanced_detail.legacy_final.label }}</strong>
+          </div>
+          <div class="common-row">
             <span>実行姿勢</span>
-            <strong>{{ snapshot.action_posture }}</strong>
+            <strong>{{ advanced_detail.legacy_final.action_posture }}</strong>
           </div>
           <div class="common-row">
             <span>信頼度</span>
-            <strong>{{ confidence_display }}</strong>
+            <strong>{{ advanced_detail.legacy_final.confidence }}</strong>
           </div>
           <div class="common-row">
             <span>判定状態</span>
-            <strong>{{ status_label }}</strong>
-          </div>
-          <div class="common-row">
-            <span>更新</span>
-            <strong>{{ as_of_display }}</strong>
+            <strong>{{ advanced_detail.legacy_final.status }}</strong>
           </div>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">Macro / Basecalc 詳細</summary>
+        <h2 class="common-section-title">Macro / Basecalc 詳細</h2>
         <div class="common-card-grid">
           <article class="common-card">
             <h3>Macro</h3>
@@ -316,19 +283,15 @@
             <p>{{ snapshot.audit_items.0 }}</p>
           </article>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">理由の詳細</summary>
+        <h2 class="common-section-title">理由の詳細</h2>
         <ol class="common-ordered-list">
           {% for reason in reasons %}
             <li>{{ reason }}</li>
           {% endfor %}
         </ol>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">見るべき水準の詳細</summary>
+        <h2 class="common-section-title">見るべき水準の詳細</h2>
         <div class="common-list">
           <div class="common-row">
             <span>上値抵抗</span>
@@ -343,10 +306,8 @@
             <strong>{{ basecalc.invalidation }}円</strong>
           </div>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">シナリオ詳細</summary>
+        <h2 class="common-section-title">シナリオ詳細</h2>
         <div class="common-list">
           <div class="common-row common-row--stack">
             <span>{{ scenario.baseline.title }}</span>
@@ -361,10 +322,8 @@
             <strong>{{ scenario.downside.text }}</strong>
           </div>
         </div>
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">検証成績</summary>
+        <h2 class="common-section-title">検証成績詳細</h2>
         {% if trade_validation_summary.available %}
           <h3 class="common-subtitle">Long / Short / No Trade 別</h3>
           <div class="common-list">
@@ -396,12 +355,10 @@
         {% else %}
           <p class="common-notice">検証成績は、1d / 3d / 5d の評価データが保存されると表示されます。</p>
         {% endif %}
-      </details>
 
-      <details class="common-section">
-        <summary class="common-section-title">監査</summary>
+        <h2 class="common-section-title">監査</h2>
         <ul class="common-bullet-list">
-          {% for item in snapshot.audit_items %}
+          {% for item in advanced_detail.audit_items %}
             <li>{{ item }}</li>
           {% endfor %}
         </ul>
