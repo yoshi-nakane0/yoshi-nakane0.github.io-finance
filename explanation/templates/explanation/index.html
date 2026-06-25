@@ -153,7 +153,11 @@
 
       <section class="common-section">
         <h2 class="common-section-title">検証成績</h2>
-        <p class="common-muted">{{ validation_summary.one_line }}</p>
+        {% if trade_validation_summary.available %}
+          <p class="common-muted">{{ validation_summary.one_line }}</p>
+        {% else %}
+          <p class="common-muted">実運用結果はまだ0件です。取引判断の当たり外れは、評価データが保存されてから確認します。</p>
+        {% endif %}
       </section>
 
       <section class="common-section">

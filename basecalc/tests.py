@@ -73,7 +73,7 @@ from .world_model import build_dual_scenario, build_world_model
 from macro.models import Indicator, Observation
 
 
-def _ready_snapshot(length=80, symbol='NIY=F', source='yahoo', fetched_at=None, volume=1000):
+def _ready_snapshot(length=80, symbol='NIY=F', source='cme_daily_bulletin', fetched_at=None, volume=1000):
     closes = [40000 + index * 25 for index in range(length)]
     return {
         'symbol': symbol,
@@ -107,7 +107,7 @@ def _create_market_bar_series(count=80, symbol='NIY=F', instrument_key='cme_nikk
                 low=close - 80,
                 close=close,
                 volume=1000,
-                source='yahoo',
+                source='cme_daily_bulletin',
                 instrument_key=instrument_key,
                 instrument_type='futures' if instrument_key == 'cme_nikkei_futures' else 'index_fallback',
             )
@@ -1078,7 +1078,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             if row.get('key') == 'intermarket' or row.get('label') == '米国3指数確認'
         )
         self.assertEqual(intermarket_row['decision_level'], 'ready')
-        self.assertEqual(context['basecalc_top']['status']['attention'], '主要データは判定可能')
+        self.assertEqual(context['basecalc_top']['status']['attention'], '信頼度が未較正です')
         self.assertNotIn('米国3指数確認が不足', context['world_model']['stop_reasons'])
 
     def test_status_summary_treats_intermarket_only_block_as_usable(self):
@@ -1185,7 +1185,7 @@ class BasecalcUpdateSecurityTests(TestCase):
             hydrate_saved_snapshot_context(context)
             enrich_basecalc_context(context)
 
-        self.assertTrue(context['world_model']['output_contract']['directional_allowed'])
+        self.assertFalse(context['world_model']['output_contract']['directional_allowed'])
         self.assertNotIn('現行モデルがATRベースラインを下回るため', context['world_model']['stop_reasons'])
         self.assertEqual(context['basecalc_top']['confidence']['direction'], '参考（信頼度 34/100）')
 
@@ -1633,8 +1633,8 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         result = build_basecalc_top_context(world_model, decision, [], {})
 
-        self.assertEqual(result['final_judgment']['headline'], '上昇優勢だが反落警戒')
-        self.assertEqual(result['final_judgment']['setup'], '方向予測停止・レンジ確認')
+        self.assertEqual(result['final_judgment']['headline'], '方向判断：参考')
+        self.assertEqual(result['final_judgment']['setup'], '方向判断停止・レンジ確認')
         self.assertEqual(result['action']['judgment'], 'レンジ・節目確認')
         self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ確認のみ')
         self.assertIn('現行モデルがATRベースラインを下回るため', result['action']['caution'])
@@ -1765,6 +1765,78 @@ class BasecalcUpdateSecurityTests(TestCase):
             result['confidence']['validation_note'],
             '参考扱い: 米国3指数確認が不足 / 類似事例不足のため信頼度を50未満に制限。検証ページで詳細確認。',
         )
+
+    def test_limited_contract_suppresses_top_direction_and_first_target(self):
+        world_model = {
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'primary_setup_label': '押し目買い',
+            'action_note': '上昇継続を基本にします。',
+            'price': 69220,
+            'upside_targets': [{'label': 'T1', 'price': 71390}],
+            'downside_targets': [{'label': 'T1', 'price': 67050}],
+            'output_contract': {
+                'contract_status': 'limited',
+                'directional_allowed': True,
+                'target_display_allowed': True,
+                'probability_display_allowed': True,
+                'stop_reasons': ['米国3指数確認が不足'],
+            },
+        }
+        decision = build_basecalc_decision_context(
+            world_model,
+            {'has_data': True, 'tone': 'neutral'},
+            [],
+            {},
+        )
+
+        result = build_basecalc_top_context(world_model, decision, [], {})
+
+        self.assertEqual(result['status']['judgment_state'], '参考')
+        self.assertEqual(result['final_judgment']['direction'], '判断保留')
+        self.assertEqual(result['final_judgment']['setup'], '方向判断停止・レンジ確認')
+        self.assertIsNone(result['lines']['first_target'])
+        self.assertIn('米国3指数確認が不足', result['status']['attention'])
+
+    def test_saved_snapshot_newer_price_status_marks_judgment_stale(self):
+        from basecalc.views import apply_saved_snapshot_status_context
+
+        context = {
+            'generated_at': '2026-06-24T05:05:00+09:00',
+            'world_model': {
+                'direction': 'up',
+                'price': 69220,
+                'output_contract': {
+                    'contract_status': 'ok',
+                    'directional_allowed': True,
+                    'target_display_allowed': True,
+                    'probability_display_allowed': True,
+                    'stop_reasons': [],
+                },
+            },
+        }
+        current_status = {
+            'schema': 'basecalc_status_v1',
+            'updated_at': '2026-06-25T01:30:51+00:00',
+            'price_data': {
+                'last_success_at': '2026-06-25T01:15:00+00:00',
+                'source': 'matsui:NIY=F',
+                'age_minutes': 15,
+                'fallback_used': False,
+                'decision_level': 'ready',
+                'decision_label': '判定可能',
+            },
+            'intermarket': {},
+        }
+
+        apply_saved_snapshot_status_context(context, current_status)
+
+        contract = context['world_model']['output_contract']
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertFalse(contract['directional_allowed'])
+        self.assertFalse(contract['target_display_allowed'])
+        self.assertIn('価格データ更新後にbasecalc判断が再作成されていません', contract['stop_reasons'])
+        self.assertEqual(context['basecalc_status']['updated_at'], current_status['updated_at'])
 
     def test_basecalc_top_confidence_shows_uncalibrated_middle_score_as_testing(self):
         decision = {
@@ -2427,7 +2499,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(cache.get('nikkei_futures_snapshot_last_good')['price'], 41100)
         self.assertEqual(MarketBar.objects.count(), 0)
 
-    def test_sync_nikkei_futures_daily_uses_225navi_and_creates_ready_snapshot(self):
+    def test_sync_nikkei_futures_daily_uses_225navi_and_creates_reference_snapshot(self):
         _create_market_bar_series(
             count=80,
             start=timezone.make_aware(datetime(2026, 3, 1)),
@@ -2472,7 +2544,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
         self.assertEqual(latest_snapshot.price, 66670)
         self.assertEqual(latest_snapshot.source, '225navi')
-        self.assertEqual(latest_snapshot.readiness_level, 'ready')
+        self.assertEqual(latest_snapshot.readiness_level, 'limited')
         cache.clear()
 
     def test_sync_does_not_create_snapshot_from_old_csv_when_no_source_returns_rows(self):
@@ -2571,7 +2643,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         latest_snapshot = MarketSnapshot.objects.order_by('-created_at').first()
         self.assertEqual(latest_snapshot.source, '225navi')
         self.assertEqual(latest_snapshot.price, 67640)
-        self.assertEqual(latest_snapshot.readiness_level, 'ready')
+        self.assertEqual(latest_snapshot.readiness_level, 'limited')
         cache.clear()
 
     def test_sync_command_logs_source_attempts_and_snapshot_source(self):
@@ -2751,6 +2823,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         with (
             patch('basecalc.daily_sync.fetch_225navi_daily_bars', return_value=rows),
             patch('basecalc.daily_sync.fetch_matsui_futures_quote', return_value=intraday_rows),
+            patch('basecalc.daily_sync.timezone.localdate', return_value=date(2026, 6, 23)),
             patch('basecalc.daily_sync.write_basecalc_status'),
         ):
             call_command(
@@ -3063,8 +3136,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         cached_snapshot.assert_not_called()
         self.assertTrue(result['updated'])
         self.assertEqual(result['price'], 69770)
-        self.assertEqual(result['readiness_level'], 'ready')
-        self.assertNotEqual(result['state_key'], 'limited_reference')
+        self.assertEqual(result['readiness_level'], 'limited')
+        self.assertEqual(result['state_key'], 'limited_reference')
         self.assertEqual(result['source_status']['source'], 'matsui')
         self.assertEqual(result['market_bars_saved'], 2)
         self.assertEqual(payload['decision_base_price'], 69770)
@@ -3074,7 +3147,7 @@ class BasecalcUpdateSecurityTests(TestCase):
     def test_fresh_futures_cache_skips_external_refetch(self):
         cached = {
             'symbol': 'NIY=F',
-            'source': 'yahoo',
+            'source': 'cme_daily_bulletin',
             'price': 41100,
             'fetched_at': timezone.now(),
             'timeframes': {
@@ -3266,7 +3339,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertIn('data', payload)
         self.assertIn('performance_by_horizon', payload)
         self.assertEqual(payload['decision_base_price'], payload['world_model']['price'])
-        self.assertEqual(payload['decision_price_source'], 'yahoo')
+        self.assertEqual(payload['decision_price_source'], 'cme_daily_bulletin')
         self.assertIn('decision_price_as_of', payload)
         practical_lines = payload['world_model']['practical_lines']
         self.assertEqual(practical_lines['current_price'], payload['world_model']['price'])
@@ -3796,7 +3869,7 @@ class BasecalcWorldModelV2SupportTests(TestCase):
             result['scenario_probabilities']['down_reversal'] + result['scenario_probabilities']['range'],
         )
 
-    def test_data_quality_scores_good_yahoo_snapshot(self):
+    def test_data_quality_scores_yahoo_snapshot_as_unofficial_reference(self):
         result = evaluate_snapshot_quality(
             {
                 'symbol': 'NIY=F',
@@ -3808,8 +3881,9 @@ class BasecalcWorldModelV2SupportTests(TestCase):
             }
         )
 
-        self.assertGreaterEqual(result['score'], 80)
-        self.assertEqual(result['level'], 'good')
+        self.assertEqual(result['score'], 70)
+        self.assertEqual(result['level'], 'warning')
+        self.assertIn('非公式データソースのため参考扱いです', result['warnings'])
         self.assertEqual(result['instrument_type'], 'futures')
 
     def test_data_quality_marks_index_fallback_and_stale_data(self):
@@ -4232,16 +4306,17 @@ class BasecalcWorldModelV2SupportTests(TestCase):
 
 
 class BasecalcReliabilitySpecTests(TestCase):
-    def test_225navi_niy_snapshot_is_official_quality(self):
+    def test_225navi_niy_snapshot_is_reference_quality(self):
         snapshot = _ready_snapshot(80, source='225navi')
         snapshot['fallback_used'] = False
         data_quality = evaluate_snapshot_quality(snapshot)
 
         self.assertEqual(data_quality['source'], '225navi')
-        self.assertEqual(data_quality['score'], 96)
-        self.assertEqual(data_quality['level'], 'good')
+        self.assertEqual(data_quality['score'], 74)
+        self.assertEqual(data_quality['level'], 'warning')
+        self.assertIn('無料公開ソースのため公式価格と同じ重みでは扱いません', data_quality['warnings'])
 
-    def test_matsui_niy_intraday_snapshot_is_ready_when_fresh(self):
+    def test_matsui_niy_intraday_snapshot_is_reference_when_fresh(self):
         snapshot = _ready_snapshot(80, source='matsui', fetched_at=timezone.now())
         snapshot['fallback_used'] = False
         data_quality = evaluate_snapshot_quality(snapshot)
@@ -4260,11 +4335,12 @@ class BasecalcReliabilitySpecTests(TestCase):
         )
 
         self.assertEqual(data_quality['source'], 'matsui')
-        self.assertEqual(data_quality['score'], 90)
-        self.assertEqual(data_quality['level'], 'good')
-        self.assertEqual(readiness['level'], 'ready')
+        self.assertEqual(data_quality['score'], 76)
+        self.assertEqual(data_quality['level'], 'warning')
+        self.assertEqual(readiness['level'], 'limited')
+        self.assertFalse(readiness['directional_allowed'])
 
-    def test_matsui_niy_snapshot_after_japan_close_keeps_good_quality(self):
+    def test_matsui_niy_snapshot_after_japan_close_keeps_reference_quality(self):
         now = timezone.make_aware(datetime(2026, 6, 23, 9, 30))
         fetched_at = timezone.make_aware(datetime(2026, 6, 23, 6, 45))
         snapshot = _ready_snapshot(80, source='matsui', fetched_at=fetched_at)
@@ -4286,9 +4362,9 @@ class BasecalcReliabilitySpecTests(TestCase):
         )
 
         self.assertFalse(data_quality['is_stale'])
-        self.assertGreaterEqual(data_quality['score'], 80)
-        self.assertEqual(data_quality['level'], 'good')
-        self.assertEqual(readiness['level'], 'ready')
+        self.assertEqual(data_quality['score'], 76)
+        self.assertEqual(data_quality['level'], 'warning')
+        self.assertEqual(readiness['level'], 'limited')
 
     def test_status_rows_show_age_fallback_and_decision(self):
         rows = status_display_rows(
@@ -4316,7 +4392,7 @@ class BasecalcReliabilitySpecTests(TestCase):
         self.assertEqual(rows[1]['age_display'], '1日前')
         self.assertEqual(rows[1]['decision_label'], '参考')
 
-    def test_good_yahoo_niy_snapshot_is_ready(self):
+    def test_cme_daily_bulletin_niy_snapshot_is_ready_with_delay_warning(self):
         snapshot = _ready_snapshot(80)
         data_quality = evaluate_snapshot_quality(snapshot)
         readiness = evaluate_world_model_readiness(
@@ -4333,8 +4409,33 @@ class BasecalcReliabilitySpecTests(TestCase):
             },
         )
 
+        self.assertEqual(data_quality['score'], 80)
+        self.assertIn('CME公式ですが遅延データのため短期判断は参考です', data_quality['warnings'])
         self.assertEqual(readiness['level'], 'ready')
         self.assertTrue(readiness['directional_allowed'])
+
+    def test_yahoo_niy_snapshot_is_unofficial_reference(self):
+        snapshot = _ready_snapshot(80, source='yahoo')
+        data_quality = evaluate_snapshot_quality(snapshot)
+        readiness = evaluate_world_model_readiness(
+            price=snapshot['price'],
+            snapshot=snapshot,
+            data_quality=data_quality,
+            daily_ohlcv={
+                'opens': snapshot['opens'],
+                'highs': snapshot['highs'],
+                'lows': snapshot['lows'],
+                'closes': snapshot['closes'],
+                'volumes': snapshot['volumes'],
+                'real_counts': {'opens': 80, 'highs': 80, 'lows': 80, 'closes': 80, 'volumes': 80},
+            },
+        )
+
+        self.assertEqual(data_quality['score'], 70)
+        self.assertEqual(data_quality['level'], 'warning')
+        self.assertIn('非公式データソースのため参考扱いです', data_quality['warnings'])
+        self.assertEqual(readiness['level'], 'limited')
+        self.assertFalse(readiness['directional_allowed'])
 
     def test_stooq_fallback_is_limited_and_direction_blocked(self):
         snapshot = _ready_snapshot(80, symbol='NK.F', source='stooq')
@@ -4687,7 +4788,7 @@ class BasecalcWorldModelTests(TestCase):
         closes = [40000 + index * 80 for index in range(80)]
         snapshot = {
             'symbol': 'NIY=F',
-            'source': 'yahoo',
+            'source': 'cme_daily_bulletin',
             'price': closes[-1],
             'previous_close': closes[-2],
             'change_pct': 0.2,
@@ -4724,7 +4825,7 @@ class BasecalcWorldModelTests(TestCase):
         closes = [40000 + index * 30 for index in range(80)]
         snapshot = {
             'symbol': 'NIY=F',
-            'source': 'yahoo',
+            'source': 'cme_daily_bulletin',
             'price': closes[-1],
             'previous_close': closes[-2],
             'change_pct': 0.2,

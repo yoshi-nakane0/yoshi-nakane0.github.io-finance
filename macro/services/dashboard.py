@@ -1648,7 +1648,16 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
 
     provided = validation.get('reliability') or {}
     if provided:
-        return {**base, **provided, **supplemental}
+        return {
+            **base,
+            **provided,
+            **supplemental,
+            'display_status': _top_reliability_display_status(
+                house_view,
+                provided.get('display_status') or '表示可',
+                sample_count=None,
+            ),
+        }
 
     live = sections.get('live') or {}
     sample_count = live.get('sample_count') or validation.get('sample_count') or 0
@@ -1666,16 +1675,11 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
         model_validation = f'{grade} / {hit_rate:.0%}' if hit_rate is not None else f'{grade} / —'
         live_record = f'Live実績 {sample_count}件 / 的中 {hit_count}件'
 
-    display_status = '表示可'
-    house_display_status = house_view.get('display_status') or house_view.get('publish_status')
-    if house_display_status in {'reference', 'hidden', 'blocked'}:
-        display_status = {
-            'reference': '参考',
-            'hidden': '非表示',
-            'blocked': '使用不可',
-        }[house_display_status]
-    elif not house_view.get('display_allowed', True) or sample_count < 10:
-        display_status = '参考'
+    display_status = _top_reliability_display_status(
+        house_view,
+        '表示可',
+        sample_count=sample_count,
+    )
 
     return {
         'data_quality': base['data_quality'],
@@ -1685,6 +1689,26 @@ def _top_validation_reliability(context: Dict, house_view: Dict, decision: Dict)
         'confidence_limit_reasons': house_view.get('confidence_limit_reasons') or [],
         **supplemental,
     }
+
+
+def _top_reliability_display_status(
+    house_view: Dict,
+    current_status: str,
+    *,
+    sample_count: Optional[int],
+) -> str:
+    house_display_status = house_view.get('display_status') or house_view.get('publish_status')
+    if house_display_status in {'reference', 'hidden', 'blocked'}:
+        return {
+            'reference': '参考',
+            'hidden': '非表示',
+            'blocked': '使用不可',
+        }[house_display_status]
+    if not house_view.get('display_allowed', True):
+        return '参考'
+    if sample_count is not None and sample_count < 10:
+        return '参考'
+    return current_status or '表示可'
 
 
 def _top_invalidation_triggers(house_view: Dict) -> List[Dict]:

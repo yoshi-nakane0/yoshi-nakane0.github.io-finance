@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
@@ -320,6 +321,18 @@ def _external_context_audit(as_of=None) -> dict:
     }
 
 
+def _quality_report_as_of(quality: dict):
+    value = (quality or {}).get('as_of')
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+    return None
+
+
 def _market_consensus_proxy_rows(as_of) -> list[dict]:
     rows = []
     for series_id, fallback_name in MARKET_CONSENSUS_PROXY_SERIES:
@@ -548,9 +561,10 @@ def build_house_view_context(*, as_of=None) -> dict:
         _grade_from_score(confidence_score),
         quality.get('confidence_cap') or 'D',
     )
+    audit_as_of = as_of or _quality_report_as_of(quality)
     validation_audit = _latest_validation_audit()
     ledger_audit = _forecast_ledger_audit()
-    external_audit = _external_context_audit(as_of=as_of)
+    external_audit = _external_context_audit(as_of=audit_as_of)
     confidence_grade = _apply_grade_cap(confidence_grade, validation_audit['grade_cap'])
     confidence_grade = _apply_grade_cap(confidence_grade, ledger_audit['grade_cap'])
     confidence_grade = _apply_grade_cap(confidence_grade, external_audit['grade_cap'])

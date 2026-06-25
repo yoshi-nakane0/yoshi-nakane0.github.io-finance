@@ -16,6 +16,9 @@ def evaluate_snapshot_quality(snapshot: Optional[dict], now=None) -> dict:
     symbol = (snapshot or {}).get("symbol")
     instrument_type = _instrument_type(source, symbol, snapshot)
     warnings = detect_snapshot_anomaly(snapshot)
+    source_warning = _source_warning(source, symbol)
+    if source_warning:
+        warnings.append(source_warning)
     stale = is_snapshot_stale(snapshot, now=now)
     if stale:
         warnings.append("価格データが古い可能性があります")
@@ -91,15 +94,15 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     source = (source or "").lower()
     symbol = (symbol or "").lower()
     if source == "225navi" and symbol == "niy=f":
-        return 96
+        return 82
     if source == "matsui" and symbol == "niy=f":
-        return 90
+        return 84
     if source == "cme_daily_bulletin" and symbol == "niy=f":
-        return 96
-    if source == "yahoo" and symbol == "niy=f":
-        return 96
-    if source == "yahoo":
         return 88
+    if source == "yahoo" and symbol == "niy=f":
+        return 78
+    if source == "yahoo":
+        return 72
     if source == "stooq" and symbol == "^nkx":
         return 58
     if source == "stooq":
@@ -109,6 +112,18 @@ def source_quality_weight(source: str, symbol: Optional[str] = None) -> int:
     if source == "cache":
         return 48
     return 42
+
+
+def _source_warning(source: str, symbol: Optional[str] = None) -> str:
+    source = (source or "").lower()
+    symbol = (symbol or "").lower()
+    if source == "cme_daily_bulletin":
+        return "CME公式ですが遅延データのため短期判断は参考です"
+    if source in {"225navi", "matsui"} and symbol == "niy=f":
+        return "無料公開ソースのため公式価格と同じ重みでは扱いません"
+    if source == "yahoo":
+        return "非公式データソースのため参考扱いです"
+    return ""
 
 
 def _same_jst_date_matsui_quote(source, fetched_at, now):

@@ -35,6 +35,10 @@ jobs:
         run: python manage.py import_basecalc_history --input basecalc/data/basecalc_history.json || true
       - name: Refresh basecalc
         run: python manage.py refresh_basecalc_data --export-history --export-path basecalc/data/basecalc_history.json
+      - name: Precompute Explanation
+        run: python manage.py precompute_explanation
+      - name: Evaluate Explanation outcomes
+        run: python manage.py evaluate_explanation_outcomes
       - name: Output contract check
         run: python manage.py check_basecalc_output_contract --snapshot basecalc/data/latest_snapshot.json
       - name: Data integrity check

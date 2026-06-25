@@ -66,7 +66,7 @@ PER_FETCH_MIN_INTERVAL_SEC = 21600
 JGB_FETCH_MIN_INTERVAL_SEC = 3600
 FUTURES_FETCH_MIN_INTERVAL_SEC = 60
 BASECALC_HISTORY_PATH = Path(__file__).resolve().parent / "data" / "basecalc_history.json"
-TRUSTED_FUTURES_SOURCES = ("225navi", "matsui")
+TRUSTED_FUTURES_SOURCES = ("cme_daily_bulletin", "225navi", "matsui")
 
 
 def index(request):
@@ -106,6 +106,7 @@ def index(request):
             context["detail_mode"] = request.GET.get("detail") == "1"
             if _should_hydrate_saved_snapshot_context(request):
                 hydrate_saved_snapshot_context(context)
+            apply_saved_snapshot_status_context(context)
             enrich_basecalc_context(context)
             return _render_basecalc_index(request, context)
         return render(
@@ -553,6 +554,78 @@ def hydrate_saved_snapshot_context(context):
     world_model = hydrate_saved_snapshot_world_model(context, world_model)
     hydrate_saved_snapshot_current_price(context, world_model)
     return context
+
+
+def apply_saved_snapshot_status_context(context, basecalc_status=None):
+    if not isinstance(context, dict):
+        return context
+    world_model = context.get("world_model") or {}
+    if not isinstance(world_model, dict):
+        return context
+    basecalc_status = basecalc_status or load_basecalc_status()
+    if not isinstance(basecalc_status, dict) or not basecalc_status.get("updated_at"):
+        return context
+
+    context["basecalc_status"] = basecalc_status
+    context["basecalc_status_rows"] = status_display_rows(basecalc_status, world_model)
+    if _saved_snapshot_price_status_is_newer(context, world_model, basecalc_status):
+        _limit_saved_snapshot_contract(
+            world_model,
+            "価格データ更新後にbasecalc判断が再作成されていません",
+        )
+    return context
+
+
+def _saved_snapshot_price_status_is_newer(context, world_model, basecalc_status):
+    price_status = basecalc_status.get("price_data") or {}
+    price_timestamp = _parse_status_timestamp(price_status.get("last_success_at"))
+    snapshot_timestamp = _parse_status_timestamp(
+        context.get("generated_at")
+        or world_model.get("generated_at")
+        or world_model.get("as_of")
+        or world_model.get("last_updated_display")
+    )
+    return bool(price_timestamp and snapshot_timestamp and price_timestamp > snapshot_timestamp)
+
+
+def _limit_saved_snapshot_contract(world_model, reason):
+    reasons = list(world_model.get("stop_reasons") or [])
+    if reason not in reasons:
+        reasons.insert(0, reason)
+    world_model["stop_reasons"] = reasons
+    contract = dict(world_model.get("output_contract") or {})
+    contract["contract_status"] = "limited"
+    contract["directional_allowed"] = False
+    contract["target_display_allowed"] = False
+    contract["probability_display_allowed"] = False
+    contract["allowed_direction"] = "stopped"
+    contract["available_display"] = "支持抵抗・ATRレンジのみ"
+    contract_reasons = list(contract.get("stop_reasons") or [])
+    if reason not in contract_reasons:
+        contract_reasons.insert(0, reason)
+    contract["stop_reasons"] = contract_reasons
+    world_model["output_contract"] = contract
+    world_model["contract_status"] = "limited"
+
+
+def _parse_status_timestamp(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value).strip()
+        if text.endswith(" JST"):
+            text = text[:-4].strip() + "+09:00"
+        elif " " in text and "T" not in text:
+            text = text.replace(" ", "T", 1)
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt_timezone.utc)
+    return parsed
 
 
 def hydrate_saved_snapshot_world_model(context, world_model):

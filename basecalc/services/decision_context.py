@@ -94,6 +94,8 @@ def _top_status(decision, status_rows):
     attention = decision.get("status_summary") or _status_summary(status_rows or [])
     if decision.get("contract_status") == "error":
         attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or "出力整合性エラー"
+    elif decision.get("contract_status") == "limited":
+        attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or attention
     return {
         "readiness": "停止" if decision.get("contract_status") == "error" else decision.get("readiness_label") or "判定不可",
         "judgment_state": _judgment_state(decision),
@@ -111,6 +113,8 @@ def _top_status(decision, status_rows):
 def _judgment_state(decision):
     if decision.get("contract_status") == "error":
         return "判定停止"
+    if decision.get("contract_status") == "limited":
+        return "参考"
     try:
         score = int(decision.get("data_quality_score") or 0)
     except (TypeError, ValueError):
@@ -140,18 +144,12 @@ def _top_final_judgment(world_model, decision):
             "setup": "再計算待ち",
             "supplement": f"理由: {reasons[0]}",
         }
-    if (world_model.get("output_contract") or {}).get("directional_allowed") is False:
+    if _directional_display_blocked(world_model):
         reasons = world_model.get("stop_reasons") or ["検証ゲート停止中"]
-        headline = (
-            (world_model.get("counter_bias") or {}).get("label")
-            or _judgment_with_reversal(
-                decision.get("direction_label") or "判定不可",
-                world_model.get("reversal_risk_score"),
-            )
-        )
         return {
-            "headline": headline,
-            "setup": "方向予測停止・レンジ確認",
+            "direction": "判断保留",
+            "headline": "方向判断：参考",
+            "setup": "方向判断停止・レンジ確認",
             "supplement": f"理由: {reasons[0]}",
         }
     headline = (
@@ -187,6 +185,24 @@ def _technical_direction_label(world_model, decision):
     return "中立"
 
 
+def _directional_display_blocked(world_model):
+    output_contract = (world_model or {}).get("output_contract") or {}
+    contract_status = output_contract.get("contract_status")
+    if contract_status and contract_status != "ok":
+        return True
+    return output_contract.get("directional_allowed") is False
+
+
+def _target_display_allowed(world_model):
+    output_contract = (world_model or {}).get("output_contract") or {}
+    if not output_contract.get("contract_status"):
+        return True
+    return (
+        output_contract.get("contract_status") == "ok"
+        and output_contract.get("target_display_allowed") is not False
+    )
+
+
 def _judgment_with_reversal(direction_label, reversal_score):
     try:
         score = int(reversal_score or 0)
@@ -206,7 +222,7 @@ def _top_action(world_model):
             "caution": "再計算後に判断",
             "note": "価格、ターゲット、レンジの時点がそろうまで判断を止めます。",
         }
-    if (world_model.get("output_contract") or {}).get("directional_allowed") is False:
+    if _directional_display_blocked(world_model):
         reasons = (world_model.get("output_contract") or {}).get("stop_reasons") or []
         reason = " / ".join(reasons[:2]) or "方向予測の検証条件が未達"
         return {
@@ -242,6 +258,7 @@ def _action_summary(world_model):
 def _top_lines(world_model, decision):
     near_levels = world_model.get("near_levels") or {}
     stopped = (world_model.get("output_contract") or {}).get("contract_status") == "error"
+    target_blocked = not _target_display_allowed(world_model)
     practical_lines = world_model.get("practical_lines") or {}
     upside_resistance = None if stopped else _target_price(decision.get("upside_target"))
     downside_support = None if stopped else _target_price(decision.get("downside_target"))
@@ -258,7 +275,7 @@ def _top_lines(world_model, decision):
         ),
         "upside_resistance": upside_resistance,
         "downside_support": downside_support,
-        "first_target": _first_target_line(world_model, upside_resistance, downside_support),
+        "first_target": None if target_blocked else _first_target_line(world_model, upside_resistance, downside_support),
         "invalidation_line": decision.get("invalidation") or world_model.get("invalidation_display") or "—",
         "reversal_warning_line": "前日安値・EMA20・VWAP割れ",
         "near_upside": near_upside,
@@ -384,6 +401,9 @@ def _top_horizons(world_model, performance):
     if output_contract.get("contract_status") == "error":
         reason = " / ".join((output_contract.get("stop_reasons") or [])[:2])
         return [{"label": "停止", "summary": "方向予測は停止", "note": reason or "出力整合性を確認中"}]
+    if _directional_display_blocked(world_model):
+        reason = " / ".join((output_contract.get("stop_reasons") or [])[:2])
+        return [{"label": "参考", "summary": "方向予測は停止。ATRレンジ・支持抵抗のみ確認", "note": reason}]
     allowed_horizons = output_contract.get("allowed_horizons") or {}
     direction = world_model.get("direction")
     if direction == "down":
@@ -517,6 +537,12 @@ def _data_quality_confidence_label(score, confidence_score=None):
 
 def _direction_confidence_label(output_contract, performance, confidence_score, direction_allowed):
     if direction_allowed is False:
+        if (
+            output_contract.get("contract_status") == "limited"
+            and not _has_direction_gate_stop_reason(output_contract)
+            and confidence_score is not None
+        ):
+            return f"参考（信頼度 {confidence_score}/100）"
         return "停止（検証未達）"
     if confidence_score is not None and confidence_score < 45:
         return f"参考（信頼度 {confidence_score}/100）"
@@ -557,6 +583,14 @@ def _confidence_is_uncalibrated(output_contract):
     return (
         output_contract.get("confidence_calibrated") is False
         or output_contract.get("confidence_status") == "未較正"
+    )
+
+
+def _has_direction_gate_stop_reason(output_contract):
+    text = " / ".join(str(reason) for reason in output_contract.get("stop_reasons") or [])
+    return any(
+        keyword in text
+        for keyword in ("ベースライン", "局面別成績", "方向と期待リターン", "方向予測")
     )
 
 

@@ -70,7 +70,7 @@ def apply_output_contract(
         "ohlcv_bar_count": _ohlcv_bar_count(world_model),
         "data_quality_score": world_model.get("data_quality_score"),
         "readiness_level": readiness_level,
-        "directional_allowed": status != "error" and all(
+        "directional_allowed": status == "ok" and all(
             item.get("direction_allowed") for item in allowed_horizons.values()
         ),
         "target_calculated_from_price": model_price,
@@ -81,14 +81,14 @@ def apply_output_contract(
         "validation_report_version": (validation_report or {}).get("schema") or "",
         "validation_gate_status": validation_gate,
         "allowed_horizons": allowed_horizons,
-        "allowed_direction": world_model.get("direction") if status != "error" else "stopped",
+        "allowed_direction": world_model.get("direction") if status == "ok" else "stopped",
         "validated_targets": _validated_targets(world_model, status),
         "invalidated_targets": _invalidated_targets(world_model),
         "us_index_status": us_index_status,
         "contract_status": status,
         "stop_reasons": _dedupe(errors + gate_reasons + warnings),
-        "target_display_allowed": status != "error",
-        "probability_display_allowed": status != "error",
+        "target_display_allowed": status == "ok",
+        "probability_display_allowed": status == "ok",
         "explanation_allowed": status == "ok",
         "available_display": "支持抵抗・ATRレンジのみ" if status != "ok" else "方向・目標・レンジ",
     }

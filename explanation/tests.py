@@ -2,6 +2,7 @@ from datetime import timedelta, timezone as dt_timezone
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -552,6 +553,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context['is_preview'] = False
         context['refresh_status'] = {'needs_refresh': False}
         context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
 
         html = render_to_string('explanation/index.html', context)
 
@@ -559,6 +561,18 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('<summary class="common-section-title">統合判断の詳細</summary>', html)
         self.assertIn('<summary class="common-section-title">Macro / Basecalc 詳細</summary>', html)
         self.assertIn('<summary class="common-section-title">world model 予測数値</summary>', html)
+
+    def test_explanation_template_top_validation_says_unverified_when_no_trade_outcomes(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('実運用結果はまだ0件です。', html)
+        self.assertNotIn('検証状態: 少ない', html)
 
     def test_decision_card_shows_reference_levels_when_no_trade_has_candidate_plan(self):
         snapshot = self._snapshot()
@@ -969,6 +983,9 @@ class ExplanationPrecomputeViewTests(TestCase):
 
 
 class ExplanationManualPriceViewTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
     def _create_market_bars(self, length=80, start=40000, step=30):
         start_at = timezone.now() - timedelta(days=length)
         for index in range(length):
@@ -982,7 +999,7 @@ class ExplanationManualPriceViewTests(TestCase):
                 low=close - 80,
                 close=close,
                 volume=1000,
-                source='test',
+                source='cme_daily_bulletin',
                 instrument_key='cme_nikkei_futures',
                 instrument_type='futures',
             )
@@ -1047,7 +1064,7 @@ class ExplanationManualPriceViewTests(TestCase):
         )
         base_snapshot = {
             'symbol': 'NIY=F',
-            'source': '225navi',
+            'source': 'cme_daily_bulletin',
             'price': 41000,
             'previous_close': 40900,
             'change_pct': 0.2,
@@ -1124,6 +1141,8 @@ class ExplanationManualPriceViewTests(TestCase):
 
     def test_manual_price_recalculates_trade_decision_from_saved_market_bars(self):
         self._create_market_bars()
+        saved_snapshot = self._saved_basecalc_snapshot()
+        saved_snapshot['world_model']['features']['source_name'] = 'cme_daily_bulletin'
         macro = MacroSignal(
             bias='positive',
             summary='Macroは支援的。',
@@ -1142,7 +1161,7 @@ class ExplanationManualPriceViewTests(TestCase):
             mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
             mock.patch(
                 'explanation.services.basecalc_adapter.load_basecalc_snapshot',
-                return_value=self._saved_basecalc_snapshot(),
+                return_value=saved_snapshot,
             ),
             mock.patch(
                 'explanation.services.basecalc_adapter.get_stale_futures_snapshot',

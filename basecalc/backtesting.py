@@ -71,12 +71,13 @@ def run_basecalc_backtest(
 
 
 def _snapshot_from_bars(bars, symbol, instrument_key):
-    instrument = normalize_instrument(symbol, "yahoo")
+    source = bars[-1].source or "unknown"
+    instrument = normalize_instrument(symbol, source)
     if instrument["instrument_key"] != instrument_key:
         instrument["instrument_key"] = instrument_key
     return {
         "symbol": instrument["symbol"] or symbol,
-        "source": "yahoo" if instrument_key == "cme_nikkei_futures" else "stooq",
+        "source": source if instrument_key == "cme_nikkei_futures" else "stooq",
         "instrument_key": instrument["instrument_key"],
         "instrument_type": instrument["instrument_type"],
         "price": bars[-1].close,

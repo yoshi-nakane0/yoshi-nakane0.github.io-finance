@@ -2401,7 +2401,10 @@ class DashboardFormatTest(TestCase):
             'missing_required_count': 4,
             'blocking_issues': ['主要系列の欠損があります。'],
             'warnings': ['トップ判断は参考扱いです。'],
-        }):
+        }), mock.patch(
+            'macro.services.house_view.load_upcoming_high_impact_events',
+            return_value=[],
+        ):
             result = house_view.build_house_view_context()
 
         self.assertIn('拡大寄り', result['house_view'])
@@ -2451,7 +2454,10 @@ class DashboardFormatTest(TestCase):
             'freshness_score': 98,
             'warnings': [],
             'blocking_issues': [],
-        }):
+        }), mock.patch(
+            'macro.services.house_view.load_upcoming_high_impact_events',
+            return_value=[],
+        ):
             result = house_view.build_house_view_context()
 
         self.assertEqual(result['confidence_grade'], 'C')
@@ -3520,6 +3526,34 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['reliability']['data_quality'], 'A / 91%')
         self.assertEqual(context['reliability']['model_validation'], 'C / 検証不足')
         self.assertEqual(context['reliability']['live_record'], 'Live実績 未評価')
+        self.assertEqual(context['reliability']['display_status'], '参考')
+
+    def test_top_decision_does_not_let_validation_display_status_override_reference_house_view(self):
+        context = dashboard.build_top_decision_context({
+            'last_updated': '2026-06-19',
+            'house_view': {
+                'house_view': '景気判断は中立',
+                'confidence_grade': 'A',
+                'confidence_score': 91,
+                'display_status': 'reference',
+                'publish_status': 'reference',
+            },
+            'house_view_validation': {
+                'reliability': {
+                    'model_validation': 'A / 80%',
+                    'live_record': 'Live実績 20件 / 的中 16件',
+                    'display_status': '表示可',
+                },
+            },
+            'macro_decision': {
+                'confidence': {
+                    'grade': 'A',
+                    'score_display': '91%',
+                    'data_freshness_pct': 90,
+                },
+            },
+        })
+
         self.assertEqual(context['reliability']['display_status'], '参考')
 
     def test_top_decision_context_includes_short_term_and_pseudo_live_status(self):
