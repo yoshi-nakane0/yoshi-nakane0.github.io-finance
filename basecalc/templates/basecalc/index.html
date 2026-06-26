@@ -97,11 +97,11 @@
                 <div class="wm-purpose-grid">
                     <article class="wm-purpose-card wm-purpose-card--technical">
                         <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">根拠3つ / 警戒3つ</span>
+                            <span class="wm-purpose-card__label">算出根拠3つ / 警戒3つ</span>
                         </div>
                         <div class="wm-purpose-card__facts">
                             {% for item in basecalc_top.reasons %}
-                            <span>根拠 <strong>{{ item }}</strong></span>
+                            <span>算出根拠 <strong>{{ item }}</strong></span>
                             {% endfor %}
                             {% for item in basecalc_top.risks %}
                             <span>警戒 <strong>{{ item }}</strong></span>
@@ -427,7 +427,7 @@
                             <div class="target-row">
                                 <span>上値の節目</span>
                                 <strong>{{ level.price|floatformat:0|intcomma }}</strong>
-                                <small>根拠: {{ level.reason|default:"近い節目" }}</small>
+                                <small>算出根拠: {{ level.reason|default:"近い節目" }}</small>
                                 <div class="target-row__meta">
                                     {% if level.distance_label %}<span>価格差 {{ level.distance_label }}</span>{% endif %}
                                     <span>参考ライン</span>
@@ -438,7 +438,7 @@
                             <div class="target-row">
                                 <span>下値の節目</span>
                                 <strong>{{ level.price|floatformat:0|intcomma }}</strong>
-                                <small>根拠: {{ level.reason|default:"近い節目" }}</small>
+                                <small>算出根拠: {{ level.reason|default:"近い節目" }}</small>
                                 <div class="target-row__meta">
                                     {% if level.distance_label %}<span>価格差 {{ level.distance_label }}</span>{% endif %}
                                     <span>参考ライン</span>
@@ -456,7 +456,7 @@
                             <div class="target-row">
                                 <span>{{ range.label }}レンジ</span>
                                 <strong>{{ range.low|floatformat:0|intcomma }}〜{{ range.high|floatformat:0|intcomma }}</strong>
-                                <small>根拠: {{ range.basis|default:"データ不足" }}</small>
+                                <small>算出根拠: {{ range.basis|default:"データ不足" }}</small>
                             </div>
                             {% empty %}
                             <div class="target-row muted-row">N/A</div>
@@ -470,7 +470,7 @@
                             <div class="target-row">
                                 <span>{{ target.display_label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>根拠: {{ target.reason|default:"データ不足" }}</small>
+                                <small>算出根拠: {{ target.reason|default:"データ不足" }}</small>
                                 <div class="target-row__meta">
                                     <span>到達しやすさ {{ target.probability_label }}</span>
                                     {% if target.distance_label %}<span>価格差 {{ target.distance_label }}</span>{% endif %}
@@ -490,7 +490,7 @@
                             <div class="target-row">
                                 <span>{{ target.display_label }}</span>
                                 <strong>{{ target.price|floatformat:0|intcomma }}</strong>
-                                <small>根拠: {{ target.reason|default:"データ不足" }}</small>
+                                <small>算出根拠: {{ target.reason|default:"データ不足" }}</small>
                                 <div class="target-row__meta">
                                     <span>到達しやすさ {{ target.probability_label }}</span>
                                     {% if target.distance_label %}<span>価格差 {{ target.distance_label }}</span>{% endif %}
@@ -516,7 +516,7 @@
                             <path d="M4 18h16"></path>
                         </svg>
                     </div>
-                    <div class="card-title">{% if world_model.similar_summary.is_statistically_valid %}未来予測詳細{% else %}条件付きシナリオ詳細{% endif %}</div>
+                    <div class="card-title">{% if world_model.similar_summary.is_statistically_valid %}類似局面ベース詳細{% else %}条件付きシナリオ詳細{% endif %}</div>
                     <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"></path>
                     </svg>
@@ -532,15 +532,15 @@
                         <div class="value">{{ world_model.confidence_score }}/100</div>
                     </div>
                     <div class="metric-box">
-                        <label>期待 1d</label>
+                        <label>類似局面 1日参考</label>
                         <div class="value">{{ world_model.expected_return_1d|floatformat:2 }}%</div>
                     </div>
                     <div class="metric-box">
-                        <label>根拠</label>
+                        <label>算出根拠</label>
                         <div class="value">{{ world_model.expected_return_label }}</div>
                     </div>
                     <div class="metric-box">
-                        <label>期待 5d</label>
+                        <label>類似局面 5日参考</label>
                         <div class="value">{{ world_model.expected_return_5d|floatformat:2 }}%</div>
                     </div>
                 </div>
@@ -566,7 +566,7 @@
                             <path d="M7 16h10"></path>
                         </svg>
                     </div>
-                    <div class="card-title">局面と根拠</div>
+                    <div class="card-title">局面と算出根拠</div>
                     <svg class="accordion-toggle" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"></path>
                     </svg>
@@ -584,7 +584,7 @@
                 {% if world_model.scenario_probabilities %}
                 <div class="summary-grid" data-field="scenario_probabilities">
                     <div class="metric-box">
-                        <label>3シナリオ確率</label>
+                        <label>3シナリオ参考比率</label>
                         <div class="value">上方向</div>
                         <small>{{ world_model.scenario_probabilities.up_continuation }}%</small>
                     </div>
@@ -641,19 +641,31 @@
                         <div class="value">{{ world_model.similar_summary.case_count }}</div>
                     </div>
                     <div class="metric-box">
-                        <label>方向一致率</label>
+                        <label>検索件数</label>
+                        <div class="value">{{ world_model.similar_summary.searched_case_count|default:"0" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>使用件数</label>
+                        <div class="value">{{ world_model.similar_summary.used_case_count|default:"0" }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>最小類似度</label>
+                        <div class="value">{{ world_model.similar_summary.min_similarity|default:"0"|floatformat:2 }}</div>
+                    </div>
+                    <div class="metric-box">
+                        <label>類似局面の方向一致率</label>
                         <div class="value">{{ world_model.similar_summary.directional_accuracy|floatformat:2 }}</div>
                     </div>
                     <div class="metric-box">
-                        <label>平均3日</label>
+                        <label>平均3日騰落率</label>
                         <div class="value">{{ world_model.similar_summary.average_return_pct|floatformat:2 }}%</div>
                     </div>
                     <div class="metric-box">
-                        <label>上値T1</label>
+                        <label>上値T1到達率</label>
                         <div class="value">{{ world_model.similar_summary.upside_t1_hit_rate|floatformat:2 }}</div>
                     </div>
                     <div class="metric-box">
-                        <label>下値T1</label>
+                        <label>下値T1到達率</label>
                         <div class="value">{{ world_model.similar_summary.downside_t1_hit_rate|floatformat:2 }}</div>
                     </div>
                 </div>

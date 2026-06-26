@@ -141,8 +141,8 @@ def _find_similar_cases_from_ohlcv(features, ohlcv, limit=30, min_similarity=0.3
                 "return_5d": round(return_5d or 0, 2),
                 "mfe_pct": round(mfe_pct or 0, 2),
                 "mae_pct": round(mae_pct or 0, 2),
-                "hit_downside_t1": (return_3d or 0) <= downside_threshold,
-                "hit_upside_t1": (return_3d or 0) >= upside_threshold,
+                "hit_downside_t1": _is_downside_t1_hit(mae_pct, downside_threshold),
+                "hit_upside_t1": _is_upside_t1_hit(mfe_pct, upside_threshold),
             }
         )
     cases = sorted(cases, key=lambda item: item["similarity"], reverse=True)[:limit]
@@ -254,6 +254,14 @@ def _market_bar_ohlcv(instrument_key, as_of=None, timeframe="1d"):
         "volumes": [bar.volume or 0 for bar in bars],
         "timestamps": [int(bar.timestamp.timestamp()) for bar in bars],
     }
+
+
+def _is_upside_t1_hit(mfe_pct, upside_threshold):
+    return (mfe_pct or 0) >= upside_threshold
+
+
+def _is_downside_t1_hit(mae_pct, downside_threshold):
+    return (mae_pct or 0) <= downside_threshold
 
 
 def _vector_from_features(features):
