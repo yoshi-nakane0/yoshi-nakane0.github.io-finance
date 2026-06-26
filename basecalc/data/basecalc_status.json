@@ -1,24 +1,24 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-26T15:06:37.397633+00:00",
+  "updated_at": "2026-06-26T20:12:07.513046+00:00",
   "price_data": {
-    "last_success_at": "2026-06-26T14:51:00+00:00",
+    "last_success_at": "2026-06-26T19:55:00+00:00",
     "last_failed_at": "2026-06-07T12:43:43.098446+00:00",
     "source": "matsui:NIY=F",
-    "age_minutes": 15,
+    "age_minutes": 17,
     "fallback_used": false,
     "decision_level": "ready",
     "decision_label": "判定可能"
   },
   "intermarket": {
     "last_success_at": "2026-06-26T15:06:35.914646+00:00",
-    "last_failed_at": "2026-06-26T14:49:34.357718+00:00",
+    "last_failed_at": "2026-06-26T20:12:07.513037+00:00",
     "source": "NQ=F / ES=F / YM=F",
-    "age_minutes": 0,
+    "age_minutes": 305,
     "fallback_used": false,
-    "asset_count": 3,
-    "decision_level": "ready",
-    "decision_label": "判定可能"
+    "asset_count": 0,
+    "decision_level": "blocked",
+    "decision_label": "停止"
   },
   "per": {
     "last_success_at": "2026-06-16T13:21:51+00:00",
