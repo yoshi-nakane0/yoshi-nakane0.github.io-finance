@@ -1,13 +1,11 @@
 {
-  "as_of": "2026-06-24",
+  "as_of": "2026-06-26",
   "blocking_issues": [],
-  "confidence_grade": "B",
-  "confidence_limit_reasons": [
-    "重要指標の発表前後のため一段階下げます。"
-  ],
+  "confidence_grade": "A",
+  "confidence_limit_reasons": [],
   "confidence_score": 91,
   "data_quality_report": {
-    "as_of": "2026-06-24",
+    "as_of": "2026-06-26",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -19,7 +17,7 @@
     "warnings": []
   },
   "display_allowed": true,
-  "display_status": "reference",
+  "display_status": "show",
   "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
   "invalidation_status_notes": [
     {
@@ -27,15 +25,15 @@
       "label": "失業率"
     },
     {
-      "detail": "直近2/2か月連続で再加速（2026-04-01: 3.29%、前月比 +0.05pt）",
+      "detail": "直近2/2か月連続で再加速（2026-05-01: 3.41%、前月比 +0.09pt）",
       "label": "Core PCE"
     },
     {
-      "detail": "現状 4.51%（2026-06-22）。判断変更目安 4.50%以上、超過 +0.01pt",
+      "detail": "現状 4.41%（2026-06-24）。判断変更目安 4.50%以上、あと +0.09pt",
       "label": "米10年金利"
     },
     {
-      "detail": "現状 2.65%（2026-06-22）。判断変更目安 5.00%以上、あと +2.35pt",
+      "detail": "現状 2.76%（2026-06-24）。判断変更目安 5.00%以上、あと +2.24pt",
       "label": "信用スプレッド"
     }
   ],
@@ -53,54 +51,36 @@
     "インフレ再加速リスクが高い"
   ],
   "main_risks": [
-    "重要指標の発表前後のため一段階下げます。",
     "金利再上昇時に株価先物へ逆風"
   ],
   "model_audit": {
     "external_context": {
       "consensus_source": "fred_market_implied_proxy",
-      "display_status": "reference",
-      "downgrade_steps": 1,
+      "display_status": "show",
+      "downgrade_steps": 0,
       "grade_cap": "A",
       "market_consensus_proxies": [
         {
           "age_days": 1,
           "label": "5年期待インフレ率",
-          "observation_date": "2026-06-23",
+          "observation_date": "2026-06-25",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T5YIE",
           "source": "FRED",
-          "value": 2.24
+          "value": 2.23
         },
         {
           "age_days": 1,
           "label": "10年期待インフレ率",
-          "observation_date": "2026-06-23",
+          "observation_date": "2026-06-25",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T10YIE",
           "source": "FRED",
           "value": 2.21
         }
       ],
-      "reasons": [
-        "重要指標の発表前後のため一段階下げます。"
-      ],
-      "upcoming_high_impact_events": [
-        {
-          "currency": "USD",
-          "date": "2026-06-25",
-          "event": "GDP（確報値）（前期比）",
-          "impact": "★★★",
-          "time": "21:30"
-        },
-        {
-          "currency": "USD",
-          "date": "2026-06-25",
-          "event": "コアPCE価格指数（前月比）",
-          "impact": "★★★",
-          "time": "21:30"
-        }
-      ]
+      "reasons": [],
+      "upcoming_high_impact_events": []
     },
     "forecast_ledger": {
       "display_status": "show",
@@ -118,27 +98,12 @@
   "probabilities": {
     "contraction": 0.02018798202221658,
     "expansion": 0.6568708855634098,
-    "financial_stress": 0.198594818914059,
-    "inflation_reacceleration": 0.8233758532469887,
+    "financial_stress": 0.2267770592019888,
+    "inflation_reacceleration": 0.8988551038774872,
     "recovery": 0.17495960104105565,
     "slowdown": 0.147981531373318
   },
-  "publish_status": "reference",
+  "publish_status": "show",
   "regime_label": "inflation_risk",
-  "upcoming_high_impact_events": [
-    {
-      "currency": "USD",
-      "date": "2026-06-25",
-      "event": "GDP（確報値）（前期比）",
-      "impact": "★★★",
-      "time": "21:30"
-    },
-    {
-      "currency": "USD",
-      "date": "2026-06-25",
-      "event": "コアPCE価格指数（前月比）",
-      "impact": "★★★",
-      "time": "21:30"
-    }
-  ]
+  "upcoming_high_impact_events": []
 }

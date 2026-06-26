@@ -1,15 +1,15 @@
 {
   "forecast_ledger": [
     {
-      "as_of": "2026-06-24",
+      "as_of": "2026-06-26",
       "audit_warnings": [],
       "confidence": 0.76,
-      "created_at": "2026-06-24T08:42:45.619653+00:00",
+      "created_at": "2026-06-26T08:42:33.052083+00:00",
       "data_vintage": "point_in_time",
       "direction": "up",
       "error": null,
-      "features_hash": "7735d350dc9ee066bce01da60dc200f5835acb23999a954e1ce6e92187423547",
-      "forecast_id": "2026-06-24:macro_hatzius_v1:macro_regime:3m_6m",
+      "features_hash": "01d85af49a7ee79bc6754edb91f7417824b57d7316ca9541c4e602ef81b22772",
+      "forecast_id": "2026-06-26:macro_hatzius_v1:macro_regime:3m_6m",
       "horizon": "3m_6m",
       "model_version": "macro_hatzius_v1",
       "prediction": 0.6568708855634098,
@@ -26,17 +26,17 @@
       "scenario_id": null,
       "settled_at": null,
       "source_dates": {
-        "BAMLH0A0HYM2": "2026-06-22",
+        "BAMLH0A0HYM2": "2026-06-24",
         "DEXJPUS": "2026-06-18",
         "INDPRO": "2026-05-01",
         "PA_DJI": "2026-06-01",
         "PA_GSPC": "2026-06-01",
         "PA_IXIC": "2026-06-01",
         "PA_N225": "2026-06-01",
-        "PCEPILFE": "2026-04-01",
-        "T10Y2Y": "2026-06-23",
+        "PCEPILFE": "2026-05-01",
+        "T10Y2Y": "2026-06-25",
         "UNRATE": "2026-05-01",
-        "VIXCLS": "2026-06-22"
+        "VIXCLS": "2026-06-24"
       },
       "status": "open",
       "target": "macro_regime"

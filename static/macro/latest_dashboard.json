@@ -40,13 +40,13 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-04-01",
-      "market_stage": 4,
+      "latest_date": "2026-05-01",
+      "market_stage": 5,
       "name_ja": "PCE",
       "series_id": "PCEPI",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.5,27.3 10.9,26.7 16.4,25.6 21.8,24.4 27.3,23.8 32.7,22.5 38.2,20.9 43.6,18.9 49.1,18.9 54.5,18.1 60.0,17.2 65.5,15.8 70.9,15.0 76.4,13.7 81.8,12.5 87.3,11.5 92.7,10.5 98.2,8.8 103.6,7.2 109.1,5.3 114.5,2.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.5,27.3 10.9,26.7 16.4,25.6 21.8,24.4 27.3,23.8 32.7,22.5 38.2,20.9 43.6,18.9 49.1,18.9 54.5,18.1 60.0,17.2 65.5,15.8 70.9,15.0 76.4,13.7 81.8,12.5 87.3,11.5 92.7,10.5 98.2,8.8 103.6,7.2 109.1,5.3 114.5,2.0 120.0,0.0\"/></svg>",
-      "yoy_display": "+3.8%",
-      "yoy_value": 3.766944114149807
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.3 10.4,26.8 15.7,25.8 20.9,24.7 26.1,24.2 31.3,23.0 36.5,21.4 41.7,19.7 47.0,19.6 52.2,18.8 57.4,18.0 62.6,16.8 67.8,16.0 73.0,14.8 78.3,13.7 83.5,12.8 88.7,11.8 93.9,10.3 99.1,8.8 104.3,7.0 109.6,3.9 114.8,2.1 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.3 10.4,26.8 15.7,25.8 20.9,24.7 26.1,24.2 31.3,23.0 36.5,21.4 41.7,19.7 47.0,19.6 52.2,18.8 57.4,18.0 62.6,16.8 67.8,16.0 73.0,14.8 78.3,13.7 83.5,12.8 88.7,11.8 93.9,10.3 99.1,8.8 104.3,7.0 109.6,3.9 114.8,2.1 120.0,0.0\"/></svg>",
+      "yoy_display": "+4.1%",
+      "yoy_value": 4.072638075644874
     },
     {
       "category": "インフレ",
@@ -56,45 +56,45 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-04-01",
+      "latest_date": "2026-05-01",
       "market_stage": 4,
       "name_ja": "Core PCE",
       "series_id": "PCEPILFE",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0\"/></svg>",
-      "yoy_display": "+3.3%",
-      "yoy_value": 3.289190610508199
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0\"/></svg>",
+      "yoy_display": "+3.4%",
+      "yoy_value": 3.412035932904036
     },
     {
       "category": "インフレ",
-      "direction_arrow": "↓",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "5年期待インフレ率",
       "series_id": "T5YIE",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,22.9 5.2,28.0 10.4,25.5 15.7,12.3 20.9,14.4 26.1,12.3 31.3,5.5 36.5,3.8 41.7,2.5 47.0,16.1 52.2,11.9 57.4,15.3 62.6,8.9 67.8,8.5 73.0,10.6 78.3,11.5 83.5,16.1 88.7,17.4 93.9,5.9 99.1,11.5 104.3,5.5 109.6,0.0 114.8,6.4 120.0,18.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,22.9 5.2,28.0 10.4,25.5 15.7,12.3 20.9,14.4 26.1,12.3 31.3,5.5 36.5,3.8 41.7,2.5 47.0,16.1 52.2,11.9 57.4,15.3 62.6,8.9 67.8,8.5 73.0,10.6 78.3,11.5 83.5,16.1 88.7,17.4 93.9,5.9 99.1,11.5 104.3,5.5 109.6,0.0 114.8,6.4 120.0,18.2\"/></svg>",
-      "yoy_display": "-3.9%",
-      "yoy_value": -3.8626609442060027
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,22.9 5.2,28.0 10.4,25.5 15.7,12.3 20.9,14.4 26.1,12.3 31.3,5.5 36.5,3.8 41.7,2.5 47.0,16.1 52.2,11.9 57.4,15.3 62.6,8.9 67.8,8.5 73.0,10.6 78.3,11.5 83.5,16.1 88.7,17.4 93.9,5.9 99.1,11.5 104.3,5.5 109.6,0.0 114.8,6.4 120.0,18.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,22.9 5.2,28.0 10.4,25.5 15.7,12.3 20.9,14.4 26.1,12.3 31.3,5.5 36.5,3.8 41.7,2.5 47.0,16.1 52.2,11.9 57.4,15.3 62.6,8.9 67.8,8.5 73.0,10.6 78.3,11.5 83.5,16.1 88.7,17.4 93.9,5.9 99.1,11.5 104.3,5.5 109.6,0.0 114.8,6.4 120.0,18.7\"/></svg>",
+      "yoy_display": "-2.2%",
+      "yoy_value": -2.192982456140343
     },
     {
       "category": "インフレ",
-      "direction_arrow": "↓",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "10年期待インフレ率",
       "series_id": "T10YIE",
       "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.9 5.2,28.0 10.4,25.3 15.7,11.7 20.9,18.1 26.1,10.8 31.3,3.6 36.5,7.2 41.7,7.2 47.0,20.8 52.2,10.8 57.4,15.4 62.6,6.3 67.8,4.5 73.0,9.0 78.3,14.5 83.5,20.8 88.7,19.0 93.9,9.0 99.1,19.0 104.3,14.5 109.6,0.0 114.8,7.2 120.0,22.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.9 5.2,28.0 10.4,25.3 15.7,11.7 20.9,18.1 26.1,10.8 31.3,3.6 36.5,7.2 41.7,7.2 47.0,20.8 52.2,10.8 57.4,15.4 62.6,6.3 67.8,4.5 73.0,9.0 78.3,14.5 83.5,20.8 88.7,19.0 93.9,9.0 99.1,19.0 104.3,14.5 109.6,0.0 114.8,7.2 120.0,22.6\"/></svg>",
-      "yoy_display": "-3.9%",
-      "yoy_value": -3.913043478260864
+      "yoy_display": "-3.1%",
+      "yoy_value": -3.0701754385964843
     },
     {
       "category": "雇用・労働",
@@ -172,9 +172,9 @@
       "market_stage": 1,
       "name_ja": "実質GDP",
       "series_id": "GDPC1",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 20.0,23.5 40.0,25.1 60.0,15.9 80.0,5.2 100.0,4.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 20.0,23.5 40.0,25.1 60.0,15.9 80.0,5.2 100.0,4.0 120.0,0.0\"/></svg>",
-      "yoy_display": "+2.6%",
-      "yoy_value": 2.566844783531317
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 20.0,23.7 40.0,25.2 60.0,16.3 80.0,6.1 100.0,5.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 20.0,23.7 40.0,25.2 60.0,16.3 80.0,6.1 100.0,5.0 120.0,0.0\"/></svg>",
+      "yoy_display": "+2.7%",
+      "yoy_value": 2.6847433414259623
     },
     {
       "category": "景気・成長",
@@ -268,9 +268,9 @@
       "market_stage": 3,
       "name_ja": "住宅建設許可",
       "series_id": "PERMIT",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.4\"/></svg>",
-      "yoy_display": "-0.2%",
-      "yoy_value": -0.211864406779661
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,11.8 5.2,13.3 10.4,7.0 15.7,17.3 20.9,15.2 26.1,4.1 31.3,10.6 36.5,11.2 41.7,13.6 47.0,7.0 52.2,13.8 57.4,18.0 62.6,20.5 67.8,20.3 73.0,28.0 78.3,13.9 83.5,17.7 88.7,18.3 93.9,8.4 99.1,21.3 104.3,0.0 109.6,25.7 114.8,17.0 120.0,18.9\"/></svg>",
+      "yoy_display": "-0.4%",
+      "yoy_value": -0.423728813559322
     },
     {
       "category": "景気・成長",
@@ -360,7 +360,7 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 3,
       "name_ja": "FF金利",
       "series_id": "DFF",
@@ -386,51 +386,35 @@
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↑",
-      "economic_stage": 3,
+      "direction_arrow": "↓",
+      "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-22",
-      "market_stage": 4,
+      "latest_date": "2026-06-24",
+      "market_stage": 3,
       "name_ja": "米10年国債利回り",
       "series_id": "DGS10",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5\"/></svg>",
-      "yoy_display": "+3.0%",
-      "yoy_value": 2.9680365296803632
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2\"/></svg>",
+      "yoy_display": "+2.6%",
+      "yoy_value": 2.5581395348837286
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 3,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 4,
       "name_ja": "10年実質金利",
       "series_id": "DFII10",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.5 5.2,22.4 10.4,28.0 15.7,14.2 20.9,15.5 26.1,1.7 31.3,5.2 36.5,18.1 41.7,18.5 47.0,14.6 52.2,9.0 57.4,14.2 62.6,12.9 67.8,19.8 73.0,20.7 78.3,20.2 83.5,21.1 88.7,15.1 93.9,16.4 99.1,24.1 104.3,12.1 109.6,14.6 114.8,9.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.5 5.2,22.4 10.4,28.0 15.7,14.2 20.9,15.5 26.1,1.7 31.3,5.2 36.5,18.1 41.7,18.5 47.0,14.6 52.2,9.0 57.4,14.2 62.6,12.9 67.8,19.8 73.0,20.7 78.3,20.2 83.5,21.1 88.7,15.1 93.9,16.4 99.1,24.1 104.3,12.1 109.6,14.6 114.8,9.0 120.0,0.0\"/></svg>",
-      "yoy_display": "+11.2%",
-      "yoy_value": 11.219512195121952
-    },
-    {
-      "category": "金利・通貨",
-      "direction_arrow": "↑",
-      "economic_stage": 3,
-      "frequency": "daily",
-      "has_data": true,
-      "importance": "B",
-      "indicator": null,
-      "latest_date": "2026-06-22",
-      "market_stage": 3,
-      "name_ja": "米2年国債利回り",
-      "series_id": "DGS2",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,1.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,1.5\"/></svg>",
-      "yoy_display": "+8.7%",
-      "yoy_value": 8.717948717948726
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.9 5.2,22.0 10.4,28.0 15.7,13.3 20.9,14.7 26.1,0.0 31.3,3.7 36.5,17.4 41.7,17.9 47.0,13.8 52.2,7.8 57.4,13.3 62.6,11.9 67.8,19.3 73.0,20.2 78.3,19.7 83.5,20.7 88.7,14.2 93.9,15.6 99.1,23.9 104.3,11.0 109.6,13.8 114.8,7.8 120.0,0.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.9 5.2,22.0 10.4,28.0 15.7,13.3 20.9,14.7 26.1,0.0 31.3,3.7 36.5,17.4 41.7,17.9 47.0,13.8 52.2,7.8 57.4,13.3 62.6,11.9 67.8,19.3 73.0,20.2 78.3,19.7 83.5,20.7 88.7,14.2 93.9,15.6 99.1,23.9 104.3,11.0 109.6,13.8 114.8,7.8 120.0,0.5\"/></svg>",
+      "yoy_display": "+10.9%",
+      "yoy_value": 10.945273631840807
     },
     {
       "category": "金利・通貨",
@@ -440,13 +424,29 @@
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
+      "market_stage": 3,
+      "name_ja": "米2年国債利回り",
+      "series_id": "DGS2",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,5.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,5.5\"/></svg>",
+      "yoy_display": "+9.6%",
+      "yoy_value": 9.600000000000009
+    },
+    {
+      "category": "金利・通貨",
+      "direction_arrow": "→",
+      "economic_stage": 3,
+      "frequency": "daily",
+      "has_data": true,
+      "importance": "B",
+      "indicator": null,
+      "latest_date": "2026-06-24",
       "market_stage": 3,
       "name_ja": "SOFR",
       "series_id": "SOFR",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,0.9 10.4,6.6 15.7,7.6 20.9,12.5 26.1,14.1 31.3,15.8 36.5,15.7 41.7,15.3 47.0,15.3 52.2,16.3 57.4,14.7 62.6,15.7 67.8,16.5 73.0,18.0 78.3,18.4 83.5,19.9 88.7,23.9 93.9,26.9 99.1,26.9 104.3,26.9 109.6,27.2 114.8,27.7 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,0.9 10.4,6.6 15.7,7.6 20.9,12.5 26.1,14.1 31.3,15.8 36.5,15.7 41.7,15.3 47.0,15.3 52.2,16.3 57.4,14.7 62.6,15.7 67.8,16.5 73.0,18.0 78.3,18.4 83.5,19.9 88.7,23.9 93.9,26.9 99.1,26.9 104.3,26.9 109.6,27.2 114.8,27.7 120.0,28.0\"/></svg>",
-      "yoy_display": "-15.9%",
-      "yoy_value": -15.850815850815856
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,1.0 10.4,6.7 15.7,7.6 20.9,12.6 26.1,14.2 31.3,15.9 36.5,15.8 41.7,15.4 47.0,15.4 52.2,16.4 57.4,14.8 62.6,15.8 67.8,16.5 73.0,18.1 78.3,18.5 83.5,20.0 88.7,24.0 93.9,27.0 99.1,27.0 104.3,27.0 109.6,27.4 114.8,27.8 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,1.0 10.4,6.7 15.7,7.6 20.9,12.6 26.1,14.2 31.3,15.9 36.5,15.8 41.7,15.4 47.0,15.4 52.2,16.4 57.4,14.8 62.6,15.8 67.8,16.5 73.0,18.1 78.3,18.5 83.5,20.0 88.7,24.0 93.9,27.0 99.1,27.0 104.3,27.0 109.6,27.4 114.8,27.8 120.0,28.0\"/></svg>",
+      "yoy_display": "-15.8%",
+      "yoy_value": -15.813953488372087
     },
     {
       "category": "金利・通貨",
@@ -456,29 +456,29 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 3,
       "name_ja": "米2-10年スプレッド",
       "series_id": "T10Y2Y",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,11.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,11.9\"/></svg>",
-      "yoy_display": "-32.0%",
-      "yoy_value": -31.999999999999996
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,12.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,12.8\"/></svg>",
+      "yoy_display": "-43.6%",
+      "yoy_value": -43.63636363636364
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↓",
+      "direction_arrow": "→",
       "economic_stage": 2,
       "frequency": "daily",
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "米3M-10年スプレッド",
       "series_id": "T10Y3M",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,1.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,1.5\"/></svg>",
-      "yoy_display": "+1725.0%",
-      "yoy_value": 1725.0
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,2.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,2.7\"/></svg>",
+      "yoy_display": "+722.2%",
+      "yoy_value": 722.2222222222223
     },
     {
       "category": "金利・通貨",
@@ -514,19 +514,19 @@
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 2,
       "frequency": "weekly",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-17",
+      "latest_date": "2026-06-24",
       "market_stage": 2,
       "name_ja": "Fed総資産",
       "series_id": "WALCL",
       "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,2.5 10.4,4.4 15.7,7.4 20.9,12.2 26.1,13.1 31.3,16.1 36.5,18.4 41.7,19.6 47.0,21.0 52.2,22.6 57.4,23.1 62.6,24.0 67.8,25.7 73.0,25.5 78.3,26.5 83.5,28.0 88.7,24.1 93.9,26.4 99.1,25.3 104.3,23.3 109.6,21.4 114.8,21.2 120.0,19.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,2.5 10.4,4.4 15.7,7.4 20.9,12.2 26.1,13.1 31.3,16.1 36.5,18.4 41.7,19.6 47.0,21.0 52.2,22.6 57.4,23.1 62.6,24.0 67.8,25.7 73.0,25.5 78.3,26.5 83.5,28.0 88.7,24.1 93.9,26.4 99.1,25.3 104.3,23.3 109.6,21.4 114.8,21.2 120.0,19.8\"/></svg>",
-      "yoy_display": "+0.9%",
-      "yoy_value": 0.8876385226941714
+      "yoy_display": "+0.8%",
+      "yoy_value": 0.8170714330189719
     },
     {
       "category": "金利・通貨",
@@ -536,13 +536,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-17",
+      "latest_date": "2026-06-24",
       "market_stage": 3,
       "name_ja": "準備預金",
       "series_id": "WRESBAL",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,7.3 5.2,6.4 10.4,13.1 15.7,9.9 20.9,10.4 26.1,9.5 31.3,10.5 36.5,5.7 41.7,0.0 47.0,10.8 52.2,8.4 57.4,3.8 62.6,4.8 67.8,10.5 73.0,20.8 78.3,28.0 83.5,25.7 88.7,22.9 93.9,25.5 99.1,22.5 104.3,21.2 109.6,24.7 114.8,17.9 120.0,19.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,7.3 5.2,6.4 10.4,13.1 15.7,9.9 20.9,10.4 26.1,9.5 31.3,10.5 36.5,5.7 41.7,0.0 47.0,10.8 52.2,8.4 57.4,3.8 62.6,4.8 67.8,10.5 73.0,20.8 78.3,28.0 83.5,25.7 88.7,22.9 93.9,25.5 99.1,22.5 104.3,21.2 109.6,24.7 114.8,17.9 120.0,19.4\"/></svg>",
-      "yoy_display": "-11.0%",
-      "yoy_value": -10.967189769153194
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,7.3 5.2,6.4 10.4,13.1 15.7,9.9 20.9,10.4 26.1,9.5 31.3,10.5 36.5,5.7 41.7,0.0 47.0,10.8 52.2,8.4 57.4,3.8 62.6,4.8 67.8,10.5 73.0,20.8 78.3,28.0 83.5,25.7 88.7,22.9 93.9,25.5 99.1,22.5 104.3,21.2 109.6,24.7 114.8,17.9 120.0,23.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,7.3 5.2,6.4 10.4,13.1 15.7,9.9 20.9,10.4 26.1,9.5 31.3,10.5 36.5,5.7 41.7,0.0 47.0,10.8 52.2,8.4 57.4,3.8 62.6,4.8 67.8,10.5 73.0,20.8 78.3,28.0 83.5,25.7 88.7,22.9 93.9,25.5 99.1,22.5 104.3,21.2 109.6,24.7 114.8,17.9 120.0,23.2\"/></svg>",
+      "yoy_display": "-13.4%",
+      "yoy_value": -13.355875440278583
     },
     {
       "category": "金利・通貨",
@@ -552,77 +552,77 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "リバースレポ",
       "series_id": "RRPONTSYD",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,3.6 5.2,2.4 10.4,0.5 15.7,16.3 20.9,16.5 26.1,0.0 31.3,17.1 36.5,14.3 41.7,4.5 47.0,13.4 52.2,9.5 57.4,0.8 62.6,15.5 67.8,23.7 73.0,25.4 78.3,25.3 83.5,27.9 88.7,22.0 93.9,27.8 99.1,27.4 104.3,27.4 109.6,27.9 114.8,27.7 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,3.6 5.2,2.4 10.4,0.5 15.7,16.3 20.9,16.5 26.1,0.0 31.3,17.1 36.5,14.3 41.7,4.5 47.0,13.4 52.2,9.5 57.4,0.8 62.6,15.5 67.8,23.7 73.0,25.4 78.3,25.3 83.5,27.9 88.7,22.0 93.9,27.8 99.1,27.4 104.3,27.4 109.6,27.9 114.8,27.7 120.0,28.0\"/></svg>",
-      "yoy_display": "-96.1%",
-      "yoy_value": -96.07788578445307
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,3.6 5.2,2.4 10.4,0.5 15.7,16.3 20.9,16.5 26.1,0.0 31.3,17.1 36.5,14.3 41.7,4.4 47.0,13.3 52.2,9.4 57.4,0.8 62.6,15.5 67.8,23.7 73.0,25.4 78.3,25.2 83.5,27.9 88.7,22.0 93.9,27.8 99.1,27.4 104.3,27.4 109.6,27.8 114.8,27.6 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,3.6 5.2,2.4 10.4,0.5 15.7,16.3 20.9,16.5 26.1,0.0 31.3,17.1 36.5,14.3 41.7,4.4 47.0,13.3 52.2,9.4 57.4,0.8 62.6,15.5 67.8,23.7 73.0,25.4 78.3,25.2 83.5,27.9 88.7,22.0 93.9,27.8 99.1,27.4 104.3,27.4 109.6,27.8 114.8,27.6 120.0,28.0\"/></svg>",
+      "yoy_display": "-97.3%",
+      "yoy_value": -97.28849245301808
     },
     {
       "category": "金利・通貨",
       "direction_arrow": "↑",
-      "economic_stage": 3,
+      "economic_stage": 5,
       "frequency": "weekly",
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-17",
-      "market_stage": 3,
+      "latest_date": "2026-06-24",
+      "market_stage": 5,
       "name_ja": "財務省一般口座（TGA）",
       "series_id": "WTREGEN",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.8 5.2,10.6 10.4,7.9 15.7,6.6 20.9,9.3 26.1,9.8 31.3,8.9 36.5,13.5 41.7,28.0 47.0,17.4 52.2,23.2 57.4,27.8 62.6,27.5 67.8,17.7 73.0,8.0 78.3,1.1 83.5,3.5 88.7,6.5 93.9,2.7 99.1,4.2 104.3,4.9 109.6,0.0 114.8,6.8 120.0,4.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.8 5.2,10.6 10.4,7.9 15.7,6.6 20.9,9.3 26.1,9.8 31.3,8.9 36.5,13.5 41.7,28.0 47.0,17.4 52.2,23.2 57.4,27.8 62.6,27.5 67.8,17.7 73.0,8.0 78.3,1.1 83.5,3.5 88.7,6.5 93.9,2.7 99.1,4.2 104.3,4.9 109.6,0.0 114.8,6.8 120.0,4.6\"/></svg>",
-      "yoy_display": "+164.6%",
-      "yoy_value": 164.5522623435374
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.8 5.2,10.6 10.4,7.9 15.7,6.6 20.9,9.3 26.1,9.8 31.3,8.9 36.5,13.5 41.7,28.0 47.0,17.4 52.2,23.2 57.4,27.8 62.6,27.5 67.8,17.7 73.0,8.0 78.3,1.1 83.5,3.5 88.7,6.5 93.9,2.7 99.1,4.2 104.3,4.9 109.6,0.0 114.8,6.8 120.0,2.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.8 5.2,10.6 10.4,7.9 15.7,6.6 20.9,9.3 26.1,9.8 31.3,8.9 36.5,13.5 41.7,28.0 47.0,17.4 52.2,23.2 57.4,27.8 62.6,27.5 67.8,17.7 73.0,8.0 78.3,1.1 83.5,3.5 88.7,6.5 93.9,2.7 99.1,4.2 104.3,4.9 109.6,0.0 114.8,6.8 120.0,2.8\"/></svg>",
+      "yoy_display": "+172.0%",
+      "yoy_value": 171.99507345408898
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 2,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 2,
       "name_ja": "VIX",
       "series_id": "VIXCLS",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,19.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,19.0\"/></svg>",
-      "yoy_display": "-16.2%",
-      "yoy_value": -16.197866149369542
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,15.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,15.8\"/></svg>",
+      "yoy_display": "+6.6%",
+      "yoy_value": 6.578947368421044
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↓",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 1,
       "name_ja": "ハイイールド社債スプレッド",
       "series_id": "BAMLH0A0HYM2",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.0 5.2,16.7 10.4,19.8 15.7,23.0 20.9,26.0 26.1,22.1 31.3,27.3 36.5,23.2 41.7,8.5 47.0,0.0 52.2,13.5 57.4,21.3 62.6,23.4 67.8,23.9 73.0,24.7 78.3,21.7 83.5,22.1 88.7,24.5 93.9,23.0 99.1,17.8 104.3,14.3 109.6,24.1 114.8,26.0 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.0 5.2,16.7 10.4,19.8 15.7,23.0 20.9,26.0 26.1,22.1 31.3,27.3 36.5,23.2 41.7,8.5 47.0,0.0 52.2,13.5 57.4,21.3 62.6,23.4 67.8,23.9 73.0,24.7 78.3,21.7 83.5,22.1 88.7,24.5 93.9,23.0 99.1,17.8 104.3,14.3 109.6,24.1 114.8,26.0 120.0,28.0\"/></svg>",
-      "yoy_display": "-15.3%",
-      "yoy_value": -15.335463258785943
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.3 5.2,17.1 10.4,20.2 15.7,23.6 20.9,26.7 26.1,22.7 31.3,28.0 36.5,23.8 41.7,8.7 47.0,0.0 52.2,13.8 57.4,21.8 62.6,24.0 67.8,24.4 73.0,25.3 78.3,22.2 83.5,22.7 88.7,25.1 93.9,23.6 99.1,18.2 104.3,14.7 109.6,24.7 114.8,26.7 120.0,26.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.3 5.2,17.1 10.4,20.2 15.7,23.6 20.9,26.7 26.1,22.7 31.3,28.0 36.5,23.8 41.7,8.7 47.0,0.0 52.2,13.8 57.4,21.8 62.6,24.0 67.8,24.4 73.0,25.3 78.3,22.2 83.5,22.7 88.7,25.1 93.9,23.6 99.1,18.2 104.3,14.7 109.6,24.7 114.8,26.7 120.0,26.2\"/></svg>",
+      "yoy_display": "-9.8%",
+      "yoy_value": -9.803921568627459
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "→",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 1,
       "name_ja": "IG社債スプレッド",
       "series_id": "BAMLC0A0CM",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,9.6 5.2,10.4 10.4,13.6 15.7,18.4 20.9,20.8 26.1,21.6 31.3,21.6 36.5,16.8 41.7,9.6 47.0,0.0 52.2,13.6 57.4,18.4 62.6,24.0 67.8,22.4 73.0,26.4 78.3,23.2 83.5,21.6 88.7,24.0 93.9,27.2 99.1,18.4 104.3,15.2 109.6,22.4 114.8,28.0 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,9.6 5.2,10.4 10.4,13.6 15.7,18.4 20.9,20.8 26.1,21.6 31.3,21.6 36.5,16.8 41.7,9.6 47.0,0.0 52.2,13.6 57.4,18.4 62.6,24.0 67.8,22.4 73.0,26.4 78.3,23.2 83.5,21.6 88.7,24.0 93.9,27.2 99.1,18.4 104.3,15.2 109.6,22.4 114.8,28.0 120.0,28.0\"/></svg>",
-      "yoy_display": "-15.9%",
-      "yoy_value": -15.909090909090912
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,9.6 5.2,10.4 10.4,13.6 15.7,18.4 20.9,20.8 26.1,21.6 31.3,21.6 36.5,16.8 41.7,9.6 47.0,0.0 52.2,13.6 57.4,18.4 62.6,24.0 67.8,22.4 73.0,26.4 78.3,23.2 83.5,21.6 88.7,24.0 93.9,27.2 99.1,18.4 104.3,15.2 109.6,22.4 114.8,28.0 120.0,27.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,9.6 5.2,10.4 10.4,13.6 15.7,18.4 20.9,20.8 26.1,21.6 31.3,21.6 36.5,16.8 41.7,9.6 47.0,0.0 52.2,13.6 57.4,18.4 62.6,24.0 67.8,22.4 73.0,26.4 78.3,23.2 83.5,21.6 88.7,24.0 93.9,27.2 99.1,18.4 104.3,15.2 109.6,22.4 114.8,28.0 120.0,27.2\"/></svg>",
+      "yoy_display": "-14.8%",
+      "yoy_value": -14.772727272727273
     },
     {
       "category": "市場ストレス",
@@ -632,45 +632,45 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "S&P 500",
       "series_id": "SP500",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,26.3 10.4,24.7 15.7,25.5 20.9,21.1 26.1,23.1 31.3,20.9 36.5,22.1 41.7,26.8 47.0,27.4 52.2,22.7 57.4,18.7 62.6,16.9 67.8,15.2 73.0,12.1 78.3,10.1 83.5,9.9 88.7,10.0 93.9,8.7 99.1,9.5 104.3,14.3 109.6,5.0 114.8,0.0 120.0,2.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,26.3 10.4,24.7 15.7,25.5 20.9,21.1 26.1,23.1 31.3,20.9 36.5,22.1 41.7,26.8 47.0,27.4 52.2,22.7 57.4,18.7 62.6,16.9 67.8,15.2 73.0,12.1 78.3,10.1 83.5,9.9 88.7,10.0 93.9,8.7 99.1,9.5 104.3,14.3 109.6,5.0 114.8,0.0 120.0,2.9\"/></svg>",
-      "yoy_display": "+22.2%",
-      "yoy_value": 22.244849522918024
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,26.3 10.4,24.7 15.7,25.5 20.9,21.1 26.1,23.1 31.3,20.9 36.5,22.1 41.7,26.8 47.0,27.4 52.2,22.7 57.4,18.7 62.6,16.9 67.8,15.2 73.0,12.1 78.3,10.1 83.5,9.9 88.7,10.0 93.9,8.7 99.1,9.5 104.3,14.3 109.6,5.0 114.8,0.0 120.0,3.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,26.3 10.4,24.7 15.7,25.5 20.9,21.1 26.1,23.1 31.3,20.9 36.5,22.1 41.7,26.8 47.0,27.4 52.2,22.7 57.4,18.7 62.6,16.9 67.8,15.2 73.0,12.1 78.3,10.1 83.5,9.9 88.7,10.0 93.9,8.7 99.1,9.5 104.3,14.3 109.6,5.0 114.8,0.0 120.0,3.0\"/></svg>",
+      "yoy_display": "+20.8%",
+      "yoy_value": 20.769809066078366
+    },
+    {
+      "category": "市場ストレス",
+      "direction_arrow": "↓",
+      "economic_stage": 3,
+      "frequency": "daily",
+      "has_data": true,
+      "importance": "B",
+      "indicator": null,
+      "latest_date": "2026-06-25",
+      "market_stage": 3,
+      "name_ja": "SKEW指数",
+      "series_id": "CBOE_SKEW",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,25.0 5.2,7.8 10.4,11.4 15.7,13.1 20.9,0.9 26.1,0.0 31.3,8.2 36.5,8.6 41.7,15.8 47.0,28.0 52.2,23.8 57.4,22.7 62.6,13.0 67.8,13.1 73.0,19.8 78.3,20.3 83.5,20.1 88.7,15.7 93.9,19.6 99.1,17.3 104.3,18.2 109.6,19.9 114.8,19.2 120.0,22.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,25.0 5.2,7.8 10.4,11.4 15.7,13.1 20.9,0.9 26.1,0.0 31.3,8.2 36.5,8.6 41.7,15.8 47.0,28.0 52.2,23.8 57.4,22.7 62.6,13.0 67.8,13.1 73.0,19.8 78.3,20.3 83.5,20.1 88.7,15.7 93.9,19.6 99.1,17.3 104.3,18.2 109.6,19.9 114.8,19.2 120.0,22.5\"/></svg>",
+      "yoy_display": "-8.1%",
+      "yoy_value": -8.112191276931176
     },
     {
       "category": "市場ストレス",
       "direction_arrow": "↑",
-      "economic_stage": 4,
-      "frequency": "daily",
-      "has_data": true,
-      "importance": "B",
-      "indicator": null,
-      "latest_date": "2026-06-23",
-      "market_stage": 4,
-      "name_ja": "SKEW指数",
-      "series_id": "CBOE_SKEW",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,25.0 5.2,7.8 10.4,11.4 15.7,13.1 20.9,0.9 26.1,0.0 31.3,8.2 36.5,8.6 41.7,15.8 47.0,28.0 52.2,23.8 57.4,22.7 62.6,13.0 67.8,13.1 73.0,19.8 78.3,20.3 83.5,20.1 88.7,15.7 93.9,19.6 99.1,17.3 104.3,18.2 109.6,19.9 114.8,19.2 120.0,20.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,25.0 5.2,7.8 10.4,11.4 15.7,13.1 20.9,0.9 26.1,0.0 31.3,8.2 36.5,8.6 41.7,15.8 47.0,28.0 52.2,23.8 57.4,22.7 62.6,13.0 67.8,13.1 73.0,19.8 78.3,20.3 83.5,20.1 88.7,15.7 93.9,19.6 99.1,17.3 104.3,18.2 109.6,19.9 114.8,19.2 120.0,20.0\"/></svg>",
-      "yoy_display": "-7.5%",
-      "yoy_value": -7.52035146659776
-    },
-    {
-      "category": "市場ストレス",
-      "direction_arrow": "↓",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "NYダウ",
       "series_id": "DJIA",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,27.6 5.2,25.7 10.4,23.8 15.7,25.2 20.9,17.2 26.1,23.2 31.3,18.1 36.5,19.9 41.7,24.6 47.0,28.0 52.2,23.9 57.4,19.3 62.6,19.2 67.8,15.6 73.0,13.4 78.3,10.4 83.5,10.1 88.7,9.2 93.9,7.1 99.1,6.8 104.3,13.6 109.6,5.1 114.8,1.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,27.6 5.2,25.7 10.4,23.8 15.7,25.2 20.9,17.2 26.1,23.2 31.3,18.1 36.5,19.9 41.7,24.6 47.0,28.0 52.2,23.9 57.4,19.3 62.6,19.2 67.8,15.6 73.0,13.4 78.3,10.4 83.5,10.1 88.7,9.2 93.9,7.1 99.1,6.8 104.3,13.6 109.6,5.1 114.8,1.6 120.0,0.0\"/></svg>",
-      "yoy_display": "+21.3%",
-      "yoy_value": 21.335557132651566
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,27.6 5.2,25.8 10.4,23.9 15.7,25.3 20.9,17.4 26.1,23.3 31.3,18.4 36.5,20.1 41.7,24.7 47.0,28.0 52.2,24.0 57.4,19.5 62.6,19.4 67.8,15.9 73.0,13.7 78.3,10.8 83.5,10.5 88.7,9.6 93.9,7.5 99.1,7.3 104.3,13.9 109.6,5.6 114.8,2.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,27.6 5.2,25.8 10.4,23.9 15.7,25.3 20.9,17.4 26.1,23.3 31.3,18.4 36.5,20.1 41.7,24.7 47.0,28.0 52.2,24.0 57.4,19.5 62.6,19.4 67.8,15.9 73.0,13.7 78.3,10.8 83.5,10.5 88.7,9.6 93.9,7.5 99.1,7.3 104.3,13.9 109.6,5.6 114.8,2.2 120.0,0.0\"/></svg>",
+      "yoy_display": "+20.8%",
+      "yoy_value": 20.794985299807394
     },
     {
       "category": "市場ストレス",
@@ -680,13 +680,13 @@
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "NASDAQ総合",
       "series_id": "NASDAQCOM",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,27.1 5.2,26.8 10.4,25.4 15.7,25.7 20.9,22.4 26.1,22.2 31.3,21.3 36.5,23.5 41.7,28.0 47.0,27.6 52.2,22.7 57.4,19.1 62.6,16.9 67.8,16.0 73.0,12.5 78.3,9.4 83.5,10.4 88.7,10.8 93.9,10.2 99.1,12.5 104.3,15.6 109.6,6.0 114.8,0.0 120.0,4.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,27.1 5.2,26.8 10.4,25.4 15.7,25.7 20.9,22.4 26.1,22.2 31.3,21.3 36.5,23.5 41.7,28.0 47.0,27.6 52.2,22.7 57.4,19.1 62.6,16.9 67.8,16.0 73.0,12.5 78.3,9.4 83.5,10.4 88.7,10.8 93.9,10.2 99.1,12.5 104.3,15.6 109.6,6.0 114.8,0.0 120.0,4.0\"/></svg>",
-      "yoy_display": "+30.3%",
-      "yoy_value": 30.340171677711286
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,27.1 5.2,26.8 10.4,25.4 15.7,25.7 20.9,22.4 26.1,22.2 31.3,21.3 36.5,23.5 41.7,28.0 47.0,27.6 52.2,22.7 57.4,19.1 62.6,16.9 67.8,16.0 73.0,12.5 78.3,9.4 83.5,10.4 88.7,10.8 93.9,10.2 99.1,12.5 104.3,15.6 109.6,6.0 114.8,0.0 120.0,4.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,27.1 5.2,26.8 10.4,25.4 15.7,25.7 20.9,22.4 26.1,22.2 31.3,21.3 36.5,23.5 41.7,28.0 47.0,27.6 52.2,22.7 57.4,19.1 62.6,16.9 67.8,16.0 73.0,12.5 78.3,9.4 83.5,10.4 88.7,10.8 93.9,10.2 99.1,12.5 104.3,15.6 109.6,6.0 114.8,0.0 120.0,4.7\"/></svg>",
+      "yoy_display": "+27.0%",
+      "yoy_value": 26.960905797917746
     },
     {
       "category": "市場ストレス",
@@ -700,41 +700,41 @@
       "market_stage": 1,
       "name_ja": "Russell 2000",
       "series_id": "RUT_INDEX",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,20.0 5.2,21.0 10.4,20.6 15.7,21.6 20.9,15.0 26.1,20.6 31.3,19.0 36.5,22.5 41.7,26.7 47.0,28.0 52.2,25.2 57.4,22.2 62.6,21.1 67.8,16.9 73.0,14.9 78.3,13.7 83.5,13.2 88.7,13.7 93.9,10.0 99.1,9.5 104.3,13.3 109.6,4.9 114.8,1.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,20.0 5.2,21.0 10.4,20.6 15.7,21.6 20.9,15.0 26.1,20.6 31.3,19.0 36.5,22.5 41.7,26.7 47.0,28.0 52.2,25.2 57.4,22.2 62.6,21.1 67.8,16.9 73.0,14.9 78.3,13.7 83.5,13.2 88.7,13.7 93.9,10.0 99.1,9.5 104.3,13.3 109.6,4.9 114.8,1.6 120.0,0.0\"/></svg>",
-      "yoy_display": "+36.8%",
-      "yoy_value": 36.80115892263118
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,20.2 5.2,21.2 10.4,20.9 15.7,21.8 20.9,15.4 26.1,20.9 31.3,19.3 36.5,22.7 41.7,26.7 47.0,28.0 52.2,25.3 57.4,22.3 62.6,21.4 67.8,17.2 73.0,15.3 78.3,14.2 83.5,13.6 88.7,14.1 93.9,10.6 99.1,10.1 104.3,13.7 109.6,5.6 114.8,2.4 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,20.2 5.2,21.2 10.4,20.9 15.7,21.8 20.9,15.4 26.1,20.9 31.3,19.3 36.5,22.7 41.7,26.7 47.0,28.0 52.2,25.3 57.4,22.3 62.6,21.4 67.8,17.2 73.0,15.3 78.3,14.2 83.5,13.6 88.7,14.1 93.9,10.6 99.1,10.1 104.3,13.7 109.6,5.6 114.8,2.4 120.0,0.0\"/></svg>",
+      "yoy_display": "+38.3%",
+      "yoy_value": 38.28987298635397
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 2,
       "frequency": "weekly",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-12",
+      "latest_date": "2026-06-19",
       "market_stage": 2,
       "name_ja": "金融ストレス指数",
       "series_id": "STLFSI4",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.2 20.9,19.7 26.1,20.0 31.3,26.2 36.5,12.2 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.2 78.3,12.7 83.5,9.6 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.5 114.8,23.0 120.0,26.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.9 5.2,21.2 10.4,4.0 15.7,9.2 20.9,19.7 26.1,20.0 31.3,26.2 36.5,12.2 41.7,19.9 47.0,3.8 52.2,16.0 57.4,23.6 62.6,28.0 67.8,19.3 73.0,16.2 78.3,12.7 83.5,9.6 88.7,18.0 93.9,22.4 99.1,11.8 104.3,0.0 109.6,22.5 114.8,23.0 120.0,26.7\"/></svg>",
-      "yoy_display": "+4.2%",
-      "yoy_value": 4.2060726729716205
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.8 5.2,16.9 10.4,3.2 15.7,7.3 20.9,15.7 26.1,15.9 31.3,20.9 36.5,9.8 41.7,15.9 47.0,3.0 52.2,12.8 57.4,18.8 62.6,22.3 67.8,15.4 73.0,12.9 78.3,10.1 83.5,7.7 88.7,14.3 93.9,17.8 99.1,9.4 104.3,0.0 109.6,17.9 114.8,18.3 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.8 5.2,16.9 10.4,3.2 15.7,7.3 20.9,15.7 26.1,15.9 31.3,20.9 36.5,9.8 41.7,15.9 47.0,3.0 52.2,12.8 57.4,18.8 62.6,22.3 67.8,15.4 73.0,12.9 78.3,10.1 83.5,7.7 88.7,14.3 93.9,17.8 99.1,9.4 104.3,0.0 109.6,17.9 114.8,18.3 120.0,28.0\"/></svg>",
+      "yoy_display": "-22.6%",
+      "yoy_value": -22.588084561178732
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "→",
+      "direction_arrow": "↓",
       "economic_stage": 1,
       "frequency": "weekly",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-12",
+      "latest_date": "2026-06-19",
       "market_stage": 1,
       "name_ja": "全米金融状況指数",
       "series_id": "NFCI",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.8 26.1,17.1 31.3,20.4 36.5,16.5 41.7,6.7 47.0,4.1 52.2,14.6 57.4,18.8 62.6,21.8 67.8,23.0 73.0,22.8 78.3,21.0 83.5,20.4 88.7,24.4 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.2 120.0,20.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.8 26.1,17.1 31.3,20.4 36.5,16.5 41.7,6.7 47.0,4.1 52.2,14.6 57.4,18.8 62.6,21.8 67.8,23.0 73.0,22.8 78.3,21.0 83.5,20.4 88.7,24.4 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.2 120.0,20.3\"/></svg>",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.7 26.1,17.0 31.3,20.3 36.5,16.4 41.7,6.7 47.0,4.0 52.2,14.5 57.4,18.7 62.6,21.7 67.8,23.0 73.0,22.7 78.3,21.0 83.5,20.3 88.7,24.2 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.3 120.0,21.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,4.2 10.4,9.2 15.7,11.6 20.9,15.7 26.1,17.0 31.3,20.3 36.5,16.4 41.7,6.7 47.0,4.0 52.2,14.5 57.4,18.7 62.6,21.7 67.8,23.0 73.0,22.7 78.3,21.0 83.5,20.3 88.7,24.2 93.9,28.0 99.1,20.2 104.3,13.2 109.6,17.8 114.8,20.3 120.0,21.5\"/></svg>",
       "yoy_display": "-6.8%",
-      "yoy_value": -6.765327695560259
+      "yoy_value": -6.832298136645969
     },
     {
       "category": "市場ストレス",
@@ -818,18 +818,19 @@
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "—",
-      "economic_stage": null,
+      "direction_arrow": "↑",
+      "economic_stage": 5,
       "frequency": "weekly",
-      "has_data": false,
+      "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": null,
-      "market_stage": null,
+      "latest_date": "2026-06-24",
+      "market_stage": 5,
       "name_ja": "NAAIMエクスポージャー",
       "series_id": "NAAIM_EXPOSURE",
-      "sparkline_svg": "",
-      "yoy_display": "—"
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,1.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,10.9 5.2,12.6 10.4,9.2 15.7,11.8 20.9,1.2 26.1,13.2 31.3,21.1 36.5,8.4 41.7,28.0 47.0,26.5 52.2,8.0 57.4,12.6 62.6,15.5 67.8,5.1 73.0,9.4 78.3,0.0 83.5,7.1 88.7,5.1 93.9,5.3 99.1,16.8 104.3,20.9 109.6,4.6 114.8,1.6 120.0,1.4\"/></svg>",
+      "yoy_display": "+4.8%",
+      "yoy_value": 4.782654904878307
     },
     {
       "category": "市場ストレス",
@@ -839,13 +840,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "S&P500 200日線乖離",
       "series_id": "PA_GSPC_DD200",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,2.6 5.2,3.3 10.4,3.4 15.7,10.0 20.9,2.5 26.1,11.2 31.3,8.6 36.5,14.6 41.7,27.1 47.0,28.0 52.2,18.2 57.4,10.4 62.6,8.3 67.8,6.6 73.0,1.6 78.3,0.0 83.5,2.0 88.7,5.7 93.9,7.4 99.1,13.2 104.3,25.4 109.6,8.8 114.8,1.8 120.0,10.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,2.6 5.2,3.3 10.4,3.4 15.7,10.0 20.9,2.5 26.1,11.2 31.3,8.6 36.5,14.6 41.7,27.1 47.0,28.0 52.2,18.2 57.4,10.4 62.6,8.3 67.8,6.6 73.0,1.6 78.3,0.0 83.5,2.0 88.7,5.7 93.9,7.4 99.1,13.2 104.3,25.4 109.6,8.8 114.8,1.8 120.0,10.0\"/></svg>",
-      "yoy_display": "+82.9%",
-      "yoy_value": 82.93028742688105
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,2.6 5.2,3.3 10.4,3.4 15.7,10.0 20.9,2.5 26.1,11.2 31.3,8.6 36.5,14.6 41.7,27.1 47.0,28.0 52.2,18.2 57.4,10.4 62.6,8.3 67.8,6.6 73.0,1.6 78.3,0.0 83.5,2.0 88.7,5.7 93.9,7.4 99.1,13.2 104.3,25.4 109.6,8.8 114.8,1.8 120.0,10.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,2.6 5.2,3.3 10.4,3.4 15.7,10.0 20.9,2.5 26.1,11.2 31.3,8.6 36.5,14.6 41.7,27.1 47.0,28.0 52.2,18.2 57.4,10.4 62.6,8.3 67.8,6.6 73.0,1.6 78.3,0.0 83.5,2.0 88.7,5.7 93.9,7.4 99.1,13.2 104.3,25.4 109.6,8.8 114.8,1.8 120.0,10.5\"/></svg>",
+      "yoy_display": "+36.2%",
+      "yoy_value": 36.20358511356056
     },
     {
       "category": "市場ストレス",
@@ -855,13 +856,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "S&P500 52週高値乖離",
       "series_id": "PA_GSPC_DD52W",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,7.6 5.2,1.0 10.4,0.0 15.7,8.1 20.9,0.0 26.1,10.2 31.3,3.8 36.5,9.2 41.7,25.9 47.0,28.0 52.2,11.3 57.4,0.0 62.6,2.4 67.8,1.9 73.0,0.2 78.3,2.2 83.5,1.8 88.7,3.7 93.9,1.7 99.1,4.3 104.3,19.3 109.6,0.0 114.8,0.0 120.0,9.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,7.6 5.2,1.0 10.4,0.0 15.7,8.1 20.9,0.0 26.1,10.2 31.3,3.8 36.5,9.2 41.7,25.9 47.0,28.0 52.2,11.3 57.4,0.0 62.6,2.4 67.8,1.9 73.0,0.2 78.3,2.2 83.5,1.8 88.7,3.7 93.9,1.7 99.1,4.3 104.3,19.3 109.6,0.0 114.8,0.0 120.0,9.6\"/></svg>",
-      "yoy_display": "-65.8%",
-      "yoy_value": -65.79618291409197
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,7.6 5.2,1.0 10.4,0.0 15.7,8.1 20.9,0.0 26.1,10.2 31.3,3.8 36.5,9.2 41.7,25.9 47.0,28.0 52.2,11.3 57.4,0.0 62.6,2.4 67.8,1.9 73.0,0.2 78.3,2.2 83.5,1.8 88.7,3.7 93.9,1.7 99.1,4.3 104.3,19.3 109.6,0.0 114.8,0.0 120.0,9.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,7.6 5.2,1.0 10.4,0.0 15.7,8.1 20.9,0.0 26.1,10.2 31.3,3.8 36.5,9.2 41.7,25.9 47.0,28.0 52.2,11.3 57.4,0.0 62.6,2.4 67.8,1.9 73.0,0.2 78.3,2.2 83.5,1.8 88.7,3.7 93.9,1.7 99.1,4.3 104.3,19.3 109.6,0.0 114.8,0.0 120.0,9.9\"/></svg>",
+      "yoy_display": "-291.8%",
+      "yoy_value": -291.8061789730039
     },
     {
       "category": "市場ストレス",
@@ -871,13 +872,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 3,
       "name_ja": "S&P500 20日リターン",
       "series_id": "PA_GSPC_MOM20",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.0 5.2,8.1 10.4,15.4 15.7,19.3 20.9,7.9 26.1,25.0 31.3,14.0 36.5,23.3 41.7,27.7 47.0,21.8 52.2,8.4 57.4,9.4 62.6,15.8 67.8,12.3 73.0,10.9 78.3,15.7 83.5,18.7 88.7,19.0 93.9,16.7 99.1,22.1 104.3,28.0 109.6,0.0 114.8,9.1 120.0,22.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.0 5.2,8.1 10.4,15.4 15.7,19.3 20.9,7.9 26.1,25.0 31.3,14.0 36.5,23.3 41.7,27.7 47.0,21.8 52.2,8.4 57.4,9.4 62.6,15.8 67.8,12.3 73.0,10.9 78.3,15.7 83.5,18.7 88.7,19.0 93.9,16.7 99.1,22.1 104.3,28.0 109.6,0.0 114.8,9.1 120.0,22.4\"/></svg>",
-      "yoy_display": "-146.1%",
-      "yoy_value": -146.09713691469454
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,19.0 5.2,8.1 10.4,15.4 15.7,19.3 20.9,7.9 26.1,25.0 31.3,14.0 36.5,23.3 41.7,27.7 47.0,21.8 52.2,8.4 57.4,9.4 62.6,15.8 67.8,12.3 73.0,10.9 78.3,15.7 83.5,18.7 88.7,19.0 93.9,16.7 99.1,22.1 104.3,28.0 109.6,0.0 114.8,9.1 120.0,23.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,19.0 5.2,8.1 10.4,15.4 15.7,19.3 20.9,7.9 26.1,25.0 31.3,14.0 36.5,23.3 41.7,27.7 47.0,21.8 52.2,8.4 57.4,9.4 62.6,15.8 67.8,12.3 73.0,10.9 78.3,15.7 83.5,18.7 88.7,19.0 93.9,16.7 99.1,22.1 104.3,28.0 109.6,0.0 114.8,9.1 120.0,23.8\"/></svg>",
+      "yoy_display": "-175.2%",
+      "yoy_value": -175.1633136570792
     },
     {
       "category": "市場ストレス",
@@ -887,13 +888,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-24",
+      "latest_date": "2026-06-26",
       "market_stage": 1,
       "name_ja": "日経225 200日線乖離",
       "series_id": "PA_N225_DD200",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,19.9 10.4,22.1 15.7,21.1 20.9,23.2 26.1,20.1 31.3,20.7 36.5,25.3 41.7,28.0 47.0,26.3 52.2,22.1 57.4,17.5 62.6,17.0 67.8,14.6 73.0,11.6 78.3,0.0 83.5,6.2 88.7,8.8 93.9,6.9 99.1,1.9 104.3,17.3 109.6,8.2 114.8,1.6 120.0,1.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,19.9 10.4,22.1 15.7,21.1 20.9,23.2 26.1,20.1 31.3,20.7 36.5,25.3 41.7,28.0 47.0,26.3 52.2,22.1 57.4,17.5 62.6,17.0 67.8,14.6 73.0,11.6 78.3,0.0 83.5,6.2 88.7,8.8 93.9,6.9 99.1,1.9 104.3,17.3 109.6,8.2 114.8,1.6 120.0,1.8\"/></svg>",
-      "yoy_display": "+1143.5%",
-      "yoy_value": 1143.5463514088467
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,19.9 10.4,22.1 15.7,21.1 20.9,23.2 26.1,20.1 31.3,20.7 36.5,25.3 41.7,28.0 47.0,26.3 52.2,22.1 57.4,17.5 62.6,17.0 67.8,14.6 73.0,11.6 78.3,0.0 83.5,6.2 88.7,8.8 93.9,6.9 99.1,1.9 104.3,17.3 109.6,8.2 114.8,1.6 120.0,2.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,19.9 10.4,22.1 15.7,21.1 20.9,23.2 26.1,20.1 31.3,20.7 36.5,25.3 41.7,28.0 47.0,26.3 52.2,22.1 57.4,17.5 62.6,17.0 67.8,14.6 73.0,11.6 78.3,0.0 83.5,6.2 88.7,8.8 93.9,6.9 99.1,1.9 104.3,17.3 109.6,8.2 114.8,1.6 120.0,2.0\"/></svg>",
+      "yoy_display": "+542.0%",
+      "yoy_value": 542.023398690477
     },
     {
       "category": "市場ストレス",
@@ -903,29 +904,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-24",
+      "latest_date": "2026-06-26",
       "market_stage": 2,
       "name_ja": "日経225 52週高値乖離",
       "series_id": "PA_N225_DD52W",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,7.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,7.9\"/></svg>",
-      "yoy_display": "+46.0%",
-      "yoy_value": 45.96755593876007
-    },
-    {
-      "category": "市場ストレス",
-      "direction_arrow": "↓",
-      "economic_stage": 1,
-      "frequency": "daily",
-      "has_data": true,
-      "importance": "C",
-      "indicator": null,
-      "latest_date": "2026-06-24",
-      "market_stage": 1,
-      "name_ja": "日経225 20日リターン",
-      "series_id": "PA_N225_MOM20",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,10.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,10.0\"/></svg>",
-      "yoy_display": "+127.2%",
-      "yoy_value": 127.2395819511771
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,7.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,15.2 10.4,18.2 15.7,13.3 20.9,17.0 26.1,9.9 31.3,11.2 36.5,21.5 41.7,28.0 47.0,26.2 52.2,18.1 57.4,7.4 62.6,3.2 67.8,4.1 73.0,3.2 78.3,0.0 83.5,7.4 88.7,7.1 93.9,3.4 99.1,0.0 104.3,23.7 109.6,3.7 114.8,0.0 120.0,7.4\"/></svg>",
+      "yoy_display": "+33.6%",
+      "yoy_value": 33.561165495644175
     },
     {
       "category": "市場ストレス",
@@ -935,29 +920,45 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-26",
+      "market_stage": 2,
+      "name_ja": "日経225 20日リターン",
+      "series_id": "PA_N225_MOM20",
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,11.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,18.6 5.2,14.9 10.4,17.4 15.7,13.0 20.9,18.4 26.1,12.7 31.3,18.0 36.5,21.8 41.7,20.3 47.0,15.1 52.2,11.0 57.4,8.4 62.6,13.0 67.8,12.3 73.0,11.2 78.3,0.0 83.5,18.2 88.7,14.2 93.9,10.8 99.1,6.2 104.3,28.0 109.6,6.2 114.8,6.9 120.0,11.8\"/></svg>",
+      "yoy_display": "+52.5%",
+      "yoy_value": 52.52370743174676
+    },
+    {
+      "category": "市場ストレス",
+      "direction_arrow": "↑",
+      "economic_stage": 2,
+      "frequency": "daily",
+      "has_data": true,
+      "importance": "C",
+      "indicator": null,
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "NYダウ 200日線乖離",
       "series_id": "PA_DJI_DD200",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,6.6 5.2,7.0 10.4,6.3 15.7,11.9 20.9,0.0 26.1,13.4 31.3,6.4 36.5,12.2 41.7,21.8 47.0,28.0 52.2,21.8 57.4,14.6 62.6,15.7 67.8,10.6 73.0,7.7 78.3,4.7 83.5,5.2 88.7,6.3 93.9,6.5 99.1,9.9 104.3,22.5 109.6,11.4 114.8,8.3 120.0,7.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,6.6 5.2,7.0 10.4,6.3 15.7,11.9 20.9,0.0 26.1,13.4 31.3,6.4 36.5,12.2 41.7,21.8 47.0,28.0 52.2,21.8 57.4,14.6 62.6,15.7 67.8,10.6 73.0,7.7 78.3,4.7 83.5,5.2 88.7,6.3 93.9,6.5 99.1,9.9 104.3,22.5 109.6,11.4 114.8,8.3 120.0,7.8\"/></svg>",
-      "yoy_display": "+5773.2%",
-      "yoy_value": 5773.150141046284
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,6.6 5.2,7.0 10.4,6.3 15.7,11.9 20.9,0.0 26.1,13.4 31.3,6.4 36.5,12.2 41.7,21.8 47.0,28.0 52.2,21.8 57.4,14.6 62.6,15.7 67.8,10.6 73.0,7.7 78.3,4.7 83.5,5.2 88.7,6.3 93.9,6.5 99.1,9.9 104.3,22.5 109.6,11.4 114.8,8.3 120.0,7.1 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,6.6 5.2,7.0 10.4,6.3 15.7,11.9 20.9,0.0 26.1,13.4 31.3,6.4 36.5,12.2 41.7,21.8 47.0,28.0 52.2,21.8 57.4,14.6 62.6,15.7 67.8,10.6 73.0,7.7 78.3,4.7 83.5,5.2 88.7,6.3 93.9,6.5 99.1,9.9 104.3,22.5 109.6,11.4 114.8,8.3 120.0,7.1\"/></svg>",
+      "yoy_display": "+644.9%",
+      "yoy_value": 644.8649679516722
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↓",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 1,
       "name_ja": "NYダウ 52週高値乖離",
       "series_id": "PA_DJI_DD52W",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,2.5 5.2,0.0 10.4,0.0 15.7,10.1 20.9,0.0 26.1,15.9 31.3,3.0 36.5,7.6 41.7,19.4 47.0,28.0 52.2,17.7 57.4,5.9 62.6,5.7 67.8,0.6 73.0,0.0 78.3,0.9 83.5,3.2 88.7,4.0 93.9,4.1 99.1,7.0 104.3,22.2 109.6,3.1 114.8,0.0 120.0,1.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,2.5 5.2,0.0 10.4,0.0 15.7,10.1 20.9,0.0 26.1,15.9 31.3,3.0 36.5,7.6 41.7,19.4 47.0,28.0 52.2,17.7 57.4,5.9 62.6,5.7 67.8,0.6 73.0,0.0 78.3,0.9 83.5,3.2 88.7,4.0 93.9,4.1 99.1,7.0 104.3,22.2 109.6,3.1 114.8,0.0 120.0,1.9\"/></svg>",
-      "yoy_display": "+88.2%",
-      "yoy_value": 88.15424110967207
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,2.5 5.2,0.0 10.4,0.0 15.7,10.1 20.9,0.0 26.1,15.9 31.3,3.0 36.5,7.6 41.7,19.4 47.0,28.0 52.2,17.7 57.4,5.9 62.6,5.7 67.8,0.6 73.0,0.0 78.3,0.9 83.5,3.2 88.7,4.0 93.9,4.1 99.1,7.0 104.3,22.2 109.6,3.1 114.8,0.0 120.0,0.4 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,2.5 5.2,0.0 10.4,0.0 15.7,10.1 20.9,0.0 26.1,15.9 31.3,3.0 36.5,7.6 41.7,19.4 47.0,28.0 52.2,17.7 57.4,5.9 62.6,5.7 67.8,0.6 73.0,0.0 78.3,0.9 83.5,3.2 88.7,4.0 93.9,4.1 99.1,7.0 104.3,22.2 109.6,3.1 114.8,0.0 120.0,0.4\"/></svg>",
+      "yoy_display": "+96.6%",
+      "yoy_value": 96.63168004329208
     },
     {
       "category": "市場ストレス",
@@ -967,13 +968,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "NYダウ 20日リターン",
       "series_id": "PA_DJI_MOM20",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.3 5.2,6.6 10.4,12.7 15.7,18.2 20.9,0.0 26.1,28.0 31.3,6.3 36.5,22.0 41.7,23.0 47.0,23.9 52.2,8.5 57.4,7.2 62.6,18.6 67.8,6.8 73.0,11.4 78.3,13.0 83.5,15.9 88.7,14.1 93.9,13.0 99.1,17.3 104.3,26.8 109.6,2.0 114.8,10.6 120.0,12.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.3 5.2,6.6 10.4,12.7 15.7,18.2 20.9,0.0 26.1,28.0 31.3,6.3 36.5,22.0 41.7,23.0 47.0,23.9 52.2,8.5 57.4,7.2 62.6,18.6 67.8,6.8 73.0,11.4 78.3,13.0 83.5,15.9 88.7,14.1 93.9,13.0 99.1,17.3 104.3,26.8 109.6,2.0 114.8,10.6 120.0,12.0\"/></svg>",
-      "yoy_display": "+24.5%",
-      "yoy_value": 24.49341299804324
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.3 5.2,6.6 10.4,12.7 15.7,18.2 20.9,0.0 26.1,28.0 31.3,6.3 36.5,22.0 41.7,23.0 47.0,23.9 52.2,8.5 57.4,7.2 62.6,18.6 67.8,6.8 73.0,11.4 78.3,13.0 83.5,15.9 88.7,14.1 93.9,13.0 99.1,17.3 104.3,26.8 109.6,2.0 114.8,10.6 120.0,11.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.3 5.2,6.6 10.4,12.7 15.7,18.2 20.9,0.0 26.1,28.0 31.3,6.3 36.5,22.0 41.7,23.0 47.0,23.9 52.2,8.5 57.4,7.2 62.6,18.6 67.8,6.8 73.0,11.4 78.3,13.0 83.5,15.9 88.7,14.1 93.9,13.0 99.1,17.3 104.3,26.8 109.6,2.0 114.8,10.6 120.0,11.2\"/></svg>",
+      "yoy_display": "+67.1%",
+      "yoy_value": 67.05982812951132
     },
     {
       "category": "市場ストレス",
@@ -983,13 +984,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "NASDAQ 200日線乖離",
       "series_id": "PA_IXIC_DD200",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.0 5.2,10.6 10.4,9.8 15.7,13.4 20.9,8.4 26.1,10.6 31.3,10.9 36.5,18.0 41.7,28.0 47.0,26.3 52.2,17.0 57.4,10.8 62.6,8.4 67.8,8.4 73.0,3.5 78.3,0.0 83.5,4.1 88.7,7.9 93.9,10.5 99.1,17.5 104.3,24.6 109.6,10.0 114.8,2.7 120.0,11.3 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.0 5.2,10.6 10.4,9.8 15.7,13.4 20.9,8.4 26.1,10.6 31.3,10.9 36.5,18.0 41.7,28.0 47.0,26.3 52.2,17.0 57.4,10.8 62.6,8.4 67.8,8.4 73.0,3.5 78.3,0.0 83.5,4.1 88.7,7.9 93.9,10.5 99.1,17.5 104.3,24.6 109.6,10.0 114.8,2.7 120.0,11.3\"/></svg>",
-      "yoy_display": "+55.4%",
-      "yoy_value": 55.36630407494838
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.0 5.2,10.6 10.4,9.8 15.7,13.4 20.9,8.4 26.1,10.6 31.3,10.9 36.5,18.0 41.7,28.0 47.0,26.3 52.2,17.0 57.4,10.8 62.6,8.4 67.8,8.4 73.0,3.5 78.3,0.0 83.5,4.1 88.7,7.9 93.9,10.5 99.1,17.5 104.3,24.6 109.6,10.0 114.8,2.7 120.0,12.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.0 5.2,10.6 10.4,9.8 15.7,13.4 20.9,8.4 26.1,10.6 31.3,10.9 36.5,18.0 41.7,28.0 47.0,26.3 52.2,17.0 57.4,10.8 62.6,8.4 67.8,8.4 73.0,3.5 78.3,0.0 83.5,4.1 88.7,7.9 93.9,10.5 99.1,17.5 104.3,24.6 109.6,10.0 114.8,2.7 120.0,12.6\"/></svg>",
+      "yoy_display": "+3.2%",
+      "yoy_value": 3.248745916344584
     },
     {
       "category": "市場ストレス",
@@ -999,13 +1000,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 3,
       "name_ja": "NASDAQ 52週高値乖離",
       "series_id": "PA_IXIC_DD52W",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,11.0 5.2,9.8 10.4,4.8 15.7,6.5 20.9,0.8 26.1,8.4 31.3,5.3 36.5,12.9 41.7,28.0 47.0,26.6 52.2,10.3 57.4,0.0 62.6,0.5 67.8,2.3 73.0,1.1 78.3,1.9 83.5,4.9 88.7,5.9 93.9,4.1 99.1,10.6 104.3,19.4 109.6,0.0 114.8,0.0 120.0,10.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,11.0 5.2,9.8 10.4,4.8 15.7,6.5 20.9,0.8 26.1,8.4 31.3,5.3 36.5,12.9 41.7,28.0 47.0,26.6 52.2,10.3 57.4,0.0 62.6,0.5 67.8,2.3 73.0,1.1 78.3,1.9 83.5,4.9 88.7,5.9 93.9,4.1 99.1,10.6 104.3,19.4 109.6,0.0 114.8,0.0 120.0,10.9\"/></svg>",
-      "yoy_display": "-106.7%",
-      "yoy_value": -106.65962716214761
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,11.0 5.2,9.8 10.4,4.8 15.7,6.5 20.9,0.8 26.1,8.4 31.3,5.3 36.5,12.9 41.7,28.0 47.0,26.6 52.2,10.3 57.4,0.0 62.6,0.5 67.8,2.3 73.0,1.1 78.3,1.9 83.5,4.9 88.7,5.9 93.9,4.1 99.1,10.6 104.3,19.4 109.6,0.0 114.8,0.0 120.0,12.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,11.0 5.2,9.8 10.4,4.8 15.7,6.5 20.9,0.8 26.1,8.4 31.3,5.3 36.5,12.9 41.7,28.0 47.0,26.6 52.2,10.3 57.4,0.0 62.6,0.5 67.8,2.3 73.0,1.1 78.3,1.9 83.5,4.9 88.7,5.9 93.9,4.1 99.1,10.6 104.3,19.4 109.6,0.0 114.8,0.0 120.0,12.6\"/></svg>",
+      "yoy_display": "-544.9%",
+      "yoy_value": -544.9492821356075
     },
     {
       "category": "市場ストレス",
@@ -1015,13 +1016,13 @@
       "has_data": true,
       "importance": "C",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 3,
       "name_ja": "NASDAQ 20日リターン",
       "series_id": "PA_IXIC_MOM20",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,23.2 5.2,11.9 10.4,16.0 15.7,18.5 20.9,11.0 26.1,20.5 31.3,17.5 36.5,25.9 41.7,28.0 47.0,19.9 52.2,8.6 57.4,10.5 62.6,14.8 67.8,14.3 73.0,10.6 78.3,14.0 83.5,21.2 88.7,20.9 93.9,18.5 99.1,26.0 104.3,25.7 109.6,0.0 114.8,8.0 120.0,23.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,23.2 5.2,11.9 10.4,16.0 15.7,18.5 20.9,11.0 26.1,20.5 31.3,17.5 36.5,25.9 41.7,28.0 47.0,19.9 52.2,8.6 57.4,10.5 62.6,14.8 67.8,14.3 73.0,10.6 78.3,14.0 83.5,21.2 88.7,20.9 93.9,18.5 99.1,26.0 104.3,25.7 109.6,0.0 114.8,8.0 120.0,23.9\"/></svg>",
-      "yoy_display": "-177.1%",
-      "yoy_value": -177.1076082973503
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,23.2 5.2,11.9 10.4,16.0 15.7,18.5 20.9,11.0 26.1,20.5 31.3,17.5 36.5,25.9 41.7,28.0 47.0,19.9 52.2,8.6 57.4,10.5 62.6,14.8 67.8,14.3 73.0,10.6 78.3,14.0 83.5,21.2 88.7,20.9 93.9,18.5 99.1,26.0 104.3,25.7 109.6,0.0 114.8,8.0 120.0,26.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,23.2 5.2,11.9 10.4,16.0 15.7,18.5 20.9,11.0 26.1,20.5 31.3,17.5 36.5,25.9 41.7,28.0 47.0,19.9 52.2,8.6 57.4,10.5 62.6,14.8 67.8,14.3 73.0,10.6 78.3,14.0 83.5,21.2 88.7,20.9 93.9,18.5 99.1,26.0 104.3,25.7 109.6,0.0 114.8,8.0 120.0,26.9\"/></svg>",
+      "yoy_display": "-222.3%",
+      "yoy_value": -222.32667666764684
     },
     {
       "category": "市場ストレス",
@@ -1069,7 +1070,7 @@
       "roc_auc_display": "0.68",
       "sample_count": 240,
       "target": "GSPC",
-      "updated_at": "2026-06-24 08:39"
+      "updated_at": "2026-06-26 08:39"
     },
     "category_summary": [
       {
@@ -1086,21 +1087,21 @@
         "weight_pct": 35
       },
       {
-        "avg_score": 25,
-        "avg_score_display": 25,
+        "avg_score": 48,
+        "avg_score_display": 48,
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
-        "count": 5,
-        "coverage_pct": 83,
+        "count": 6,
+        "coverage_pct": 67,
         "expected_count": 6,
-        "fresh_count": 5,
-        "missing_count": 1,
-        "stale_count": 0,
+        "fresh_count": 4,
+        "missing_count": 0,
+        "stale_count": 2,
         "weight_pct": 30
       },
       {
-        "avg_score": 11,
-        "avg_score_display": 11,
+        "avg_score": 12,
+        "avg_score_display": 12,
         "category": "price_action",
         "category_label": "価格アクション",
         "count": 12,
@@ -1135,10 +1136,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "VIX",
-        "observation_date": "2026-06-22",
+        "observation_date": "2026-06-24",
         "score": 25,
         "series_id": "VIXCLS",
-        "value_display": "17.28",
+        "value_display": "18.63",
         "warning": null
       },
       {
@@ -1150,30 +1151,30 @@
         "is_missing": false,
         "is_stale": false,
         "label": "SKEW（テール警戒）",
-        "observation_date": "2026-06-23",
-        "score": 75,
+        "observation_date": "2026-06-25",
+        "score": 50,
         "series_id": "CBOE_SKEW",
-        "value_display": "143.1",
+        "value_display": "139.9",
         "warning": null
       },
       {
-        "age_days": null,
-        "age_days_display": "—",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
-        "freshness_label": "欠損",
-        "is_missing": true,
+        "freshness_label": "新鮮",
+        "is_missing": false,
         "is_stale": false,
         "label": "NAAIMエクスポージャー",
-        "observation_date": "—",
-        "score": "—",
+        "observation_date": "2026-06-24",
+        "score": 90,
         "series_id": "NAAIM_EXPOSURE",
-        "value_display": "—",
-        "warning": "データなし"
+        "value_display": "98.59",
+        "warning": null
       },
       {
-        "age_days": 4,
-        "age_days_display": "4日",
+        "age_days": 6,
+        "age_days_display": "6日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1187,34 +1188,34 @@
         "warning": null
       },
       {
-        "age_days": 6,
-        "age_days_display": "6日",
+        "age_days": 8,
+        "age_days_display": "8日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
-        "freshness_label": "新鮮",
+        "freshness_label": "古い",
         "is_missing": false,
-        "is_stale": false,
+        "is_stale": true,
         "label": "MOVE指数",
         "observation_date": "2026-06-18",
         "score": 0,
         "series_id": "MOVE_INDEX",
         "value_display": "65.39",
-        "warning": null
+        "warning": "観測日が古い（目安7日以内）"
       },
       {
-        "age_days": 6,
-        "age_days_display": "6日",
+        "age_days": 8,
+        "age_days_display": "8日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
-        "freshness_label": "新鮮",
+        "freshness_label": "古い",
         "is_missing": false,
-        "is_stale": false,
+        "is_stale": true,
         "label": "VIX/VIX3M比",
         "observation_date": "2026-06-18",
         "score": 0,
         "series_id": "VIX_VIX3M_RATIO",
         "value_display": "0.84",
-        "warning": null
+        "warning": "観測日が古い（目安7日以内）"
       },
       {
         "age_days": 2,
@@ -1225,10 +1226,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "HYスプレッド",
-        "observation_date": "2026-06-22",
+        "observation_date": "2026-06-24",
         "score": 0,
         "series_id": "BAMLH0A0HYM2",
-        "value_display": "2.65",
+        "value_display": "2.76",
         "warning": null
       },
       {
@@ -1240,40 +1241,40 @@
         "is_missing": false,
         "is_stale": false,
         "label": "IGスプレッド",
-        "observation_date": "2026-06-22",
+        "observation_date": "2026-06-24",
         "score": 0,
         "series_id": "BAMLC0A0CM",
-        "value_display": "0.74",
+        "value_display": "0.75",
         "warning": null
       },
       {
-        "age_days": 12,
-        "age_days_display": "12日",
+        "age_days": 7,
+        "age_days_display": "7日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
         "is_missing": false,
         "is_stale": false,
         "label": "金融状況",
-        "observation_date": "2026-06-12",
+        "observation_date": "2026-06-19",
         "score": 0,
         "series_id": "NFCI",
-        "value_display": "-0.51",
+        "value_display": "-0.52",
         "warning": null
       },
       {
-        "age_days": 12,
-        "age_days_display": "12日",
+        "age_days": 7,
+        "age_days_display": "7日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
         "is_missing": false,
         "is_stale": false,
         "label": "金融ストレス",
-        "observation_date": "2026-06-12",
+        "observation_date": "2026-06-19",
         "score": 25,
         "series_id": "STLFSI4",
-        "value_display": "-0.77",
+        "value_display": "-0.96",
         "warning": null
       },
       {
@@ -1285,10 +1286,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "2-10年スプレッド",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 50,
         "series_id": "T10Y2Y",
-        "value_display": "0.34",
+        "value_display": "0.31",
         "warning": null
       },
       {
@@ -1300,10 +1301,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "3M-10年スプレッド",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 25,
         "series_id": "T10Y3M",
-        "value_display": "0.65",
+        "value_display": "0.56",
         "warning": null
       },
       {
@@ -1315,10 +1316,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "S&P500 200日線",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 0,
         "series_id": "PA_GSPC_DD200",
-        "value_display": "6.56",
+        "value_display": "6.31",
         "warning": null
       },
       {
@@ -1330,10 +1331,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NYダウ 200日線",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 0,
         "series_id": "PA_DJI_DD200",
-        "value_display": "7.16",
+        "value_display": "7.54",
         "warning": null
       },
       {
@@ -1345,10 +1346,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NASDAQ 200日線",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 0,
         "series_id": "PA_IXIC_DD200",
-        "value_display": "8.55",
+        "value_display": "7.41",
         "warning": null
       },
       {
@@ -1360,10 +1361,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "日経225 200日線",
-        "observation_date": "2026-06-24",
+        "observation_date": "2026-06-26",
         "score": 0,
         "series_id": "PA_N225_DD200",
-        "value_display": "28.12",
+        "value_display": "27.80",
         "warning": null
       },
       {
@@ -1375,10 +1376,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "S&P500 52週高値",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 15,
         "series_id": "PA_GSPC_DD52W",
-        "value_display": "-3.21",
+        "value_display": "-3.32",
         "warning": null
       },
       {
@@ -1390,10 +1391,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NYダウ 52週高値",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 0,
         "series_id": "PA_DJI_DD52W",
-        "value_display": "-0.64",
+        "value_display": "-0.15",
         "warning": null
       },
       {
@@ -1405,10 +1406,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NASDAQ 52週高値",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 40,
         "series_id": "PA_IXIC_DD52W",
-        "value_display": "-5.56",
+        "value_display": "-6.40",
         "warning": null
       },
       {
@@ -1420,10 +1421,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "日経225 52週高値",
-        "observation_date": "2026-06-24",
+        "observation_date": "2026-06-26",
         "score": 15,
         "series_id": "PA_N225_DD52W",
-        "value_display": "-4.39",
+        "value_display": "-4.15",
         "warning": null
       },
       {
@@ -1435,10 +1436,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "S&P500 20日",
-        "observation_date": "2026-06-23",
-        "score": 20,
+        "observation_date": "2026-06-25",
+        "score": 40,
         "series_id": "PA_GSPC_MOM20",
-        "value_display": "-1.45",
+        "value_display": "-2.17",
         "warning": null
       },
       {
@@ -1450,10 +1451,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NYダウ 20日",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 0,
         "series_id": "PA_DJI_MOM20",
-        "value_display": "2.15",
+        "value_display": "2.52",
         "warning": null
       },
       {
@@ -1465,10 +1466,10 @@
         "is_missing": false,
         "is_stale": false,
         "label": "NASDAQ 20日",
-        "observation_date": "2026-06-23",
+        "observation_date": "2026-06-25",
         "score": 40,
         "series_id": "PA_IXIC_MOM20",
-        "value_display": "-2.87",
+        "value_display": "-4.93",
         "warning": null
       },
       {
@@ -1480,30 +1481,30 @@
         "is_missing": false,
         "is_stale": false,
         "label": "日経225 20日",
-        "observation_date": "2026-06-24",
+        "observation_date": "2026-06-26",
         "score": 0,
         "series_id": "PA_N225_MOM20",
-        "value_display": "6.42",
+        "value_display": "4.57",
         "warning": null
       }
     ],
-    "data_quality_pct": 95,
-    "forward_risk_score": 19,
+    "data_quality_pct": 90,
+    "forward_risk_score": 28,
     "is_provisional": false,
-    "level": "calm",
-    "level_label": "平常",
-    "market_stress_score": 17,
+    "level": "caution",
+    "level_label": "注意",
+    "market_stress_score": 25,
     "quality_warnings": [
-      "未取得の指標: NAAIMエクスポージャー。この1件は今回の点数に含めていません。"
+      "観測日が古い指標があります: MOVE指数、VIX/VIX3M比"
     ],
-    "rule_agreement_pct": 87,
-    "total_score": 17,
+    "rule_agreement_pct": 81,
+    "total_score": 25,
     "validation_confidence_pct": null,
     "validation_status": "月次検証あり"
   },
   "data_quality": 100.0,
   "data_quality_report": {
-    "as_of": "2026-06-24",
+    "as_of": "2026-06-26",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -1548,7 +1549,7 @@
     "tone": "warning",
     "total_count": 1
   },
-  "generated_at": "2026-06-24T08:43:04.098830+00:00",
+  "generated_at": "2026-06-26T08:42:52.231965+00:00",
   "goldman_outlook_comparison": {
     "audit": {
       "comparison_mode": "public_static_outlook_vs_live_house_view",
@@ -1561,7 +1562,7 @@
       "latest_public_source_date": "2026-01-15",
       "model_validation_usage": "not_allowed",
       "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
-      "public_outlook_age_days": 160
+      "public_outlook_age_days": 162
     },
     "benchmark_outlooks": [
       {
@@ -1645,7 +1646,7 @@
         "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
       }
     ],
-    "generated_at": "2026-06-24T08:42:56.959330+00:00",
+    "generated_at": "2026-06-26T08:42:44.694977+00:00",
     "goldman_sachs_public_outlook": {
       "as_of": "2026-01-11",
       "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -1667,9 +1668,9 @@
       }
     },
     "house_view_snapshot": {
-      "as_of": "2026-06-24",
+      "as_of": "2026-06-26",
       "confidence": 76.0,
-      "data_quality": 92.0,
+      "data_quality": 93.0,
       "primary_regime": "slowdown",
       "regime_probabilities": {
         "contraction": 0.02018798202221658,
@@ -1679,8 +1680,8 @@
       },
       "risk_probabilities": {
         "acceleration": 0.7181067459277792,
-        "financial_stress": 0.198594818914059,
-        "inflation_reacceleration": 0.8233758532469887,
+        "financial_stress": 0.2267770592019888,
+        "inflation_reacceleration": 0.8988551038774872,
         "recession": 0.07198151800287787
       }
     },
@@ -1693,24 +1694,24 @@
   "has_observations": true,
   "historical_crash_similarity": [
     {
-      "distance": 0.6330656701996877,
-      "distance_display": "0.63",
+      "distance": 0.6175185035111427,
+      "distance_display": "0.62",
       "label": "2022年米株急落",
       "month_label": "2022年06月",
       "month_start": "2022-06-01",
       "period": "inflation_2022"
     },
     {
-      "distance": 0.6370455854515991,
-      "distance_display": "0.64",
+      "distance": 0.6194630831029483,
+      "distance_display": "0.62",
       "label": "2022年底",
       "month_label": "2022年10月",
       "month_start": "2022-10-01",
       "period": "inflation_2022"
     },
     {
-      "distance": 1.0079219819783605,
-      "distance_display": "1.01",
+      "distance": 0.9981247907197234,
+      "distance_display": "1.00",
       "label": "チャイナショック",
       "month_label": "2015年08月",
       "month_start": "2015-08-01",
@@ -1718,15 +1719,13 @@
     }
   ],
   "house_view": {
-    "as_of": "2026-06-24",
+    "as_of": "2026-06-26",
     "blocking_issues": [],
-    "confidence_grade": "B",
-    "confidence_limit_reasons": [
-      "重要指標の発表前後のため一段階下げます。"
-    ],
+    "confidence_grade": "A",
+    "confidence_limit_reasons": [],
     "confidence_score": 91,
     "data_quality_report": {
-      "as_of": "2026-06-24",
+      "as_of": "2026-06-26",
       "blocking_issues": [],
       "confidence_cap": "A",
       "display_allowed": true,
@@ -1738,7 +1737,7 @@
       "warnings": []
     },
     "display_allowed": true,
-    "display_status": "reference",
+    "display_status": "show",
     "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
     "invalidation_status_notes": [
       {
@@ -1746,15 +1745,15 @@
         "label": "失業率"
       },
       {
-        "detail": "直近2/2か月連続で再加速（2026-04-01: 3.29%、前月比 +0.05pt）",
+        "detail": "直近2/2か月連続で再加速（2026-05-01: 3.41%、前月比 +0.09pt）",
         "label": "Core PCE"
       },
       {
-        "detail": "現状 4.51%（2026-06-22）。判断変更目安 4.50%以上、超過 +0.01pt",
+        "detail": "現状 4.41%（2026-06-24）。判断変更目安 4.50%以上、あと +0.09pt",
         "label": "米10年金利"
       },
       {
-        "detail": "現状 2.65%（2026-06-22）。判断変更目安 5.00%以上、あと +2.35pt",
+        "detail": "現状 2.76%（2026-06-24）。判断変更目安 5.00%以上、あと +2.24pt",
         "label": "信用スプレッド"
       }
     ],
@@ -1772,54 +1771,36 @@
       "インフレ再加速リスクが高い"
     ],
     "main_risks": [
-      "重要指標の発表前後のため一段階下げます。",
       "金利再上昇時に株価先物へ逆風"
     ],
     "model_audit": {
       "external_context": {
         "consensus_source": "fred_market_implied_proxy",
-        "display_status": "reference",
-        "downgrade_steps": 1,
+        "display_status": "show",
+        "downgrade_steps": 0,
         "grade_cap": "A",
         "market_consensus_proxies": [
           {
             "age_days": 1,
             "label": "5年期待インフレ率",
-            "observation_date": "2026-06-23",
+            "observation_date": "2026-06-25",
             "proxy_type": "market_implied_inflation_expectation",
             "series_id": "T5YIE",
             "source": "FRED",
-            "value": 2.24
+            "value": 2.23
           },
           {
             "age_days": 1,
             "label": "10年期待インフレ率",
-            "observation_date": "2026-06-23",
+            "observation_date": "2026-06-25",
             "proxy_type": "market_implied_inflation_expectation",
             "series_id": "T10YIE",
             "source": "FRED",
             "value": 2.21
           }
         ],
-        "reasons": [
-          "重要指標の発表前後のため一段階下げます。"
-        ],
-        "upcoming_high_impact_events": [
-          {
-            "currency": "USD",
-            "date": "2026-06-25",
-            "event": "GDP（確報値）（前期比）",
-            "impact": "★★★",
-            "time": "21:30"
-          },
-          {
-            "currency": "USD",
-            "date": "2026-06-25",
-            "event": "コアPCE価格指数（前月比）",
-            "impact": "★★★",
-            "time": "21:30"
-          }
-        ]
+        "reasons": [],
+        "upcoming_high_impact_events": []
       },
       "forecast_ledger": {
         "display_status": "show",
@@ -1837,29 +1818,14 @@
     "probabilities": {
       "contraction": 0.02018798202221658,
       "expansion": 0.6568708855634098,
-      "financial_stress": 0.198594818914059,
-      "inflation_reacceleration": 0.8233758532469887,
+      "financial_stress": 0.2267770592019888,
+      "inflation_reacceleration": 0.8988551038774872,
       "recovery": 0.17495960104105565,
       "slowdown": 0.147981531373318
     },
-    "publish_status": "reference",
+    "publish_status": "show",
     "regime_label": "inflation_risk",
-    "upcoming_high_impact_events": [
-      {
-        "currency": "USD",
-        "date": "2026-06-25",
-        "event": "GDP（確報値）（前期比）",
-        "impact": "★★★",
-        "time": "21:30"
-      },
-      {
-        "currency": "USD",
-        "date": "2026-06-25",
-        "event": "コアPCE価格指数（前月比）",
-        "impact": "★★★",
-        "time": "21:30"
-      }
-    ]
+    "upcoming_high_impact_events": []
   },
   "house_view_validation": {
     "accuracy_sections": {
@@ -2286,12 +2252,12 @@
         "too_defensive_count": 0
       }
     },
-    "generated_at": "2026-06-24T08:42:56.963288+00:00",
+    "generated_at": "2026-06-26T08:42:44.699042+00:00",
     "hit_count": 0,
     "hit_rate": null,
     "model_version": "macro_hatzius_v1",
     "operation_health": {
-      "latest_as_of": "2026-06-24",
+      "latest_as_of": "2026-06-26",
       "missing_features_hash_count": 0,
       "missing_prediction_interval_count": 0,
       "notes": [
@@ -2325,13 +2291,13 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-04-01",
+      "latest_date": "2026-05-01",
       "market_stage": 4,
       "name_ja": "Core PCE",
       "series_id": "PCEPILFE",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0\"/></svg>",
-      "yoy_display": "+3.3%",
-      "yoy_value": 3.289190610508199
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0\"/></svg>",
+      "yoy_display": "+3.4%",
+      "yoy_value": 3.412035932904036
     },
     {
       "category": "雇用・労働",
@@ -2383,35 +2349,35 @@
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↑",
-      "economic_stage": 3,
+      "direction_arrow": "↓",
+      "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-22",
-      "market_stage": 4,
+      "latest_date": "2026-06-24",
+      "market_stage": 3,
       "name_ja": "米10年国債利回り",
       "series_id": "DGS10",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5\"/></svg>",
-      "yoy_display": "+3.0%",
-      "yoy_value": 2.9680365296803632
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2\"/></svg>",
+      "yoy_display": "+2.6%",
+      "yoy_value": 2.5581395348837286
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 3,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 3,
       "name_ja": "米2年国債利回り",
       "series_id": "DGS2",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,1.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,1.5\"/></svg>",
-      "yoy_display": "+8.7%",
-      "yoy_value": 8.717948717948726
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,5.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,0.0 5.2,11.7 10.4,19.4 15.7,4.0 20.9,4.9 26.1,1.2 31.3,2.2 36.5,9.2 41.7,12.3 47.0,21.2 52.2,12.3 57.4,17.5 62.6,10.8 67.8,21.5 73.0,21.2 78.3,21.2 83.5,25.2 88.7,25.2 93.9,23.7 99.1,28.0 104.3,15.4 109.6,12.6 114.8,9.5 120.0,5.5\"/></svg>",
+      "yoy_display": "+9.6%",
+      "yoy_value": 9.600000000000009
     },
     {
       "category": "金利・通貨",
@@ -2421,29 +2387,29 @@
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 3,
       "name_ja": "米2-10年スプレッド",
       "series_id": "T10Y2Y",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,11.9 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,11.9\"/></svg>",
-      "yoy_display": "-32.0%",
-      "yoy_value": -31.999999999999996
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,12.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,22.0 10.4,17.6 15.7,18.5 20.9,20.6 26.1,12.2 31.3,11.3 36.5,14.6 41.7,11.9 47.0,5.1 52.2,6.6 57.4,6.6 62.6,9.2 67.8,3.0 73.0,5.4 78.3,6.9 83.5,5.7 88.7,0.9 93.9,0.0 99.1,4.5 104.3,6.9 109.6,6.6 114.8,8.0 120.0,12.8\"/></svg>",
+      "yoy_display": "-43.6%",
+      "yoy_value": -43.63636363636364
     },
     {
       "category": "金利・通貨",
-      "direction_arrow": "↓",
+      "direction_arrow": "→",
       "economic_stage": 2,
       "frequency": "daily",
       "has_data": true,
       "importance": "A",
       "indicator": null,
-      "latest_date": "2026-06-23",
+      "latest_date": "2026-06-25",
       "market_stage": 2,
       "name_ja": "米3M-10年スプレッド",
       "series_id": "T10Y3M",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,1.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,1.5\"/></svg>",
-      "yoy_display": "+1725.0%",
-      "yoy_value": 1725.0
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,2.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.7 10.4,22.6 15.7,15.1 20.9,15.6 26.1,7.4 31.3,6.6 36.5,11.3 41.7,11.4 47.0,12.1 52.2,9.6 57.4,12.5 62.6,10.8 67.8,10.2 73.0,8.3 78.3,7.3 83.5,8.3 88.7,3.4 93.9,2.3 99.1,6.2 104.3,2.2 109.6,0.5 114.8,0.0 120.0,2.7\"/></svg>",
+      "yoy_display": "+722.2%",
+      "yoy_value": 722.2222222222223
     },
     {
       "category": "金利・通貨",
@@ -2463,42 +2429,42 @@
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↑",
+      "direction_arrow": "↓",
       "economic_stage": 2,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 2,
       "name_ja": "VIX",
       "series_id": "VIXCLS",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,19.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,19.0\"/></svg>",
-      "yoy_display": "-16.2%",
-      "yoy_value": -16.197866149369542
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,15.8 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,21.2 5.2,24.4 10.4,20.3 15.7,5.0 20.9,28.0 26.1,18.8 31.3,21.0 36.5,13.4 41.7,7.1 47.0,1.3 52.2,15.9 57.4,20.3 62.6,20.3 67.8,23.6 73.0,21.4 78.3,18.6 83.5,21.2 88.7,24.6 93.9,18.6 99.1,12.9 104.3,0.0 109.6,19.9 114.8,23.7 120.0,15.8\"/></svg>",
+      "yoy_display": "+6.6%",
+      "yoy_value": 6.578947368421044
     },
     {
       "category": "市場ストレス",
-      "direction_arrow": "↓",
+      "direction_arrow": "↑",
       "economic_stage": 1,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-22",
+      "latest_date": "2026-06-24",
       "market_stage": 1,
       "name_ja": "ハイイールド社債スプレッド",
       "series_id": "BAMLH0A0HYM2",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.0 5.2,16.7 10.4,19.8 15.7,23.0 20.9,26.0 26.1,22.1 31.3,27.3 36.5,23.2 41.7,8.5 47.0,0.0 52.2,13.5 57.4,21.3 62.6,23.4 67.8,23.9 73.0,24.7 78.3,21.7 83.5,22.1 88.7,24.5 93.9,23.0 99.1,17.8 104.3,14.3 109.6,24.1 114.8,26.0 120.0,28.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.0 5.2,16.7 10.4,19.8 15.7,23.0 20.9,26.0 26.1,22.1 31.3,27.3 36.5,23.2 41.7,8.5 47.0,0.0 52.2,13.5 57.4,21.3 62.6,23.4 67.8,23.9 73.0,24.7 78.3,21.7 83.5,22.1 88.7,24.5 93.9,23.0 99.1,17.8 104.3,14.3 109.6,24.1 114.8,26.0 120.0,28.0\"/></svg>",
-      "yoy_display": "-15.3%",
-      "yoy_value": -15.335463258785943
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,15.3 5.2,17.1 10.4,20.2 15.7,23.6 20.9,26.7 26.1,22.7 31.3,28.0 36.5,23.8 41.7,8.7 47.0,0.0 52.2,13.8 57.4,21.8 62.6,24.0 67.8,24.4 73.0,25.3 78.3,22.2 83.5,22.7 88.7,25.1 93.9,23.6 99.1,18.2 104.3,14.7 109.6,24.7 114.8,26.7 120.0,26.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,15.3 5.2,17.1 10.4,20.2 15.7,23.6 20.9,26.7 26.1,22.7 31.3,28.0 36.5,23.8 41.7,8.7 47.0,0.0 52.2,13.8 57.4,21.8 62.6,24.0 67.8,24.4 73.0,25.3 78.3,22.2 83.5,22.7 88.7,25.1 93.9,23.6 99.1,18.2 104.3,14.7 109.6,24.7 114.8,26.7 120.0,26.2\"/></svg>",
+      "yoy_display": "-9.8%",
+      "yoy_value": -9.803921568627459
     }
   ],
-  "job_duration_sec": 7.254,
-  "last_updated": "2026-06-24",
+  "job_duration_sec": 7.654,
+  "last_updated": "2026-06-26",
   "linkages": [
     {
-      "correlation": 0.9980664219519584,
+      "correlation": 0.9980114039813589,
       "correlation_display": "+1.00",
       "interpretation": "CPIとPCEは同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2506,7 +2472,7 @@
       "relation_text": "CPI ⇔ PCE（同時連動）"
     },
     {
-      "correlation": 0.9974685351073356,
+      "correlation": 0.9974659481676109,
       "correlation_display": "+1.00",
       "interpretation": "FF金利とFF金利（月次）は同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2514,7 +2480,7 @@
       "relation_text": "FF金利 ⇔ FF金利（月次）（同時連動）"
     },
     {
-      "correlation": 0.996214809464723,
+      "correlation": 0.9962386909811339,
       "correlation_display": "+1.00",
       "interpretation": "PCEが上がると約1ヶ月後にCore PCEも強く上がりやすい関係。",
       "is_negative": false,
@@ -2522,7 +2488,7 @@
       "relation_text": "PCE → Core PCE（約1ヶ月先行）"
     },
     {
-      "correlation": 0.9960712819065031,
+      "correlation": 0.9957299600072274,
       "correlation_display": "+1.00",
       "interpretation": "Core CPIとCore PCEは同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2530,7 +2496,7 @@
       "relation_text": "Core CPI ⇔ Core PCE（同時連動）"
     },
     {
-      "correlation": 0.9932829653407288,
+      "correlation": 0.9932627461596102,
       "correlation_display": "+0.99",
       "interpretation": "PCEが上がると約2ヶ月後にCore CPIも強く上がりやすい関係。",
       "is_negative": false,
@@ -2546,7 +2512,7 @@
       "relation_text": "CPI → Core CPI（約2ヶ月先行）"
     },
     {
-      "correlation": 0.9906930103490545,
+      "correlation": 0.9907121182431584,
       "correlation_display": "+0.99",
       "interpretation": "CPIが上がると約1ヶ月後にCore PCEも強く上がりやすい関係。",
       "is_negative": false,
@@ -2554,7 +2520,7 @@
       "relation_text": "CPI → Core PCE（約1ヶ月先行）"
     },
     {
-      "correlation": 0.9807541831056056,
+      "correlation": 0.9807518497977152,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利も強く上がりやすい関係。",
       "is_negative": false,
@@ -2562,7 +2528,7 @@
       "relation_text": "米2年国債利回り → FF金利（約3ヶ月先行）"
     },
     {
-      "correlation": 0.9798431168224244,
+      "correlation": 0.9798396248909189,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利（月次）も強く上がりやすい関係。",
       "is_negative": false,
@@ -2570,7 +2536,7 @@
       "relation_text": "米2年国債利回り → FF金利（月次）（約3ヶ月先行）"
     },
     {
-      "correlation": 0.9772593635876925,
+      "correlation": 0.9772386453206771,
       "correlation_display": "+0.98",
       "interpretation": "10年期待インフレ率と5年期待インフレ率は同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2580,16 +2546,16 @@
   ],
   "macro_decision": {
     "bad_points": [
-      "Core PCEが物価高止まり（前年比 3.29 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
-      "CPIが物価高止まり（前年比 4.17 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
-      "PCEが物価高止まり（前年比 3.77 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
+      "PCEが物価高止まり（前年比 4.07 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
+      "Core PCEが物価高止まり（前年比 3.41 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
+      "CPIが物価高止まり（前年比 4.17 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
     ],
     "confidence": {
-      "data_freshness_pct": 95,
+      "data_freshness_pct": 91,
       "grade": "A",
       "label": "高い",
       "notes": [
-        "未取得の指標が1件あります。"
+        "主要データの取得状況と判定材料は確認済みです。"
       ],
       "sample_note": "モデル予測は検証条件を満たすものだけ参考表示します。",
       "score": 86,
@@ -2604,22 +2570,23 @@
     "headline": "景気は弱含みで物価も重い",
     "market_stress": {
       "abnormal_items": [
-        "SKEW（テール警戒）",
-        "NAAIMエクスポージャー"
+        "NAAIMエクスポージャー",
+        "MOVE指数",
+        "VIX/VIX3M比"
       ],
-      "data_quality_display": "95%",
-      "level": "calm",
-      "level_label": "平常",
-      "score": 17,
-      "score_display": "17/100",
+      "data_quality_display": "90%",
+      "level": "caution",
+      "level_label": "注意",
+      "score": 25,
+      "score_display": "25/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "policy_pressure": {
       "alerts": [
-        "政策金利見通しは中立です。"
+        "金利低下は株価先物に追い風です。"
       ],
       "data_quality_display": "67%",
-      "label": "中立",
+      "label": "金利低下が追い風",
       "rows": [
         {
           "label": "実効FF金利",
@@ -2627,28 +2594,28 @@
         },
         {
           "label": "米2年金利",
-          "value": "4.24"
+          "value": "4.11"
         },
         {
           "label": "米10年金利",
-          "value": "4.51"
+          "value": "4.41"
         },
         {
           "label": "5年期待インフレ",
-          "value": "2.24"
+          "value": "2.23"
         },
         {
           "label": "MOVE指数",
           "value": "65.39"
         }
       ],
-      "score_display": "53",
-      "summary": "中立。米2年金利5日変化は+4.0bpです。",
+      "score_display": "54",
+      "summary": "金利低下が追い風。米2年金利5日変化は-8.0bpです。",
       "tone": "good"
     }
   },
   "macro_forecast_report": {
-    "as_of": "2026-06-24",
+    "as_of": "2026-06-26",
     "axes": [
       {
         "key": "growth_momentum",
@@ -2657,8 +2624,8 @@
       },
       {
         "key": "inflation_pressure",
-        "label": "粘着",
-        "score_display": "60%"
+        "label": "再加速警戒",
+        "score_display": "64%"
       },
       {
         "key": "labor_slack",
@@ -2668,17 +2635,17 @@
       {
         "key": "policy_stance",
         "label": "中立",
-        "score_display": "53%"
+        "score_display": "54%"
       },
       {
         "key": "financial_conditions",
         "label": "追い風",
-        "score_display": "88%"
+        "score_display": "84%"
       },
       {
         "key": "credit_stress",
         "label": "低い",
-        "score_display": "20%"
+        "score_display": "23%"
       },
       {
         "key": "global_demand",
@@ -2693,16 +2660,16 @@
       {
         "key": "nikkei_macro_bias",
         "label": "上昇支援",
-        "score_display": "78%"
+        "score_display": "76%"
       }
     ],
     "change_summary": "前回から主レジームの変更なし。",
     "confidence_display": "76%",
-    "data_quality_display": "96%",
+    "data_quality_display": "94%",
     "executive_summary": {
       "confidence": "C / 検証不足",
       "main_view": "3〜6か月の主シナリオは expansion。",
-      "one_line": "景気は改善基調。物価は粘着、金融環境は追い風。",
+      "one_line": "景気は改善基調。物価は再加速警戒、金融環境は追い風。",
       "publish_status": "reference"
     },
     "growth_view": {
@@ -2717,9 +2684,9 @@
         "信用スプレッド拡大"
       ]
     },
-    "headline": "景気は改善基調。物価は粘着、金融環境は追い風。",
+    "headline": "景気は改善基調。物価は再加速警戒、金融環境は追い風。",
     "inflation_view": {
-      "current_state": "物価は粘着。",
+      "current_state": "物価は再加速警戒。",
       "drivers": [
         "Core CPI",
         "Core PCE",
@@ -2728,7 +2695,7 @@
       ],
       "forecast_3m": "Core CPI/Core PCEの再加速を確認。",
       "forecast_6m": "賃金、期待インフレ、原油で更新。",
-      "reacceleration_risk": 0.8233758532469887
+      "reacceleration_risk": 0.8988551038774872
     },
     "invalidation_triggers": [
       "失業率が3か月連続で上昇",
@@ -2736,7 +2703,7 @@
       "米10年金利が4.5%以上",
       "HYスプレッドが5%以上"
     ],
-    "judgment": "3〜6か月の主シナリオは expansion。 後退確率は7%、物価再加速確率は82%、金融ストレス確率は20%。",
+    "judgment": "3〜6か月の主シナリオは expansion。 後退確率は7%、物価再加速確率は90%、金融ストレス確率は23%。",
     "labor_view": {
       "current_state": "雇用は失業率、NFP、賃金、求人で確認。",
       "recession_warning": 0.07198151800287787,
@@ -2800,7 +2767,7 @@
         ],
         "name": "baseline",
         "nikkei_bias": "long",
-        "probability": 0.5867
+        "probability": 0.5837
       },
       {
         "invalidation_triggers": [
@@ -2815,7 +2782,7 @@
         ],
         "name": "upside",
         "nikkei_bias": "long",
-        "probability": 0.2761
+        "probability": 0.2747
       },
       {
         "invalidation_triggers": [
@@ -2831,13 +2798,13 @@
         ],
         "name": "downside",
         "nikkei_bias": "short",
-        "probability": 0.1372
+        "probability": 0.1416
       }
     ],
     "scenarios": [
       {
         "growth_view": "景気は改善を基本に、後退確率を確認しながら判断する。",
-        "inflation_view": "物価は粘着。再加速確率は82%として扱う。",
+        "inflation_view": "物価は再加速警戒。再加速確率は90%として扱う。",
         "invalidation_triggers": [
           "米失業率が3か月連続で上昇",
           "クレジットスプレッドが急拡大",
@@ -2856,7 +2823,7 @@
         "name_key": "baseline",
         "nikkei_bias": "上昇支援",
         "policy_view": "政策スタンスは中立。金利上昇時は株式の上値を抑えやすい。",
-        "probability_display": "59%"
+        "probability_display": "58%"
       },
       {
         "growth_view": "雇用悪化と需要鈍化が同時に進む。",
@@ -2897,7 +2864,7 @@
         "name_key": "upside",
         "nikkei_bias": "上昇支援",
         "policy_view": "利下げ期待または金融環境の緩みが株式を支える。",
-        "probability_display": "28%"
+        "probability_display": "27%"
       }
     ],
     "warnings": [
@@ -2928,10 +2895,10 @@
         "direction_accuracy_display": "67.8%",
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-06-24 08:42",
+        "evaluated_at": "2026-06-26 08:42",
         "event_count": null,
         "horizon": "3m",
-        "mae_display": "5.49",
+        "mae_display": "5.48",
         "model_version": "return_lightgbm_v2",
         "pr_auc_display": "—",
         "rmse_display": "7.49",
@@ -2954,7 +2921,7 @@
         "metric_label": "ROC-AUC 0.68 / PR-AUC 0.15",
         "model_label": "GSPC 63日 -10.0%",
         "sample_label": "検証 240件 / イベント 19件",
-        "updated_at": "2026-06-24 08:39"
+        "updated_at": "2026-06-26 08:39"
       },
       {
         "label": "急落確率モデル",
@@ -2979,7 +2946,7 @@
       }
     ],
     "has_any": true,
-    "latest_backtest_date": "2026-06-24 08:39",
+    "latest_backtest_date": "2026-06-26 08:39",
     "latest_training_date": "2026-06-19",
     "status_label": "要確認",
     "tone": "warning",
@@ -2989,12 +2956,12 @@
   },
   "policy_expectation": {
     "alerts": [
-      "政策金利見通しは中立です。"
+      "金利低下は株価先物に追い風です。"
     ],
-    "bias_label": "中立",
+    "bias_label": "金利低下が追い風",
     "data_quality_display": "67%",
     "has_snapshot": true,
-    "policy_bias": "neutral",
+    "policy_bias": "dovish_tailwind",
     "rows": [
       {
         "label": "実効FF金利",
@@ -3002,15 +2969,15 @@
       },
       {
         "label": "米2年金利",
-        "value": "4.24"
+        "value": "4.11"
       },
       {
         "label": "米10年金利",
-        "value": "4.51"
+        "value": "4.41"
       },
       {
         "label": "5年期待インフレ",
-        "value": "2.24"
+        "value": "2.23"
       },
       {
         "label": "MOVE指数",
@@ -3022,14 +2989,14 @@
       },
       {
         "label": "米2年金利5日変化",
-        "value": "+4.0bp"
+        "value": "-8.0bp"
       },
       {
         "label": "米10年金利5日変化",
-        "value": "+2.0bp"
+        "value": "-5.0bp"
       }
     ],
-    "summary": "中立。米2年金利5日変化は+4.0bpです。",
+    "summary": "金利低下が追い風。米2年金利5日変化は-8.0bpです。",
     "title": "政策金利見通し",
     "tone": "good"
   },
@@ -3059,7 +3026,7 @@
     "warnings": []
   },
   "scenario_analysis": {
-    "base_market_stress_score": 17,
+    "base_market_stress_score": 25,
     "base_regime_fit_display": "近さの目安 66%",
     "base_regime_label": "拡大",
     "base_regime_probability_display": "66%",
@@ -3136,12 +3103,12 @@
     "scenarios": [
       {
         "assumption": "現在の状態が大きく変わらない場合。景気の見方は景気の見方: 拡大寄り、近さは66%です。",
-        "financial_stress_probability_display": "20%",
-        "inflation_probability_display": "82%",
+        "financial_stress_probability_display": "23%",
+        "inflation_probability_display": "90%",
         "is_custom": false,
         "key": "most_likely",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 17,
+        "market_stress_score": 25,
         "recession_probability_display": "7%",
         "regime_fit_display": "近さの目安 66%",
         "regime_label": "拡大",
@@ -3153,16 +3120,16 @@
       },
       {
         "assumption": "物価圧力が一段悪化する想定",
-        "financial_stress_probability_display": "39%",
-        "inflation_probability_display": "92%",
+        "financial_stress_probability_display": "41%",
+        "inflation_probability_display": "95%",
         "is_custom": false,
         "key": "top_risk",
         "market_stress_delta_display": "+4pt",
-        "market_stress_score": 21,
-        "recession_probability_display": "9%",
-        "regime_fit_display": "近さの目安 62%",
+        "market_stress_score": 29,
+        "recession_probability_display": "10%",
+        "regime_fit_display": "近さの目安 58%",
         "regime_label": "拡大",
-        "regime_probability_display": "62%",
+        "regime_probability_display": "58%",
         "regime_view_display": "景気の見方: 拡大寄り",
         "title": "悪化シナリオ",
         "world_state_delta": {
@@ -3170,7 +3137,7 @@
           "inflation_score": 6.7,
           "market_stress_score": 4.0,
           "policy_pressure_score": 1.7,
-          "risk_appetite_score": -5.0
+          "risk_appetite_score": -6.0
         },
         "world_state_delta_rows": [
           {
@@ -3202,8 +3169,8 @@
             "label": "信用"
           },
           {
-            "delta": -5.0,
-            "delta_display": "-5.0",
+            "delta": -6.0,
+            "delta_display": "-6.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3213,11 +3180,11 @@
       {
         "assumption": "VIX低下、信用スプレッド縮小、金利圧力低下、リスク選好改善を想定",
         "financial_stress_probability_display": "15%",
-        "inflation_probability_display": "66%",
+        "inflation_probability_display": "79%",
         "is_custom": false,
         "key": "improvement",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 17,
+        "market_stress_score": 25,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 71%",
         "regime_label": "拡大",
@@ -3225,7 +3192,7 @@
         "regime_view_display": "景気の見方: 拡大寄り",
         "title": "改善シナリオ",
         "world_state_delta": {
-          "credit_score": 2.7,
+          "credit_score": 4.7,
           "inflation_score": -6.7
         },
         "world_state_delta_rows": [
@@ -3237,8 +3204,8 @@
             "label": "物価"
           },
           {
-            "delta": 2.7,
-            "delta_display": "+2.7",
+            "delta": 4.7,
+            "delta_display": "+4.7",
             "is_negative": false,
             "key": "credit_score",
             "label": "信用"
@@ -3247,12 +3214,12 @@
       },
       {
         "assumption": "外部ショックでVIX急騰と信用悪化が同時に起きる想定",
-        "financial_stress_probability_display": "70%",
-        "inflation_probability_display": "82%",
+        "financial_stress_probability_display": "71%",
+        "inflation_probability_display": "90%",
         "is_custom": false,
         "key": "market_shock",
         "market_stress_delta_display": "+9pt",
-        "market_stress_score": 26,
+        "market_stress_score": 34,
         "recession_probability_display": "19%",
         "regime_fit_display": "近さの目安 34%",
         "regime_label": "拡大",
@@ -3262,7 +3229,7 @@
         "world_state_delta": {
           "credit_score": -27.3,
           "market_stress_score": 9.0,
-          "risk_appetite_score": -13.0
+          "risk_appetite_score": -16.0
         },
         "world_state_delta_rows": [
           {
@@ -3280,8 +3247,8 @@
             "label": "信用"
           },
           {
-            "delta": -13.0,
-            "delta_display": "-13.0",
+            "delta": -16.0,
+            "delta_display": "-16.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3290,12 +3257,12 @@
       },
       {
         "assumption": "景気指標は強いが、利下げ織り込み後退と米金利上昇が株価先物に逆風となる想定",
-        "financial_stress_probability_display": "20%",
-        "inflation_probability_display": "92%",
+        "financial_stress_probability_display": "23%",
+        "inflation_probability_display": "96%",
         "is_custom": false,
         "key": "rate_cut_delay",
-        "market_stress_delta_display": "+4pt",
-        "market_stress_score": 21,
+        "market_stress_delta_display": "+3pt",
+        "market_stress_score": 28,
         "recession_probability_display": "8%",
         "regime_fit_display": "近さの目安 62%",
         "regime_label": "拡大",
@@ -3304,8 +3271,8 @@
         "title": "利下げ後退・米金利上昇",
         "world_state_delta": {
           "inflation_score": 6.7,
-          "market_stress_score": 4.0,
-          "policy_pressure_score": 1.3
+          "market_stress_score": 3.0,
+          "policy_pressure_score": 1.2
         },
         "world_state_delta_rows": [
           {
@@ -3316,15 +3283,15 @@
             "label": "物価"
           },
           {
-            "delta": 1.3,
-            "delta_display": "+1.3",
+            "delta": 1.2,
+            "delta_display": "+1.2",
             "is_negative": false,
             "key": "policy_pressure_score",
             "label": "政策圧力"
           },
           {
-            "delta": 4.0,
-            "delta_display": "+4.0",
+            "delta": 3.0,
+            "delta_display": "+3.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -3333,12 +3300,12 @@
       },
       {
         "assumption": "米金利低下、VIX低下、信用環境改善で株価先物に追い風となる想定",
-        "financial_stress_probability_display": "14%",
-        "inflation_probability_display": "82%",
+        "financial_stress_probability_display": "15%",
+        "inflation_probability_display": "90%",
         "is_custom": false,
         "key": "rates_down_risk_on",
-        "market_stress_delta_display": "-3pt",
-        "market_stress_score": 14,
+        "market_stress_delta_display": "-4pt",
+        "market_stress_score": 21,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 71%",
         "regime_label": "拡大",
@@ -3346,10 +3313,10 @@
         "regime_view_display": "景気の見方: 拡大寄り",
         "title": "金利低下・リスクオン",
         "world_state_delta": {
-          "credit_score": 2.7,
-          "market_stress_score": -3.0,
+          "credit_score": 4.7,
+          "market_stress_score": -4.0,
           "policy_pressure_score": 2.1,
-          "risk_appetite_score": 5.0
+          "risk_appetite_score": 7.0
         },
         "world_state_delta_rows": [
           {
@@ -3360,22 +3327,22 @@
             "label": "政策圧力"
           },
           {
-            "delta": -3.0,
-            "delta_display": "-3.0",
+            "delta": -4.0,
+            "delta_display": "-4.0",
             "is_negative": true,
             "key": "market_stress_score",
             "label": "市場ストレス"
           },
           {
-            "delta": 2.7,
-            "delta_display": "+2.7",
+            "delta": 4.7,
+            "delta_display": "+4.7",
             "is_negative": false,
             "key": "credit_score",
             "label": "信用"
           },
           {
-            "delta": 5.0,
-            "delta_display": "+5.0",
+            "delta": 7.0,
+            "delta_display": "+7.0",
             "is_negative": false,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3387,7 +3354,7 @@
   "similar_periods": [
     {
       "core_pce_display": "127.9",
-      "distance_display": "0.15",
+      "distance_display": "0.14",
       "indpro_display": "101.5",
       "month_label": "2025年12月",
       "month_start": "2025-12-01",
@@ -3426,28 +3393,28 @@
       "spx_return_value": 10.423338582985755
     },
     {
-      "core_pce_display": "128.4",
-      "distance_display": "0.16",
-      "indpro_display": "101.1",
-      "month_label": "2026年01月",
-      "month_start": "2026-01-01",
-      "nasdaq_return_display": "-3.4%",
+      "core_pce_display": "129.0",
+      "distance_display": "0.15",
+      "indpro_display": "101.9",
+      "month_label": "2026年02月",
+      "month_start": "2026-02-01",
+      "nasdaq_return_display": "-4.8%",
       "nasdaq_return_pos": false,
-      "nasdaq_return_value": -3.382556700330624,
-      "nikkei_return_display": "-13.2%",
-      "nikkei_return_pos": false,
-      "nikkei_return_value": -13.231121697947831,
-      "nydow_return_display": "+0.2%",
-      "nydow_return_pos": true,
-      "nydow_return_value": 0.1747776849578699,
-      "spread_display": "0.74",
-      "spx_return_display": "-0.9%",
+      "nasdaq_return_value": -4.753705888374103,
+      "nikkei_return_display": "+16.1%",
+      "nikkei_return_pos": true,
+      "nikkei_return_value": 16.099891128669512,
+      "nydow_return_display": "-5.4%",
+      "nydow_return_pos": false,
+      "nydow_return_value": -5.382854264373584,
+      "spread_display": "0.59",
+      "spx_return_display": "-5.1%",
       "spx_return_pos": false,
-      "spx_return_value": -0.8668344740704348
+      "spx_return_value": -5.093269096857696
     },
     {
       "core_pce_display": "127.2",
-      "distance_display": "0.17",
+      "distance_display": "0.15",
       "indpro_display": "101.2",
       "month_label": "2025年10月",
       "month_start": "2025-10-01",
@@ -3466,24 +3433,24 @@
       "spx_return_value": 0.12996181666717824
     },
     {
-      "core_pce_display": "128.9",
-      "distance_display": "0.17",
-      "indpro_display": "101.9",
-      "month_label": "2026年02月",
-      "month_start": "2026-02-01",
-      "nasdaq_return_display": "-4.8%",
+      "core_pce_display": "128.5",
+      "distance_display": "0.16",
+      "indpro_display": "101.1",
+      "month_label": "2026年01月",
+      "month_start": "2026-01-01",
+      "nasdaq_return_display": "-3.4%",
       "nasdaq_return_pos": false,
-      "nasdaq_return_value": -4.753705888374103,
-      "nikkei_return_display": "+16.1%",
-      "nikkei_return_pos": true,
-      "nikkei_return_value": 16.099891128669512,
-      "nydow_return_display": "-5.4%",
-      "nydow_return_pos": false,
-      "nydow_return_value": -5.382854264373584,
-      "spread_display": "0.59",
-      "spx_return_display": "-5.1%",
+      "nasdaq_return_value": -3.382556700330624,
+      "nikkei_return_display": "-13.2%",
+      "nikkei_return_pos": false,
+      "nikkei_return_value": -13.231121697947831,
+      "nydow_return_display": "+0.2%",
+      "nydow_return_pos": true,
+      "nydow_return_value": 0.1747776849578699,
+      "spread_display": "0.74",
+      "spx_return_display": "-0.9%",
       "spx_return_pos": false,
-      "spx_return_value": -5.093269096857696
+      "spx_return_value": -0.8668344740704348
     }
   ],
   "source": "github_actions",
@@ -3497,28 +3464,28 @@
       },
       {
         "label": "物価",
-        "score_display": "60%",
-        "value": "粘着"
+        "score_display": "64%",
+        "value": "再加速警戒"
       },
       {
         "label": "政策・金利",
-        "score_display": "88%",
+        "score_display": "84%",
         "value": "追い風"
       },
       {
         "label": "日経影響",
-        "score_display": "78%",
+        "score_display": "76%",
         "value": "上昇支援"
       }
     ],
     "bad_points": [
       "インフレ再加速リスクが高い",
       "米金利上昇が株価バリュエーションを圧迫",
-      "Core PCEが物価高止まり（前年比 3.29 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
+      "PCEが物価高止まり（前年比 4.07 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
     ],
     "bad_points_detail": [
-      "CPIが物価高止まり（前年比 4.17 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
-      "PCEが物価高止まり（前年比 3.77 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
+      "Core PCEが物価高止まり（前年比 3.41 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
+      "CPIが物価高止まり（前年比 4.17 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
     ],
     "driver_cards": [
       {
@@ -3529,13 +3496,13 @@
         "has_data": true,
         "importance": "A",
         "indicator": null,
-        "latest_date": "2026-04-01",
+        "latest_date": "2026-05-01",
         "market_stage": 4,
         "name_ja": "Core PCE",
         "series_id": "PCEPILFE",
-        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.5,27.1 10.9,26.2 16.4,24.8 21.8,23.3 27.3,22.8 32.7,21.9 38.2,20.3 43.6,18.1 49.1,17.6 54.5,16.6 60.0,15.5 65.5,14.1 70.9,12.9 76.4,11.7 81.8,10.8 87.3,9.6 92.7,8.7 98.2,7.0 103.6,4.8 109.1,2.8 114.5,1.2 120.0,0.0\"/></svg>",
-        "yoy_display": "+3.3%",
-        "yoy_value": 3.289190610508199
+        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 5.2,27.1 10.4,26.3 15.7,25.0 20.9,23.6 26.1,23.1 31.3,22.3 36.5,20.8 41.7,18.7 47.0,18.2 52.2,17.3 57.4,16.2 62.6,15.0 67.8,13.8 73.0,12.7 78.3,11.8 83.5,10.7 88.7,9.9 93.9,8.3 99.1,6.2 104.3,4.2 109.6,2.8 114.8,1.6 120.0,0.0\"/></svg>",
+        "yoy_display": "+3.4%",
+        "yoy_value": 3.412035932904036
       },
       {
         "category": "雇用・労働",
@@ -3587,32 +3554,39 @@
       },
       {
         "category": "金利・通貨",
-        "direction_arrow": "↑",
-        "economic_stage": 3,
+        "direction_arrow": "↓",
+        "economic_stage": 1,
         "frequency": "daily",
         "has_data": true,
         "importance": "A",
         "indicator": null,
-        "latest_date": "2026-06-22",
-        "market_stage": 4,
+        "latest_date": "2026-06-24",
+        "market_stage": 3,
         "name_ja": "米10年国債利回り",
         "series_id": "DGS10",
-        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,2.5\"/></svg>",
-        "yoy_display": "+3.0%",
-        "yoy_value": 2.9680365296803632
+        "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,17.8 5.2,24.4 10.4,28.0 15.7,10.9 20.9,14.5 26.1,0.0 31.3,0.0 36.5,12.4 41.7,12.7 47.0,14.9 52.2,6.2 57.4,12.4 62.6,7.6 67.8,12.7 73.0,15.3 78.3,17.1 83.5,20.4 88.7,14.5 93.9,11.6 99.1,22.2 104.3,10.2 109.6,6.5 114.8,4.7 120.0,6.2\"/></svg>",
+        "yoy_display": "+2.6%",
+        "yoy_value": 2.5581395348837286
       }
     ],
+    "entry_filter": {
+      "long_permission": "条件付き",
+      "max_risk": "インフレ再加速リスクが高い / 米金利上昇が株価バリュエーションを圧迫 / PCEが物価高止まり（前年比 4.07 index）。金利が下がりにくく、消費や株価の重しになりやすいです。",
+      "nikkei_impact": "上昇支援",
+      "role_note": "短期エントリーはbasecalcを優先",
+      "short_permission": "抑制"
+    },
     "final_judgment": {
-      "confidence": "判断品質 B / 91%",
+      "confidence": "判断品質 A / 91%",
       "direction": "中立（物価警戒）",
       "max_risk": "インフレ再加速リスクが高い・米金利上昇が株価バリュエーションを圧迫",
       "nikkei_impact": "上昇支援",
       "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意"
     },
     "freshness": {
-      "confidence": "判断品質 B / 91%",
+      "confidence": "判断品質 A / 91%",
       "data_freshness": "100%",
-      "updated_at": "2026-06-24"
+      "updated_at": "2026-06-26"
     },
     "good_points": [
       "実質GDPが拡大寄り（前年比 3 十億$）。需要が強く、企業売上や雇用を支えやすいです。",
@@ -3640,14 +3614,15 @@
     ],
     "market_stress": {
       "abnormal_items": [
-        "SKEW（テール警戒）",
-        "NAAIMエクスポージャー"
+        "NAAIMエクスポージャー",
+        "MOVE指数",
+        "VIX/VIX3M比"
       ],
-      "data_quality_display": "95%",
-      "level": "calm",
-      "level_label": "平常",
-      "score": 17,
-      "score_display": "17/100",
+      "data_quality_display": "90%",
+      "level": "caution",
+      "level_label": "注意",
+      "score": 25,
+      "score_display": "25/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "nikkei": {
@@ -3656,10 +3631,10 @@
     },
     "policy_pressure": {
       "alerts": [
-        "政策金利見通しは中立です。"
+        "金利低下は株価先物に追い風です。"
       ],
       "data_quality_display": "67%",
-      "label": "中立",
+      "label": "金利低下が追い風",
       "rows": [
         {
           "label": "実効FF金利",
@@ -3667,27 +3642,27 @@
         },
         {
           "label": "米2年金利",
-          "value": "4.24"
+          "value": "4.11"
         },
         {
           "label": "米10年金利",
-          "value": "4.51"
+          "value": "4.41"
         },
         {
           "label": "5年期待インフレ",
-          "value": "2.24"
+          "value": "2.23"
         },
         {
           "label": "MOVE指数",
           "value": "65.39"
         }
       ],
-      "score_display": "53",
-      "summary": "中立。米2年金利5日変化は+4.0bpです。",
+      "score_display": "54",
+      "summary": "金利低下が追い風。米2年金利5日変化は-8.0bpです。",
       "tone": "good"
     },
     "reliability": {
-      "data_quality": "B / 91%",
+      "data_quality": "A / 91%",
       "display_status": "表示可",
       "live_record": "Live実績 未評価",
       "model_validation": "A / 疑似Live 80%",
@@ -3701,14 +3676,14 @@
         "name": "基本",
         "name_key": "baseline",
         "nikkei_bias": "上昇支援",
-        "probability_display": "59%",
+        "probability_display": "58%",
         "reason": "成長モメンタム"
       },
       {
         "name": "上振れ",
         "name_key": "upside",
         "nikkei_bias": "上昇支援",
-        "probability_display": "28%",
+        "probability_display": "27%",
         "reason": "雇用安定"
       },
       {
@@ -3721,16 +3696,16 @@
     ]
   },
   "validation_weight_report": {
-    "generated_at": "2026-06-24T08:42:56.979085+00:00",
+    "generated_at": "2026-06-26T08:42:44.715000+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-06-24T08:42:56.294039+00:00",
+        "evaluated_at": "2026-06-26T08:42:44.009174+00:00",
         "horizon": "3m",
         "metrics_used": {
           "baseline": "best_available_naive_baseline",
-          "baseline_mae": 5.94882326807303,
+          "baseline_mae": 5.948408468683077,
           "baseline_models": [
             "zero",
             "last_value",
@@ -3738,10 +3713,10 @@
           ],
           "direction_accuracy": 0.6781609195402298,
           "live_settled_sample_count": 0,
-          "mae": 5.48518069438879,
+          "mae": 5.484765894998836,
           "model_refit_count": 0,
-          "rmse": 7.4922578714480625,
-          "skill_score": 0.07793853553736951,
+          "rmse": 7.491839992624783,
+          "skill_score": 0.07794397041245671,
           "validation_method": "rolling_mean_fallback",
           "validation_source": "historical_walk_forward"
         },
@@ -3827,7 +3802,7 @@
       "WTREGEN"
     ],
     "fred_active_series_count": 47,
-    "generated_at": "2026-06-24T08:42:56.977382+00:00",
+    "generated_at": "2026-06-26T08:42:44.713274+00:00",
     "missing_vintage_series": [],
     "strict_point_in_time_ready": true,
     "vintage_coverage_pct": 100.0,
@@ -3838,12 +3813,12 @@
     "archive_recommended": false,
     "is_large": false,
     "is_stale": false,
-    "latest_collected_at": "2026-06-24 08:41",
+    "latest_collected_at": "2026-06-26 08:41",
     "note": "FREDの改定前データを蓄積しており、point-in-time検証に使えます。",
     "series_count": 47,
     "status_label": "蓄積済み",
     "tone": "good",
-    "total_count": 100057
+    "total_count": 100085
   },
   "warnings": [],
   "world_model_operations": {
@@ -3854,7 +3829,7 @@
         "cadence": "daily",
         "is_stale": false,
         "label": "日次更新",
-        "last_finished_at": "2026-06-24 08:42",
+        "last_finished_at": "2026-06-26 08:42",
         "status": "success",
         "status_label": "成功",
         "summary_label": "World State を更新しました。"
@@ -3864,7 +3839,7 @@
         "cadence": "weekly",
         "is_stale": false,
         "label": "週次検証",
-        "last_finished_at": "2026-06-24 08:42",
+        "last_finished_at": "2026-06-26 08:42",
         "status": "success",
         "status_label": "日次内で確認",
         "summary_label": "共有DB未設定のため、日次更新の実行履歴を表示しています。"
@@ -3874,7 +3849,7 @@
         "cadence": "monthly",
         "is_stale": false,
         "label": "月次学習",
-        "last_finished_at": "2026-06-24 08:39",
+        "last_finished_at": "2026-06-26 08:39",
         "status": "success",
         "status_label": "出力更新済み",
         "summary_label": "月次モデル出力ファイルを確認しました。"
@@ -3884,7 +3859,7 @@
         "cadence": "archive",
         "is_stale": false,
         "label": "履歴退避",
-        "last_finished_at": "2026-06-24 08:39",
+        "last_finished_at": "2026-06-26 08:39",
         "status": "success",
         "status_label": "月次内で退避",
         "summary_label": "月次メンテナンス内の履歴退避を前提に表示しています。"
@@ -3894,8 +3869,8 @@
     "tone": "good"
   },
   "world_state": {
-    "as_of_date": "2026-06-24",
-    "data_quality_display": "96%",
+    "as_of_date": "2026-06-26",
+    "data_quality_display": "94%",
     "has_snapshot": true,
     "model_version": "world_state_v1",
     "negative_drivers": [
@@ -3922,25 +3897,25 @@
         "value": 64.9
       },
       {
-        "bar_pct": 60,
-        "display": "60",
+        "bar_pct": 64,
+        "display": "64",
         "field": "inflation_score",
         "label": "物価リスク",
-        "value": 59.64
+        "value": 63.73
       },
       {
-        "bar_pct": 53,
-        "display": "53",
+        "bar_pct": 54,
+        "display": "54",
         "field": "policy_pressure_score",
         "label": "政策圧力",
-        "value": 52.66
+        "value": 53.52
       },
       {
-        "bar_pct": 97,
-        "display": "97",
+        "bar_pct": 95,
+        "display": "95",
         "field": "credit_score",
         "label": "信用",
-        "value": 97.27
+        "value": 95.27
       },
       {
         "bar_pct": 94,
@@ -3950,11 +3925,11 @@
         "value": 94.0
       },
       {
-        "bar_pct": 75,
-        "display": "75",
+        "bar_pct": 52,
+        "display": "52",
         "field": "risk_appetite_score",
         "label": "リスク選好",
-        "value": 75.0
+        "value": 52.0
       },
       {
         "bar_pct": 100,
@@ -3964,14 +3939,14 @@
         "value": 100.0
       },
       {
-        "bar_pct": 17,
-        "display": "17",
+        "bar_pct": 25,
+        "display": "25",
         "field": "market_stress_score",
         "label": "市場ストレス",
-        "value": 17.0
+        "value": 25.0
       }
     ],
-    "summary": "成長は強め、雇用は強い、物価は比較的安定。",
+    "summary": "成長は強め、雇用は強い、物価再加速に注意。",
     "warnings": [
       "観測日が古い主要指標があります: 鉱工業生産指数（2026-05-01）、実質GDP（2026-01-01）、失業率（2026-05-01）",
       "GDPは四半期データのため、直近変化の反映が遅れます。"

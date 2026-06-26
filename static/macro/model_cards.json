@@ -5,24 +5,24 @@
       "display_label": "トップ表示可",
       "display_policy": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-24T08:42:56.294039+00:00",
+      "evaluated_at": "2026-06-26T08:42:44.009174+00:00",
       "event_count": null,
       "feature_set": [],
       "horizon": "3m",
       "key_metrics": {
-        "baseline_mae": 5.94882326807303,
+        "baseline_mae": 5.948408468683077,
         "brier_score": null,
         "direction_accuracy": 0.6781609195402298,
-        "mae": 5.48518069438879,
+        "mae": 5.484765894998836,
         "pr_auc": null,
-        "rmse": 7.4922578714480625,
+        "rmse": 7.491839992624783,
         "roc_auc": null,
-        "skill_score": 0.07793853553736951
+        "skill_score": 0.07794397041245671
       },
       "known_weaknesses": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
       ],
-      "last_validated_at": "2026-06-24T08:42:56.294039+00:00",
+      "last_validated_at": "2026-06-26T08:42:44.009174+00:00",
       "leakage_check": "not_flagged",
       "limitations": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"

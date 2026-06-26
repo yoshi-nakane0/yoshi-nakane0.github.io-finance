@@ -1,28 +1,23 @@
 {
   "latest_update_status": {
-    "failed": [
-      {
-        "error": "NAAIM fetch failed: NAAIM download URL not found",
-        "series_id": "NAAIM_EXPOSURE"
-      }
-    ],
-    "failed_count": 1,
-    "finished_at": "2026-06-24T08:42:43.636864+00:00",
+    "failed": [],
+    "failed_count": 0,
+    "finished_at": "2026-06-26T08:42:30.274368+00:00",
     "message": "日次更新を実行しました。",
-    "recorded_at": "2026-06-24T08:42:44.389133+00:00",
+    "recorded_at": "2026-06-26T08:42:31.783050+00:00",
     "source": "refresh_macro_data",
-    "started_at": "2026-06-24T08:40:09.358514+00:00",
-    "status": "partial",
-    "status_cache_computed_at": "2026-06-24T08:42:44.389983+00:00",
-    "success_count": 65
+    "started_at": "2026-06-26T08:39:54.407054+00:00",
+    "status": "success",
+    "status_cache_computed_at": "2026-06-26T08:42:31.783810+00:00",
+    "success_count": 66
   },
   "operations_status": [
     {
       "cadence": "daily",
       "error": "",
-      "finished_at": "2026-06-24T08:42:45.060951+00:00",
+      "finished_at": "2026-06-26T08:42:32.477422+00:00",
       "name": "compute_world_state",
-      "started_at": "2026-06-24T08:42:44.949768+00:00",
+      "started_at": "2026-06-26T08:42:32.363463+00:00",
       "status": "success",
       "steps": [
         {
@@ -31,17 +26,17 @@
         }
       ],
       "summary": {
-        "as_of_date": "2026-06-24",
-        "data_quality": 95.67,
+        "as_of_date": "2026-06-26",
+        "data_quality": 94.33,
         "message": "World State を更新しました。"
       }
     },
     {
       "cadence": "daily",
       "error": "",
-      "finished_at": "2026-06-24T08:42:44.391183+00:00",
+      "finished_at": "2026-06-26T08:42:31.784966+00:00",
       "name": "refresh_macro_data",
-      "started_at": "2026-06-24T08:40:09.354499+00:00",
+      "started_at": "2026-06-26T08:39:54.402858+00:00",
       "status": "success",
       "steps": [
         {
@@ -66,8 +61,8 @@
         }
       ],
       "summary": {
-        "indicator_failed_count": 1,
-        "indicator_success_count": 65,
+        "indicator_failed_count": 0,
+        "indicator_success_count": 66,
         "message": "日次更新を実行しました。",
         "price_failed_count": 0,
         "price_success_count": 4

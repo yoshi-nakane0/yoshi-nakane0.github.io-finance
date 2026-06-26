@@ -1,10 +1,10 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-06-26T05:49:44.933972+00:00",
+  "as_of": "2026-06-26T08:42:52.231965+00:00",
   "audit": {
     "items": [
       "予測ゲート停止中",
-      "主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）"
+      "金利再上昇時に株価先物へ逆風"
     ],
     "level": "warning"
   },
@@ -15,7 +15,7 @@
   "evidence": [
     "basecalcは方向を強く示していない。",
     "macroは景気判断が中立だが、物価再加速リスクと金利上昇リスクが残る。",
-    "予測ゲート停止中、主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）のため、強い判断にはしない。"
+    "予測ゲート停止中、金利再上昇時に株価先物へ逆風のため、強い判断にはしない。"
   ],
   "final": {
     "action_posture": "方向が出るまで待つ。",
@@ -25,7 +25,7 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-06-26T05:49:45.106371+00:00",
+  "generated_at": "2026-06-26T08:42:59.106397+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -60,7 +60,7 @@
     "base_confidence": 44,
     "basecalc_confidence": 44,
     "confidence_cap": "B-",
-    "macro_confidence": 88
+    "macro_confidence": 91
   },
   "source_snapshots": {
     "basecalc": {
@@ -5716,7 +5716,7 @@
             "directional_allowed": false,
             "display_price": 69420.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-26T05:49:45.098322+00:00",
+            "generated_at": "2026-06-26T08:42:59.097084+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -5908,7 +5908,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 69420.0,
             "readiness_level": "ready",
-            "snapshot_id": "2ca9eca4-c46d-4d06-aa20-8191d2e780dd",
+            "snapshot_id": "fd95ce75-d1cd-4d06-a2d4-99fe0718284d",
             "source_timestamp": "2026-06-26 14:34 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため"
@@ -7113,49 +7113,47 @@
       ]
     },
     "macro": {
-      "as_of": "2026-06-24T08:43:04.098830+00:00",
+      "as_of": "2026-06-26T08:42:52.231965+00:00",
       "bias": "neutral_inflation_risk",
-      "confidence_grade": "B",
-      "confidence_score": 88,
-      "data_quality_score": 88,
+      "confidence_grade": "A",
+      "confidence_score": 91,
+      "data_quality_score": 100,
       "factor_vector": {
-        "credit_stress_score": 19,
+        "credit_stress_score": 23,
         "event_risk_score": 0,
         "fx_support_score": 50,
         "growth_score": 50,
-        "inflation_risk_score": 82,
-        "macro_long_filter": 0.82,
+        "inflation_risk_score": 90,
+        "macro_long_filter": 0.81,
         "macro_short_filter": 1.1,
         "macro_stale": false,
-        "macro_volatility_filter": 1.06,
+        "macro_volatility_filter": 1.08,
         "policy_uncertainty_score": 0,
-        "rates_pressure_score": 82,
+        "rates_pressure_score": 90,
         "risk_appetite_score": 50
       },
       "model_version": "",
       "raw": {
-        "as_of": "2026-06-23",
+        "as_of": "2026-06-26",
         "blocking_issues": [],
-        "confidence_grade": "B",
+        "confidence_grade": "A",
         "confidence_limit_reasons": [],
-        "confidence_score": 88,
+        "confidence_score": 91,
         "data_quality_report": {
           "as_of": "2026-06-26",
           "blocking_issues": [],
-          "confidence_cap": "B",
+          "confidence_cap": "A",
           "display_allowed": true,
-          "freshness_score": 87.5,
+          "freshness_score": 100.0,
           "missing_required_count": 0,
           "required_count": 8,
-          "stale_required_count": 1,
+          "stale_required_count": 0,
           "usable_for_decision": true,
-          "warnings": [
-            "主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）"
-          ]
+          "warnings": []
         },
         "display_allowed": true,
         "display_status": "show",
-        "generated_at": "2026-06-24T08:43:04.098830+00:00",
+        "generated_at": "2026-06-26T08:42:52.231965+00:00",
         "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
         "invalidation_status_notes": [
           {
@@ -7163,15 +7161,15 @@
             "label": "失業率"
           },
           {
-            "detail": "直近2/2か月連続で再加速（2026-04-01: 3.29%、前月比 +0.05pt）",
+            "detail": "直近2/2か月連続で再加速（2026-05-01: 3.41%、前月比 +0.09pt）",
             "label": "Core PCE"
           },
           {
-            "detail": "現状 4.46%（2026-06-18）。判断変更目安 4.50%以上、あと +0.04pt",
+            "detail": "現状 4.41%（2026-06-24）。判断変更目安 4.50%以上、あと +0.09pt",
             "label": "米10年金利"
           },
           {
-            "detail": "現状 2.66%（2026-06-19）。判断変更目安 5.00%以上、あと +2.34pt",
+            "detail": "現状 2.76%（2026-06-24）。判断変更目安 5.00%以上、あと +2.24pt",
             "label": "信用スプレッド"
           }
         ],
@@ -7189,7 +7187,6 @@
           "インフレ再加速リスクが高い"
         ],
         "main_risks": [
-          "主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）",
           "金利再上昇時に株価先物へ逆風"
         ],
         "model_audit": {
@@ -7200,22 +7197,22 @@
             "grade_cap": "A",
             "market_consensus_proxies": [
               {
-                "age_days": 4,
+                "age_days": 1,
                 "label": "5年期待インフレ率",
-                "observation_date": "2026-06-22",
+                "observation_date": "2026-06-25",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T5YIE",
                 "source": "FRED",
-                "value": 2.28
+                "value": 2.23
               },
               {
-                "age_days": 4,
+                "age_days": 1,
                 "label": "10年期待インフレ率",
-                "observation_date": "2026-06-22",
+                "observation_date": "2026-06-25",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T10YIE",
                 "source": "FRED",
-                "value": 2.23
+                "value": 2.21
               }
             ],
             "reasons": [],
@@ -7237,8 +7234,8 @@
         "probabilities": {
           "contraction": 0.02018798202221658,
           "expansion": 0.6568708855634098,
-          "financial_stress": 0.19316101651728157,
-          "inflation_reacceleration": 0.8233758532469887,
+          "financial_stress": 0.2267770592019888,
+          "inflation_reacceleration": 0.8988551038774872,
           "recovery": 0.17495960104105565,
           "slowdown": 0.147981531373318
         },
@@ -7248,14 +7245,13 @@
       },
       "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
       "warnings": [
-        "主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）",
         "金利再上昇時に株価先物へ逆風"
       ]
     }
   },
   "trade_decision": {
     "blocked_reasons": [
-      "R/R不足"
+      "現行モデルがATRベースラインを下回るため"
     ],
     "confidence_grade": "C",
     "confidence_score": 41,
@@ -7279,13 +7275,13 @@
     "price_source": "market_data",
     "probability": 0.08,
     "reasons": [
-      "利益幅に対して損切り幅が大きいため見送り。"
+      "basecalcの方向予測が停止しているため、売買候補にしない。"
     ],
     "reversal_score": 0,
     "reversal_watch": {},
     "reward_risk": 0.95,
     "selected_side": "no_trade",
-    "short_score": 15,
+    "short_score": 16,
     "stop_price": 72720.0,
     "target_1": {
       "confidence": "Middle",
