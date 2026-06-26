@@ -37,6 +37,24 @@
       {% endif %}
 
       <section class="common-section">
+        <h2 class="common-section-title">日経先物価格</h2>
+        <form method="get" action="" class="common-action-form">
+          <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
+          <button type="submit" class="common-button">この価格で判定</button>
+        </form>
+        {% if manual_price.active %}
+          <div class="common-list">
+            {% for row in manual_price.source_rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.value }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="common-section">
         <p class="common-kicker">日経先物 1日〜5日 最終判断</p>
         <h1 class="common-title">最終判断：{{ beginner_decision.label }}</h1>
         <p class="common-muted">{{ beginner_decision.headline }}</p>
@@ -73,8 +91,48 @@
             <span>データ状態</span>
             <strong>{{ beginner_decision.data_state }}</strong>
           </div>
+          {% if beginner_decision.wait_reason_summary %}
+            <div class="common-row common-row--stack">
+              <span>待機理由</span>
+              <strong>{{ beginner_decision.wait_reason_summary }}</strong>
+            </div>
+          {% endif %}
         </div>
       </section>
+
+      {% if beginner_decision.reference_candidate.available %}
+        <section class="common-section">
+          <p class="common-kicker">監視用</p>
+          <h2 class="common-section-title">参考候補：{{ beginner_decision.reference_candidate.label }}</h2>
+          <p class="common-muted">{{ beginner_decision.reference_candidate.note }}</p>
+          <div class="common-list">
+            <div class="common-row">
+              <span>エントリー目安</span>
+              <strong>{{ beginner_decision.reference_candidate.entry_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>第1目標</span>
+              <strong>{{ beginner_decision.reference_candidate.target_1_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>損切り</span>
+              <strong>{{ beginner_decision.reference_candidate.stop_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>R/R</span>
+              <strong>{{ beginner_decision.reference_candidate.reward_risk_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>信頼度</span>
+              <strong>{{ beginner_decision.reference_candidate.confidence_display }}</strong>
+            </div>
+            <div class="common-row common-row--stack">
+              <span>未達条件</span>
+              <strong>{{ beginner_decision.reference_candidate.reason_display }}</strong>
+            </div>
+          </div>
+        </section>
+      {% endif %}
 
       <section class="common-section">
         <h2 class="common-section-title">次に見る条件</h2>
@@ -140,24 +198,6 @@
           <p class="common-muted">{{ validation_summary.one_line }}</p>
         {% else %}
           <p class="common-muted">実運用結果はまだ0件です。取引判断の当たり外れは、評価データが保存されてから確認します。</p>
-        {% endif %}
-      </section>
-
-      <section class="common-section">
-        <h2 class="common-section-title">日経先物価格</h2>
-        <form method="get" action="" class="common-action-form">
-          <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
-          <button type="submit" class="common-button">この価格で判定</button>
-        </form>
-        {% if manual_price.active %}
-          <div class="common-list">
-            {% for row in manual_price.source_rows %}
-              <div class="common-row">
-                <span>{{ row.label }}</span>
-                <strong>{{ row.value }}</strong>
-              </div>
-            {% endfor %}
-          </div>
         {% endif %}
       </section>
 

@@ -45,6 +45,7 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
             'data_quality_score': 86,
             'readiness_level': 'ready',
             'can_show_prediction': True,
+            'allowed_direction': 'allowed',
             'current_price': 42000,
             'support': 41600,
             'resistance': 42800,
@@ -167,6 +168,33 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(decision.stop_price, 41400)
         self.assertEqual(decision.invalidation_price, 41400)
         self.assertIn('R/R不足', decision.blocked_reasons)
+
+    def test_trade_decision_v2_blocks_when_confidence_is_below_candidate_threshold(self):
+        macro = self._macro('positive', confidence_score=49, confidence_grade='C')
+        basecalc = self._basecalc(confidence_score=49, confidence_grade='Low')
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_trade_conflict')
+        self.assertIn('信頼度不足', decision.blocked_reasons)
+
+    def test_trade_decision_v2_blocks_when_basecalc_direction_is_stopped(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            contract_status='limited',
+            allowed_direction='stopped',
+            can_show_prediction=False,
+            stop_reasons=['方向予測停止'],
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_trade_conflict')
+        self.assertIn('方向予測停止', decision.blocked_reasons)
 
     def test_trade_decision_v2_blocks_contract_error_and_hides_targets(self):
         macro = self._macro('positive')
@@ -580,6 +608,17 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('実運用結果はまだ0件です。', html)
         self.assertNotIn('検証状態: 少ない', html)
 
+    def test_explanation_template_places_manual_price_before_final_decision(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertLess(html.index('日経先物価格'), html.index('日経先物 1日〜5日 最終判断'))
+
     def test_explanation_template_top_uses_beginner_decision_and_hides_no_trade_execution_prices(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
@@ -615,6 +654,36 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('参考 72,376〜72,539円', top_html)
         self.assertNotIn('72,400円', top_html)
         self.assertNotIn('75,800円', top_html)
+
+    def test_explanation_template_renders_reference_candidate_as_separate_section(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 71800, 'probability': 0.21},
+            'stop_price': 72950,
+            'reward_risk': 0.95,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'blocked_reasons': ['R/R不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        top_html = html.split('詳細を表示', 1)[0]
+
+        self.assertIn('参考候補', top_html)
+        self.assertIn('参考ショート候補', top_html)
+        self.assertIn('71,800円', top_html)
+        self.assertLess(top_html.index('参考候補'), top_html.index('次に見る条件'))
 
     def test_decision_card_hides_reference_levels_when_no_trade_has_candidate_plan(self):
         snapshot = self._snapshot()
@@ -668,6 +737,74 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(beginner['reward_risk_display'], '不採用（1.2未満）')
         self.assertIn('R/R不足', beginner['warnings'])
 
+    def test_beginner_decision_splits_wait_reasons_for_direction_rr_and_confidence(self):
+        snapshot = self._snapshot()
+        snapshot.confidence_score = 41
+        snapshot.confidence_grade = 'C'
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['output_contract'] = {
+            'contract_status': 'limited',
+            'directional_allowed': False,
+            'stop_reasons': ['ATRとの差が小さいため方向予測停止'],
+        }
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 72400, 'probability': 0.21},
+            'stop_price': 75800,
+            'reward_risk': 0.95,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'long_score': 45,
+            'short_score': 30,
+            'no_trade_score': 70,
+            'blocked_reasons': ['R/R不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertEqual(beginner['status'], 'wait')
+        self.assertEqual(beginner['wait_reason_summary'], '待機：方向予測停止 / R/R不足 / 信頼度不足')
+        self.assertIn('方向予測停止', beginner['wait_reasons'])
+        self.assertIn('R/R不足', beginner['wait_reasons'])
+        self.assertIn('信頼度不足', beginner['wait_reasons'])
+        self.assertIn('ATR基準に届かないため、方向予測は参考表示にしています。', beginner['warnings'])
+
+    def test_beginner_decision_shows_reference_candidate_when_no_trade_keeps_plan(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 71800, 'probability': 0.21},
+            'stop_price': 72950,
+            'reward_risk': 0.95,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'long_score': 0,
+            'short_score': 15,
+            'no_trade_score': 80,
+            'blocked_reasons': ['R/R不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        candidate = context['beginner_decision']['reference_candidate']
+
+        self.assertTrue(candidate['available'])
+        self.assertEqual(candidate['label'], '参考ショート候補')
+        self.assertEqual(candidate['entry_display'], '72,376〜72,539円')
+        self.assertEqual(candidate['target_1_display'], '71,800円')
+        self.assertEqual(candidate['stop_display'], '72,950円')
+        self.assertEqual(candidate['reward_risk_display'], '0.95')
+        self.assertIn('最終判断ではありません。', candidate['note'])
+
     def test_beginner_decision_blocks_invalid_long_target_direction(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
@@ -710,6 +847,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             'reward_risk': 1.55,
             'confidence_score': 64,
             'confidence_grade': 'B-',
+            'long_score': 35,
+            'short_score': 72,
+            'no_trade_score': 35,
             'blocked_reasons': [],
         })
 
@@ -721,6 +861,34 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(beginner['label'], '売り候補')
         self.assertEqual(beginner['target_1_display'], '71,800円')
         self.assertEqual(beginner['stop_display'], '72,950円')
+
+    def test_beginner_decision_requires_side_score_to_clear_no_trade(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72300,
+            'entry_zone_high': 72450,
+            'target_1': {'label': 'T1', 'price': 73100, 'probability': 0.62},
+            'stop_price': 71900,
+            'reward_risk': 1.34,
+            'confidence_score': 64,
+            'confidence_grade': 'B-',
+            'long_score': 58,
+            'short_score': 35,
+            'no_trade_score': 62,
+            'blocked_reasons': [],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertFalse(beginner['tradable'])
+        self.assertEqual(beginner['status'], 'wait')
+        self.assertIn('スコア不足', beginner['wait_reasons'])
+        self.assertIn('no_tradeより弱い', beginner['wait_reasons'])
 
     def test_decision_card_marks_low_confidence_blocked_trade_as_reference(self):
         snapshot = self._snapshot()

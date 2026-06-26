@@ -38,6 +38,9 @@ class BeginnerDecision:
     reward_risk_display: str
     confidence_display: str
     data_state: str
+    wait_reasons: List[str] = field(default_factory=list)
+    wait_reason_summary: str = ''
+    reference_candidate: Dict[str, Any] = field(default_factory=dict)
     reasons: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     next_triggers: Dict[str, List[str]] = field(default_factory=dict)
@@ -107,6 +110,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     direction_warning = _direction_warning(selected_side, current_price, target_1_price, stop_price)
     if direction_warning:
         blocking_reasons.append(direction_warning)
+    blocking_reasons.extend(_score_gate_reasons(selected_side, trade_decision))
 
     tradable = all([
         selected_side in {'long', 'short'},
@@ -136,7 +140,15 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     if status in {'wait', 'no_trade', 'data_blocked'}:
         tradable = False
 
-    warnings = _limited(warnings + blocking_reasons + _macro_warnings(macro, selected_side))
+    wait_reasons = _wait_reasons(
+        directional_allowed=directional_allowed,
+        reward_risk=reward_risk,
+        confidence_score=confidence_score,
+        blocking_reasons=blocking_reasons,
+        status=status,
+    )
+    reference_warnings = _reference_warnings(basecalc, output_contract, directional_allowed)
+    warnings = _limited(warnings + blocking_reasons + reference_warnings + _macro_warnings(macro, selected_side))
     if reward_risk is not None and reward_risk < 1.2 and 'R/R不足' not in warnings:
         warnings.append('R/R不足')
     warnings = _limited(warnings)
@@ -147,6 +159,18 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     stop_display = _price_display(stop_price) if tradable else '—'
     invalidation_display = _price_display(invalidation_price) if tradable and invalidation_price is not None else '—'
     reward_risk_display = _reward_risk_display(reward_risk, tradable, status)
+    reference_candidate = _reference_candidate(
+        status=status,
+        tradable=tradable,
+        decision=trade_decision,
+        current_price=current_price,
+        target_1_price=target_1_price,
+        stop_price=stop_price,
+        reward_risk=reward_risk,
+        confidence_grade=confidence_grade,
+        confidence_score=confidence_score,
+        wait_reasons=wait_reasons,
+    )
 
     return BeginnerDecision(
         status=status,
@@ -165,6 +189,9 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         reward_risk_display=reward_risk_display,
         confidence_display=_confidence_display(confidence_grade, confidence_score, manual_price, status),
         data_state=_data_state(snapshot.audit_level, manual_price, confidence_score),
+        wait_reasons=wait_reasons,
+        wait_reason_summary=_wait_reason_summary(status, wait_reasons),
+        reference_candidate=reference_candidate,
         reasons=reasons,
         warnings=warnings or ['条件がそろうまで待機。'],
         next_triggers=_next_triggers(basecalc, world_model, reward_risk, directional_allowed),
@@ -255,6 +282,96 @@ def _direction_warning(side, current_price, target_price, stop_price):
         return 'target/stop が現在値と整合していません'
     if side == 'short' and (target_price >= current_price or stop_price <= current_price):
         return 'target/stop が現在値と整合していません'
+    return None
+
+
+def _score_gate_reasons(selected_side, trade_decision):
+    if selected_side not in {'long', 'short'}:
+        return []
+    side_score = _int_or_none(trade_decision.get(f'{selected_side}_score'))
+    no_trade_score = _int_or_none(trade_decision.get('no_trade_score'))
+    if side_score is None or no_trade_score is None:
+        return []
+    reasons = []
+    if side_score < 65:
+        reasons.append('スコア不足')
+    if side_score - no_trade_score < 8:
+        reasons.append('no_tradeより弱い')
+    return reasons
+
+
+def _wait_reasons(*, directional_allowed, reward_risk, confidence_score, blocking_reasons, status):
+    reasons = []
+    if directional_allowed is False:
+        reasons.append('方向予測停止')
+    if reward_risk is not None and reward_risk < 1.2:
+        reasons.append('R/R不足')
+    if confidence_score < 50:
+        reasons.append('信頼度不足')
+    for reason in blocking_reasons:
+        if reason in {'スコア不足', 'no_tradeより弱い'}:
+            reasons.append(reason)
+        elif 'target/stop' in reason:
+            reasons.append('target/stop不整合')
+        elif 'データ品質不足' in reason and status == 'data_blocked':
+            reasons.append(reason)
+    if status in {'wait', 'no_trade'} and not reasons:
+        reasons.append('条件未達')
+    return _dedupe(reasons)
+
+
+def _wait_reason_summary(status, wait_reasons):
+    if status not in {'wait', 'no_trade', 'data_blocked'} or not wait_reasons:
+        return ''
+    return f'{STATUS_LABELS[status]}：{" / ".join(wait_reasons)}'
+
+
+def _reference_warnings(basecalc, output_contract, directional_allowed):
+    if directional_allowed is not False:
+        return []
+    reasons = list(basecalc.get('stop_reasons') or []) + list(output_contract.get('stop_reasons') or [])
+    if any('ATR' in str(reason) for reason in reasons):
+        return ['ATR基準に届かないため、方向予測は参考表示にしています。']
+    return []
+
+
+def _reference_candidate(
+    *,
+    status,
+    tradable,
+    decision,
+    current_price,
+    target_1_price,
+    stop_price,
+    reward_risk,
+    confidence_grade,
+    confidence_score,
+    wait_reasons,
+):
+    side = _reference_side(current_price, target_1_price, stop_price)
+    if tradable or status not in {'wait', 'no_trade'} or side is None:
+        return {'available': False}
+    return {
+        'available': True,
+        'side': side,
+        'label': '参考ロング候補' if side == 'long' else '参考ショート候補',
+        'note': '最終判断ではありません。条件未達のため、監視用として扱います。',
+        'entry_display': _entry_display(decision),
+        'target_1_display': _price_display(target_1_price),
+        'stop_display': _price_display(stop_price),
+        'reward_risk_display': 'N/A' if reward_risk is None else f'{float(reward_risk):.2f}',
+        'confidence_display': f'{confidence_grade} / {confidence_score}%（参考）',
+        'reason_display': ' / '.join(wait_reasons) if wait_reasons else '条件未達',
+    }
+
+
+def _reference_side(current_price, target_price, stop_price):
+    if current_price is None or target_price is None or stop_price is None:
+        return None
+    if target_price > current_price and stop_price < current_price:
+        return 'long'
+    if target_price < current_price and stop_price > current_price:
+        return 'short'
     return None
 
 
@@ -362,6 +479,13 @@ def _int_value(value, default):
         return default
 
 
+def _int_or_none(value):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def _number(value):
     try:
         return float(value)
@@ -381,3 +505,11 @@ def _format_price(value):
 
 def _limited(items, limit=3):
     return [str(item) for item in items if item][:limit]
+
+
+def _dedupe(items):
+    result = []
+    for item in items:
+        if item and item not in result:
+            result.append(item)
+    return result

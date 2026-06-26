@@ -1,22 +1,19 @@
 {
-  "basecalc_as_of": "2026-06-25T13:10:00+00:00",
+  "basecalc_as_of": "2026-06-26T05:34:00+00:00",
   "basecalc_status": "limited",
   "blocking_reasons": [
     "現行モデルがATRベースラインを下回るため",
-    "上昇継続の過去成績が弱いため",
-    "信頼度が未較正です",
-    "局面別成績が弱いため信頼度を50未満に制限",
     "予測ゲート停止中",
-    "重要指標の発表前後のため一段階下げます。"
+    "主要指標が1件古くなっています: 米10年国債利回り（2026-06-18）"
   ],
   "data_freshness": {
     "basecalc": "usable_with_warning",
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-25T13:25:40.469454+00:00",
+  "explanation_as_of": "2026-06-26T05:49:44.933972+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-06-25T13:25:42.198816+00:00",
+  "generated_at": "2026-06-26T05:49:45.160854+00:00",
   "macro_as_of": "2026-06-24T08:43:04.098830+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",

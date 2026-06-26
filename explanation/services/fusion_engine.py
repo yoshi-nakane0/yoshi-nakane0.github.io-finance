@@ -97,6 +97,28 @@ def build_trade_decision_v2(
             price_source=price_source,
         )
 
+    if _direction_stopped(basecalc):
+        likely_plan = long_plan if long_score >= short_score else short_plan
+        likely_side = 'long' if long_score >= short_score else 'short'
+        return _no_trade_decision_with_plan(
+            likely_side,
+            likely_plan,
+            decision_type='no_trade_conflict',
+            current_price=current_price,
+            confidence_score=confidence_score,
+            confidence_grade=confidence_grade,
+            long_score=long_score,
+            short_score=short_score,
+            no_trade_score=max(no_trade_score, 80),
+            trend_follow_score=trend_follow_score,
+            reversal_score=reversal_score,
+            reasons=['basecalcの方向予測が停止しているため、売買候補にしない。'],
+            blocked_reasons=list(basecalc.stop_reasons or ['方向予測停止']),
+            counter_scenario=basecalc.counter_bias,
+            reversal_watch=reversal if reversal.get('status') != 'none' else {},
+            price_source=price_source,
+        )
+
     no_chase = _no_chase_decision_type(basecalc, reversal, long_plan, short_plan)
     if no_chase:
         warning = '高値追い禁止' if no_chase == 'no_chase_long' else '突っ込み売り禁止'
@@ -124,6 +146,25 @@ def build_trade_decision_v2(
 
     likely_plan = long_plan if long_score >= short_score else short_plan
     likely_side = 'long' if long_score >= short_score else 'short'
+    if confidence_score < 50:
+        return _no_trade_decision_with_plan(
+            likely_side,
+            likely_plan,
+            decision_type='no_trade_conflict',
+            current_price=current_price,
+            confidence_score=confidence_score,
+            confidence_grade=confidence_grade,
+            long_score=long_score,
+            short_score=short_score,
+            no_trade_score=max(no_trade_score, 80),
+            trend_follow_score=trend_follow_score,
+            reversal_score=reversal_score,
+            reasons=['信頼度が50%未満のため、売買候補にしない。'],
+            blocked_reasons=['信頼度不足'],
+            counter_scenario=basecalc.counter_bias,
+            reversal_watch=reversal if reversal.get('status') != 'none' else {},
+            price_source=price_source,
+        )
     if likely_plan.reward_risk is not None and likely_plan.reward_risk < 1.2:
         return _no_trade_decision_with_plan(
             likely_side,
@@ -449,6 +490,12 @@ def _no_chase_decision_type(basecalc, reversal, long_plan, short_plan):
         if short_plan.blocked_reasons or (short_plan.reward_risk is not None and short_plan.reward_risk < 1.2):
             return 'no_chase_short'
     return ''
+
+
+def _direction_stopped(basecalc):
+    return basecalc.allowed_direction in {'stopped', 'none'} or (
+        basecalc.contract_status == 'limited' and not basecalc.can_show_prediction
+    )
 
 
 def _decision_type(selected_side, basecalc, reversal):
