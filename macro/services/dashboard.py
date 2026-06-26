@@ -1966,6 +1966,9 @@ def _support_materials_display(world_scores: Dict[str, float], support_materials
         for field, label in fields
         if world_scores.get(field) is not None
     ]
+    market_stress = world_scores.get('market_stress_score')
+    if market_stress is not None and market_stress <= 30:
+        parts.append(f'低ストレス {market_stress:.0f}%')
     if parts:
         return ' / '.join(parts)
     if support_materials:

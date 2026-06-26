@@ -3607,7 +3607,10 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(context['economic_view']['headline'], '景気は強め。ただし物価・金利に警戒。')
         self.assertEqual(context['economic_view']['cards'][0]['value'], '強め')
-        self.assertEqual(context['economic_view']['cards'][1]['value'], '成長 67% / 雇用 65% / 信用 97% / 流動性 94%')
+        self.assertEqual(
+            context['economic_view']['cards'][1]['value'],
+            '成長 67% / 雇用 65% / 信用 97% / 流動性 94% / 低ストレス 17%',
+        )
         self.assertIn('インフレ再加速 82%', context['economic_view']['cards'][2]['value'])
         self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
         self.assertEqual(context['macro_role']['role'], '3〜6か月の経済環境を見るページ')
@@ -3635,7 +3638,7 @@ class DashboardFormatTest(TestCase):
                     'headline': '景気は強め。ただし物価・金利に警戒。',
                     'cards': [
                         {'label': '経済の強弱', 'value': '強め', 'detail': '成長・雇用・信用環境は底堅い。'},
-                        {'label': '支えている材料', 'value': '成長 67% / 雇用 65% / 信用 97% / 流動性 94%', 'detail': '低ストレスも支え。'},
+                        {'label': '支えている材料', 'value': '成長 67% / 雇用 65% / 信用 97% / 流動性 94% / 低ストレス 17%', 'detail': '低ストレスも支え。'},
                         {'label': '重しになっている材料', 'value': 'インフレ再加速 82% / 米金利上昇', 'detail': '物価と金利が重し。'},
                         {'label': '株価への見方', 'value': '条件付き追い風', 'detail': '金利上昇時は上値が重い。'},
                     ],
