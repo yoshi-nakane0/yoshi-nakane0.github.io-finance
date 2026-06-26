@@ -36,37 +36,44 @@
         </section>
       {% endif %}
 
-      <section class="common-section">
-        <h2 class="common-section-title">日経先物価格</h2>
-        <form method="get" action="" class="common-action-form">
-          <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
-          <button type="submit" class="common-button">この価格で判定</button>
-        </form>
-        {% if manual_price.active %}
-          <div class="common-list">
-            {% for row in manual_price.source_rows %}
-              <div class="common-row">
-                <span>{{ row.label }}</span>
-                <strong>{{ row.value }}</strong>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      </section>
+      <div class="common-market-heading">
+        <span class="common-market-heading__icon" aria-hidden="true">↗</span>
+        <span>日経先物価格</span>
+      </div>
 
-      <section class="common-section">
-        <p class="common-kicker">日経先物 1日〜5日 最終判断</p>
-        <h1 class="common-title">最終判断：{{ beginner_decision.label }}</h1>
-        <p class="common-muted">{{ beginner_decision.headline }}</p>
-        <div class="common-list">
-          <div class="common-row">
-            <span>現在値</span>
-            <strong>{{ beginner_decision.current_price_display }}</strong>
+      <section class="common-decision-card{% if beginner_decision.label == 'ロング' %} common-decision-card--long{% elif beginner_decision.label == 'ショート' %} common-decision-card--short{% else %} common-decision-card--wait{% endif %}">
+        <div class="common-decision-card__body">
+          <div class="common-decision-card__copy">
+            <p class="common-kicker">日経先物 1日〜5日 最終判断</p>
+            <p class="common-kicker"><strong>最終判断：{{ beginner_decision.label }}</strong></p>
+            <div class="common-status-badge{% if beginner_decision.label == 'ロング' %} common-status-badge--long{% elif beginner_decision.label == 'ショート' %} common-status-badge--short{% else %} common-status-badge--wait{% endif %}">
+              <span class="common-status-icon" aria-hidden="true">{% if beginner_decision.label == 'ロング' %}↑{% elif beginner_decision.label == 'ショート' %}↓{% else %}Ⅱ{% endif %}</span>
+              <span>{% if beginner_decision.label == 'ロング' %}LONG{% elif beginner_decision.label == 'ショート' %}SHORT{% else %}WAIT{% endif %}</span>
+            </div>
+            <p class="common-price-display">{{ beginner_decision.current_price_display }}</p>
+            <p class="common-muted">現在値</p>
           </div>
-          <div class="common-row">
-            <span>実行可否</span>
+          <div class="common-chart-ghost" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="common-choice-grid" aria-label="実行可否">
+          <div class="common-choice-card{% if beginner_decision.label != 'ロング' and beginner_decision.label != 'ショート' %} is-active{% endif %}">
+            <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
             <strong>{{ beginner_decision.plain_action }}</strong>
           </div>
+          <div class="common-choice-card{% if beginner_decision.label == 'ロング' %} is-active{% endif %}">
+            <span class="common-status-icon common-status-icon--small common-status-icon--long" aria-hidden="true">↑</span>
+            <strong>ロング</strong>
+          </div>
+          <div class="common-choice-card{% if beginner_decision.label == 'ショート' %} is-active{% endif %}">
+            <span class="common-status-icon common-status-icon--small common-status-icon--short" aria-hidden="true">↓</span>
+            <strong>ショート</strong>
+          </div>
+        </div>
+
+        <div class="common-decision-metrics">
           <div class="common-row">
             <span>エントリー</span>
             <strong>{{ beginner_decision.entry_display }}</strong>
@@ -83,29 +90,105 @@
             <span>R/R</span>
             <strong>{{ beginner_decision.reward_risk_display }}</strong>
           </div>
-          <div class="common-row">
-            <span>信頼度</span>
-            <strong>{{ beginner_decision.confidence_display }}</strong>
-          </div>
-          <div class="common-row">
-            <span>データ状態</span>
-            <strong>{{ beginner_decision.data_state }}</strong>
-          </div>
-          {% if beginner_decision.wait_reason_summary %}
-            <div class="common-row common-row--stack">
-              <span>待機理由</span>
-              <strong>{{ beginner_decision.wait_reason_summary }}</strong>
-            </div>
-          {% endif %}
         </div>
       </section>
 
+      {% if manual_price.active %}
+        <section class="common-section">
+          <h2 class="common-section-title">手入力価格</h2>
+          <div class="common-list">
+            {% for row in manual_price.source_rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.value }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <details class="common-section">
+        <summary class="common-section-title">価格を変えて確認</summary>
+        <form method="get" action="" class="common-action-form">
+          <input type="number" name="price" class="common-input" value="{{ manual_price.price|default:'' }}" step="1" min="1" inputmode="numeric" aria-label="日経先物価格">
+          <button type="submit" class="common-button">この価格で判定</button>
+        </form>
+      </details>
+
+      {% if beginner_decision.wait_reason_summary %}
+        <section class="common-section common-wait-section">
+          <div class="common-section-heading">
+            <h2 class="common-section-title">待機理由</h2>
+            <span class="common-info-dot" aria-label="待機理由の補足">i</span>
+          </div>
+          <div class="common-wait-reason-grid">
+            {% for reason in beginner_decision.wait_reasons|slice:":3" %}
+              <article class="common-wait-reason-card">
+                <div class="common-wait-reason-card__head">
+                  <span class="common-wait-reason-card__icon" aria-hidden="true">
+                    {% if reason == '方向予測停止' %}
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="8"></circle>
+                        <path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z"></path>
+                      </svg>
+                    {% elif reason == 'R/R不足' %}
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 3 19 6v5c0 4.6-2.7 8.3-7 10-4.3-1.7-7-5.4-7-10V6z"></path>
+                        <path d="M12 8v5"></path>
+                        <path d="M12 16h.01"></path>
+                      </svg>
+                    {% elif reason == '信頼度不足' %}
+                      <svg viewBox="0 0 24 24">
+                        <path d="M5 19V13"></path>
+                        <path d="M10 19V9"></path>
+                        <path d="M15 19V5"></path>
+                        <path d="M20 19V3"></path>
+                      </svg>
+                    {% else %}
+                      <svg viewBox="0 0 24 24">
+                        <path d="M9 7v10"></path>
+                        <path d="M15 7v10"></path>
+                      </svg>
+                    {% endif %}
+                  </span>
+                  <strong>{{ reason }}</strong>
+                </div>
+                <p>
+                  {% if reason == '方向予測停止' %}
+                    方向の明確な優位性が確認できません
+                  {% elif reason == 'R/R不足' %}
+                    期待値が基準を下回っています
+                  {% elif reason == '信頼度不足' %}
+                    信頼度が基準に届いていません
+                  {% else %}
+                    条件がそろうまで待機します
+                  {% endif %}
+                </p>
+              </article>
+            {% empty %}
+              <article class="common-wait-reason-card">
+                <div class="common-wait-reason-card__head">
+                  <span class="common-wait-reason-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M9 7v10"></path>
+                      <path d="M15 7v10"></path>
+                    </svg>
+                  </span>
+                  <strong>待機継続</strong>
+                </div>
+                <p>条件がそろうまで待機します</p>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
       {% if beginner_decision.reference_candidate.available %}
         <section class="common-section">
-          <p class="common-kicker">監視用</p>
-          <h2 class="common-section-title">参考候補：{{ beginner_decision.reference_candidate.label }}</h2>
-          <p class="common-muted">{{ beginner_decision.reference_candidate.note }}</p>
-          <div class="common-list">
+          <h2 class="common-section-title">監視用</h2>
+          <p class="common-kicker">参考候補</p>
+          <h3 class="common-subtitle">{{ beginner_decision.reference_candidate.label }}</h3>
+          <div class="common-list common-list--compact">
             <div class="common-row">
               <span>エントリー目安</span>
               <strong>{{ beginner_decision.reference_candidate.entry_display }}</strong>
@@ -122,65 +205,81 @@
               <span>R/R</span>
               <strong>{{ beginner_decision.reference_candidate.reward_risk_display }}</strong>
             </div>
-            <div class="common-row">
-              <span>信頼度</span>
-              <strong>{{ beginner_decision.reference_candidate.confidence_display }}</strong>
-            </div>
-            <div class="common-row common-row--stack">
-              <span>未達条件</span>
-              <strong>{{ beginner_decision.reference_candidate.reason_display }}</strong>
-            </div>
           </div>
         </section>
       {% endif %}
 
       <section class="common-section">
         <h2 class="common-section-title">次に見る条件</h2>
-        <h3 class="common-subtitle">ロング</h3>
-        <ul class="common-bullet-list">
-          {% for item in beginner_decision.next_triggers.long %}
-            <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-        <h3 class="common-subtitle">ショート</h3>
-        <ul class="common-bullet-list">
-          {% for item in beginner_decision.next_triggers.short %}
-            <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-        <h3 class="common-subtitle">待機継続</h3>
-        <ul class="common-bullet-list">
-          {% for item in beginner_decision.next_triggers.wait %}
-            <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
+        <div class="common-trigger-grid">
+          <article class="common-trigger-card">
+            <span class="common-status-icon common-status-icon--long" aria-hidden="true">↑</span>
+            <strong>ロング</strong>
+            <ul class="common-mini-list">
+              {% for item in beginner_decision.next_triggers.long %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          </article>
+          <article class="common-trigger-card">
+            <span class="common-status-icon common-status-icon--short" aria-hidden="true">↓</span>
+            <strong>ショート</strong>
+            <ul class="common-mini-list">
+              {% for item in beginner_decision.next_triggers.short %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          </article>
+          <article class="common-trigger-card">
+            <span class="common-status-icon common-status-icon--wait" aria-hidden="true">Ⅱ</span>
+            <strong>待機継続</strong>
+            <ul class="common-mini-list">
+              {% for item in beginner_decision.next_triggers.wait %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          </article>
+        </div>
       </section>
 
-      <section class="common-section">
+      <section class="common-section common-section--accent">
         <h2 class="common-section-title">採用理由 / 警戒理由</h2>
-        <ol class="common-ordered-list">
+        <div class="common-hero-reason">
+          <span class="common-status-icon common-status-icon--wait" aria-hidden="true">Ⅱ</span>
+          <div>
+            <strong>{{ beginner_decision.plain_action }}</strong>
+            <p class="common-muted">{{ beginner_decision.headline }}</p>
+          </div>
+        </div>
+        <div class="common-list common-list--compact">
           {% for reason in beginner_decision.reasons %}
-            <li>{{ reason }}</li>
+            <div class="common-row common-row--stack">
+              <span>理由</span>
+              <strong>{{ reason }}</strong>
+            </div>
           {% endfor %}
-        </ol>
-        <ul class="common-bullet-list">
           {% for warning in beginner_decision.warnings %}
-            <li>{{ warning }}</li>
+            <div class="common-row common-row--stack">
+              <span>警戒</span>
+              <strong>{{ warning }}</strong>
+            </div>
           {% endfor %}
-        </ul>
+        </div>
       </section>
 
       <section class="common-section">
         <h2 class="common-section-title">macro × basecalc</h2>
-        <div class="common-list">
-          <div class="common-row common-row--stack">
+        <div class="common-summary-grid">
+          <article class="common-summary-card">
             <span>macro</span>
-            <strong>{{ beginner_decision.macro_summary }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
+            <strong>{{ alignment_summary.macro }}</strong>
+          </article>
+          <article class="common-summary-card">
             <span>basecalc</span>
-            <strong>{{ beginner_decision.basecalc_summary }}</strong>
-          </div>
+            <strong>{{ alignment_summary.basecalc }}</strong>
+          </article>
+        </div>
+        <div class="common-list common-list--compact">
           <div class="common-row">
             <span>一致度</span>
             <strong>{{ alignment_summary.status }}</strong>
@@ -192,12 +291,14 @@
         </div>
       </section>
 
-      <section class="common-section">
+      <section class="common-section common-empty-state">
         <h2 class="common-section-title">検証成績</h2>
         {% if trade_validation_summary.available %}
           <p class="common-muted">{{ validation_summary.one_line }}</p>
         {% else %}
-          <p class="common-muted">実運用結果はまだ0件です。取引判断の当たり外れは、評価データが保存されてから確認します。</p>
+          <div class="common-empty-state__icon" aria-hidden="true">▥</div>
+          <strong>実運用結果 0件</strong>
+          <p class="common-muted">実運用結果はまだ0件です。検証データを保存すると結果が表示されます。</p>
         {% endif %}
       </section>
 

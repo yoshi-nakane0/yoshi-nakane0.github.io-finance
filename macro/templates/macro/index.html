@@ -8,7 +8,7 @@
     <title>Macro</title>
 
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260619-top-decision">
+    <link rel="stylesheet" href="{% static 'macro/css/style.css' %}?v=20260627-mock-ui">
 </head>
 
 <body>
@@ -31,7 +31,7 @@
             {% if generated_payload_meta %}
                 <ul class="macro-messages">
                     <li class="macro-message {% if generated_payload_meta.stale %}macro-message--warning{% else %}macro-message--info{% endif %}">
-                        生成: {{ generated_payload_meta.generated_at|default:"—" }} / 品質: {{ generated_payload_meta.data_quality|default:"—" }} / {{ generated_payload_meta.source|default:"generated" }}
+                        生成: {{ top_decision.freshness.updated_at|default:"—" }} / 品質: {{ generated_payload_meta.data_quality|default:"—" }} / {{ generated_payload_meta.source|default:"generated" }}
                     </li>
                     {% for warning in generated_payload_meta.warnings %}
                         <li class="macro-message macro-message--warning">{{ warning }}</li>
@@ -39,100 +39,93 @@
                 </ul>
             {% endif %}
 
-            <section class="macro-section macro-decision" id="macro-final-decision">
-                <div class="macro-section-headline">
-                    <h2 class="macro-section-title macro-section-title--pulse">{{ top_decision.economic_view.title }}</h2>
-                    <span class="macro-regime-status-pill">{{ top_decision.final_judgment.confidence }}</span>
-                </div>
-                <div class="macro-regime-answer">
-                    <div class="macro-regime-answer-label">Macro経済判定</div>
-                    <div class="macro-regime-answer-main">{{ top_decision.economic_view.headline }}</div>
-                    <p class="macro-regime-answer-detail">{{ top_decision.final_judgment.summary }}</p>
-                </div>
-                <div class="macro-decision-grid">
-                    {% for card in top_decision.economic_view.cards %}
-                        <div class="macro-decision-card {% if forloop.counter == 3 %}macro-decision-card--stress{% else %}macro-decision-card--confidence{% endif %}">
-                            <span class="macro-decision-label">{{ card.label }}</span>
-                            <strong>{{ card.value }}</strong>
-                            <p>{{ card.detail }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="macro-reliability-grid">
-                    <div class="macro-reliability-item">
-                        <span class="macro-reliability-label">判定の信頼度</span>
-                        <span class="macro-reliability-value">{{ top_decision.reliability.data_quality|default:"—" }}</span>
-                    </div>
-                    <div class="macro-reliability-item">
-                        <span class="macro-reliability-label">データ鮮度</span>
-                        <span class="macro-reliability-value">{{ top_decision.freshness.data_freshness }}</span>
-                    </div>
-                    <div class="macro-reliability-item">
-                        <span class="macro-reliability-label">判定状態</span>
-                        <span class="macro-reliability-value">{{ top_decision.reliability.display_status|default:"参考" }}</span>
-                    </div>
-                    <div class="macro-reliability-item">
-                        <span class="macro-reliability-label">最終更新</span>
-                        <span class="macro-reliability-value">{{ top_decision.freshness.updated_at }}</span>
+            <section class="macro-hero macro-section" id="macro-final-decision" aria-label="{{ top_decision.economic_view.title }}">
+                <div class="macro-hero__content">
+                    <div class="macro-hero__badge">いまの結論</div>
+                    <h2 class="macro-hero__headline">{{ top_decision.economic_view.headline }}</h2>
+                    <p class="macro-hero__summary">{{ top_decision.final_judgment.summary }}</p>
+                    <div class="macro-hero__chips">
+                        <span class="macro-hero__chip macro-hero__chip--good">支え: {{ top_decision.final_judgment.direction }}</span>
+                        <span class="macro-hero__chip macro-hero__chip--warn">注意: {{ top_decision.final_judgment.max_risk }}</span>
                     </div>
                 </div>
-                {% if top_decision.axis_summary %}
-                    <div class="macro-state-card-grid">
-                        {% for row in top_decision.axis_summary %}
-                            <div class="macro-state-card macro-direction-card">
-                                <div class="macro-state-card__top">
-                                    <span class="macro-state-card__icon" aria-hidden="true"></span>
-                                    <span class="macro-state-card__title">{{ row.label }}</span>
-                                    <span class="macro-state-card__badge">{{ row.score_display }}</span>
-                                </div>
-                                <strong class="macro-direction-card__value">{{ row.value }}</strong>
+                <div class="macro-score-ring" aria-label="{{ top_decision.final_judgment.confidence }}">
+                    <div class="macro-score-ring__value">{{ top_decision.final_judgment.confidence|cut:"Macro現状スコア " }}</div>
+                    <div class="macro-score-ring__label">Macro現状スコア</div>
+                </div>
+                <div class="macro-hero__meta">
+                    <span>生成 {{ top_decision.freshness.updated_at|default:"—" }}</span>
+                    <span>判定の信頼度 {{ top_decision.reliability.data_quality|default:"—" }}</span>
+                    <span>品質 {{ generated_payload_meta.data_quality|default:top_decision.reliability.data_quality|default:"—" }}</span>
+                    <span>{{ generated_payload_meta.source|default:"saved_json" }}</span>
+                </div>
+            </section>
+
+            {% if top_decision.axis_summary %}
+                <section class="macro-axis-grid" aria-label="Macro主要スコア">
+                    {% for row in top_decision.axis_summary %}
+                        <article class="macro-axis-card macro-axis-card--{{ forloop.counter }}">
+                            <div class="macro-axis-card__head">
+                                <span class="macro-axis-card__icon" aria-hidden="true"></span>
+                                <span class="macro-axis-card__label">{{ row.label }}</span>
                             </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </section>
-
-            <section class="macro-section">
-                <h2 class="macro-section-title">判断を変える条件</h2>
-                <div class="macro-decision-grid">
-                    {% for trigger in top_decision.invalidation_triggers %}
-                        <div class="macro-decision-card">
-                            <span class="macro-decision-label">{{ trigger.label }}</span>
-                            <strong>{{ trigger.detail }}</strong>
-                        </div>
-                    {% empty %}
-                        <p class="macro-placeholder">判断変更条件は更新データ待ちです。</p>
+                            <div class="macro-axis-card__body">
+                                <strong>{{ row.score_display }}</strong>
+                                <span>{{ row.value }}</span>
+                            </div>
+                            <div class="macro-axis-card__meter" aria-hidden="true">
+                                <span style="width: {{ row.score_display|cut:'%' }}%;"></span>
+                            </div>
+                        </article>
                     {% endfor %}
+                </section>
+            {% endif %}
+
+            <section class="macro-section macro-trigger-panel">
+                <h2 class="macro-section-title">判断を変える条件</h2>
+                <ol class="macro-trigger-timeline">
+                    {% for trigger in top_decision.invalidation_triggers %}
+                        <li>
+                            <span class="macro-trigger-timeline__num">{{ forloop.counter }}</span>
+                            <div class="macro-trigger-timeline__body">
+                                <span>{{ trigger.detail }}</span>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li>
+                            <span class="macro-trigger-timeline__num">1</span>
+                            <div class="macro-trigger-timeline__body">
+                                <span>判断変更条件は更新データ待ちです。</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </section>
+
+            <section class="macro-evidence-stack" aria-label="良い材料と悪い材料">
+                <div class="macro-evidence-panel macro-evidence-panel--good">
+                    <h2 class="macro-section-title">良い材料</h2>
+                    <ul>
+                        {% for point in top_decision.good_points %}
+                            <li><span class="macro-evidence-panel__icon" aria-hidden="true"></span><span>{{ point }}</span></li>
+                        {% empty %}
+                            <li><span class="macro-evidence-panel__icon" aria-hidden="true"></span><span>良い材料は更新データ待ちです。</span></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="macro-evidence-panel macro-evidence-panel--bad">
+                    <h2 class="macro-section-title">悪い材料</h2>
+                    <ul>
+                        {% for point in top_decision.bad_points %}
+                            <li><span class="macro-evidence-panel__icon" aria-hidden="true"></span><span>{{ point }}</span></li>
+                        {% empty %}
+                            <li><span class="macro-evidence-panel__icon" aria-hidden="true"></span><span>悪い材料は更新データ待ちです。</span></li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </section>
 
-            <section class="macro-section">
-                <h2 class="macro-section-title">良い材料 / 悪い材料</h2>
-                <div class="macro-regime-materials">
-                    <div class="macro-regime-material">
-                        <span class="macro-regime-material-title macro-pos">良い材料</span>
-                        <ul>
-                            {% for point in top_decision.good_points %}
-                                <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
-                            {% empty %}
-                                <li>良い材料は更新データ待ちです。</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="macro-regime-material">
-                        <span class="macro-regime-material-title macro-neg">悪い材料</span>
-                        <ul>
-                            {% for point in top_decision.bad_points %}
-                                <li><span class="macro-material-icon" aria-hidden="true"></span>{{ point }}</li>
-                            {% empty %}
-                                <li>悪い材料は更新データ待ちです。</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <details class="macro-section">
+            <details class="macro-section macro-verification" open>
                 <summary class="macro-section-title macro-section-title--shield">詳細・監査・検証（信頼度・データ鮮度）</summary>
                 <div class="macro-section-headline">
                     <a href="{% url 'macro:audit' %}" class="macro-scenario-reset">詳細・監査へ</a>

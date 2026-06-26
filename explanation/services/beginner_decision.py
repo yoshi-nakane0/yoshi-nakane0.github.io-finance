@@ -361,7 +361,6 @@ def _reference_candidate(
         'stop_display': _price_display(stop_price),
         'reward_risk_display': 'N/A' if reward_risk is None else f'{float(reward_risk):.2f}',
         'confidence_display': f'{confidence_grade} / {confidence_score}%（参考）',
-        'reason_display': ' / '.join(wait_reasons) if wait_reasons else '条件未達',
     }
 
 

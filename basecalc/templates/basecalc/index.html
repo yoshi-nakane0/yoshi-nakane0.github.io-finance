@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>basecalc - 日経先物テクニカル分析</title>
     <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
-    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=world-model-20260524">
+    <link rel="stylesheet" href="{% static 'basecalc/css/style.css' %}?v=mock-top-20260627">
 </head>
 <body>
     <div class="app-container">
@@ -27,173 +27,187 @@
             </div>
             {% else %}
 
-            <section class="wm-dashboard {% if basecalc_top.range_mode.active %}wm-range{% else %}wm-{{ decision.direction }}{% endif %}" data-field="wm_hero">
-                <article class="wm-purpose-card wm-purpose-card--technical wm-purpose-card--lead">
-                    <div class="wm-purpose-card__head">
-                        <span class="wm-purpose-card__label">{% if basecalc_top.range_mode.active %}レンジ確認モード{% else %}テクニカル最終判定{% endif %}</span>
-                    </div>
-                    <div class="wm-purpose-card__main">
+            <section class="wm-dashboard basecalc-top {% if basecalc_top.range_mode.active %}wm-range{% else %}wm-{{ decision.direction }}{% endif %}" data-field="wm_hero">
+                <article class="basecalc-hero-card">
+                    <div class="basecalc-hero-card__copy">
+                        <span class="basecalc-kicker">{% if basecalc_top.range_mode.active %}レンジ確認モード{% else %}テクニカル最終判定{% endif %}</span>
                         <h1 class="wm-dashboard__title">{{ basecalc_top.final_judgment.direction }}</h1>
+                        <p>{% if basecalc_top.range_mode.active %}{{ basecalc_top.range_mode.subtitle }}{% else %}{{ basecalc_top.final_judgment.headline }}{% endif %}</p>
+                    </div>
+                    <div class="basecalc-pill-row">
                         {% if basecalc_top.range_mode.active %}
-                        <div class="wm-purpose-card__badge">{{ basecalc_top.range_mode.subtitle }}</div>
+                        <span class="basecalc-pill basecalc-pill--warning">追撃買い禁止</span>
+                        <span class="basecalc-pill basecalc-pill--ok">使える判断: {{ basecalc_top.range_mode.allowed }}</span>
                         {% else %}
-                        <div class="wm-purpose-card__badge">現在値 {{ basecalc_top.lines.current_price|floatformat:0|intcomma|default:"N/A" }} / セットアップ {{ basecalc_top.final_judgment.setup }}</div>
+                        <span class="basecalc-pill basecalc-pill--ok">判定状態: {{ basecalc_top.status.judgment_state }}</span>
+                        <span class="basecalc-pill basecalc-pill--warning">注意: {{ basecalc_top.action.caution }}</span>
                         {% endif %}
                     </div>
-                    <div class="wm-purpose-card__facts">
-                        {% if basecalc_top.range_mode.active %}
-                        <span>現在値 <strong>{% if basecalc_top.lines.current_price_display %}{{ basecalc_top.lines.current_price_display }}{% else %}{{ basecalc_top.lines.current_price|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong></span>
-                        <span>近い上値 <strong>{% if basecalc_top.lines.near_upside_display %}{{ basecalc_top.lines.near_upside_display }}{% else %}{{ basecalc_top.lines.near_upside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong></span>
-                        <span>近い下値 <strong>{% if basecalc_top.lines.near_downside_display %}{{ basecalc_top.lines.near_downside_display }}{% else %}{{ basecalc_top.lines.near_downside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong></span>
-                        <span>判定作成日時 <strong>{{ basecalc_top.status.updated_at }}</strong></span>
-                        {% else %}
-                        <span>信頼度 <strong>{{ basecalc_top.confidence.direction }}</strong></span>
-                        <span>判定状態 <strong>{{ basecalc_top.status.judgment_state }}</strong></span>
-                        <span>データ状態 <strong>{{ basecalc_top.status.data_state }}</strong></span>
-                        <span>判定作成日時 <strong>{{ basecalc_top.status.updated_at }}</strong></span>
-                        {% endif %}
+
+                    <div class="basecalc-hero-chart">
+                        <div class="basecalc-line basecalc-line--resistance">
+                            <span>上値抵抗（主要）</span>
+                            <i></i>
+                            <strong>{% if basecalc_top.lines.upside_resistance_display %}{{ basecalc_top.lines.upside_resistance_display }}{% else %}{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        </div>
+                        <div class="basecalc-line basecalc-line--near-up">
+                            <span>近い上値</span>
+                            <i></i>
+                            <strong>{% if basecalc_top.lines.near_upside_display %}{{ basecalc_top.lines.near_upside_display }}{% else %}{{ basecalc_top.lines.near_upside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        </div>
+                        <div class="basecalc-line basecalc-line--current">
+                            <span>現在値</span>
+                            <i></i>
+                            <strong>{% if basecalc_top.lines.current_price_display %}{{ basecalc_top.lines.current_price_display }}{% else %}{{ basecalc_top.lines.current_price|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        </div>
+                        <div class="basecalc-line basecalc-line--near-down">
+                            <span>近い下値</span>
+                            <i></i>
+                            <strong>{% if basecalc_top.lines.near_downside_display %}{{ basecalc_top.lines.near_downside_display }}{% else %}{{ basecalc_top.lines.near_downside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        </div>
+                        <div class="basecalc-line basecalc-line--support">
+                            <span>下値支持（主要）</span>
+                            <i></i>
+                            <strong>{% if basecalc_top.lines.downside_support_display %}{{ basecalc_top.lines.downside_support_display }}{% else %}{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        </div>
                     </div>
                 </article>
 
-                <div class="wm-purpose-grid">
-                    <article class="wm-purpose-card wm-purpose-card--technical">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">{% if basecalc_top.range_mode.active %}レンジ確認の重要ライン{% else %}実行可否と重要ライン{% endif %}</span>
-                        </div>
-                        <div class="wm-purpose-card__main">
-                            <h2 data-field="direction_label">{{ basecalc_top.action.judgment }}</h2>
-                            <div class="wm-purpose-card__badge">{{ basecalc_top.final_judgment.headline }}</div>
-                        </div>
-                        <div class="wm-purpose-card__facts">
-                            <span>上値抵抗 <strong>{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}</strong></span>
-                            <span>下値支持 <strong>{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}</strong></span>
-                            <span>無効化 <strong>{{ basecalc_top.lines.invalidation_line }}</strong></span>
-                            <span>反転警戒ライン <strong>{{ basecalc_top.lines.reversal_warning_line }}</strong></span>
-                            {% if basecalc_top.range_mode.active %}
-                            <span>使える判断 <strong>{{ basecalc_top.range_mode.allowed }}</strong></span>
-                            <span>使わない判断 <strong>{{ basecalc_top.range_mode.prohibited }}</strong></span>
-                            {% for reason in basecalc_top.range_mode.stop_reasons %}
-                            <span>停止理由 <strong>{{ reason }}</strong></span>
-                            {% endfor %}
-                            {% endif %}
-                        </div>
+                <div class="basecalc-level-grid">
+                    <article class="basecalc-mini-card basecalc-mini-card--amber">
+                        <span>近い上値</span>
+                        <strong>{% if basecalc_top.lines.near_upside_display %}{{ basecalc_top.lines.near_upside_display }}{% else %}{{ basecalc_top.lines.near_upside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        <small>上抜けに注目</small>
                     </article>
-
-                    <article class="wm-purpose-card wm-purpose-card--stress">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">順張り・逆張り・警戒</span>
-                        </div>
-                        <div class="wm-purpose-card__main">
-                            <h2>{{ basecalc_top.action.judgment }}</h2>
-                            <div class="wm-purpose-card__badge">{{ basecalc_top.behavior.trend_pressure }}</div>
-                        </div>
-                        <div class="wm-purpose-card__facts">
-                            <span>反転警戒 <strong>{{ basecalc_top.behavior.reversal_warning }}</strong></span>
-                            <span>追いかけリスク <strong>{{ basecalc_top.behavior.chase_risk }}</strong></span>
-                        </div>
+                    <article class="basecalc-mini-card basecalc-mini-card--green">
+                        <span>近い下値</span>
+                        <strong>{% if basecalc_top.lines.near_downside_display %}{{ basecalc_top.lines.near_downside_display }}{% else %}{{ basecalc_top.lines.near_downside|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        <small>割れに注意</small>
+                    </article>
+                    <article class="basecalc-mini-card basecalc-mini-card--red">
+                        <span>上値抵抗</span>
+                        <strong>{% if basecalc_top.lines.upside_resistance_display %}{{ basecalc_top.lines.upside_resistance_display }}{% else %}{{ basecalc_top.lines.upside_resistance|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        <small>強い抵抗帯</small>
+                    </article>
+                    <article class="basecalc-mini-card basecalc-mini-card--green">
+                        <span>下値支持</span>
+                        <strong>{% if basecalc_top.lines.downside_support_display %}{{ basecalc_top.lines.downside_support_display }}{% else %}{{ basecalc_top.lines.downside_support|floatformat:0|intcomma|default:"N/A" }}{% endif %}</strong>
+                        <small>強い支持帯</small>
                     </article>
                 </div>
 
-                <div class="wm-purpose-grid">
-                    <article class="wm-purpose-card wm-purpose-card--technical">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">算出根拠3つ / 警戒3つ</span>
-                        </div>
-                        <div class="wm-purpose-card__facts">
-                            {% for item in basecalc_top.reasons %}
-                            <span>算出根拠 <strong>{{ item }}</strong></span>
-                            {% endfor %}
-                            {% for item in basecalc_top.risks %}
-                            <span>警戒 <strong>{{ item }}</strong></span>
-                            {% endfor %}
-                        </div>
-                    </article>
-
-                    <article class="wm-purpose-card wm-purpose-card--forecast">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">判断変更条件</span>
-                        </div>
-                        <div class="wm-purpose-card__facts">
-                            {% for item in basecalc_top.change_conditions %}
-                            <span>{{ item.label }} <strong>{{ item.detail }}</strong></span>
-                            {% endfor %}
-                        </div>
-                    </article>
-                </div>
-
-                <details class="wm-purpose-card wm-purpose-card--forecast">
-                    <summary class="wm-purpose-card__label">詳細を表示</summary>
-                    <div class="wm-purpose-grid">
-                        <article class="wm-purpose-card wm-purpose-card--forecast">
-                            <div class="wm-purpose-card__head">
-                                <span class="wm-purpose-card__label">1日・3日・5日の見通し</span>
-                            </div>
-                            <div class="wm-purpose-card__facts">
-                                {% for item in basecalc_top.horizons %}
-                                <span>{{ item.label }} <strong>{{ item.summary }}</strong></span>
-                                {% endfor %}
-                            </div>
-                        </article>
-
-                        <article class="wm-purpose-card wm-purpose-card--stress">
-                            <div class="wm-purpose-card__head">
-                                <span class="wm-purpose-card__label">米国3指数確認</span>
-                            </div>
-                            <div class="wm-purpose-card__facts">
-                                <span>米国3指数 <strong>{{ basecalc_top.external.us_indices }}</strong></span>
-                                <span>理由 <strong>{{ basecalc_top.external.us_reason }}</strong></span>
-                                <span>市場ストレス <strong>{{ basecalc_top.external.market_stress }}</strong></span>
-                                <span>日経先物への影響 <strong>{{ basecalc_top.external.market_impact }}</strong></span>
-                            </div>
-                        </article>
+                <section class="basecalc-panel basecalc-panel--ok">
+                    <h2>使える判断（確認できること）</h2>
+                    <div class="basecalc-judgment-grid">
+                        <div><strong>支持抵抗</strong><span>節目の効き目を確認</span></div>
+                        <div><strong>ATRレンジ</strong><span>値幅の目安を確認</span></div>
+                        <div><strong>反転警戒</strong><span>反発・失速の兆候確認</span></div>
                     </div>
+                </section>
 
-                    <article class="wm-purpose-card wm-purpose-card--forecast">
-                        <div class="wm-purpose-card__head">
-                            <span class="wm-purpose-card__label">信頼度・データ品質・検証リンク</span>
+                <section class="basecalc-panel basecalc-panel--danger">
+                    <h2>使わない判断（禁止事項）</h2>
+                    {% if basecalc_top.range_mode.active %}
+                    <p class="basecalc-panel-note">{{ basecalc_top.range_mode.prohibited }}</p>
+                    {% for reason in basecalc_top.range_mode.stop_reasons %}
+                    <p class="basecalc-panel-note">停止理由: {{ reason }}</p>
+                    {% endfor %}
+                    {% elif basecalc_top.action.prohibited %}
+                    <p class="basecalc-panel-note">{{ basecalc_top.action.prohibited }}</p>
+                    {% endif %}
+                    <div class="basecalc-judgment-grid">
+                        <div><strong>方向の断定</strong><span>上下どちらの断定もしない</span></div>
+                        <div><strong>高値追い</strong><span>ブレイク追線はしない</span></div>
+                        <div><strong>追撃買い</strong><span>上昇局面の買い増し禁止</span></div>
+                    </div>
+                </section>
+
+                <section class="basecalc-panel basecalc-panel--info">
+                    <h2>順張り・逆張り・警戒</h2>
+                    <div class="basecalc-status-grid">
+                        <div><span>順張り圧力</span><strong>{{ basecalc_top.behavior.trend_pressure }}</strong></div>
+                        <div><span>反転警戒</span><strong>{{ basecalc_top.behavior.reversal_warning }}</strong></div>
+                        <div><span>追いかけリスク</span><strong>{{ basecalc_top.behavior.chase_risk }}</strong></div>
+                        <div><span>反転警戒ライン</span><strong>{{ basecalc_top.lines.reversal_warning_line }}</strong></div>
+                    </div>
+                </section>
+
+                <section class="basecalc-panel basecalc-panel--split">
+                    <h2>根拠と注意点</h2>
+                    <div class="basecalc-split-grid">
+                        <div class="basecalc-note-box basecalc-note-box--ok">
+                            <h3>根拠（良い材料・中立）</h3>
+                            {% for item in basecalc_top.reasons %}
+                            <p>{{ item }}</p>
+                            {% endfor %}
                         </div>
-                        <div class="wm-purpose-card__facts">
-                            <span>データ品質 <strong>{{ basecalc_top.confidence.data_quality }}</strong></span>
-                            <span>方向判断 <strong>{{ basecalc_top.confidence.direction }}</strong></span>
-                            <span>レンジ・節目 <strong>{{ basecalc_top.confidence.range }}</strong></span>
-                            <span>検証 <strong>{{ basecalc_top.confidence.validation_note }}</strong></span>
+                        <div class="basecalc-note-box basecalc-note-box--danger">
+                            <h3>注意点（リスク要因）</h3>
+                            {% for item in basecalc_top.risks %}
+                            <p>{{ item }}</p>
+                            {% endfor %}
                         </div>
-                    </article>
-                </details>
+                    </div>
+                </section>
+
+                <section class="basecalc-panel basecalc-panel--change">
+                    <h2>判断変更条件</h2>
+                    <ol class="basecalc-condition-list">
+                        {% for item in basecalc_top.change_conditions %}
+                        <li><span>{{ forloop.counter }}</span><strong>{{ item.label }}</strong><em>{{ item.detail }}</em></li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
+                <section class="basecalc-panel basecalc-panel--time">
+                    <h2>時間軸別の確認ポイント</h2>
+                    <div class="basecalc-time-grid">
+                        {% for item in basecalc_top.horizons %}
+                        <div><span>{{ item.label }}</span><strong>{{ item.summary }}</strong>{% if item.note %}<small>{{ item.note }}</small>{% endif %}</div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <div class="basecalc-meta-grid">
+                    <div><span>データ品質</span><strong>{{ basecalc_top.confidence.data_quality }}</strong><small>{{ basecalc_top.status.data_state }}</small></div>
+                    <div><span>信頼度</span><strong>{{ basecalc_top.confidence.direction }}</strong><small>{{ basecalc_top.confidence.range }}</small></div>
+                    <div><span>判定状態</span><strong>{{ basecalc_top.status.judgment_state }}</strong><small>{{ basecalc_top.final_judgment.setup }}</small></div>
+                    <div><span>更新</span><strong>{{ basecalc_top.status.updated_at }}</strong><small>{{ basecalc_top.confidence.validation_note }}</small></div>
+                </div>
+
+                <div class="action-row top-actions basecalc-actions">
+                    {% if can_update_basecalc_data %}
+                    <form method="post" action="{% url 'basecalc:workflow_dispatch' %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-base btn-outline" id="basecalc-workflow-dispatch"{% if refresh_workflow_state.status == "running" %} disabled{% endif %}>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                                <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Actions更新
+                        </button>
+                    </form>
+                    <form method="post" action="" id="price-refresh-form" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update">
+                        <button type="submit" class="btn-base btn-outline" id="price-refresh">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                                <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            更新
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
+                    <a href="{% url 'basecalc:validation' %}" class="btn-base btn-outline">検証</a>
+                    <a href="{% url 'basecalc:index' %}?detail=1" class="btn-base btn-outline">詳細</a>
+                </div>
             </section>
-
-            <div class="action-row top-actions">
-                {% if can_update_basecalc_data %}
-                <form method="post" action="{% url 'basecalc:workflow_dispatch' %}" class="inline-form">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-base btn-outline" id="basecalc-workflow-dispatch"{% if refresh_workflow_state.status == "running" %} disabled{% endif %}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Actions更新
-                    </button>
-                </form>
-                <form method="post" action="" id="price-refresh-form" class="inline-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update">
-                    <button type="submit" class="btn-base btn-outline" id="price-refresh">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        更新
-                    </button>
-                </form>
-                {% endif %}
-                <a href="{% url 'basecalc:history' %}" class="btn-base btn-outline">履歴</a>
-                <a href="{% url 'basecalc:validation' %}" class="btn-base btn-outline">検証</a>
-                <a href="{% url 'basecalc:index' %}?detail=1" class="btn-base btn-outline">詳細</a>
-            </div>
             {% if can_update_basecalc_data and refresh_workflow_state %}
             <div class="notice-text">
                 {{ refresh_workflow_state.message }}

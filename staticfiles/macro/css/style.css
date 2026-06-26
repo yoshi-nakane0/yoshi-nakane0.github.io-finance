@@ -3699,3 +3699,478 @@ body {
         height: 10rem;
         transform: none;
     }
+
+/* === Macro mock-inspired mobile dashboard === */
+.macro-container {
+    padding: 0.72rem 0.72rem 1.6rem;
+}
+
+.macro-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8.8rem;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 12.9rem;
+    padding: 0.95rem;
+    border-color: rgba(95, 179, 255, 0.56);
+    background:
+        radial-gradient(circle at 82% 35%, rgba(33, 204, 255, 0.24), transparent 9rem),
+        radial-gradient(circle at 12% 0%, rgba(29, 162, 255, 0.18), transparent 8rem),
+        linear-gradient(145deg, rgba(6, 26, 53, 0.98), rgba(2, 10, 24, 0.98));
+}
+
+.macro-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.28;
+    background:
+        linear-gradient(90deg, rgba(53, 231, 242, 0.08) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(53, 231, 242, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.macro-hero__content,
+.macro-score-ring,
+.macro-hero__meta {
+    position: relative;
+    z-index: 1;
+}
+
+.macro-hero__content {
+    min-width: 0;
+    display: grid;
+    gap: 0.52rem;
+}
+
+.macro-hero__badge {
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.22rem 0.62rem;
+    border-radius: 8px;
+    background: rgba(20, 147, 234, 0.36);
+    color: var(--macro-accent-strong);
+    font-size: 0.82rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.macro-hero__headline {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.66rem;
+    font-weight: 900;
+    line-height: 1.22;
+    letter-spacing: 0;
+    text-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+}
+
+.macro-hero__summary {
+    margin: 0;
+    color: #c8d5e5;
+    font-size: 0.86rem;
+    font-weight: 750;
+    line-height: 1.48;
+}
+
+.macro-hero__chips {
+    display: grid;
+    gap: 0.42rem;
+}
+
+.macro-hero__chip {
+    display: block;
+    min-width: 0;
+    padding: 0.38rem 0.52rem;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 8px;
+    background: rgba(7, 28, 50, 0.74);
+    color: #e6edf7;
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+}
+
+.macro-hero__chip--good {
+    border-color: rgba(57, 233, 129, 0.38);
+    color: #75f2a7;
+}
+
+.macro-hero__chip--warn {
+    border-color: rgba(250, 204, 21, 0.46);
+    color: #ffd45a;
+}
+
+.macro-score-ring {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.28rem;
+    justify-self: center;
+    width: 8.25rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at center, #06152c 0 58%, transparent 59%),
+        conic-gradient(#35e7f2 0 70%, rgba(70, 104, 134, 0.46) 70% 100%);
+    box-shadow: 0 0 26px rgba(53, 231, 242, 0.2), inset 0 0 20px rgba(6, 17, 35, 0.74);
+}
+
+.macro-score-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0.55rem;
+    border-radius: 50%;
+    border: 0.5rem solid rgba(57, 233, 129, 0.16);
+    border-right-color: rgba(53, 231, 242, 0.82);
+    border-bottom-color: rgba(57, 233, 129, 0.78);
+}
+
+.macro-score-ring__value,
+.macro-score-ring__label {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.macro-score-ring__value {
+    color: #ffffff;
+    font-size: 2.05rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-score-ring__label {
+    color: #aab9cc;
+    font-size: 0.64rem;
+    font-weight: 850;
+    line-height: 1.2;
+}
+
+.macro-hero__meta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 0.65rem;
+    padding-top: 0.54rem;
+    border-top: 1px solid rgba(125, 158, 190, 0.16);
+    color: #9fb0c5;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.macro-axis-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.56rem;
+    margin-bottom: 0.85rem;
+}
+
+.macro-axis-card {
+    --axis-color: #35e7f2;
+    min-width: 0;
+    padding: 0.7rem 0.68rem;
+    border: 1px solid rgba(95, 179, 255, 0.42);
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--axis-color) 18%, transparent), transparent 5.5rem),
+        linear-gradient(145deg, rgba(6, 28, 55, 0.95), rgba(3, 13, 29, 0.96));
+    box-shadow: var(--macro-panel-shadow);
+}
+
+.macro-axis-card--2 {
+    --axis-color: #ffbd22;
+}
+
+.macro-axis-card--3,
+.macro-axis-card--4 {
+    --axis-color: #5dea88;
+}
+
+.macro-axis-card__head {
+    display: flex;
+    align-items: center;
+    gap: 0.48rem;
+    min-width: 0;
+}
+
+.macro-axis-card__icon {
+    width: 1.68rem;
+    height: 1.68rem;
+    flex: 0 0 auto;
+    color: var(--axis-color);
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--axis-color) 45%, transparent));
+}
+
+.macro-axis-card__icon::before {
+    content: "↗";
+    font-size: 1.66rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.macro-axis-card--2 .macro-axis-card__icon::before {
+    content: "!";
+}
+
+.macro-axis-card--3 .macro-axis-card__icon::before {
+    content: "▥";
+}
+
+.macro-axis-card--4 .macro-axis-card__icon::before {
+    content: "▮";
+}
+
+.macro-axis-card__label {
+    color: #edf5ff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.macro-axis-card__body {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.42rem;
+    margin-top: 0.42rem;
+}
+
+.macro-axis-card__body strong {
+    color: #ffffff;
+    font-size: 1.68rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.macro-axis-card__body span {
+    color: var(--axis-color);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-align: right;
+    line-height: 1.2;
+}
+
+.macro-axis-card__meter {
+    height: 0.42rem;
+    margin-top: 0.48rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(125, 158, 190, 0.2);
+}
+
+.macro-axis-card__meter span {
+    display: block;
+    height: 100%;
+    max-width: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #35e7f2, var(--axis-color));
+    box-shadow: 0 0 13px color-mix(in srgb, var(--axis-color) 45%, transparent);
+}
+
+.macro-trigger-panel {
+    border-color: rgba(245, 164, 0, 0.78);
+    background:
+        radial-gradient(circle at 15% 12%, rgba(245, 164, 0, 0.13), transparent 8rem),
+        linear-gradient(145deg, rgba(18, 28, 38, 0.96), rgba(3, 12, 25, 0.96));
+}
+
+.macro-trigger-panel .macro-section-title {
+    color: #ffbd22;
+}
+
+.macro-trigger-timeline {
+    display: grid;
+    gap: 0.42rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: trigger;
+}
+
+.macro-trigger-timeline li {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.46rem;
+    align-items: center;
+    min-width: 0;
+    counter-increment: trigger;
+}
+
+.macro-trigger-timeline__num {
+    display: inline-grid;
+    place-items: center;
+    width: 1.82rem;
+    height: 1.82rem;
+    border: 2px solid #ffbd22;
+    border-radius: 50%;
+    color: #ffbd22;
+    background: rgba(8, 18, 31, 0.96);
+    font-size: 0.88rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 14px rgba(245, 164, 0, 0.22);
+}
+
+.macro-trigger-timeline__body {
+    min-width: 0;
+    padding: 0.52rem 0.68rem;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 8px;
+    background: rgba(10, 27, 45, 0.68);
+}
+
+.macro-trigger-timeline__body span {
+    color: #e8eef8;
+    font-size: 0.86rem;
+    font-weight: 820;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.macro-evidence-stack {
+    display: grid;
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+}
+
+.macro-evidence-panel {
+    --evidence-color: var(--macro-good);
+    position: relative;
+    overflow: hidden;
+    padding: 0.88rem 0.82rem;
+    border: 1px solid color-mix(in srgb, var(--evidence-color) 56%, transparent);
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--evidence-color) 17%, transparent), transparent 8rem),
+        linear-gradient(145deg, rgba(7, 27, 39, 0.96), rgba(3, 13, 29, 0.98));
+    box-shadow: var(--macro-panel-shadow);
+}
+
+.macro-evidence-panel--bad {
+    --evidence-color: #ff626f;
+    background:
+        radial-gradient(circle at 8% 0%, rgba(255, 98, 111, 0.13), transparent 8rem),
+        linear-gradient(145deg, rgba(35, 17, 27, 0.96), rgba(3, 13, 29, 0.98));
+}
+
+.macro-evidence-panel .macro-section-title {
+    color: var(--evidence-color);
+    margin-bottom: 0.62rem;
+}
+
+.macro-evidence-panel ul {
+    display: grid;
+    gap: 0.42rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.macro-evidence-panel li {
+    display: grid;
+    grid-template-columns: 1.7rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 2.7rem;
+    padding: 0.46rem 0.58rem;
+    border: 1px solid color-mix(in srgb, var(--evidence-color) 24%, transparent);
+    border-radius: 8px;
+    background: rgba(9, 31, 55, 0.55);
+}
+
+.macro-evidence-panel li::after {
+    content: "›";
+    color: #d9e5f2;
+    font-size: 1.45rem;
+    font-weight: 800;
+    grid-column: 3;
+}
+
+.macro-evidence-panel__icon {
+    color: var(--evidence-color);
+    font-size: 1.35rem;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1;
+}
+
+.macro-evidence-panel__icon::before {
+    content: "✓";
+}
+
+.macro-evidence-panel--bad .macro-evidence-panel__icon::before {
+    content: "!";
+}
+
+.macro-evidence-panel li span:last-child {
+    min-width: 0;
+    color: #e8eef8;
+    font-size: 0.84rem;
+    font-weight: 780;
+    line-height: 1.42;
+    overflow-wrap: anywhere;
+}
+
+.macro-verification {
+    border-color: rgba(95, 179, 255, 0.58);
+}
+
+.macro-verification > summary {
+    cursor: pointer;
+}
+
+.macro-verification .macro-scenarios {
+    margin-top: 0.65rem;
+}
+
+.macro-verification .macro-scenario-card {
+    text-align: center;
+}
+
+.macro-verification .macro-state-section-head {
+    display: grid;
+    gap: 0.18rem;
+    justify-items: center;
+}
+
+.macro-verification .macro-state-section-title {
+    color: #b7c6da;
+    font-size: 0.74rem;
+}
+
+.macro-verification .macro-state-section-note {
+    color: #b7c6da;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.macro-verification .macro-scenario-card p {
+    margin: 0.22rem 0 0;
+    color: #f5f9ff;
+    font-size: 1.32rem;
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+@media (max-width: 390px) {
+    .macro-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .macro-score-ring {
+        justify-self: start;
+        width: 7.4rem;
+    }
+
+    .macro-axis-grid {
+        grid-template-columns: 1fr;
+    }
+}

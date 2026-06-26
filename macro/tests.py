@@ -3189,38 +3189,36 @@ class DashboardFormatTest(TestCase):
             / 'style.css'
         ).read_text(encoding='utf-8')
 
-        self.assertIn('macro-state-card', template)
-        self.assertIn('macro-state-card__icon', template)
-        self.assertIn('macro-state-card__badge', template)
+        self.assertIn('macro-axis-grid', template)
+        self.assertIn('macro-axis-card__icon', template)
+        self.assertIn('macro-axis-card__meter', template)
         self.assertIn('macro-risk-gauge', template)
-        self.assertIn('macro-material-icon', template)
-        self.assertIn('.macro-state-card {', css)
-        self.assertIn('.macro-state-card-grid {', css)
+        self.assertIn('macro-evidence-panel__icon', template)
+        self.assertIn('.macro-axis-card {', css)
+        self.assertIn('.macro-axis-grid {', css)
         self.assertIn('.macro-risk-gauge-fill {', css)
-        self.assertIn('.macro-material-card {', css)
-        self.assertIn('font-size: 1.5rem;', css)
-        self.assertIn('font-size: 1.375rem;', css)
+        self.assertIn('.macro-evidence-panel {', css)
+        self.assertIn('font-size: 1.68rem;', css)
+        self.assertIn('font-size: 2.05rem;', css)
         self.assertIn(
-            '.macro-direction-card__value {\n'
-            '    align-self: center;\n'
-            '    justify-self: center;\n'
-            '    color: var(--state-color);\n'
-            '    font-size: 1.5rem;\n'
-            '    font-weight: 500;',
+            '.macro-axis-card__body strong {\n'
+            '    color: #ffffff;\n'
+            '    font-size: 1.68rem;\n'
+            '    font-weight: 900;',
             css,
         )
         self.assertIn(
-            '.macro-risk-card__value strong {\n'
-            '    color: var(--state-color);\n'
-            '    font-size: 1.375rem;\n'
-            '    font-weight: 500;',
+            '.macro-score-ring__value {\n'
+            '    color: #ffffff;\n'
+            '    font-size: 2.05rem;\n'
+            '    font-weight: 900;',
             css,
         )
         self.assertIn(
-            '.macro-material-card__value {\n'
-            '    color: #cbd5e1;\n'
-            '    font-size: 1rem;\n'
-            '    font-weight: 500;',
+            '.macro-evidence-panel li span:last-child {\n'
+            '    min-width: 0;\n'
+            '    color: #e8eef8;\n'
+            '    font-size: 0.84rem;',
             css,
         )
 
@@ -3746,7 +3744,12 @@ class DashboardFormatTest(TestCase):
                     'updated_at': '2026-06-25',
                 },
                 'reliability': {'data_quality': 'B / 74%', 'display_status': '参考'},
-                'axis_summary': [],
+                'axis_summary': [
+                    {'label': '景気', 'score_display': '67%', 'value': '改善'},
+                    {'label': '物価', 'score_display': '64%', 'value': '再加速警戒'},
+                    {'label': '政策・金利', 'score_display': '84%', 'value': '追い風'},
+                    {'label': '日経影響', 'score_display': '76%', 'value': '上昇支援'},
+                ],
                 'invalidation_triggers': [
                     {'label': 'Core PCE', 'detail': '再加速で警戒'},
                 ],
@@ -3773,6 +3776,12 @@ class DashboardFormatTest(TestCase):
 
         self.assertIn('Macro経済判定', top_html)
         self.assertIn('Macro現状スコア 81%', top_html)
+        self.assertIn('macro-hero', top_html)
+        self.assertIn('macro-score-ring', top_html)
+        self.assertIn('macro-axis-grid', top_html)
+        self.assertIn('macro-trigger-timeline', top_html)
+        self.assertIn('macro-evidence-panel--good', top_html)
+        self.assertIn('macro-evidence-panel--bad', top_html)
         self.assertIn('判定の信頼度', top_html)
         self.assertIn('B / 74%', top_html)
         self.assertEqual(html.count('>詳細・監査・検証（信頼度・データ鮮度）<'), 1)
@@ -3786,10 +3795,10 @@ class DashboardFormatTest(TestCase):
         self.assertNotIn('イベント前で慎重', detail_html)
         self.assertIn('>モデル検証<', detail_html)
         self.assertIn('景気は強め。ただし物価・金利に警戒。', top_html)
-        self.assertIn('経済の強弱', top_html)
-        self.assertIn('支えている材料', top_html)
-        self.assertIn('重しになっている材料', top_html)
-        self.assertIn('株価への見方', top_html)
+        self.assertIn('景気', top_html)
+        self.assertIn('物価', top_html)
+        self.assertIn('政策・金利', top_html)
+        self.assertIn('日経影響', top_html)
         self.assertNotIn('このページでは判断しない', top_html)
         self.assertNotIn('3〜6か月の経済環境を見るページ', top_html)
         self.assertNotIn('売買判断ではなく', top_html)
@@ -4689,8 +4698,8 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '今後3カ月のベースシナリオ')
         self.assertNotContains(r, 'モデルの信頼度')
         self.assertContains(r, 'Macro経済判定')
-        self.assertContains(r, '経済の強弱')
-        self.assertContains(r, '株価への見方')
+        self.assertContains(r, 'Macro現状スコア')
+        self.assertContains(r, '判断を変える条件')
         self.assertNotContains(r, 'このページでは判断しない')
         self.assertNotContains(r, '短期エントリーはbasecalcを優先')
         self.assertNotContains(r, 'ロング許可度')
