@@ -1,8 +1,9 @@
 {
-  "basecalc_as_of": "2026-06-26T05:34:00+00:00",
+  "basecalc_as_of": "2026-06-26T09:38:00+00:00",
   "basecalc_status": "limited",
   "blocking_reasons": [
     "現行モデルがATRベースラインを下回るため",
+    "米国3指数確認が不足",
     "予測ゲート停止中",
     "金利再上昇時に株価先物へ逆風"
   ],
@@ -11,9 +12,9 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-26T08:42:52.231965+00:00",
+  "explanation_as_of": "2026-06-26T09:53:52.277316+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-06-26T08:42:59.130115+00:00",
+  "generated_at": "2026-06-26T11:47:54.592771+00:00",
   "macro_as_of": "2026-06-26T08:42:52.231965+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",

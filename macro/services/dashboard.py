@@ -1586,11 +1586,6 @@ def _compact_direction(house_view: Dict, forecast: Dict, decision: Dict) -> str:
     return decision.get('headline') or forecast.get('headline') or 'データ確認中'
 
 
-def _format_confidence(decision: Dict, house_view: Dict) -> str:
-    data_quality = _format_data_quality(decision, house_view)
-    return f'判断品質 {data_quality}'
-
-
 def _format_data_quality(decision: Dict, house_view: Dict) -> str:
     confidence = decision.get('confidence') or {}
     grade = house_view.get('confidence_grade') or confidence.get('grade') or '—'
@@ -1600,6 +1595,38 @@ def _format_data_quality(decision: Dict, house_view: Dict) -> str:
     if not score:
         score = confidence.get('score_display')
     return f'{grade} / {score or "—"}'
+
+
+def _macro_current_score_display(context: Dict) -> str:
+    world_scores = _world_score_map(context.get('world_state') or {})
+    positive_fields = (
+        'growth_score',
+        'labor_score',
+        'credit_score',
+        'liquidity_score',
+        'risk_appetite_score',
+        'market_trend_score',
+    )
+    drag_fields = (
+        'inflation_score',
+        'policy_pressure_score',
+        'market_stress_score',
+    )
+    score_inputs = [
+        world_scores[field]
+        for field in positive_fields
+        if world_scores.get(field) is not None
+    ]
+    score_inputs.extend(
+        100 - world_scores[field]
+        for field in drag_fields
+        if world_scores.get(field) is not None
+    )
+    if not score_inputs:
+        return 'Macro現状スコア —'
+    score = round(sum(score_inputs) / len(score_inputs))
+    score = max(0, min(100, score))
+    return f'Macro現状スコア {score}%'
 
 
 def _top_data_freshness_display(context: Dict, confidence: Dict) -> str:
@@ -1820,6 +1847,7 @@ def build_top_decision_context(context: Dict) -> Dict:
         support_materials=good_materials['visible'],
         drag_materials=risk_candidates,
     )
+    macro_current_score = _macro_current_score_display(context)
 
     return {
         'final_judgment': {
@@ -1832,7 +1860,7 @@ def build_top_decision_context(context: Dict) -> Dict:
                 or forecast.get('judgment')
                 or '主要データの更新後に最終判断を表示します。'
             ),
-            'confidence': _format_confidence(decision, house_view),
+            'confidence': macro_current_score,
         },
         'nikkei': {
             'bias': nikkei_impact,
@@ -1848,7 +1876,7 @@ def build_top_decision_context(context: Dict) -> Dict:
         'policy_pressure': decision.get('policy_pressure') or {},
         'market_stress': decision.get('market_stress') or {},
         'freshness': {
-            'confidence': _format_confidence(decision, house_view),
+            'confidence': macro_current_score,
             'data_freshness': _top_data_freshness_display(context, confidence),
             'updated_at': context.get('last_updated') or context.get('generated_at') or '—',
         },

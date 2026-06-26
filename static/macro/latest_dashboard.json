@@ -3596,14 +3596,14 @@
       "title": "Macro経済判定"
     },
     "final_judgment": {
-      "confidence": "判断品質 A / 91%",
+      "confidence": "Macro現状スコア 70%",
       "direction": "中立（物価警戒）",
       "max_risk": "インフレ再加速リスクが高い・米金利上昇が株価バリュエーションを圧迫",
       "nikkei_impact": "上昇支援",
       "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意"
     },
     "freshness": {
-      "confidence": "判断品質 A / 91%",
+      "confidence": "Macro現状スコア 70%",
       "data_freshness": "100%",
       "updated_at": "2026-06-26"
     },

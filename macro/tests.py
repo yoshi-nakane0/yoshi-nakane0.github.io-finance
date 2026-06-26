@@ -3566,7 +3566,7 @@ class DashboardFormatTest(TestCase):
         self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
         self.assertNotIn('macro_role', context)
         self.assertNotIn('role_note', context.get('nikkei', {}))
-        self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 92%')
+        self.assertEqual(context['final_judgment']['confidence'], 'Macro現状スコア —')
         self.assertEqual(len(context['invalidation_triggers']), 4)
         self.assertEqual(
             [item['name_key'] for item in context['scenarios']],
@@ -3614,6 +3614,8 @@ class DashboardFormatTest(TestCase):
         )
         self.assertIn('インフレ再加速 82%', context['economic_view']['cards'][2]['value'])
         self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
+        self.assertEqual(context['final_judgment']['confidence'], 'Macro現状スコア 81%')
+        self.assertEqual(context['reliability']['data_quality'], 'B / 74%')
         self.assertNotIn('macro_role', context)
         self.assertNotIn('role_note', context.get('nikkei', {}))
         self.assertNotIn('entry_filter', context)
@@ -3630,7 +3632,7 @@ class DashboardFormatTest(TestCase):
                 'final_judgment': {
                     'direction': '中立（物価警戒）',
                     'summary': '景気判断は中立だが、物価再加速リスクが高い。',
-                    'confidence': '判断品質 B / 74%',
+                    'confidence': 'Macro現状スコア 81%',
                     'nikkei_impact': '上昇支援',
                     'max_risk': '米金利上昇',
                 },
@@ -3645,11 +3647,11 @@ class DashboardFormatTest(TestCase):
                     ],
                 },
                 'freshness': {
-                    'confidence': '判断品質 B / 74%',
+                    'confidence': 'Macro現状スコア 81%',
                     'data_freshness': '90%',
                     'updated_at': '2026-06-25',
                 },
-                'reliability': {'display_status': '参考'},
+                'reliability': {'data_quality': 'B / 74%', 'display_status': '参考'},
                 'axis_summary': [],
                 'invalidation_triggers': [
                     {'label': 'Core PCE', 'detail': '再加速で警戒'},
@@ -3659,8 +3661,8 @@ class DashboardFormatTest(TestCase):
                 ],
                 'good_points': ['雇用が強い'],
                 'bad_points': ['米金利上昇'],
-                'good_points_detail': [],
-                'bad_points_detail': [],
+                'good_points_detail': ['消費が底堅い'],
+                'bad_points_detail': ['イベント前で慎重'],
                 'policy_pressure': {},
                 'market_stress': {},
                 'driver_cards': [],
@@ -3669,8 +3671,26 @@ class DashboardFormatTest(TestCase):
 
         html = render_to_string('macro/index.html', context)
         top_html = html.split('詳細・監査・検証', 1)[0]
+        detail_html = html.split(
+            '<summary class="macro-section-title macro-section-title--shield">'
+            '詳細・監査・検証（信頼度・データ鮮度）</summary>',
+            1,
+        )[1]
 
         self.assertIn('Macro経済判定', top_html)
+        self.assertIn('Macro現状スコア 81%', top_html)
+        self.assertIn('判定の信頼度', top_html)
+        self.assertIn('B / 74%', top_html)
+        self.assertEqual(html.count('>詳細・監査・検証（信頼度・データ鮮度）<'), 1)
+        self.assertNotIn('>判定の信頼度<', detail_html)
+        self.assertNotIn('>データ鮮度<', detail_html)
+        self.assertNotIn('>更新<', detail_html)
+        self.assertNotIn('>表示扱い<', detail_html)
+        self.assertNotIn('良い材料の詳細', detail_html)
+        self.assertNotIn('悪い材料の詳細', detail_html)
+        self.assertNotIn('消費が底堅い', detail_html)
+        self.assertNotIn('イベント前で慎重', detail_html)
+        self.assertIn('>モデル検証<', detail_html)
         self.assertIn('景気は強め。ただし物価・金利に警戒。', top_html)
         self.assertIn('経済の強弱', top_html)
         self.assertIn('支えている材料', top_html)
@@ -3746,7 +3766,7 @@ class DashboardFormatTest(TestCase):
             context['final_judgment']['summary'],
             '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
         )
-        self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 91%')
+        self.assertEqual(context['final_judgment']['confidence'], 'Macro現状スコア —')
         self.assertEqual(context['reliability']['data_quality'], 'A / 91%')
         self.assertEqual(context['reliability']['model_validation'], 'C / 検証不足')
         self.assertEqual(context['reliability']['live_record'], 'Live実績 未評価')

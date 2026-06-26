@@ -1789,16 +1789,112 @@ class BasecalcUpdateSecurityTests(TestCase):
 
         result = build_basecalc_top_context(world_model, decision, [], {})
 
-        self.assertEqual(result['final_judgment']['direction'], '中立')
-        self.assertEqual(result['final_judgment']['headline'], '方向予測は使わずレンジ確認')
-        self.assertEqual(result['final_judgment']['setup'], '検証上はATRレンジ優先')
+        self.assertEqual(result['final_judgment']['direction'], '方向予測停止中')
+        self.assertEqual(result['final_judgment']['headline'], '現在は売買方向を出さず、支持抵抗とレンジだけ確認')
+        self.assertEqual(result['final_judgment']['setup'], 'レンジ確認モード')
+        self.assertTrue(result['range_mode']['active'])
+        self.assertEqual(result['range_mode']['title'], '方向予測停止中')
+        self.assertEqual(result['range_mode']['subtitle'], '現在は売買方向を出さず、支持抵抗とレンジだけ確認')
+        self.assertEqual(result['range_mode']['allowed'], '支持抵抗・ATRレンジ・反転警戒')
+        self.assertEqual(result['range_mode']['prohibited'], '方向の断定・高値追い・追撃買い')
+        self.assertEqual(result['range_mode']['stop_reasons'], ['現行モデルがATRベースラインを下回るため'])
         self.assertEqual(result['action']['judgment'], 'レンジ・節目確認')
         self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ・反転警戒')
         self.assertIn('現行モデルがATRベースラインを下回るため', result['action']['caution'])
         self.assertEqual(result['lines']['first_target'], 68570)
+        self.assertEqual(result['lines']['near_upside'], 66700)
+        self.assertEqual(result['lines']['near_downside'], 66600)
         self.assertEqual(result['lines']['structural_break'], '64,770')
         self.assertEqual([row['label'] for row in result['horizons']], ['1日', '3日', '5日'])
         self.assertEqual(result['horizons'][0]['summary'], '方向予測停止。ATRレンジ・支持抵抗を確認')
+
+    def test_basecalc_template_uses_range_mode_when_direction_prediction_is_stopped(self):
+        context = {
+            'error': None,
+            'can_update_basecalc_data': False,
+            'refresh_workflow_state': {},
+            'detail_mode': False,
+            'decision': {'direction': 'up'},
+            'world_model': {'data_quality': {'level': 'warning'}},
+            'basecalc_top': {
+                'range_mode': {
+                    'active': True,
+                    'title': '方向予測停止中',
+                    'subtitle': '現在は売買方向を出さず、支持抵抗とレンジだけ確認',
+                    'allowed': '支持抵抗・ATRレンジ・反転警戒',
+                    'prohibited': '方向の断定・高値追い・追撃買い',
+                    'stop_reasons': ['米国3指数確認不足', 'ATR基準に未達'],
+                },
+                'status': {
+                    'judgment_state': '参考',
+                    'data_state': '注意',
+                    'updated_at': '2026-06-26 18:38 JST',
+                },
+                'final_judgment': {
+                    'direction': '方向予測停止中',
+                    'headline': '現在は売買方向を出さず、支持抵抗とレンジだけ確認',
+                    'setup': 'レンジ確認モード',
+                    'supplement': '理由: 米国3指数確認不足',
+                },
+                'action': {
+                    'judgment': 'レンジ・節目確認',
+                    'allowed': '支持抵抗・ATRレンジ・反転警戒',
+                    'prohibited': '方向の断定・高値追い・追撃買い',
+                    'caution': '米国3指数確認不足 / ATR基準に未達',
+                },
+                'lines': {
+                    'current_price': 69290,
+                    'current_price_display': '69,290',
+                    'near_upside': 69300,
+                    'near_upside_display': '69,300',
+                    'near_downside': 69200,
+                    'near_downside_display': '69,200',
+                    'upside_resistance': 73210,
+                    'downside_support': 65370,
+                    'invalidation_line': 'N/A',
+                    'first_target': 73210,
+                    'reversal_warning_line': '前日安値・EMA20・VWAP割れ',
+                },
+                'behavior': {
+                    'trend_pressure': '順張り圧力は弱め。',
+                    'reversal_warning': '反転警戒は限定的です。',
+                    'chase_risk': '追いかけリスク: 中程度。',
+                },
+                'change_conditions': [{'label': '高値終値突破', 'detail': '上値目標を拡張'}],
+                'reasons': ['EMA5 > EMA20 > EMA60'],
+                'risks': ['米国3指数確認が不十分'],
+                'horizons': [{'label': '1日', 'summary': '方向予測停止。ATRレンジ・支持抵抗を確認'}],
+                'external': {
+                    'us_indices': 'まちまち',
+                    'us_reason': '米国3指数データなし',
+                    'market_stress': '通常',
+                    'market_impact': '中立',
+                },
+                'confidence': {
+                    'data_quality': 'データ中 76/100 / 信頼度低 44/100',
+                    'direction': '停止（検証未達）',
+                    'range': '中',
+                    'validation_note': '方向予測停止: 米国3指数確認不足。',
+                },
+            },
+        }
+
+        html = render_to_string('basecalc/index.html', context)
+        top_html = html.split('詳細を表示', 1)[0]
+
+        self.assertIn('方向予測停止中', top_html)
+        self.assertIn('現在は売買方向を出さず、支持抵抗とレンジだけ確認', top_html)
+        self.assertIn('近い上値', top_html)
+        self.assertIn('69,300', top_html)
+        self.assertIn('近い下値', top_html)
+        self.assertIn('69,200', top_html)
+        self.assertIn('使える判断', top_html)
+        self.assertIn('支持抵抗・ATRレンジ・反転警戒', top_html)
+        self.assertIn('使わない判断', top_html)
+        self.assertIn('方向の断定・高値追い・追撃買い', top_html)
+        self.assertIn('停止理由', top_html)
+        self.assertNotIn('<h1 class="wm-dashboard__title">中立</h1>', top_html)
+        self.assertNotIn('信頼度 <strong>停止', top_html)
 
     def test_basecalc_top_risks_do_not_duplicate_reversal_warning(self):
         world_model = {
@@ -2116,9 +2212,9 @@ class BasecalcUpdateSecurityTests(TestCase):
             response = self.client.get(reverse('basecalc:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'テクニカル最終判定')
+        self.assertContains(response, 'レンジ確認モード')
         self.assertContains(response, '判定作成日時')
-        self.assertContains(response, '実行可否と重要ライン')
+        self.assertContains(response, 'レンジ確認の重要ライン')
         self.assertContains(response, '順張り・逆張り・警戒')
         self.assertContains(response, '現在値')
         self.assertContains(response, '判断変更条件')
@@ -2400,7 +2496,7 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertContains(response, '米国3指数確認')
         self.assertContains(response, '追いかけリスク')
         self.assertContains(response, '1日・3日・5日の見通し')
-        self.assertContains(response, '方向予測は使わずレンジ確認')
+        self.assertContains(response, '現在は売買方向を出さず、支持抵抗とレンジだけ確認')
         self.assertContains(response, 'ATRレンジ・支持抵抗を確認')
         self.assertNotContains(response, '追いかけリスク: low')
         self.assertNotContains(response, '1d の方向')

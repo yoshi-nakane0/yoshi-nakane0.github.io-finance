@@ -76,6 +76,7 @@ def build_basecalc_top_context(world_model, decision, status_rows=None, performa
     world_model = world_model or {}
     decision = decision or {}
     return {
+        "range_mode": _range_mode_context(world_model),
         "status": _top_status(decision, status_rows),
         "final_judgment": _top_final_judgment(world_model, decision),
         "action": _top_action(world_model),
@@ -147,9 +148,9 @@ def _top_final_judgment(world_model, decision):
     if _directional_display_blocked(world_model):
         reasons = world_model.get("stop_reasons") or ["検証ゲート停止中"]
         return {
-            "direction": "中立",
-            "headline": "方向予測は使わずレンジ確認",
-            "setup": "検証上はATRレンジ優先",
+            "direction": "方向予測停止中",
+            "headline": "現在は売買方向を出さず、支持抵抗とレンジだけ確認",
+            "setup": "レンジ確認モード",
             "supplement": f"理由: {reasons[0]}",
         }
     headline = (
@@ -191,6 +192,25 @@ def _directional_display_blocked(world_model):
     if contract_status == "error":
         return True
     return output_contract.get("directional_allowed") is False
+
+
+def _range_mode_context(world_model):
+    if not _directional_display_blocked(world_model):
+        return {"active": False}
+    output_contract = (world_model or {}).get("output_contract") or {}
+    reasons = [
+        str(reason)
+        for reason in (output_contract.get("stop_reasons") or world_model.get("stop_reasons") or [])
+        if reason
+    ]
+    return {
+        "active": True,
+        "title": "方向予測停止中",
+        "subtitle": "現在は売買方向を出さず、支持抵抗とレンジだけ確認",
+        "allowed": "支持抵抗・ATRレンジ・反転警戒",
+        "prohibited": "方向の断定・高値追い・追撃買い",
+        "stop_reasons": reasons[:3] or ["方向予測の検証条件が未達"],
+    }
 
 
 def _target_display_allowed(world_model):
@@ -267,7 +287,7 @@ def _top_lines(world_model, decision):
     downside_support = _prefer_line_price(practical_lines.get("downside_support"), downside_support)
     near_upside = _prefer_line_price(practical_lines.get("near_upside"), near_upside)
     near_downside = _prefer_line_price(practical_lines.get("near_downside"), near_downside)
-    return {
+    lines = {
         "current_price": _prefer_line_price(
             practical_lines.get("current_price"),
             decision.get("price") or world_model.get("price"),
@@ -287,6 +307,15 @@ def _top_lines(world_model, decision):
             downside_support,
         ),
     }
+    for key in (
+        "current_price",
+        "upside_resistance",
+        "downside_support",
+        "near_upside",
+        "near_downside",
+    ):
+        lines[f"{key}_display"] = _price_text(lines.get(key))
+    return lines
 
 
 def _first_target_line(world_model, upside_resistance, downside_support):
