@@ -3337,6 +3337,100 @@ class DashboardFormatTest(TestCase):
             context['warnings'],
         )
 
+    def test_reliability_ignores_stale_non_decision_indicator_but_keeps_key_market_series(self):
+        Indicator.objects.all().update(is_active=False)
+        specs = [
+            ('BUSLOANS', '商業銀行事業貸出', Indicator.Importance.C),
+            ('DEXJPUS', 'USD/JPY', Indicator.Importance.A),
+            ('MOVE_INDEX', 'MOVE指数', Indicator.Importance.B),
+            ('VIX_VIX3M_RATIO', 'VIX/VIX3M比', Indicator.Importance.B),
+        ]
+        for series_id, name, importance in specs:
+            indicator, _ = Indicator.objects.update_or_create(
+                fred_series_id=series_id,
+                defaults={
+                    'source': Indicator.Source.FRED,
+                    'name_ja': name,
+                    'category': Indicator.Category.MARKET,
+                    'importance': importance,
+                    'frequency': Indicator.Frequency.DAILY,
+                    'is_active': True,
+                },
+            )
+            Observation.objects.create(
+                indicator=indicator,
+                observation_date=date(2026, 6, 18),
+                value=1.0,
+            )
+
+        with mock.patch(
+            'macro.services.dashboard.timezone.localdate',
+            return_value=date(2026, 6, 26),
+        ):
+            context = dashboard.build_reliability_context(
+                last_updated='2026-06-26',
+            )
+
+        stale_labels = [item['label'] for item in context['stale_items']]
+        self.assertEqual(context['stale_count'], 3)
+        self.assertFalse(any('商業銀行事業貸出' in label for label in stale_labels))
+        self.assertTrue(any('USD/JPY' in label for label in stale_labels))
+        self.assertTrue(any('MOVE指数' in label for label in stale_labels))
+        self.assertTrue(any('VIX/VIX3M比' in label for label in stale_labels))
+
+    def test_static_reliability_ignores_stale_non_decision_indicator_but_keeps_key_market_series(self):
+        payload = {
+            'last_updated': '2026-06-26',
+            'generated_at': '2026-06-26T09:00:00+09:00',
+            'audit_indicator_cards': [
+                {
+                    'series_id': 'BUSLOANS',
+                    'name_ja': '商業銀行事業貸出',
+                    'importance': Indicator.Importance.C,
+                    'latest_date': '2026-06-18',
+                    'frequency': Indicator.Frequency.DAILY,
+                    'has_data': True,
+                },
+                {
+                    'series_id': 'DEXJPUS',
+                    'name_ja': 'USD/JPY',
+                    'importance': Indicator.Importance.A,
+                    'latest_date': '2026-06-18',
+                    'frequency': Indicator.Frequency.DAILY,
+                    'has_data': True,
+                },
+                {
+                    'series_id': 'MOVE_INDEX',
+                    'name_ja': 'MOVE指数',
+                    'importance': Indicator.Importance.B,
+                    'latest_date': '2026-06-18',
+                    'frequency': Indicator.Frequency.DAILY,
+                    'has_data': True,
+                },
+                {
+                    'series_id': 'VIX_VIX3M_RATIO',
+                    'name_ja': 'VIX/VIX3M比',
+                    'importance': Indicator.Importance.B,
+                    'latest_date': '2026-06-18',
+                    'frequency': Indicator.Frequency.DAILY,
+                    'has_data': True,
+                },
+            ],
+        }
+
+        with mock.patch(
+            'macro.services.dashboard.timezone.localdate',
+            return_value=date(2026, 6, 26),
+        ):
+            context = dashboard.build_static_reliability_context(payload)
+
+        stale_labels = [item['label'] for item in context['stale_items']]
+        self.assertEqual(context['stale_count'], 3)
+        self.assertFalse(any('商業銀行事業貸出' in label for label in stale_labels))
+        self.assertTrue(any('USD/JPY' in label for label in stale_labels))
+        self.assertTrue(any('MOVE指数' in label for label in stale_labels))
+        self.assertTrue(any('VIX/VIX3M比' in label for label in stale_labels))
+
     def test_reliability_treats_recent_monthly_and_quarterly_periods_as_fresh(self):
         Indicator.objects.all().update(is_active=False)
         specs = [

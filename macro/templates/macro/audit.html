@@ -104,7 +104,7 @@
                             {% endif %}
                             {% if macro_reliability.missing_items or macro_reliability.stale_items %}
                                 <div>
-                                    <span class="macro-reliability-detail-title">未取得・古い指標</span>
+                                    <span class="macro-reliability-detail-title">未取得・古い重要指標</span>
                                     <ul class="macro-reliability-detail-list">
                                         {% for item in macro_reliability.missing_items %}
                                             <li>未取得: {{ item.label }}</li>

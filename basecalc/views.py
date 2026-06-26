@@ -828,11 +828,11 @@ def _practical_lines_match_latest_price(world_model, latest_price):
     latest_price = normalize_price(latest_price)
     if current_price is None or latest_price is None or current_price != latest_price:
         return False
+    if practical_lines.get("target_model_version") != "targets_v2":
+        return False
     required_keys = (
         "upside_resistance",
         "downside_support",
-        "near_upside",
-        "near_downside",
     )
     return all(normalize_price(practical_lines.get(key)) is not None for key in required_keys)
 
@@ -850,19 +850,34 @@ def _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, l
     if len(ohlcv.get("closes") or []) < 20:
         return world_model
     features = build_features(latest_price, daily_snapshot, ohlcv)
-    targets = build_targets(features, {})
+    similar_summary = world_model.get("similar_summary") if isinstance(world_model.get("similar_summary"), dict) else {}
+    targets = build_targets(features, similar_summary)
     near_levels = targets.get("near_levels") or {}
+    upside_row = _first_structural_target(targets.get("upside"))
+    downside_row = _first_structural_target(targets.get("downside"))
+    near_upside_row = _first_level_row(near_levels.get("upside"))
+    near_downside_row = _first_level_row(near_levels.get("downside"))
     practical_lines = {
+        "target_model_version": "targets_v2",
         "current_price": latest_price,
-        "upside_resistance": _first_target_price(targets.get("upside")),
-        "downside_support": _first_target_price(targets.get("downside")),
-        "near_upside": _first_target_price(near_levels.get("upside")),
-        "near_downside": _first_target_price(near_levels.get("downside")),
+        "upside_resistance": _line_price(upside_row),
+        "downside_support": _line_price(downside_row),
+        "near_upside": _line_price(near_upside_row),
+        "near_downside": _line_price(near_downside_row),
+        "upside_resistance_detail": _line_payload(upside_row),
+        "downside_support_detail": _line_payload(downside_row),
+        "near_upside_detail": _line_payload(near_upside_row),
+        "near_downside_detail": _line_payload(near_downside_row),
         "source": latest_snapshot.get("source"),
         "source_timestamp": latest_snapshot.get("fetched_at"),
     }
     world_model["practical_lines"] = practical_lines
     world_model["near_levels"] = near_levels
+    world_model["upside_targets"] = targets.get("upside") or world_model.get("upside_targets") or []
+    world_model["downside_targets"] = targets.get("downside") or world_model.get("downside_targets") or []
+    world_model["target_ranges"] = targets.get("target_ranges") or world_model.get("target_ranges") or []
+    if targets.get("invalidation"):
+        world_model["invalidation"] = targets.get("invalidation")
     return world_model
 
 
@@ -871,6 +886,46 @@ def _first_target_price(rows):
     if isinstance(first, dict):
         return first.get("price")
     return None
+
+
+def _first_structural_target(rows):
+    usable = [row for row in (rows or []) if isinstance(row, dict) and row.get("price") is not None]
+    if not usable:
+        return None
+    for row in usable:
+        if row.get("line_role") in {"structural", "psychological"}:
+            return row
+    for row in usable:
+        if row.get("line_role") != "atr_projection":
+            return row
+    return usable[0]
+
+
+def _first_level_row(rows):
+    first = (rows or [None])[0]
+    return first if isinstance(first, dict) else None
+
+
+def _line_price(row):
+    return row.get("price") if isinstance(row, dict) else None
+
+
+def _line_payload(row):
+    if not isinstance(row, dict):
+        return None
+    return {
+        "price": row.get("price"),
+        "reason": row.get("reason") or "",
+        "source": row.get("source") or "",
+        "sources": row.get("sources") or ([row.get("source")] if row.get("source") else []),
+        "line_role": row.get("line_role") or "",
+        "confidence": row.get("confidence") or "",
+        "distance_abs": row.get("distance_abs"),
+        "distance_pct": row.get("distance_pct"),
+        "distance_atr": row.get("distance_atr"),
+        "rank_score": row.get("rank_score"),
+        "confluence_count": row.get("confluence_count"),
+    }
 
 
 def _refresh_saved_snapshot_status_rows(context, world_model, latest_snapshot=None):

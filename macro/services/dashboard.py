@@ -69,6 +69,10 @@ TOP_MACRO_SERIES = {
     'VIXCLS',
     'BAMLH0A0HYM2',
 }
+AUDIT_FRESHNESS_REQUIRED_SERIES = TOP_MACRO_SERIES | {
+    'MOVE_INDEX',
+    'VIX_VIX3M_RATIO',
+}
 
 
 def format_value(value: Optional[float], unit: str) -> str:
@@ -357,7 +361,14 @@ def _active_indicator_freshness() -> Dict:
     today = timezone.localdate()
     missing = []
     stale = []
+    tracked_total = 0
     for indicator in indicators:
+        if not _is_audit_freshness_required(
+            indicator.fred_series_id,
+            indicator.importance,
+        ):
+            continue
+        tracked_total += 1
         latest_date = indicator.latest_obs_date
         if latest_date is None:
             missing.append({
@@ -378,7 +389,7 @@ def _active_indicator_freshness() -> Dict:
                 ),
                 'age_days': age_days,
             })
-    total = len(indicators)
+    total = tracked_total
     fresh_count = max(total - len(missing) - len(stale), 0)
     freshness_pct = round(fresh_count / total * 100) if total else 0
     return {
@@ -436,9 +447,16 @@ def _static_indicator_freshness(cards: List[Dict]) -> Optional[Dict]:
     today = timezone.localdate()
     missing = []
     stale = []
+    tracked_total = 0
     for card in cards:
         series_id = card.get('series_id') or ''
         name = card.get('name_ja') or card.get('name') or series_id or '指標'
+        if not _is_audit_freshness_required(
+            series_id,
+            card.get('importance'),
+        ):
+            continue
+        tracked_total += 1
         latest_date = _coerce_date(card.get('latest_date'))
         if not card.get('has_data') or latest_date is None:
             missing.append({
@@ -462,7 +480,7 @@ def _static_indicator_freshness(cards: List[Dict]) -> Optional[Dict]:
                 'age_days': age_days,
             })
 
-    total = len(cards)
+    total = tracked_total
     fresh_count = max(total - len(missing) - len(stale), 0)
     freshness_pct = round(fresh_count / total * 100) if total else 0
     return {
@@ -472,6 +490,14 @@ def _static_indicator_freshness(cards: List[Dict]) -> Optional[Dict]:
         'stale': stale,
         'freshness_pct': freshness_pct,
     }
+
+
+def _is_audit_freshness_required(series_id: str, importance: Optional[str]) -> bool:
+    if series_id in AUDIT_FRESHNESS_REQUIRED_SERIES:
+        return True
+    if importance in {Indicator.Importance.A, Indicator.Importance.B}:
+        return True
+    return importance in (None, '')
 
 
 def _reliability_context_from_freshness(

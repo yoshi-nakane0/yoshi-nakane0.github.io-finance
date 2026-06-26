@@ -276,22 +276,54 @@ def _action_summary(world_model):
 
 def _top_lines(world_model, decision):
     near_levels = world_model.get("near_levels") or {}
-    stopped = (world_model.get("output_contract") or {}).get("contract_status") == "error"
+    output_contract = world_model.get("output_contract") or {}
+    stopped = output_contract.get("contract_status") == "error"
     target_blocked = not _target_display_allowed(world_model)
     practical_lines = world_model.get("practical_lines") or {}
-    upside_resistance = None if stopped else _target_price(decision.get("upside_target"))
-    downside_support = None if stopped else _target_price(decision.get("downside_target"))
-    near_upside = None if stopped else _first_level_price(near_levels.get("upside"))
-    near_downside = None if stopped else _first_level_price(near_levels.get("downside"))
+
+    current_price = _prefer_line_price(
+        practical_lines.get("current_price"),
+        decision.get("price") or world_model.get("price"),
+    )
+    if stopped:
+        lines = {
+            "current_price": current_price,
+            "upside_resistance": None,
+            "downside_support": None,
+            "first_target": None,
+            "invalidation_line": "—",
+            "reversal_warning_line": "価格、ターゲット、レンジの時点がそろうまで判断停止",
+            "near_upside": None,
+            "near_downside": None,
+            "short_term_weakening": "再計算後に確認",
+            "structural_break": "—",
+            "line_status": "stopped",
+            "line_status_reason": "output_contract error",
+            "upside_resistance_detail": None,
+            "downside_support_detail": None,
+            "near_upside_detail": None,
+            "near_downside_detail": None,
+        }
+        for key in (
+            "current_price",
+            "upside_resistance",
+            "downside_support",
+            "near_upside",
+            "near_downside",
+        ):
+            lines[f"{key}_display"] = _price_text(lines.get(key))
+        return lines
+
+    upside_resistance = _target_price(decision.get("upside_target"))
+    downside_support = _target_price(decision.get("downside_target"))
+    near_upside = _first_level_price(near_levels.get("upside"))
+    near_downside = _first_level_price(near_levels.get("downside"))
     upside_resistance = _prefer_line_price(practical_lines.get("upside_resistance"), upside_resistance)
     downside_support = _prefer_line_price(practical_lines.get("downside_support"), downside_support)
     near_upside = _prefer_line_price(practical_lines.get("near_upside"), near_upside)
     near_downside = _prefer_line_price(practical_lines.get("near_downside"), near_downside)
     lines = {
-        "current_price": _prefer_line_price(
-            practical_lines.get("current_price"),
-            decision.get("price") or world_model.get("price"),
-        ),
+        "current_price": current_price,
         "upside_resistance": upside_resistance,
         "downside_support": downside_support,
         "first_target": None if target_blocked else _first_target_line(world_model, upside_resistance, downside_support),
@@ -305,6 +337,24 @@ def _top_lines(world_model, decision):
             decision,
             upside_resistance,
             downside_support,
+        ),
+        "line_status": "reference" if target_blocked else "active",
+        "target_display_blocked": target_blocked,
+        "upside_resistance_detail": _prefer_line_detail(
+            practical_lines.get("upside_resistance_detail"),
+            upside_resistance,
+        ),
+        "downside_support_detail": _prefer_line_detail(
+            practical_lines.get("downside_support_detail"),
+            downside_support,
+        ),
+        "near_upside_detail": _prefer_line_detail(
+            practical_lines.get("near_upside_detail"),
+            near_upside,
+        ),
+        "near_downside_detail": _prefer_line_detail(
+            practical_lines.get("near_downside_detail"),
+            near_downside,
         ),
     }
     for key in (
@@ -348,7 +398,17 @@ def _top_behavior(world_model):
 
 
 def _prefer_line_price(primary, fallback):
+    if isinstance(primary, dict):
+        primary = primary.get("price")
     return primary if primary is not None else fallback
+
+
+def _prefer_line_detail(primary, price):
+    if isinstance(primary, dict) and primary.get("price") is not None:
+        return primary
+    if price is None:
+        return None
+    return {"price": price}
 
 
 def _target_price(target):
