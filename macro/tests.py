@@ -3558,6 +3558,13 @@ class DashboardFormatTest(TestCase):
 
         self.assertEqual(context['final_judgment']['direction'], '中立〜改善')
         self.assertEqual(context['final_judgment']['nikkei_impact'], '上昇支援')
+        self.assertEqual(context['economic_view']['headline'], '景気は中立。ただし物価・金利に警戒。')
+        self.assertEqual(
+            [card['label'] for card in context['economic_view']['cards']],
+            ['経済の強弱', '支えている材料', '重しになっている材料', '株価への見方'],
+        )
+        self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
+        self.assertEqual(context['macro_role']['judgment'], 'このページでは判断しない')
         self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 92%')
         self.assertEqual(len(context['invalidation_triggers']), 4)
         self.assertEqual(
@@ -3569,16 +3576,26 @@ class DashboardFormatTest(TestCase):
         self.assertLessEqual(len(context['bad_points']), 3)
         self.assertEqual(context['freshness']['data_freshness'], '100%')
 
-    def test_top_decision_context_adds_long_short_permission_filter(self):
+    def test_top_decision_context_adds_macro_economic_view_without_trade_permission(self):
         context = dashboard.build_top_decision_context({
             'last_updated': '2026-06-19',
             'house_view': {
                 'house_view': '景気判断は中立だが、物価再加速リスクが高く金利上昇に注意',
                 'confidence_grade': 'B',
                 'confidence_score': 74,
+                'probabilities': {'inflation_reacceleration': 0.82},
             },
             'macro_forecast_report': {
                 'nikkei_implication': '日経先物へのmacroバイアスは上昇支援。',
+            },
+            'world_state': {
+                'score_rows': [
+                    {'field': 'growth_score', 'label': '成長', 'display': '67', 'value': 67},
+                    {'field': 'labor_score', 'label': '雇用', 'display': '65', 'value': 65},
+                    {'field': 'credit_score', 'label': '信用', 'display': '97', 'value': 97},
+                    {'field': 'liquidity_score', 'label': '流動性', 'display': '94', 'value': 94},
+                    {'field': 'market_stress_score', 'label': '市場ストレス', 'display': '17', 'value': 17},
+                ],
             },
             'macro_decision': {
                 'bad_points': ['Core PCEが高い', '米金利が上昇', '重要イベント前で慎重'],
@@ -3588,12 +3605,18 @@ class DashboardFormatTest(TestCase):
             },
         })
 
-        self.assertEqual(context['entry_filter']['long_permission'], '条件付き')
-        self.assertEqual(context['entry_filter']['short_permission'], '抑制')
-        self.assertEqual(context['entry_filter']['role_note'], '短期エントリーはbasecalcを優先')
-        self.assertIn('米金利上昇', context['entry_filter']['max_risk'])
+        self.assertEqual(context['economic_view']['headline'], '景気は強め。ただし物価・金利に警戒。')
+        self.assertEqual(context['economic_view']['cards'][0]['value'], '強め')
+        self.assertEqual(context['economic_view']['cards'][1]['value'], '成長 67% / 雇用 65% / 信用 97% / 流動性 94%')
+        self.assertIn('インフレ再加速 82%', context['economic_view']['cards'][2]['value'])
+        self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
+        self.assertEqual(context['macro_role']['role'], '3〜6か月の経済環境を見るページ')
+        self.assertEqual(context['macro_role']['judgment'], 'このページでは判断しない')
+        self.assertNotIn('entry_filter', context)
+        self.assertNotIn('long_permission', context)
+        self.assertNotIn('short_permission', context)
 
-    def test_macro_template_shows_entry_filter_before_details(self):
+    def test_macro_template_shows_economic_view_before_details_without_permission_words(self):
         context = {
             'messages': [],
             'dashboard_cache_missing': False,
@@ -3607,11 +3630,20 @@ class DashboardFormatTest(TestCase):
                     'nikkei_impact': '上昇支援',
                     'max_risk': '米金利上昇',
                 },
-                'entry_filter': {
-                    'long_permission': '条件付き',
-                    'short_permission': '抑制',
-                    'role_note': '短期エントリーはbasecalcを優先',
-                    'max_risk': '米金利上昇',
+                'economic_view': {
+                    'title': 'Macro経済判定',
+                    'headline': '景気は強め。ただし物価・金利に警戒。',
+                    'cards': [
+                        {'label': '経済の強弱', 'value': '強め', 'detail': '成長・雇用・信用環境は底堅い。'},
+                        {'label': '支えている材料', 'value': '成長 67% / 雇用 65% / 信用 97% / 流動性 94%', 'detail': '低ストレスも支え。'},
+                        {'label': '重しになっている材料', 'value': 'インフレ再加速 82% / 米金利上昇', 'detail': '物価と金利が重し。'},
+                        {'label': '株価への見方', 'value': '条件付き追い風', 'detail': '金利上昇時は上値が重い。'},
+                    ],
+                },
+                'macro_role': {
+                    'judgment': 'このページでは判断しない',
+                    'role': '3〜6か月の経済環境を見るページ',
+                    'note': 'macroは売買判断ではなく、経済環境の強弱を見るページです。',
                 },
                 'freshness': {
                     'confidence': '判断品質 B / 74%',
@@ -3639,11 +3671,17 @@ class DashboardFormatTest(TestCase):
         html = render_to_string('macro/index.html', context)
         top_html = html.split('詳細・監査・検証', 1)[0]
 
-        self.assertIn('ロング許可度', top_html)
-        self.assertIn('条件付き', top_html)
-        self.assertIn('ショート許可度', top_html)
-        self.assertIn('抑制', top_html)
-        self.assertIn('短期エントリーはbasecalcを優先', top_html)
+        self.assertIn('Macro経済判定', top_html)
+        self.assertIn('景気は強め。ただし物価・金利に警戒。', top_html)
+        self.assertIn('経済の強弱', top_html)
+        self.assertIn('支えている材料', top_html)
+        self.assertIn('重しになっている材料', top_html)
+        self.assertIn('株価への見方', top_html)
+        self.assertIn('このページでは判断しない', top_html)
+        self.assertIn('3〜6か月の経済環境を見るページ', top_html)
+        self.assertNotIn('ロング許可度', top_html)
+        self.assertNotIn('ショート許可度', top_html)
+        self.assertNotIn('許可', top_html)
         self.assertNotIn('基本・上振れ・下振れシナリオ', top_html)
         self.assertIn('基本・上振れ・下振れシナリオ', html)
 
@@ -4536,8 +4574,12 @@ class MacroUrlsTest(TestCase):
         self.assertNotContains(r, '前回からの変化')
         self.assertNotContains(r, '今後3カ月のベースシナリオ')
         self.assertNotContains(r, 'モデルの信頼度')
-        self.assertContains(r, '最終マクロ判断')
-        self.assertContains(r, '景気の向き')
+        self.assertContains(r, 'Macro経済判定')
+        self.assertContains(r, '経済の強弱')
+        self.assertContains(r, '株価への見方')
+        self.assertContains(r, 'このページでは判断しない')
+        self.assertNotContains(r, 'ロング許可度')
+        self.assertNotContains(r, 'ショート許可度')
         self.assertContains(r, '良い材料')
         self.assertContains(r, '悪い材料')
         self.assertContains(r, '政策・金利圧力')

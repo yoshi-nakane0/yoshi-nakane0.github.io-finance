@@ -1813,10 +1813,12 @@ def build_top_decision_context(context: Dict) -> Dict:
     )
     risk_candidates = bad_materials['visible']
     reliability = _top_validation_reliability(context, house_view, decision)
-    entry_filter = _top_entry_filter(
+    economic_view = _top_economic_view(
+        context=context,
+        direction=_compact_direction(house_view, forecast, decision),
         nikkei_impact=nikkei_impact,
-        risk_candidates=risk_candidates,
-        decision=decision,
+        support_materials=good_materials['visible'],
+        drag_materials=risk_candidates,
     )
 
     return {
@@ -1836,7 +1838,12 @@ def build_top_decision_context(context: Dict) -> Dict:
             'bias': nikkei_impact,
             'role_note': '短期エントリーはbasecalcを優先',
         },
-        'entry_filter': entry_filter,
+        'economic_view': economic_view,
+        'macro_role': {
+            'judgment': 'このページでは判断しない',
+            'role': '3〜6か月の経済環境を見るページ',
+            'note': 'macroは売買判断ではなく、経済環境の強弱を見るページです。',
+        },
         'invalidation_triggers': _top_invalidation_triggers(house_view),
         'scenarios': scenarios,
         'axis_summary': _top_axis_summary(forecast),
@@ -1856,40 +1863,173 @@ def build_top_decision_context(context: Dict) -> Dict:
     }
 
 
-def _top_entry_filter(nikkei_impact: str, risk_candidates: List[str], decision: Dict) -> Dict:
-    risk_text = ' / '.join(risk_candidates[:3]) if risk_candidates else '主要リスクを確認中'
-    pressure = decision.get('policy_pressure') or {}
-    stress = decision.get('market_stress') or {}
-    pressure_text = str(pressure.get('label') or '')
-    try:
-        pressure_score = float(pressure.get('score') or 0)
-    except (TypeError, ValueError):
-        pressure_score = 0
-    try:
-        stress_score = float(stress.get('score') or 0)
-    except (TypeError, ValueError):
-        stress_score = 0
-
-    high_rate_pressure = pressure_score >= 75 or '逆風' in pressure_text or '金利' in risk_text
-    high_stress = stress_score >= 70 or '信用' in risk_text
-
-    if nikkei_impact == '上昇支援':
-        long_permission = '条件付き' if high_rate_pressure or high_stress else '強い'
-        short_permission = '抑制'
-    elif nikkei_impact == '下落圧力':
-        long_permission = '抑制'
-        short_permission = '強い' if not high_stress else '条件付き'
-    else:
-        long_permission = '条件付き'
-        short_permission = '条件付き'
-
+def _top_economic_view(
+    *,
+    context: Dict,
+    direction: str,
+    nikkei_impact: str,
+    support_materials: List[str],
+    drag_materials: List[str],
+) -> Dict:
+    world_scores = _world_score_map(context.get('world_state') or {})
+    strength = _economic_strength_label(world_scores, direction)
+    has_inflation_or_rate_risk = _has_inflation_or_rate_risk(context, drag_materials)
+    headline = (
+        f'景気は{strength}。ただし物価・金利に警戒。'
+        if has_inflation_or_rate_risk
+        else f'景気は{strength}。信用・流動性を確認。'
+    )
+    stock_view = _stock_implication_label(nikkei_impact, has_inflation_or_rate_risk)
     return {
-        'nikkei_impact': nikkei_impact,
-        'max_risk': risk_text,
-        'long_permission': long_permission,
-        'short_permission': short_permission,
-        'role_note': '短期エントリーはbasecalcを優先',
+        'title': 'Macro経済判定',
+        'headline': headline,
+        'cards': [
+            {
+                'label': '経済の強弱',
+                'value': strength,
+                'detail': _economic_strength_detail(strength, world_scores),
+            },
+            {
+                'label': '支えている材料',
+                'value': _support_materials_display(world_scores, support_materials),
+                'detail': '成長・雇用・信用・流動性など、経済を支える材料です。',
+            },
+            {
+                'label': '重しになっている材料',
+                'value': _drag_materials_display(context, drag_materials),
+                'detail': '物価・金利・イベントなど、株価や消費の重しになりやすい材料です。',
+            },
+            {
+                'label': '株価への見方',
+                'value': stock_view,
+                'detail': _stock_implication_detail(stock_view),
+            },
+        ],
     }
+
+
+def _world_score_map(world_state: Dict) -> Dict[str, float]:
+    result = {}
+    for row in world_state.get('score_rows') or []:
+        field = row.get('field')
+        if not field:
+            continue
+        value = _safe_float(row.get('value'))
+        if value is None:
+            value = _safe_float(row.get('display'))
+        if value is not None:
+            result[field] = value
+    return result
+
+
+def _economic_strength_label(world_scores: Dict[str, float], direction: str) -> str:
+    core_values = [
+        world_scores.get('growth_score'),
+        world_scores.get('labor_score'),
+        world_scores.get('credit_score'),
+        world_scores.get('liquidity_score'),
+    ]
+    core_values = [value for value in core_values if value is not None]
+    if core_values:
+        average = sum(core_values) / len(core_values)
+        if average >= 65:
+            return '強め'
+        if average >= 45:
+            return '中立'
+        return '弱め'
+    if '強' in direction or '改善' in direction:
+        return '中立'
+    if '弱' in direction or '悪化' in direction:
+        return '弱め'
+    return '中立'
+
+
+def _economic_strength_detail(strength: str, world_scores: Dict[str, float]) -> str:
+    if strength == '強め':
+        return '成長・雇用・信用環境は底堅い。'
+    if strength == '弱め':
+        return '成長や雇用の弱さを確認する局面です。'
+    if world_scores:
+        return '強弱が混在しており、次の指標更新を確認します。'
+    return '保存済みの経済判断を参考にしています。'
+
+
+def _support_materials_display(world_scores: Dict[str, float], support_materials: List[str]) -> str:
+    fields = [
+        ('growth_score', '成長'),
+        ('labor_score', '雇用'),
+        ('credit_score', '信用'),
+        ('liquidity_score', '流動性'),
+    ]
+    parts = [
+        f'{label} {world_scores[field]:.0f}%'
+        for field, label in fields
+        if world_scores.get(field) is not None
+    ]
+    if parts:
+        return ' / '.join(parts)
+    if support_materials:
+        return ' / '.join(support_materials[:4])
+    return '支援材料を確認中'
+
+
+def _drag_materials_display(context: Dict, drag_materials: List[str]) -> str:
+    parts = []
+    inflation = _inflation_reacceleration_pct(context)
+    if inflation is not None:
+        parts.append(f'インフレ再加速 {inflation:.0f}%')
+    for item in drag_materials:
+        if item and item not in parts:
+            parts.append(item)
+        if len(parts) >= 3:
+            break
+    return ' / '.join(parts) if parts else '警戒材料を確認中'
+
+
+def _inflation_reacceleration_pct(context: Dict) -> Optional[float]:
+    house_view = context.get('house_view') or {}
+    probabilities = house_view.get('probabilities') or {}
+    raw = (
+        probabilities.get('inflation_reacceleration')
+        or (context.get('macro_forecast_report') or {}).get('inflation_reacceleration')
+    )
+    value = _safe_float(raw)
+    if value is None:
+        return None
+    return value * 100 if value <= 1 else value
+
+
+def _has_inflation_or_rate_risk(context: Dict, drag_materials: List[str]) -> bool:
+    if _inflation_reacceleration_pct(context) is not None and _inflation_reacceleration_pct(context) >= 60:
+        return True
+    text = ' '.join(str(item) for item in drag_materials)
+    text += ' ' + str((context.get('macro_decision') or {}).get('policy_pressure') or {})
+    return any(keyword in text for keyword in ('物価', 'インフレ', '金利', 'PCE', 'CPI'))
+
+
+def _stock_implication_label(nikkei_impact: str, has_risk: bool) -> str:
+    if nikkei_impact == '上昇支援':
+        return '条件付き追い風' if has_risk else '追い風'
+    if nikkei_impact == '下落圧力':
+        return '逆風'
+    return '中立'
+
+
+def _stock_implication_detail(stock_view: str) -> str:
+    if stock_view == '条件付き追い風':
+        return '経済環境は支援的だが、金利上昇時は上値が重くなりやすい。'
+    if stock_view == '追い風':
+        return '経済と信用環境は株価を支えやすい。'
+    if stock_view == '逆風':
+        return '経済環境または金融環境が株価の重しになりやすい。'
+    return '方向感は限定的で、株価判断は他ページの短期材料も確認します。'
+
+
+def _safe_float(value):
+    try:
+        return float(str(value).replace('%', '').strip())
+    except (TypeError, ValueError):
+        return None
 
 
 def build_historical_crash_similarity(top_n: int = 3) -> List[Dict]:
