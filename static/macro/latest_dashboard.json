@@ -2716,7 +2716,7 @@
     "market_implication": {
       "equities": "株式はマクロ追い風を一部織り込み",
       "fx": "為替の織り込みは中立",
-      "nikkei_futures": "日経先物へのmacroバイアスは上昇支援。短期売買はbasecalcを優先。",
+      "nikkei_futures": "日経先物へのmacroバイアスは上昇支援。",
       "rates": "金利市場は中立"
     },
     "market_mispricing_watch": [
@@ -2731,7 +2731,7 @@
       ]
     },
     "model_version": "macro_hatzius_v1",
-    "nikkei_implication": "日経先物へのmacroバイアスは上昇支援。今日〜数週間の売買判断はbasecalcを優先する。",
+    "nikkei_implication": "日経先物へのmacroバイアスは上昇支援。",
     "policy_view": {
       "boj_path": "賃金と物価を確認しながら正常化を探る。",
       "fed_path": "インフレ再加速と雇用の底堅さで利下げしにくい。",
@@ -2818,7 +2818,7 @@
           "金融環境",
           "信用ストレス"
         ],
-        "market_view": "短期判断はbasecalcを優先し、macroは3〜6か月の環境認識として使う。",
+        "market_view": "成長・物価・金融環境・信用ストレスをあわせて市場環境を確認する。",
         "name": "基本",
         "name_key": "baseline",
         "nikkei_bias": "上昇支援",
@@ -3631,11 +3631,6 @@
         "label": "条件"
       }
     ],
-    "macro_role": {
-      "judgment": "このページでは判断しない",
-      "note": "macroは売買判断ではなく、経済環境の強弱を見るページです。",
-      "role": "3〜6か月の経済環境を見るページ"
-    },
     "market_stress": {
       "abnormal_items": [
         "NAAIMエクスポージャー",
@@ -3650,8 +3645,7 @@
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "nikkei": {
-      "bias": "上昇支援",
-      "role_note": "短期エントリーはbasecalcを優先"
+      "bias": "上昇支援"
     },
     "policy_pressure": {
       "alerts": [

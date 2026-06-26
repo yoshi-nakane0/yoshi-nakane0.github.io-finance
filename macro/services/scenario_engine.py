@@ -68,7 +68,7 @@ def build_macro_scenarios(
             'growth_view': f'景気は{growth_label}を基本に、後退確率を確認しながら判断する。',
             'inflation_view': f'物価は{inflation_label}。再加速確率は{inflation_risk * 100:.0f}%として扱う。',
             'policy_view': f'政策スタンスは{policy_label}。金利上昇時は株式の上値を抑えやすい。',
-            'market_view': '短期判断はbasecalcを優先し、macroは3〜6か月の環境認識として使う。',
+            'market_view': '成長・物価・金融環境・信用ストレスをあわせて市場環境を確認する。',
             'nikkei_bias': baseline_bias,
             'key_drivers': ['成長モメンタム', '物価圧力', '金融環境', '信用ストレス'],
             'invalidation_triggers': BASE_INVALIDATION_TRIGGERS,

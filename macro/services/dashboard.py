@@ -1836,14 +1836,8 @@ def build_top_decision_context(context: Dict) -> Dict:
         },
         'nikkei': {
             'bias': nikkei_impact,
-            'role_note': '短期エントリーはbasecalcを優先',
         },
         'economic_view': economic_view,
-        'macro_role': {
-            'judgment': 'このページでは判断しない',
-            'role': '3〜6か月の経済環境を見るページ',
-            'note': 'macroは売買判断ではなく、経済環境の強弱を見るページです。',
-        },
         'invalidation_triggers': _top_invalidation_triggers(house_view),
         'scenarios': scenarios,
         'axis_summary': _top_axis_summary(forecast),

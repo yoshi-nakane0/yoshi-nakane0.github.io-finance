@@ -3564,7 +3564,8 @@ class DashboardFormatTest(TestCase):
             ['経済の強弱', '支えている材料', '重しになっている材料', '株価への見方'],
         )
         self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
-        self.assertEqual(context['macro_role']['judgment'], 'このページでは判断しない')
+        self.assertNotIn('macro_role', context)
+        self.assertNotIn('role_note', context.get('nikkei', {}))
         self.assertEqual(context['final_judgment']['confidence'], '判断品質 A / 92%')
         self.assertEqual(len(context['invalidation_triggers']), 4)
         self.assertEqual(
@@ -3613,8 +3614,8 @@ class DashboardFormatTest(TestCase):
         )
         self.assertIn('インフレ再加速 82%', context['economic_view']['cards'][2]['value'])
         self.assertEqual(context['economic_view']['cards'][3]['value'], '条件付き追い風')
-        self.assertEqual(context['macro_role']['role'], '3〜6か月の経済環境を見るページ')
-        self.assertEqual(context['macro_role']['judgment'], 'このページでは判断しない')
+        self.assertNotIn('macro_role', context)
+        self.assertNotIn('role_note', context.get('nikkei', {}))
         self.assertNotIn('entry_filter', context)
         self.assertNotIn('long_permission', context)
         self.assertNotIn('short_permission', context)
@@ -3642,11 +3643,6 @@ class DashboardFormatTest(TestCase):
                         {'label': '重しになっている材料', 'value': 'インフレ再加速 82% / 米金利上昇', 'detail': '物価と金利が重し。'},
                         {'label': '株価への見方', 'value': '条件付き追い風', 'detail': '金利上昇時は上値が重い。'},
                     ],
-                },
-                'macro_role': {
-                    'judgment': 'このページでは判断しない',
-                    'role': '3〜6か月の経済環境を見るページ',
-                    'note': 'macroは売買判断ではなく、経済環境の強弱を見るページです。',
                 },
                 'freshness': {
                     'confidence': '判断品質 B / 74%',
@@ -3680,8 +3676,9 @@ class DashboardFormatTest(TestCase):
         self.assertIn('支えている材料', top_html)
         self.assertIn('重しになっている材料', top_html)
         self.assertIn('株価への見方', top_html)
-        self.assertIn('このページでは判断しない', top_html)
-        self.assertIn('3〜6か月の経済環境を見るページ', top_html)
+        self.assertNotIn('このページでは判断しない', top_html)
+        self.assertNotIn('3〜6か月の経済環境を見るページ', top_html)
+        self.assertNotIn('売買判断ではなく', top_html)
         self.assertNotIn('ロング許可度', top_html)
         self.assertNotIn('ショート許可度', top_html)
         self.assertNotIn('許可', top_html)
@@ -4580,7 +4577,8 @@ class MacroUrlsTest(TestCase):
         self.assertContains(r, 'Macro経済判定')
         self.assertContains(r, '経済の強弱')
         self.assertContains(r, '株価への見方')
-        self.assertContains(r, 'このページでは判断しない')
+        self.assertNotContains(r, 'このページでは判断しない')
+        self.assertNotContains(r, '短期エントリーはbasecalcを優先')
         self.assertNotContains(r, 'ロング許可度')
         self.assertNotContains(r, 'ショート許可度')
         self.assertContains(r, '良い材料')

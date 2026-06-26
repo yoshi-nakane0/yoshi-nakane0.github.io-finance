@@ -119,10 +119,7 @@ def write_macro_report(
             'rates': market_pricing['rates'],
             'fx': market_pricing['fx'],
             'equities': market_pricing['equities'],
-            'nikkei_futures': (
-                f'日経先物へのmacroバイアスは{nikkei}。'
-                '短期売買はbasecalcを優先。'
-            ),
+            'nikkei_futures': f'日経先物へのmacroバイアスは{nikkei}。',
         },
         'scenario_table': scenario_rows,
         'invalidation_triggers': [
@@ -144,10 +141,7 @@ def write_macro_report(
             f'物価再加速確率は{inflation_risk * 100:.0f}%、'
             f'金融ストレス確率は{stress * 100:.0f}%。'
         ),
-        'nikkei_implication': (
-            f'日経先物へのmacroバイアスは{nikkei}。'
-            '今日〜数週間の売買判断はbasecalcを優先する。'
-        ),
+        'nikkei_implication': f'日経先物へのmacroバイアスは{nikkei}。',
         'change_summary': change_summary,
         'what_changed': what_changed,
         'market_mispricing_watch': market_watch,
