@@ -316,12 +316,20 @@ def _top_lines(world_model, decision):
 
     upside_resistance = _target_price(decision.get("upside_target"))
     downside_support = _target_price(decision.get("downside_target"))
-    near_upside = _first_level_price(near_levels.get("upside"))
-    near_downside = _first_level_price(near_levels.get("downside"))
+    near_upside_row = _practical_near_level(
+        near_levels.get("upside"),
+        practical_lines.get("near_upside_detail"),
+        current_price,
+    )
+    near_downside_row = _practical_near_level(
+        near_levels.get("downside"),
+        practical_lines.get("near_downside_detail"),
+        current_price,
+    )
+    near_upside = _target_price(near_upside_row)
+    near_downside = _target_price(near_downside_row)
     upside_resistance = _prefer_line_price(practical_lines.get("upside_resistance"), upside_resistance)
     downside_support = _prefer_line_price(practical_lines.get("downside_support"), downside_support)
-    near_upside = _prefer_line_price(practical_lines.get("near_upside"), near_upside)
-    near_downside = _prefer_line_price(practical_lines.get("near_downside"), near_downside)
     lines = {
         "current_price": current_price,
         "upside_resistance": upside_resistance,
@@ -348,14 +356,8 @@ def _top_lines(world_model, decision):
             practical_lines.get("downside_support_detail"),
             downside_support,
         ),
-        "near_upside_detail": _prefer_line_detail(
-            practical_lines.get("near_upside_detail"),
-            near_upside,
-        ),
-        "near_downside_detail": _prefer_line_detail(
-            practical_lines.get("near_downside_detail"),
-            near_downside,
-        ),
+        "near_upside_detail": _prefer_line_detail(near_upside_row, near_upside),
+        "near_downside_detail": _prefer_line_detail(near_downside_row, near_downside),
     }
     for key in (
         "current_price",
@@ -418,6 +420,79 @@ def _target_price(target):
 def _first_level_price(levels):
     first = (levels or [None])[0]
     return first.get("price") if isinstance(first, dict) else None
+
+
+def _practical_near_level(levels, fallback_detail, current_price):
+    candidates = [
+        dict(row)
+        for row in (levels or [])
+        if isinstance(row, dict) and row.get("price") is not None
+    ]
+    if isinstance(fallback_detail, dict) and fallback_detail.get("price") is not None:
+        if not any(row.get("price") == fallback_detail.get("price") for row in candidates):
+            candidates.append(dict(fallback_detail))
+    if not candidates:
+        return fallback_detail if isinstance(fallback_detail, dict) else None
+
+    practical = [
+        row for row in candidates if _near_level_is_practical(row, current_price)
+    ]
+    if not practical:
+        return None
+    return sorted(practical, key=lambda row: _near_level_sort_key(row, current_price))[0]
+
+
+def _near_level_is_practical(row, current_price):
+    distance_abs = _line_distance_abs(row, current_price)
+    if distance_abs is None:
+        return False
+    minimum = _minimum_practical_near_distance(current_price)
+    if distance_abs < minimum:
+        return False
+    if _is_round_number_level(row):
+        return False
+    return True
+
+
+def _is_round_number_level(row):
+    source = str((row or {}).get("source") or "")
+    if source.startswith("round_"):
+        return True
+    return any(str(source).startswith("round_") for source in ((row or {}).get("sources") or []))
+
+
+def _near_level_sort_key(row, current_price):
+    role = row.get("line_role")
+    role_priority = 0 if role == "structural" else 1 if role == "psychological" else 2
+    distance_abs = _line_distance_abs(row, current_price)
+    confluence = len(row.get("sources") or [row.get("source")])
+    return (
+        role_priority,
+        -confluence,
+        distance_abs if distance_abs is not None else 999999,
+        row.get("price") or 0,
+    )
+
+
+def _line_distance_abs(row, current_price):
+    value = row.get("distance_abs") if isinstance(row, dict) else None
+    if value is not None:
+        try:
+            return abs(float(value))
+        except (TypeError, ValueError):
+            pass
+    try:
+        return abs(float(row.get("price")) - float(current_price))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def _minimum_practical_near_distance(current_price):
+    try:
+        price = abs(float(current_price))
+    except (TypeError, ValueError):
+        price = 0
+    return max(300, price * 0.004)
 
 
 def _structural_break_line(world_model, decision, upside_resistance, downside_support):

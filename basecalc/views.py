@@ -855,8 +855,8 @@ def _attach_practical_lines_from_latest_snapshot(world_model, latest_snapshot, l
     near_levels = targets.get("near_levels") or {}
     upside_row = _first_structural_target(targets.get("upside"))
     downside_row = _first_structural_target(targets.get("downside"))
-    near_upside_row = _first_level_row(near_levels.get("upside"))
-    near_downside_row = _first_level_row(near_levels.get("downside"))
+    near_upside_row = _first_level_row(near_levels.get("upside"), current_price=latest_price)
+    near_downside_row = _first_level_row(near_levels.get("downside"), current_price=latest_price)
     practical_lines = {
         "target_model_version": "targets_v2",
         "current_price": latest_price,
@@ -901,9 +901,68 @@ def _first_structural_target(rows):
     return usable[0]
 
 
-def _first_level_row(rows):
-    first = (rows or [None])[0]
-    return first if isinstance(first, dict) else None
+def _first_level_row(rows, current_price=None):
+    usable = [row for row in (rows or []) if isinstance(row, dict) and row.get("price") is not None]
+    if not usable:
+        return None
+    if current_price is None:
+        return usable[0]
+    practical = [row for row in usable if _near_level_is_practical(row, current_price)]
+    if not practical:
+        return None
+    return sorted(practical, key=lambda row: _near_level_sort_key(row, current_price))[0]
+
+
+def _near_level_is_practical(row, current_price):
+    distance_abs = _line_distance_abs(row, current_price)
+    if distance_abs is None:
+        return False
+    if distance_abs < _minimum_practical_near_distance(current_price):
+        return False
+    if _is_round_number_level(row):
+        return False
+    return True
+
+
+def _is_round_number_level(row):
+    source = str((row or {}).get("source") or "")
+    if source.startswith("round_"):
+        return True
+    return any(str(source).startswith("round_") for source in ((row or {}).get("sources") or []))
+
+
+def _near_level_sort_key(row, current_price):
+    role = row.get("line_role")
+    role_priority = 0 if role == "structural" else 1 if role == "psychological" else 2
+    distance_abs = _line_distance_abs(row, current_price)
+    confluence = len(row.get("sources") or [row.get("source")])
+    return (
+        role_priority,
+        -confluence,
+        distance_abs if distance_abs is not None else 999999,
+        row.get("price") or 0,
+    )
+
+
+def _line_distance_abs(row, current_price):
+    value = row.get("distance_abs") if isinstance(row, dict) else None
+    if value is not None:
+        try:
+            return abs(float(value))
+        except (TypeError, ValueError):
+            pass
+    try:
+        return abs(float(row.get("price")) - float(current_price))
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def _minimum_practical_near_distance(current_price):
+    try:
+        price = abs(float(current_price))
+    except (TypeError, ValueError):
+        price = 0
+    return max(300, price * 0.004)
 
 
 def _line_price(row):

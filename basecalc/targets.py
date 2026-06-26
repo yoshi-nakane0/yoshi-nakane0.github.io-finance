@@ -41,11 +41,6 @@ def build_targets(features, similar_summary=None):
         (price - atr * 2.0, "ATR 2.0", "Low", "atr_2"),
         (price - similar_step, "過去類似局面の平均到達幅", "Low", "similar_mae"),
     ]
-    round_upside = _round_number_candidates(price, above=True)
-    round_downside = _round_number_candidates(price, above=False)
-    upside_candidates.extend(round_upside)
-    downside_candidates.extend(round_downside)
-
     upside, near_upside = _select_targets(upside_candidates, price, atr, similar_summary, above=True)
     downside, near_downside = _select_targets(downside_candidates, price, atr, similar_summary, above=False)
     if len(upside) < 3:

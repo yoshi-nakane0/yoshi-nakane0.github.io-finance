@@ -893,10 +893,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(current_price, 41000)
         self.assertGreater(lines['upside_resistance'], current_price)
         self.assertLess(lines['downside_support'], current_price)
-        self.assertGreater(lines['near_upside'], current_price)
-        self.assertLess(lines['near_downside'], current_price)
-        self.assertEqual(rendered_context['world_model']['near_levels']['upside'][0]['price'], 41100)
-        self.assertEqual(rendered_context['world_model']['near_levels']['downside'][0]['price'], 40900)
+        if lines['near_upside'] is not None:
+            self.assertGreater(lines['near_upside'], current_price)
+            self.assertFalse(str((lines.get('near_upside_detail') or {}).get('source') or '').startswith('round_'))
+        if lines['near_downside'] is not None:
+            self.assertLess(lines['near_downside'], current_price)
+            self.assertFalse(str((lines.get('near_downside_detail') or {}).get('source') or '').startswith('round_'))
 
     def test_get_keeps_hydrated_practical_lines_without_rebuilding_them(self):
         saved_at = timezone.localtime(timezone.now())
@@ -1735,8 +1737,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['lines']['current_price'], 69770)
         self.assertEqual(result['lines']['upside_resistance'], 72090)
         self.assertEqual(result['lines']['downside_support'], 67450)
-        self.assertEqual(result['lines']['near_upside'], 69800)
-        self.assertEqual(result['lines']['near_downside'], 69700)
+        self.assertIsNone(result['lines']['near_upside'])
+        self.assertIsNone(result['lines']['near_downside'])
 
     def test_basecalc_top_uses_range_only_action_when_direction_gate_stops_prediction(self):
         world_model = {
@@ -1802,8 +1804,8 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(result['action']['allowed'], '支持抵抗・ATRレンジ・反転警戒')
         self.assertIn('現行モデルがATRベースラインを下回るため', result['action']['caution'])
         self.assertEqual(result['lines']['first_target'], 68570)
-        self.assertEqual(result['lines']['near_upside'], 66700)
-        self.assertEqual(result['lines']['near_downside'], 66600)
+        self.assertIsNone(result['lines']['near_upside'])
+        self.assertIsNone(result['lines']['near_downside'])
         self.assertEqual(result['lines']['structural_break'], '64,770')
         self.assertEqual([row['label'] for row in result['horizons']], ['1日', '3日', '5日'])
         self.assertEqual(result['horizons'][0]['summary'], '方向予測停止。ATRレンジ・支持抵抗を確認')
@@ -3603,8 +3605,12 @@ class BasecalcUpdateSecurityTests(TestCase):
         self.assertEqual(practical_lines['current_price'], payload['world_model']['price'])
         self.assertGreater(practical_lines['upside_resistance'], practical_lines['current_price'])
         self.assertLess(practical_lines['downside_support'], practical_lines['current_price'])
-        self.assertGreater(practical_lines['near_upside'], practical_lines['current_price'])
-        self.assertLess(practical_lines['near_downside'], practical_lines['current_price'])
+        if practical_lines['near_upside'] is not None:
+            self.assertGreater(practical_lines['near_upside'], practical_lines['current_price'])
+            self.assertFalse(str((practical_lines.get('near_upside_detail') or {}).get('source') or '').startswith('round_'))
+        if practical_lines['near_downside'] is not None:
+            self.assertLess(practical_lines['near_downside'], practical_lines['current_price'])
+            self.assertFalse(str((practical_lines.get('near_downside_detail') or {}).get('source') or '').startswith('round_'))
         top_lines = payload['basecalc_top']['lines']
         self.assertEqual(top_lines['current_price'], practical_lines['current_price'])
         self.assertEqual(top_lines['upside_resistance'], practical_lines['upside_resistance'])
