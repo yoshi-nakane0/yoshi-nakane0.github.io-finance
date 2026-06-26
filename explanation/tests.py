@@ -564,6 +564,22 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             ['1d', '3d', '5d'],
         )
         self.assertEqual(context['world_model_predictions'][0]['expected_return'], '-0.02%')
+        self.assertEqual(context['world_model_predictions'][0]['expected_price'], '69,386円')
+        self.assertEqual(context['world_model_predictions'][0]['base_price'], '69,400円')
+
+    def test_world_model_predictions_use_manual_price_when_available(self):
+        snapshot = self._snapshot()
+        snapshot.source_snapshots['basecalc']['raw']['manual_price_override'] = {
+            'active': True,
+            'price': 42000,
+            'price_display': '42,000',
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['world_model_predictions'][0]['expected_return'], '-0.02%')
+        self.assertEqual(context['world_model_predictions'][0]['expected_price'], '41,992円')
+        self.assertEqual(context['world_model_predictions'][0]['base_price'], '42,000円')
 
     def test_view_context_adds_integrated_decision_summary(self):
         context = snapshot_to_view(self._snapshot())
@@ -578,12 +594,17 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('Long', context['adoption_summary']['long_condition'])
         self.assertIn('Short', context['adoption_summary']['short_condition'])
 
-    def test_explanation_template_hides_detailed_source_sections_by_default(self):
+    def test_explanation_template_removes_low_priority_duplicate_sections(self):
         context = snapshot_to_view(self._snapshot())
         context['is_preview'] = False
         context['refresh_status'] = {'needs_refresh': False}
         context['can_precompute_explanation'] = False
-        context['trade_validation_summary'] = {'available': False}
+        context['trade_validation_summary'] = {
+            'available': True,
+            'side_rows': [{'label': 'Long', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
+            'style_rows': [{'label': 'Trend', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
+            'confidence_rows': [{'label': 'B', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
+        }
 
         html = render_to_string('explanation/index.html', context)
 
@@ -593,8 +614,23 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('world model 予測数値', top_html)
         self.assertNotIn('ロング条件詳細', top_html)
         self.assertNotIn('ショート条件詳細', top_html)
-        self.assertIn('Macro / Basecalc 詳細', html)
+        self.assertNotIn('従来の統合ラベル', html)
+        self.assertNotIn('Macro / Basecalc 詳細', html)
+        self.assertNotIn('理由の詳細', html)
+        self.assertNotIn('シナリオ詳細', html)
+        self.assertNotIn('検証成績詳細', html)
+        self.assertNotIn('見るべき水準の詳細', html)
+        self.assertNotIn('Long / Short / No Trade 別', html)
+        self.assertNotIn('Trend / Reversal 別', html)
+        self.assertNotIn('信頼度別', html)
+        self.assertIn('採用理由 / 警戒理由', html)
+        self.assertIn('macro × basecalc', html)
+        self.assertIn('検証成績', html)
+        self.assertIn('次に見る条件', html)
+        self.assertIn('/macro/', html)
+        self.assertIn('/basecalc/', html)
         self.assertIn('world model 予測数値', html)
+        self.assertIn('69,386円 / -0.02%', html)
 
     def test_explanation_template_top_validation_says_unverified_when_no_trade_outcomes(self):
         context = snapshot_to_view(self._snapshot())

@@ -26,6 +26,7 @@ def snapshot_to_view(snapshot):
     decision_card = _decision_card(trade_decision, snapshot)
     long_judgment = _trade_judgment('long', snapshot, world_model, trade_decision)
     short_judgment = _trade_judgment('short', snapshot, world_model, trade_decision)
+    world_model_predictions = _world_model_predictions(world_model, manual_price, trade_decision)
     alignment_summary = _alignment_summary(snapshot)
     adoption_summary = _adoption_summary(
         decision_card,
@@ -58,14 +59,14 @@ def snapshot_to_view(snapshot):
             },
             'long_judgment': long_judgment,
             'short_judgment': short_judgment,
-            'world_model_predictions': _world_model_predictions(world_model),
+            'world_model_predictions': world_model_predictions,
             'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
             'audit_items': snapshot.audit_items or [],
         },
         'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
         'long_judgment': long_judgment,
         'short_judgment': short_judgment,
-        'world_model_predictions': _world_model_predictions(world_model),
+        'world_model_predictions': world_model_predictions,
         'macro': {
             'bias': snapshot.macro_bias,
             'summary': macro.get('summary') or '',
@@ -423,23 +424,47 @@ def _trade_stance(side, final_stance):
     return '様子見'
 
 
-def _world_model_predictions(world_model):
+def _world_model_predictions(world_model, manual_price=None, trade_decision=None):
     horizons = world_model.get('horizons') or {}
     output_contract = world_model.get('output_contract') or {}
     allowed = output_contract.get('allowed_horizons') or {}
+    base_price = _prediction_base_price(world_model, manual_price or {}, trade_decision or {})
     return [
         {
             'horizon': horizon,
             'bias': '停止' if output_contract.get('contract_status') == 'error' or not (allowed.get(horizon) or {}).get('direction_allowed', True) else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
-            'expected_return': _format_percent(
-                (horizons.get(horizon) or {}).get('expected_return_pct')
-                if (horizons.get(horizon) or {}).get('expected_return_pct') is not None
-                else world_model.get(f'expected_return_{horizon}')
-            ),
+            'expected_return': _format_percent(_expected_return_pct(world_model, horizons, horizon)),
+            'expected_price': _expected_price_display(base_price, _expected_return_pct(world_model, horizons, horizon)),
+            'base_price': _price_with_suffix(base_price),
             'setup': '方向判断停止' if output_contract.get('contract_status') == 'error' else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
         }
         for horizon in ('1d', '3d', '5d')
     ]
+
+
+def _expected_return_pct(world_model, horizons, horizon):
+    horizon_data = horizons.get(horizon) or {}
+    if horizon_data.get('expected_return_pct') is not None:
+        return horizon_data.get('expected_return_pct')
+    return world_model.get(f'expected_return_{horizon}')
+
+
+def _prediction_base_price(world_model, manual_price, trade_decision):
+    if manual_price.get('active'):
+        return manual_price.get('price')
+    return (
+        world_model.get('display_price')
+        or world_model.get('price')
+        or trade_decision.get('current_price')
+    )
+
+
+def _expected_price_display(base_price, expected_return_pct):
+    price = _number_or_none(base_price)
+    expected_return = _number_or_none(expected_return_pct)
+    if price is None or expected_return is None:
+        return 'N/A'
+    return _price_with_suffix(price * (1 + expected_return / 100))
 
 
 def _basecalc_summary(basecalc, world_model):
@@ -655,10 +680,10 @@ def _probability_display(value):
 
 
 def _format_price(value):
-    try:
-        return f'{float(value):,.0f}'
-    except (TypeError, ValueError):
+    number = _number_or_none(value)
+    if number is None:
         return 'N/A'
+    return f'{number:,.0f}'
 
 
 def _format_percent(value):
@@ -666,6 +691,17 @@ def _format_percent(value):
         return f'{float(value):+.2f}%'
     except (TypeError, ValueError):
         return 'N/A'
+
+
+def _number_or_none(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.replace(',', '').replace('円', '').replace('%', '').strip()
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _format_probability(target):

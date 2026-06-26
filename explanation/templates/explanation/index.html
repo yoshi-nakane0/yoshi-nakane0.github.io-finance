@@ -279,7 +279,7 @@
           {% for item in advanced_detail.world_model_predictions %}
             <div class="common-row">
               <span>{{ item.horizon }} / {{ item.bias }}</span>
-              <strong>{{ item.expected_return }}</strong>
+              <strong>{{ item.expected_price }} / {{ item.expected_return }}</strong>
             </div>
             <div class="common-row common-row--stack">
               <span>{{ item.horizon }} setup</span>
@@ -287,114 +287,6 @@
             </div>
           {% endfor %}
         </div>
-
-        <h2 class="common-section-title">従来の統合ラベル</h2>
-        <div class="common-list">
-          <div class="common-row">
-            <span>最終判断</span>
-            <strong>{{ advanced_detail.legacy_final.label }}</strong>
-          </div>
-          <div class="common-row">
-            <span>実行姿勢</span>
-            <strong>{{ advanced_detail.legacy_final.action_posture }}</strong>
-          </div>
-          <div class="common-row">
-            <span>信頼度</span>
-            <strong>{{ advanced_detail.legacy_final.confidence }}</strong>
-          </div>
-          <div class="common-row">
-            <span>判定状態</span>
-            <strong>{{ advanced_detail.legacy_final.status }}</strong>
-          </div>
-        </div>
-
-        <h2 class="common-section-title">Macro / Basecalc 詳細</h2>
-        <div class="common-card-grid">
-          <article class="common-card">
-            <h3>Macro</h3>
-            <p>{{ macro.summary }}</p>
-          </article>
-          <article class="common-card">
-            <h3>Basecalc</h3>
-            <p>{{ basecalc.summary }}</p>
-          </article>
-          <article class="common-card">
-            <h3>Audit</h3>
-            <p>{{ snapshot.audit_items.0 }}</p>
-          </article>
-        </div>
-
-        <h2 class="common-section-title">理由の詳細</h2>
-        <ol class="common-ordered-list">
-          {% for reason in reasons %}
-            <li>{{ reason }}</li>
-          {% endfor %}
-        </ol>
-
-        <h2 class="common-section-title">見るべき水準の詳細</h2>
-        <div class="common-list">
-          <div class="common-row">
-            <span>上値抵抗</span>
-            <strong>{{ basecalc.resistance }}円</strong>
-          </div>
-          <div class="common-row">
-            <span>下値支持</span>
-            <strong>{{ basecalc.support }}円</strong>
-          </div>
-          <div class="common-row">
-            <span>無効化</span>
-            <strong>{{ basecalc.invalidation }}円</strong>
-          </div>
-        </div>
-
-        <h2 class="common-section-title">シナリオ詳細</h2>
-        <div class="common-list">
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.baseline.title }}</span>
-            <strong>{{ scenario.baseline.text }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.upside.title }}</span>
-            <strong>{{ scenario.upside.text }}</strong>
-          </div>
-          <div class="common-row common-row--stack">
-            <span>{{ scenario.downside.title }}</span>
-            <strong>{{ scenario.downside.text }}</strong>
-          </div>
-        </div>
-
-        <h2 class="common-section-title">検証成績詳細</h2>
-        {% if trade_validation_summary.available %}
-          <h3 class="common-subtitle">Long / Short / No Trade 別</h3>
-          <div class="common-list">
-            {% for row in trade_validation_summary.side_rows %}
-              <div class="common-row">
-                <span>{{ row.label }} / {{ row.sample_count }}件</span>
-                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
-              </div>
-            {% endfor %}
-          </div>
-          <h3 class="common-subtitle">Trend / Reversal 別</h3>
-          <div class="common-list">
-            {% for row in trade_validation_summary.style_rows %}
-              <div class="common-row">
-                <span>{{ row.label }} / {{ row.sample_count }}件</span>
-                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
-              </div>
-            {% endfor %}
-          </div>
-          <h3 class="common-subtitle">信頼度別</h3>
-          <div class="common-list">
-            {% for row in trade_validation_summary.confidence_rows %}
-              <div class="common-row">
-                <span>{{ row.label }} / {{ row.sample_count }}件</span>
-                <strong>方向 {{ row.direction_hit_rate }} / 目標 {{ row.target_1_hit_rate }} / stop {{ row.stop_hit_rate }}</strong>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="common-notice">検証成績は、1d / 3d / 5d の評価データが保存されると表示されます。</p>
-        {% endif %}
 
         <h2 class="common-section-title">監査</h2>
         <ul class="common-bullet-list">
