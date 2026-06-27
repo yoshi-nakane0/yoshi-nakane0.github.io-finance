@@ -1,5 +1,5 @@
 {
-  "basecalc_as_of": "2026-06-26T19:55:00+00:00",
+  "basecalc_as_of": "2026-06-26T21:00:00+00:00",
   "basecalc_status": "limited",
   "blocking_reasons": [
     "現行モデルがATRベースラインを下回るため",
@@ -12,9 +12,9 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-26T20:12:21.529351+00:00",
+  "explanation_as_of": "2026-06-27T04:18:19.804268+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-06-26T20:12:23.806618+00:00",
+  "generated_at": "2026-06-27T04:18:22.107401+00:00",
   "macro_as_of": "2026-06-26T08:42:52.231965+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
