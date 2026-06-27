@@ -1,20 +1,20 @@
 {
   "schema": "basecalc_status_v1",
-  "updated_at": "2026-06-27T08:51:21.589757+00:00",
+  "updated_at": "2026-06-27T14:08:15.590929+00:00",
   "price_data": {
     "last_success_at": "2026-06-26T21:00:00+00:00",
     "last_failed_at": "2026-06-07T12:43:43.098446+00:00",
     "source": "matsui:NIY=F",
-    "age_minutes": 711,
+    "age_minutes": 1028,
     "fallback_used": false,
     "decision_level": "ready",
     "decision_label": "判定可能"
   },
   "intermarket": {
     "last_success_at": "2026-06-26T15:06:35.914646+00:00",
-    "last_failed_at": "2026-06-27T08:51:21.589747+00:00",
+    "last_failed_at": "2026-06-27T14:08:15.590910+00:00",
     "source": "NQ=F / ES=F / YM=F",
-    "age_minutes": 1064,
+    "age_minutes": 1381,
     "fallback_used": false,
     "asset_count": 0,
     "decision_level": "blocked",
