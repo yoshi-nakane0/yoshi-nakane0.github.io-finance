@@ -1,6 +1,6 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-06-27T04:18:19.804268+00:00",
+  "as_of": "2026-06-27T08:13:34.344987+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -26,7 +26,7 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-06-27T04:18:22.081323+00:00",
+  "generated_at": "2026-06-27T08:13:40.973487+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -6434,7 +6434,7 @@
             "directional_allowed": false,
             "display_price": 69610.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-27T04:18:22.071784+00:00",
+            "generated_at": "2026-06-27T08:13:40.963803+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -6687,7 +6687,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 69610.0,
             "readiness_level": "ready",
-            "snapshot_id": "965e0406-4bed-4ccd-854a-f21e6524c505",
+            "snapshot_id": "6dcd40a7-e093-47c9-9824-d7fe1da683f0",
             "source_timestamp": "2026-06-27 06:00 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため",
@@ -8073,7 +8073,7 @@
       ]
     },
     "macro": {
-      "as_of": "2026-06-26T08:42:52.231965+00:00",
+      "as_of": "2026-06-27T08:13:34.344987+00:00",
       "bias": "neutral_inflation_risk",
       "confidence_grade": "A",
       "confidence_score": 91,
@@ -8094,13 +8094,13 @@
       },
       "model_version": "",
       "raw": {
-        "as_of": "2026-06-26",
+        "as_of": "2026-06-27",
         "blocking_issues": [],
         "confidence_grade": "A",
         "confidence_limit_reasons": [],
         "confidence_score": 91,
         "data_quality_report": {
-          "as_of": "2026-06-26",
+          "as_of": "2026-06-27",
           "blocking_issues": [],
           "confidence_cap": "A",
           "display_allowed": true,
@@ -8113,7 +8113,7 @@
         },
         "display_allowed": true,
         "display_status": "show",
-        "generated_at": "2026-06-26T08:42:52.231965+00:00",
+        "generated_at": "2026-06-27T08:13:34.344987+00:00",
         "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
         "invalidation_status_notes": [
           {
@@ -8125,11 +8125,11 @@
             "label": "Core PCE"
           },
           {
-            "detail": "現状 4.41%（2026-06-24）。判断変更目安 4.50%以上、あと +0.09pt",
+            "detail": "現状 4.40%（2026-06-25）。判断変更目安 4.50%以上、あと +0.10pt",
             "label": "米10年金利"
           },
           {
-            "detail": "現状 2.76%（2026-06-24）。判断変更目安 5.00%以上、あと +2.24pt",
+            "detail": "現状 2.78%（2026-06-25）。判断変更目安 5.00%以上、あと +2.22pt",
             "label": "信用スプレッド"
           }
         ],
@@ -8159,20 +8159,20 @@
               {
                 "age_days": 1,
                 "label": "5年期待インフレ率",
-                "observation_date": "2026-06-25",
+                "observation_date": "2026-06-26",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T5YIE",
                 "source": "FRED",
-                "value": 2.23
+                "value": 2.21
               },
               {
                 "age_days": 1,
                 "label": "10年期待インフレ率",
-                "observation_date": "2026-06-25",
+                "observation_date": "2026-06-26",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T10YIE",
                 "source": "FRED",
-                "value": 2.21
+                "value": 2.2
               }
             ],
             "reasons": [],
@@ -8194,7 +8194,7 @@
         "probabilities": {
           "contraction": 0.02018798202221658,
           "expansion": 0.6568708855634098,
-          "financial_stress": 0.2267770592019888,
+          "financial_stress": 0.23240155898374434,
           "inflation_reacceleration": 0.8988551038774872,
           "recovery": 0.17495960104105565,
           "slowdown": 0.147981531373318

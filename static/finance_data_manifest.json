@@ -12,10 +12,10 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-27T04:18:19.804268+00:00",
+  "explanation_as_of": "2026-06-27T08:13:34.344987+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-06-27T04:18:22.107401+00:00",
-  "macro_as_of": "2026-06-26T08:42:52.231965+00:00",
+  "generated_at": "2026-06-27T08:13:40.998558+00:00",
+  "macro_as_of": "2026-06-27T08:13:34.344987+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
   "source_versions": {
