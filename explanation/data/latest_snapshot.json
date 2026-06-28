@@ -29,7 +29,7 @@
     "stance": "withhold",
     "status": "blocked"
   },
-  "generated_at": "2026-06-28T09:34:50.671442+00:00",
+  "generated_at": "2026-06-28T11:12:05.950772+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -3312,7 +3312,7 @@
             "directional_allowed": false,
             "display_price": 69610.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-28T09:34:50.665436+00:00",
+            "generated_at": "2026-06-28T11:12:05.945149+00:00",
             "invalidated_targets": {
               "downside": [],
               "upside": []
@@ -3326,7 +3326,7 @@
             "probability_display_allowed": false,
             "range_calculated_from_price": 69610.0,
             "readiness_level": "blocked",
-            "snapshot_id": "a1cbcb94-2d19-4740-bb5a-8378be31f419",
+            "snapshot_id": "8b4891a9-573a-407a-bebb-100730aae6fb",
             "source_timestamp": "2026-06-27 06:00 JST",
             "stop_reasons": [
               "判定可能なデータ状態ではありません",
