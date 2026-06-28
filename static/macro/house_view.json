@@ -1,11 +1,11 @@
 {
-  "as_of": "2026-06-27",
+  "as_of": "2026-06-28",
   "blocking_issues": [],
   "confidence_grade": "A",
   "confidence_limit_reasons": [],
-  "confidence_score": 91,
+  "confidence_score": 92,
   "data_quality_report": {
-    "as_of": "2026-06-27",
+    "as_of": "2026-06-28",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -61,7 +61,7 @@
       "grade_cap": "A",
       "market_consensus_proxies": [
         {
-          "age_days": 1,
+          "age_days": 2,
           "label": "5年期待インフレ率",
           "observation_date": "2026-06-26",
           "proxy_type": "market_implied_inflation_expectation",
@@ -70,7 +70,7 @@
           "value": 2.21
         },
         {
-          "age_days": 1,
+          "age_days": 2,
           "label": "10年期待インフレ率",
           "observation_date": "2026-06-26",
           "proxy_type": "market_implied_inflation_expectation",

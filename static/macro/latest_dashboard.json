@@ -808,13 +808,13 @@
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-20",
+      "latest_date": "2026-06-27",
       "market_stage": 1,
       "name_ja": "AAII強気%",
       "series_id": "AAII_BULLISH",
       "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,28.0 120.0,0.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,28.0 120.0,0.0\"/></svg>",
-      "yoy_display": "+2.8%",
-      "yoy_value": 2.8089887640449436
+      "yoy_display": "+26.1%",
+      "yoy_value": 26.12359550561797
     },
     {
       "category": "市場ストレス",
@@ -1032,29 +1032,29 @@
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-18",
+      "latest_date": "2026-06-26",
       "market_stage": 1,
       "name_ja": "MOVE指数",
       "series_id": "MOVE_INDEX",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,10.1 10.4,15.0 15.7,0.0 20.9,14.7 26.1,13.4 31.3,16.0 36.5,11.3 41.7,12.5 47.0,8.4 52.2,15.9 57.4,16.6 62.6,20.4 67.8,20.6 73.0,21.1 78.3,25.3 83.5,24.4 88.7,26.2 93.9,28.0 99.1,22.8 104.3,14.4 109.6,23.3 114.8,23.9 120.0,25.7 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,10.1 10.4,15.0 15.7,0.0 20.9,14.7 26.1,13.4 31.3,16.0 36.5,11.3 41.7,12.5 47.0,8.4 52.2,15.9 57.4,16.6 62.6,20.4 67.8,20.6 73.0,21.1 78.3,25.3 83.5,24.4 88.7,26.2 93.9,28.0 99.1,22.8 104.3,14.4 109.6,23.3 114.8,23.9 120.0,25.7\"/></svg>",
-      "yoy_display": "-30.2%",
-      "yoy_value": -30.16873150804712
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,13.2 5.2,10.1 10.4,15.0 15.7,0.0 20.9,14.7 26.1,13.4 31.3,16.0 36.5,11.3 41.7,12.5 47.0,8.4 52.2,15.9 57.4,16.6 62.6,20.4 67.8,20.6 73.0,21.1 78.3,25.3 83.5,24.4 88.7,26.2 93.9,28.0 99.1,22.8 104.3,14.4 109.6,23.3 114.8,23.9 120.0,25.2 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,13.2 5.2,10.1 10.4,15.0 15.7,0.0 20.9,14.7 26.1,13.4 31.3,16.0 36.5,11.3 41.7,12.5 47.0,8.4 52.2,15.9 57.4,16.6 62.6,20.4 67.8,20.6 73.0,21.1 78.3,25.3 83.5,24.4 88.7,26.2 93.9,28.0 99.1,22.8 104.3,14.4 109.6,23.3 114.8,23.9 120.0,25.2\"/></svg>",
+      "yoy_display": "-25.3%",
+      "yoy_value": -25.34927908319698
     },
     {
       "category": "市場ストレス",
       "direction_arrow": "↓",
-      "economic_stage": 1,
+      "economic_stage": 2,
       "frequency": "daily",
       "has_data": true,
       "importance": "B",
       "indicator": null,
-      "latest_date": "2026-06-18",
-      "market_stage": 1,
+      "latest_date": "2026-06-26",
+      "market_stage": 2,
       "name_ja": "VIX/VIX3M比",
       "series_id": "VIX_VIX3M_RATIO",
-      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,25.6 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,25.6\"/></svg>",
-      "yoy_display": "-8.6%",
-      "yoy_value": -8.583706366096175
+      "sparkline_svg": "<svg viewBox=\"0 0 120 28\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"macro-sparkline\" aria-hidden=\"true\"><polygon fill=\"rgba(56, 189, 248, 0.18)\" stroke=\"none\" points=\"0,28 0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,15.0 120,28\"/><polyline fill=\"none\" stroke=\"#38BDF8\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\"0.0,8.2 5.2,22.5 10.4,21.1 15.7,0.0 20.9,26.6 26.1,15.1 31.3,18.2 36.5,7.0 41.7,1.2 47.0,7.7 52.2,21.4 57.4,22.5 62.6,20.7 67.8,25.8 73.0,21.6 78.3,23.8 83.5,26.4 88.7,27.8 93.9,21.4 99.1,14.1 104.3,4.8 109.6,25.2 114.8,28.0 120.0,15.0\"/></svg>",
+      "yoy_display": "+7.2%",
+      "yoy_value": 7.22184124853057
     }
   ],
   "crash_alert": {
@@ -1070,7 +1070,7 @@
       "roc_auc_display": "0.68",
       "sample_count": 240,
       "target": "GSPC",
-      "updated_at": "2026-06-27 08:10"
+      "updated_at": "2026-06-28 08:32"
     },
     "category_summary": [
       {
@@ -1087,16 +1087,16 @@
         "weight_pct": 35
       },
       {
-        "avg_score": 48,
-        "avg_score_display": 48,
+        "avg_score": 40,
+        "avg_score_display": 40,
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "count": 6,
-        "coverage_pct": 67,
+        "coverage_pct": 100,
         "expected_count": 6,
-        "fresh_count": 4,
+        "fresh_count": 6,
         "missing_count": 0,
-        "stale_count": 2,
+        "stale_count": 0,
         "weight_pct": 30
       },
       {
@@ -1128,8 +1128,8 @@
     ],
     "components": [
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1143,8 +1143,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1158,8 +1158,8 @@
         "warning": null
       },
       {
-        "age_days": 3,
-        "age_days_display": "3日",
+        "age_days": 4,
+        "age_days_display": "4日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
@@ -1173,53 +1173,53 @@
         "warning": null
       },
       {
-        "age_days": 7,
-        "age_days_display": "7日",
+        "age_days": 1,
+        "age_days_display": "1日",
         "category": "volatility_sentiment",
         "category_label": "ボラ・需給",
         "freshness_label": "新鮮",
         "is_missing": false,
         "is_stale": false,
         "label": "AAII強気%",
-        "observation_date": "2026-06-20",
-        "score": 25,
+        "observation_date": "2026-06-27",
+        "score": 50,
         "series_id": "AAII_BULLISH",
-        "value_display": "36.60",
+        "value_display": "44.90",
         "warning": null
-      },
-      {
-        "age_days": 9,
-        "age_days_display": "9日",
-        "category": "volatility_sentiment",
-        "category_label": "ボラ・需給",
-        "freshness_label": "古い",
-        "is_missing": false,
-        "is_stale": true,
-        "label": "MOVE指数",
-        "observation_date": "2026-06-18",
-        "score": 0,
-        "series_id": "MOVE_INDEX",
-        "value_display": "65.39",
-        "warning": "観測日が古い（目安7日以内）"
-      },
-      {
-        "age_days": 9,
-        "age_days_display": "9日",
-        "category": "volatility_sentiment",
-        "category_label": "ボラ・需給",
-        "freshness_label": "古い",
-        "is_missing": false,
-        "is_stale": true,
-        "label": "VIX/VIX3M比",
-        "observation_date": "2026-06-18",
-        "score": 0,
-        "series_id": "VIX_VIX3M_RATIO",
-        "value_display": "0.84",
-        "warning": "観測日が古い（目安7日以内）"
       },
       {
         "age_days": 2,
         "age_days_display": "2日",
+        "category": "volatility_sentiment",
+        "category_label": "ボラ・需給",
+        "freshness_label": "新鮮",
+        "is_missing": false,
+        "is_stale": false,
+        "label": "MOVE指数",
+        "observation_date": "2026-06-26",
+        "score": 0,
+        "series_id": "MOVE_INDEX",
+        "value_display": "66.79",
+        "warning": null
+      },
+      {
+        "age_days": 2,
+        "age_days_display": "2日",
+        "category": "volatility_sentiment",
+        "category_label": "ボラ・需給",
+        "freshness_label": "新鮮",
+        "is_missing": false,
+        "is_stale": false,
+        "label": "VIX/VIX3M比",
+        "observation_date": "2026-06-26",
+        "score": 25,
+        "series_id": "VIX_VIX3M_RATIO",
+        "value_display": "0.91",
+        "warning": null
+      },
+      {
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1233,8 +1233,8 @@
         "warning": null
       },
       {
-        "age_days": 2,
-        "age_days_display": "2日",
+        "age_days": 3,
+        "age_days_display": "3日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1248,8 +1248,8 @@
         "warning": null
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 9,
+        "age_days_display": "9日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1263,8 +1263,8 @@
         "warning": null
       },
       {
-        "age_days": 8,
-        "age_days_display": "8日",
+        "age_days": 9,
+        "age_days_display": "9日",
         "category": "credit_liquidity",
         "category_label": "信用・流動性",
         "freshness_label": "新鮮",
@@ -1278,8 +1278,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "macro_cycle",
         "category_label": "景気・金利",
         "freshness_label": "新鮮",
@@ -1293,8 +1293,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "macro_cycle",
         "category_label": "景気・金利",
         "freshness_label": "新鮮",
@@ -1308,8 +1308,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1323,8 +1323,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1338,8 +1338,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1353,8 +1353,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1368,8 +1368,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1383,8 +1383,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1398,8 +1398,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1413,8 +1413,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1428,8 +1428,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1443,8 +1443,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1458,8 +1458,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1473,8 +1473,8 @@
         "warning": null
       },
       {
-        "age_days": 1,
-        "age_days_display": "1日",
+        "age_days": 2,
+        "age_days_display": "2日",
         "category": "price_action",
         "category_label": "価格アクション",
         "freshness_label": "新鮮",
@@ -1488,23 +1488,21 @@
         "warning": null
       }
     ],
-    "data_quality_pct": 90,
-    "forward_risk_score": 28,
+    "data_quality_pct": 100,
+    "forward_risk_score": 25,
     "is_provisional": false,
-    "level": "caution",
-    "level_label": "注意",
-    "market_stress_score": 25,
-    "quality_warnings": [
-      "観測日が古い指標があります: MOVE指数、VIX/VIX3M比"
-    ],
-    "rule_agreement_pct": 79,
-    "total_score": 25,
+    "level": "calm",
+    "level_label": "平常",
+    "market_stress_score": 23,
+    "quality_warnings": [],
+    "rule_agreement_pct": 76,
+    "total_score": 23,
     "validation_confidence_pct": null,
     "validation_status": "月次検証あり"
   },
   "data_quality": 100.0,
   "data_quality_report": {
-    "as_of": "2026-06-27",
+    "as_of": "2026-06-28",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -1549,7 +1547,7 @@
     "tone": "warning",
     "total_count": 1
   },
-  "generated_at": "2026-06-27T08:13:34.344987+00:00",
+  "generated_at": "2026-06-28T08:36:05.745026+00:00",
   "goldman_outlook_comparison": {
     "audit": {
       "comparison_mode": "public_static_outlook_vs_live_house_view",
@@ -1562,7 +1560,7 @@
       "latest_public_source_date": "2026-01-15",
       "model_validation_usage": "not_allowed",
       "next_review": "Goldman公開ページが更新された時点で比較基準日を更新する。",
-      "public_outlook_age_days": 163
+      "public_outlook_age_days": 164
     },
     "benchmark_outlooks": [
       {
@@ -1646,7 +1644,7 @@
         "url": "https://www.goldmansachs.com/insights/articles/the-outlook-for-fed-rate-cuts-in-2026"
       }
     ],
-    "generated_at": "2026-06-27T08:13:27.028904+00:00",
+    "generated_at": "2026-06-28T08:35:58.349287+00:00",
     "goldman_sachs_public_outlook": {
       "as_of": "2026-01-11",
       "author": "Goldman Sachs Research / Jan Hatzius team public outlook",
@@ -1668,7 +1666,7 @@
       }
     },
     "house_view_snapshot": {
-      "as_of": "2026-06-27",
+      "as_of": "2026-06-28",
       "confidence": 76.0,
       "data_quality": 93.0,
       "primary_regime": "slowdown",
@@ -1694,7 +1692,7 @@
   "has_observations": true,
   "historical_crash_similarity": [
     {
-      "distance": 0.6154618833211722,
+      "distance": 0.6154622147752633,
       "distance_display": "0.62",
       "label": "2022年米株急落",
       "month_label": "2022年06月",
@@ -1702,7 +1700,7 @@
       "period": "inflation_2022"
     },
     {
-      "distance": 0.6173345254089582,
+      "distance": 0.6173161480534156,
       "distance_display": "0.62",
       "label": "2022年底",
       "month_label": "2022年10月",
@@ -1710,7 +1708,7 @@
       "period": "inflation_2022"
     },
     {
-      "distance": 0.9968663158210413,
+      "distance": 0.9968875474075953,
       "distance_display": "1.00",
       "label": "チャイナショック",
       "month_label": "2015年08月",
@@ -1719,13 +1717,13 @@
     }
   ],
   "house_view": {
-    "as_of": "2026-06-27",
+    "as_of": "2026-06-28",
     "blocking_issues": [],
     "confidence_grade": "A",
     "confidence_limit_reasons": [],
-    "confidence_score": 91,
+    "confidence_score": 92,
     "data_quality_report": {
-      "as_of": "2026-06-27",
+      "as_of": "2026-06-28",
       "blocking_issues": [],
       "confidence_cap": "A",
       "display_allowed": true,
@@ -1781,7 +1779,7 @@
         "grade_cap": "A",
         "market_consensus_proxies": [
           {
-            "age_days": 1,
+            "age_days": 2,
             "label": "5年期待インフレ率",
             "observation_date": "2026-06-26",
             "proxy_type": "market_implied_inflation_expectation",
@@ -1790,7 +1788,7 @@
             "value": 2.21
           },
           {
-            "age_days": 1,
+            "age_days": 2,
             "label": "10年期待インフレ率",
             "observation_date": "2026-06-26",
             "proxy_type": "market_implied_inflation_expectation",
@@ -2252,12 +2250,12 @@
         "too_defensive_count": 0
       }
     },
-    "generated_at": "2026-06-27T08:13:27.032888+00:00",
+    "generated_at": "2026-06-28T08:35:58.353507+00:00",
     "hit_count": 0,
     "hit_rate": null,
     "model_version": "macro_hatzius_v1",
     "operation_health": {
-      "latest_as_of": "2026-06-27",
+      "latest_as_of": "2026-06-28",
       "missing_features_hash_count": 0,
       "missing_prediction_interval_count": 0,
       "notes": [
@@ -2460,8 +2458,8 @@
       "yoy_value": -8.552631578947375
     }
   ],
-  "job_duration_sec": 7.431,
-  "last_updated": "2026-06-26",
+  "job_duration_sec": 7.512,
+  "last_updated": "2026-06-27",
   "linkages": [
     {
       "correlation": 0.9980114039813589,
@@ -2472,7 +2470,7 @@
       "relation_text": "CPI ⇔ PCE（同時連動）"
     },
     {
-      "correlation": 0.9974648134673832,
+      "correlation": 0.9974637245197766,
       "correlation_display": "+1.00",
       "interpretation": "FF金利とFF金利（月次）は同時に強く同じ方向へ動きやすい関係。",
       "is_negative": false,
@@ -2520,7 +2518,7 @@
       "relation_text": "CPI → Core PCE（約1ヶ月先行）"
     },
     {
-      "correlation": 0.9807495773751357,
+      "correlation": 0.9807474640025245,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利も強く上がりやすい関係。",
       "is_negative": false,
@@ -2528,7 +2526,7 @@
       "relation_text": "米2年国債利回り → FF金利（約3ヶ月先行）"
     },
     {
-      "correlation": 0.9798359389091436,
+      "correlation": 0.9798321616066881,
       "correlation_display": "+0.98",
       "interpretation": "米2年国債利回りが上がると約3ヶ月後にFF金利（月次）も強く上がりやすい関係。",
       "is_negative": false,
@@ -2551,15 +2549,15 @@
       "CPIが物価高止まり（前年比 4.17 index）。金利が下がりにくく、消費や株価の重しになりやすいです。"
     ],
     "confidence": {
-      "data_freshness_pct": 88,
+      "data_freshness_pct": 93,
       "grade": "A",
       "label": "高い",
       "notes": [
         "主要データの取得状況と判定材料は確認済みです。"
       ],
       "sample_note": "モデル予測は検証条件を満たすものだけ参考表示します。",
-      "score": 86,
-      "score_display": "86%"
+      "score": 90,
+      "score_display": "90%"
     },
     "detail": "成長ペースが落ち、慎重に見る局面です。 ただし物価高が金利や消費の重しになります。",
     "good_points": [
@@ -2570,15 +2568,13 @@
     "headline": "景気は弱含みで物価も重い",
     "market_stress": {
       "abnormal_items": [
-        "NAAIMエクスポージャー",
-        "MOVE指数",
-        "VIX/VIX3M比"
+        "NAAIMエクスポージャー"
       ],
-      "data_quality_display": "90%",
-      "level": "caution",
-      "level_label": "注意",
-      "score": 25,
-      "score_display": "25/100",
+      "data_quality_display": "100%",
+      "level": "calm",
+      "level_label": "平常",
+      "score": 23,
+      "score_display": "23/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "policy_pressure": {
@@ -2606,7 +2602,7 @@
         },
         {
           "label": "MOVE指数",
-          "value": "65.39"
+          "value": "66.79"
         }
       ],
       "score_display": "53",
@@ -2615,7 +2611,7 @@
     }
   },
   "macro_forecast_report": {
-    "as_of": "2026-06-27",
+    "as_of": "2026-06-28",
     "axes": [
       {
         "key": "growth_momentum",
@@ -2640,7 +2636,7 @@
       {
         "key": "financial_conditions",
         "label": "追い風",
-        "score_display": "84%"
+        "score_display": "86%"
       },
       {
         "key": "credit_stress",
@@ -2665,7 +2661,7 @@
     ],
     "change_summary": "前回から主レジームの変更なし。",
     "confidence_display": "76%",
-    "data_quality_display": "94%",
+    "data_quality_display": "98%",
     "executive_summary": {
       "confidence": "C / 検証不足",
       "main_view": "3〜6か月の主シナリオは expansion。",
@@ -2895,7 +2891,7 @@
         "direction_accuracy_display": "67.8%",
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-06-27 08:13",
+        "evaluated_at": "2026-06-28 08:35",
         "event_count": null,
         "horizon": "3m",
         "mae_display": "5.48",
@@ -2921,7 +2917,7 @@
         "metric_label": "ROC-AUC 0.68 / PR-AUC 0.15",
         "model_label": "GSPC 63日 -10.0%",
         "sample_label": "検証 240件 / イベント 19件",
-        "updated_at": "2026-06-27 08:10"
+        "updated_at": "2026-06-28 08:32"
       },
       {
         "label": "急落確率モデル",
@@ -2946,7 +2942,7 @@
       }
     ],
     "has_any": true,
-    "latest_backtest_date": "2026-06-27 08:10",
+    "latest_backtest_date": "2026-06-28 08:32",
     "latest_training_date": "2026-06-19",
     "status_label": "要確認",
     "tone": "warning",
@@ -2981,7 +2977,7 @@
       },
       {
         "label": "MOVE指数",
-        "value": "65.39"
+        "value": "66.79"
       },
       {
         "label": "ドル円",
@@ -3026,7 +3022,7 @@
     "warnings": []
   },
   "scenario_analysis": {
-    "base_market_stress_score": 25,
+    "base_market_stress_score": 23,
     "base_regime_fit_display": "近さの目安 66%",
     "base_regime_label": "拡大",
     "base_regime_probability_display": "66%",
@@ -3108,7 +3104,7 @@
         "is_custom": false,
         "key": "most_likely",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 25,
+        "market_stress_score": 23,
         "recession_probability_display": "7%",
         "regime_fit_display": "近さの目安 66%",
         "regime_label": "拡大",
@@ -3124,8 +3120,8 @@
         "inflation_probability_display": "95%",
         "is_custom": false,
         "key": "top_risk",
-        "market_stress_delta_display": "+4pt",
-        "market_stress_score": 29,
+        "market_stress_delta_display": "+3pt",
+        "market_stress_score": 26,
         "recession_probability_display": "10%",
         "regime_fit_display": "近さの目安 58%",
         "regime_label": "拡大",
@@ -3135,9 +3131,9 @@
         "world_state_delta": {
           "credit_score": -13.6,
           "inflation_score": 6.7,
-          "market_stress_score": 4.0,
+          "market_stress_score": 3.0,
           "policy_pressure_score": 1.7,
-          "risk_appetite_score": -6.0
+          "risk_appetite_score": -4.0
         },
         "world_state_delta_rows": [
           {
@@ -3155,8 +3151,8 @@
             "label": "政策圧力"
           },
           {
-            "delta": 4.0,
-            "delta_display": "+4.0",
+            "delta": 3.0,
+            "delta_display": "+3.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -3169,8 +3165,8 @@
             "label": "信用"
           },
           {
-            "delta": -6.0,
-            "delta_display": "-6.0",
+            "delta": -4.0,
+            "delta_display": "-4.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3184,7 +3180,7 @@
         "is_custom": false,
         "key": "improvement",
         "market_stress_delta_display": "0pt",
-        "market_stress_score": 25,
+        "market_stress_score": 23,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 69%",
         "regime_label": "拡大",
@@ -3218,8 +3214,8 @@
         "inflation_probability_display": "90%",
         "is_custom": false,
         "key": "market_shock",
-        "market_stress_delta_display": "+9pt",
-        "market_stress_score": 34,
+        "market_stress_delta_display": "+7pt",
+        "market_stress_score": 30,
         "recession_probability_display": "19%",
         "regime_fit_display": "近さの目安 34%",
         "regime_label": "拡大",
@@ -3228,13 +3224,13 @@
         "title": "ショックシナリオ",
         "world_state_delta": {
           "credit_score": -27.3,
-          "market_stress_score": 9.0,
-          "risk_appetite_score": -16.0
+          "market_stress_score": 7.0,
+          "risk_appetite_score": -11.0
         },
         "world_state_delta_rows": [
           {
-            "delta": 9.0,
-            "delta_display": "+9.0",
+            "delta": 7.0,
+            "delta_display": "+7.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -3247,8 +3243,8 @@
             "label": "信用"
           },
           {
-            "delta": -16.0,
-            "delta_display": "-16.0",
+            "delta": -11.0,
+            "delta_display": "-11.0",
             "is_negative": true,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3261,8 +3257,8 @@
         "inflation_probability_display": "96%",
         "is_custom": false,
         "key": "rate_cut_delay",
-        "market_stress_delta_display": "+4pt",
-        "market_stress_score": 29,
+        "market_stress_delta_display": "+3pt",
+        "market_stress_score": 26,
         "recession_probability_display": "8%",
         "regime_fit_display": "近さの目安 62%",
         "regime_label": "拡大",
@@ -3271,7 +3267,7 @@
         "title": "利下げ後退・米金利上昇",
         "world_state_delta": {
           "inflation_score": 6.7,
-          "market_stress_score": 4.0,
+          "market_stress_score": 3.0,
           "policy_pressure_score": 1.2
         },
         "world_state_delta_rows": [
@@ -3290,8 +3286,8 @@
             "label": "政策圧力"
           },
           {
-            "delta": 4.0,
-            "delta_display": "+4.0",
+            "delta": 3.0,
+            "delta_display": "+3.0",
             "is_negative": false,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -3304,8 +3300,8 @@
         "inflation_probability_display": "90%",
         "is_custom": false,
         "key": "rates_down_risk_on",
-        "market_stress_delta_display": "-4pt",
-        "market_stress_score": 21,
+        "market_stress_delta_display": "-3pt",
+        "market_stress_score": 20,
         "recession_probability_display": "6%",
         "regime_fit_display": "近さの目安 71%",
         "regime_label": "拡大",
@@ -3314,9 +3310,9 @@
         "title": "金利低下・リスクオン",
         "world_state_delta": {
           "credit_score": 5.1,
-          "market_stress_score": -4.0,
+          "market_stress_score": -3.0,
           "policy_pressure_score": 2.1,
-          "risk_appetite_score": 7.0
+          "risk_appetite_score": 4.0
         },
         "world_state_delta_rows": [
           {
@@ -3327,8 +3323,8 @@
             "label": "政策圧力"
           },
           {
-            "delta": -4.0,
-            "delta_display": "-4.0",
+            "delta": -3.0,
+            "delta_display": "-3.0",
             "is_negative": true,
             "key": "market_stress_score",
             "label": "市場ストレス"
@@ -3341,8 +3337,8 @@
             "label": "信用"
           },
           {
-            "delta": 7.0,
-            "delta_display": "+7.0",
+            "delta": 4.0,
+            "delta_display": "+4.0",
             "is_negative": false,
             "key": "risk_appetite_score",
             "label": "リスク選好"
@@ -3469,7 +3465,7 @@
       },
       {
         "label": "政策・金利",
-        "score_display": "84%",
+        "score_display": "86%",
         "value": "追い風"
       },
       {
@@ -3579,7 +3575,7 @@
         {
           "detail": "成長・雇用・信用・流動性など、経済を支える材料です。",
           "label": "支えている材料",
-          "value": "成長 67% / 雇用 65% / 信用 95% / 流動性 94% / 低ストレス 25%"
+          "value": "成長 67% / 雇用 65% / 信用 95% / 流動性 94% / 低ストレス 23%"
         },
         {
           "detail": "物価・金利・イベントなど、株価や消費の重しになりやすい材料です。",
@@ -3596,16 +3592,16 @@
       "title": "Macro経済判定"
     },
     "final_judgment": {
-      "confidence": "Macro現状スコア 70%",
+      "confidence": "Macro現状スコア 71%",
       "direction": "中立（物価警戒）",
       "max_risk": "インフレ再加速リスクが高い・米金利上昇が株価バリュエーションを圧迫",
       "nikkei_impact": "上昇支援",
       "summary": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意"
     },
     "freshness": {
-      "confidence": "Macro現状スコア 70%",
+      "confidence": "Macro現状スコア 71%",
       "data_freshness": "100%",
-      "updated_at": "2026-06-26"
+      "updated_at": "2026-06-27"
     },
     "good_points": [
       "実質GDPが拡大寄り（前年比 3 十億$）。需要が強く、企業売上や雇用を支えやすいです。",
@@ -3633,15 +3629,13 @@
     ],
     "market_stress": {
       "abnormal_items": [
-        "NAAIMエクスポージャー",
-        "MOVE指数",
-        "VIX/VIX3M比"
+        "NAAIMエクスポージャー"
       ],
-      "data_quality_display": "90%",
-      "level": "caution",
-      "level_label": "注意",
-      "score": 25,
-      "score_display": "25/100",
+      "data_quality_display": "100%",
+      "level": "calm",
+      "level_label": "平常",
+      "score": 23,
+      "score_display": "23/100",
       "summary": "急落確率ではなく、現在の市場の緊張度です。"
     },
     "nikkei": {
@@ -3672,7 +3666,7 @@
         },
         {
           "label": "MOVE指数",
-          "value": "65.39"
+          "value": "66.79"
         }
       ],
       "score_display": "53",
@@ -3680,7 +3674,7 @@
       "tone": "good"
     },
     "reliability": {
-      "data_quality": "A / 91%",
+      "data_quality": "A / 92%",
       "display_status": "表示可",
       "live_record": "Live実績 未評価",
       "model_validation": "A / 疑似Live 80%",
@@ -3714,12 +3708,12 @@
     ]
   },
   "validation_weight_report": {
-    "generated_at": "2026-06-27T08:13:27.048689+00:00",
+    "generated_at": "2026-06-28T08:35:58.369627+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-06-27T08:13:26.369802+00:00",
+        "evaluated_at": "2026-06-28T08:35:57.634230+00:00",
         "horizon": "3m",
         "metrics_used": {
           "baseline": "best_available_naive_baseline",
@@ -3820,7 +3814,7 @@
       "WTREGEN"
     ],
     "fred_active_series_count": 47,
-    "generated_at": "2026-06-27T08:13:27.046974+00:00",
+    "generated_at": "2026-06-28T08:35:58.367820+00:00",
     "missing_vintage_series": [],
     "strict_point_in_time_ready": true,
     "vintage_coverage_pct": 100.0,
@@ -3831,12 +3825,12 @@
     "archive_recommended": false,
     "is_large": false,
     "is_stale": false,
-    "latest_collected_at": "2026-06-27 08:12",
+    "latest_collected_at": "2026-06-28 08:34",
     "note": "FREDの改定前データを蓄積しており、point-in-time検証に使えます。",
     "series_count": 47,
     "status_label": "蓄積済み",
     "tone": "good",
-    "total_count": 100092
+    "total_count": 100084
   },
   "warnings": [],
   "world_model_operations": {
@@ -3847,7 +3841,7 @@
         "cadence": "daily",
         "is_stale": false,
         "label": "日次更新",
-        "last_finished_at": "2026-06-27 08:13",
+        "last_finished_at": "2026-06-28 08:35",
         "status": "success",
         "status_label": "成功",
         "summary_label": "World State を更新しました。"
@@ -3857,7 +3851,7 @@
         "cadence": "weekly",
         "is_stale": false,
         "label": "週次検証",
-        "last_finished_at": "2026-06-27 08:13",
+        "last_finished_at": "2026-06-28 08:35",
         "status": "success",
         "status_label": "日次内で確認",
         "summary_label": "共有DB未設定のため、日次更新の実行履歴を表示しています。"
@@ -3867,7 +3861,7 @@
         "cadence": "monthly",
         "is_stale": false,
         "label": "月次学習",
-        "last_finished_at": "2026-06-27 08:10",
+        "last_finished_at": "2026-06-28 08:32",
         "status": "success",
         "status_label": "出力更新済み",
         "summary_label": "月次モデル出力ファイルを確認しました。"
@@ -3877,7 +3871,7 @@
         "cadence": "archive",
         "is_stale": false,
         "label": "履歴退避",
-        "last_finished_at": "2026-06-27 08:10",
+        "last_finished_at": "2026-06-28 08:32",
         "status": "success",
         "status_label": "月次内で退避",
         "summary_label": "月次メンテナンス内の履歴退避を前提に表示しています。"
@@ -3887,8 +3881,8 @@
     "tone": "good"
   },
   "world_state": {
-    "as_of_date": "2026-06-27",
-    "data_quality_display": "94%",
+    "as_of_date": "2026-06-28",
+    "data_quality_display": "98%",
     "has_snapshot": true,
     "model_version": "world_state_v1",
     "negative_drivers": [
@@ -3943,11 +3937,11 @@
         "value": 94.0
       },
       {
-        "bar_pct": 52,
-        "display": "52",
+        "bar_pct": 60,
+        "display": "60",
         "field": "risk_appetite_score",
         "label": "リスク選好",
-        "value": 52.0
+        "value": 60.0
       },
       {
         "bar_pct": 100,
@@ -3957,11 +3951,11 @@
         "value": 100.0
       },
       {
-        "bar_pct": 25,
-        "display": "25",
+        "bar_pct": 23,
+        "display": "23",
         "field": "market_stress_score",
         "label": "市場ストレス",
-        "value": 25.0
+        "value": 23.0
       }
     ],
     "summary": "成長は強め、雇用は強い、物価再加速に注意。",

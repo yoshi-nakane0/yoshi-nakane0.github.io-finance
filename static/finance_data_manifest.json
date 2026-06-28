@@ -15,10 +15,10 @@
     "explanation": "blocked",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-28T04:53:41.424405+00:00",
+  "explanation_as_of": "2026-06-28T08:36:05.745026+00:00",
   "explanation_status": "blocked",
-  "generated_at": "2026-06-28T04:53:42.214483+00:00",
-  "macro_as_of": "2026-06-27T08:13:34.344987+00:00",
+  "generated_at": "2026-06-28T08:36:12.955403+00:00",
+  "macro_as_of": "2026-06-28T08:36:05.745026+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
   "source_versions": {
