@@ -1,6 +1,6 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-06-28T08:36:05.745026+00:00",
+  "as_of": "2026-06-28T09:34:49.888756+00:00",
   "audit": {
     "items": [
       "basecalcの方向判断は停止",
@@ -29,7 +29,7 @@
     "stance": "withhold",
     "status": "blocked"
   },
-  "generated_at": "2026-06-28T08:36:12.940468+00:00",
+  "generated_at": "2026-06-28T09:34:50.671442+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -91,7 +91,7 @@
           "target_probability_allowed": true
         }
       },
-      "as_of": "2026-06-28T04:53:41.424405+00:00",
+      "as_of": "2026-06-28T09:34:49.888756+00:00",
       "bearish_invalidation": 71570.0,
       "bias": "neutral",
       "bullish_invalidation": 67650.0,
@@ -589,12 +589,12 @@
             "decision_label": "停止",
             "decision_level": "blocked",
             "fallback_used": false,
-            "last_failed_at": "2026-06-28T04:53:41.523016+00:00",
+            "last_failed_at": "2026-06-28T09:34:49.992135+00:00",
             "last_success_at": null,
             "source": "NQ=F / ES=F / YM=F"
           },
           "price_data": {
-            "age_minutes": 1913,
+            "age_minutes": 2194,
             "decision_label": "停止",
             "decision_level": "blocked",
             "fallback_used": false,
@@ -622,7 +622,7 @@
             "fallback_display": "なし",
             "key": "intermarket",
             "label": "米国3指数確認",
-            "last_failed_at": "2026-06-28T04:53:41.523016+00:00",
+            "last_failed_at": "2026-06-28T09:34:49.992135+00:00",
             "last_success_at": "",
             "source": "NQ=F / ES=F / YM=F"
           }
@@ -1266,7 +1266,7 @@
               "evidence": [
                 "米国3指数データなし"
               ],
-              "fetched_at": "2026-06-28T04:53:27.147855+00:00",
+              "fetched_at": "2026-06-28T09:34:35.624182+00:00",
               "readiness": {
                 "level": "blocked",
                 "missing": [
@@ -1441,7 +1441,7 @@
               "directional_allowed": false,
               "display_price": 69610.0,
               "explanation_allowed": false,
-              "generated_at": "2026-06-28T04:53:41.523849+00:00",
+              "generated_at": "2026-06-28T09:34:49.992964+00:00",
               "invalidated_targets": {
                 "downside": [
                   {
@@ -1642,12 +1642,12 @@
               "model_price": 69610.0,
               "model_version": "wm_v2.0.0",
               "ohlcv_bar_count": null,
-              "price_age_minutes": 1913,
+              "price_age_minutes": 2194,
               "price_source": "matsui",
               "probability_display_allowed": false,
               "range_calculated_from_price": 69610.0,
               "readiness_level": "blocked",
-              "snapshot_id": "bca9ab41-3e26-46cc-b444-d7c94cad69c3",
+              "snapshot_id": "366ce20f-c56f-4d97-b8cc-ee8185a6a31d",
               "source_timestamp": "2026-06-27 06:00 JST",
               "stop_reasons": [
                 "判定可能なデータ状態ではありません",
@@ -1964,7 +1964,7 @@
               "source": "matsui",
               "symbol": "NIY=F"
             },
-            "stale_minutes": 1913,
+            "stale_minutes": 2194,
             "state_key": "data_unavailable",
             "state_label": "データ不足",
             "stop_reasons": [
@@ -1990,7 +1990,7 @@
               "evidence": [
                 "米国3指数データなし"
               ],
-              "fetched_at": "2026-06-28T04:53:27.147855+00:00",
+              "fetched_at": "2026-06-28T09:34:35.624182+00:00",
               "readiness": {
                 "level": "blocked",
                 "missing": [
@@ -2081,7 +2081,7 @@
         "decision_price_source": "matsui",
         "decision_price_symbol": "NIY=F",
         "detail_mode": false,
-        "generated_at": "2026-06-28T04:53:41.424405+00:00",
+        "generated_at": "2026-06-28T09:34:49.888756+00:00",
         "intermarket_technicals": {
           "components": {},
           "confirmation_label": "mixed",
@@ -2090,7 +2090,7 @@
           "evidence": [
             "米国3指数データなし"
           ],
-          "fetched_at": "2026-06-28T04:53:27.147855+00:00",
+          "fetched_at": "2026-06-28T09:34:35.624182+00:00",
           "readiness": {
             "level": "blocked",
             "missing": [
@@ -2103,7 +2103,7 @@
           },
           "risk_label": "technical_confirm"
         },
-        "job_duration_sec": 19.669,
+        "job_duration_sec": 20.008,
         "latest_price": 69610,
         "latest_price_display": "69,610",
         "market_shock": {
@@ -3137,7 +3137,7 @@
             "evidence": [
               "米国3指数データなし"
             ],
-            "fetched_at": "2026-06-28T04:53:27.147855+00:00",
+            "fetched_at": "2026-06-28T09:34:35.624182+00:00",
             "readiness": {
               "level": "blocked",
               "missing": [
@@ -3312,7 +3312,7 @@
             "directional_allowed": false,
             "display_price": 69610.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-28T08:36:12.933992+00:00",
+            "generated_at": "2026-06-28T09:34:50.665436+00:00",
             "invalidated_targets": {
               "downside": [],
               "upside": []
@@ -3321,12 +3321,12 @@
             "model_price": 69610.0,
             "model_version": "wm_v2.0.0",
             "ohlcv_bar_count": null,
-            "price_age_minutes": 1913,
+            "price_age_minutes": 2194,
             "price_source": "matsui",
             "probability_display_allowed": false,
             "range_calculated_from_price": 69610.0,
             "readiness_level": "blocked",
-            "snapshot_id": "cb6809ff-e307-4148-9319-e63aa16036b7",
+            "snapshot_id": "a1cbcb94-2d19-4740-bb5a-8378be31f419",
             "source_timestamp": "2026-06-27 06:00 JST",
             "stop_reasons": [
               "判定可能なデータ状態ではありません",
@@ -3643,7 +3643,7 @@
             "source": "matsui",
             "symbol": "NIY=F"
           },
-          "stale_minutes": 1913,
+          "stale_minutes": 2194,
           "state_key": "data_unavailable",
           "state_label": "データ不足",
           "stop_reasons": [
@@ -3669,7 +3669,7 @@
             "evidence": [
               "米国3指数データなし"
             ],
-            "fetched_at": "2026-06-28T04:53:27.147855+00:00",
+            "fetched_at": "2026-06-28T09:34:35.624182+00:00",
             "readiness": {
               "level": "blocked",
               "missing": [
