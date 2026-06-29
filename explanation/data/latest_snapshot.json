@@ -1,6 +1,6 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-06-29T05:01:45.995236+00:00",
+  "as_of": "2026-06-29T10:13:05.105709+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -26,7 +26,7 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-06-29T05:01:46.732273+00:00",
+  "generated_at": "2026-06-29T10:13:12.208315+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -61,7 +61,7 @@
     "base_confidence": 44,
     "basecalc_confidence": 44,
     "confidence_cap": "B-",
-    "macro_confidence": 92
+    "macro_confidence": 91
   },
   "source_snapshots": {
     "basecalc": {
@@ -6430,7 +6430,7 @@
             "directional_allowed": false,
             "display_price": 68780.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-29T05:01:46.723335+00:00",
+            "generated_at": "2026-06-29T10:13:12.198178+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -6684,7 +6684,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 68780.0,
             "readiness_level": "ready",
-            "snapshot_id": "dcd69487-684c-4a61-9d85-268e739c19ca",
+            "snapshot_id": "29694ca6-f1a6-4c83-837f-c35b80ee6005",
             "source_timestamp": "2026-06-29 13:46 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため",
@@ -8085,10 +8085,10 @@
       ]
     },
     "macro": {
-      "as_of": "2026-06-28T08:36:05.745026+00:00",
+      "as_of": "2026-06-29T10:13:05.105709+00:00",
       "bias": "neutral_inflation_risk",
       "confidence_grade": "A",
-      "confidence_score": 92,
+      "confidence_score": 91,
       "data_quality_score": 100,
       "factor_vector": {
         "credit_stress_score": 23,
@@ -8106,13 +8106,13 @@
       },
       "model_version": "",
       "raw": {
-        "as_of": "2026-06-28",
+        "as_of": "2026-06-29",
         "blocking_issues": [],
         "confidence_grade": "A",
         "confidence_limit_reasons": [],
-        "confidence_score": 92,
+        "confidence_score": 91,
         "data_quality_report": {
-          "as_of": "2026-06-28",
+          "as_of": "2026-06-29",
           "blocking_issues": [],
           "confidence_cap": "A",
           "display_allowed": true,
@@ -8125,7 +8125,7 @@
         },
         "display_allowed": true,
         "display_status": "show",
-        "generated_at": "2026-06-28T08:36:05.745026+00:00",
+        "generated_at": "2026-06-29T10:13:05.105709+00:00",
         "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
         "invalidation_status_notes": [
           {
@@ -8169,7 +8169,7 @@
             "grade_cap": "A",
             "market_consensus_proxies": [
               {
-                "age_days": 2,
+                "age_days": 3,
                 "label": "5年期待インフレ率",
                 "observation_date": "2026-06-26",
                 "proxy_type": "market_implied_inflation_expectation",
@@ -8178,7 +8178,7 @@
                 "value": 2.21
               },
               {
-                "age_days": 2,
+                "age_days": 3,
                 "label": "10年期待インフレ率",
                 "observation_date": "2026-06-26",
                 "proxy_type": "market_implied_inflation_expectation",

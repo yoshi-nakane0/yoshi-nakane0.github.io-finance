@@ -1,11 +1,11 @@
 {
   "validation_weight_report": {
-    "generated_at": "2026-06-28T08:36:12.300730+00:00",
+    "generated_at": "2026-06-29T10:13:11.583837+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-06-28T08:35:57.634230+00:00",
+        "evaluated_at": "2026-06-29T10:12:57.180805+00:00",
         "horizon": "3m",
         "metrics_used": {
           "baseline": "best_available_naive_baseline",

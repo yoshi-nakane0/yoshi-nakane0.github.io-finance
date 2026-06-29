@@ -2,14 +2,14 @@
   "freshness": {
     "age_days": 0,
     "is_stale": false,
-    "latest_evaluated_at": "2026-06-28T08:35:57.634230+00:00",
+    "latest_evaluated_at": "2026-06-29T10:12:57.180805+00:00",
     "stale_after_days": 30
   },
   "model_validation_report": [
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-28T08:35:57.634230+00:00",
+      "evaluated_at": "2026-06-29T10:12:57.180805+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {

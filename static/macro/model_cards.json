@@ -5,7 +5,7 @@
       "display_label": "トップ表示可",
       "display_policy": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-06-28T08:35:57.634230+00:00",
+      "evaluated_at": "2026-06-29T10:12:57.180805+00:00",
       "event_count": null,
       "feature_set": [],
       "horizon": "3m",
@@ -22,7 +22,7 @@
       "known_weaknesses": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
       ],
-      "last_validated_at": "2026-06-28T08:35:57.634230+00:00",
+      "last_validated_at": "2026-06-29T10:12:57.180805+00:00",
       "leakage_check": "not_flagged",
       "limitations": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
