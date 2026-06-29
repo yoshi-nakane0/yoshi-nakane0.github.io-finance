@@ -1,23 +1,20 @@
 {
-  "basecalc_as_of": "2026-06-26T21:00:00+00:00",
-  "basecalc_status": "blocked",
+  "basecalc_as_of": "2026-06-29T01:22:00+00:00",
+  "basecalc_status": "limited",
   "blocking_reasons": [
-    "判定可能なデータ状態ではありません",
     "現行モデルがATRベースラインを下回るため",
     "米国3指数確認が不足",
-    "類似事例不足のため信頼度を50未満に制限",
-    "basecalcの方向判断は停止",
     "予測ゲート停止中",
     "金利再上昇時に株価先物へ逆風"
   ],
   "data_freshness": {
-    "basecalc": "blocked",
-    "explanation": "blocked",
+    "basecalc": "usable_with_warning",
+    "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-28T19:48:14.362844+00:00",
-  "explanation_status": "blocked",
-  "generated_at": "2026-06-28T19:48:15.241601+00:00",
+  "explanation_as_of": "2026-06-29T01:37:45.725458+00:00",
+  "explanation_status": "limited",
+  "generated_at": "2026-06-29T01:37:46.560431+00:00",
   "macro_as_of": "2026-06-28T08:36:05.745026+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
