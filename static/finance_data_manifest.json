@@ -5,17 +5,17 @@
     "現行モデルがATRベースラインを下回るため",
     "米国3指数確認が不足",
     "予測ゲート停止中",
-    "金利再上昇時に株価先物へ逆風"
+    "重要指標の発表前後のため一段階下げます。"
   ],
   "data_freshness": {
     "basecalc": "usable_with_warning",
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-06-30T04:36:07.392907+00:00",
+  "explanation_as_of": "2026-06-30T08:45:28.333836+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-06-30T04:36:08.190418+00:00",
-  "macro_as_of": "2026-06-29T10:13:05.105709+00:00",
+  "generated_at": "2026-06-30T08:45:35.605799+00:00",
+  "macro_as_of": "2026-06-30T08:45:28.333836+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
   "source_versions": {
