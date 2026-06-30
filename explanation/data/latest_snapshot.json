@@ -26,7 +26,7 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-06-30T10:03:12.505414+00:00",
+  "generated_at": "2026-06-30T11:48:05.528928+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -6465,7 +6465,7 @@
             "directional_allowed": false,
             "display_price": 70050.0,
             "explanation_allowed": false,
-            "generated_at": "2026-06-30T10:03:12.496124+00:00",
+            "generated_at": "2026-06-30T11:48:05.519469+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -6721,7 +6721,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 70050.0,
             "readiness_level": "ready",
-            "snapshot_id": "8e67956f-18ea-4933-8031-aa7195f3ad0b",
+            "snapshot_id": "798520e5-7a78-4be3-bc15-7a967feed6aa",
             "source_timestamp": "2026-06-30 18:45 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため",
