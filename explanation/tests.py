@@ -21,7 +21,7 @@ from .services.macro_adapter import load_macro_signal
 from .services.scenario_builder import build_scenarios
 from .services.serializer import snapshot_to_api, snapshot_to_view
 from .services.target_selector import select_trade_targets
-from .services.validation_engine import evaluate_trade_outcome
+from .services.validation_engine import build_trade_validation_summary, evaluate_trade_outcome
 
 
 class ExplanationDecisionEngineTests(SimpleTestCase):
@@ -193,7 +193,12 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
         self.assertEqual(decision.selected_side, 'no_trade')
-        self.assertEqual(decision.decision_type, 'no_trade_conflict')
+        self.assertEqual(decision.decision_type, 'no_trade_direction_stopped')
+        self.assertIsNone(decision.entry_price)
+        self.assertIsNone(decision.target_1)
+        self.assertIsNone(decision.target_2)
+        self.assertIsNone(decision.stop_price)
+        self.assertIsNone(decision.reward_risk)
         self.assertIn('方向予測停止', decision.blocked_reasons)
 
     def test_trade_decision_v2_blocks_contract_error_and_hides_targets(self):
@@ -676,7 +681,39 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
 
         self.assertEqual(context['alignment_summary']['status'], '時間軸分岐')
-        self.assertIn('短期はbasecalc', context['alignment_summary']['action'])
+        self.assertIn('短期と中期を分けて扱い', context['alignment_summary']['action'])
+
+    def test_view_context_labels_neutral_range_as_no_direction_alignment(self):
+        snapshot = self._snapshot()
+        snapshot.macro_bias = 'neutral'
+        snapshot.basecalc_bias = 'range'
+        snapshot.alignment_status = 'aligned'
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['alignment_summary']['macro'], '中立')
+        self.assertEqual(context['alignment_summary']['basecalc'], 'レンジ')
+        self.assertEqual(context['alignment_summary']['status'], '方向なしで一致')
+        self.assertIn('順張り候補ではなく待機', context['alignment_summary']['action'])
+
+    def test_world_model_predictions_hide_values_when_horizon_direction_is_stopped(self):
+        snapshot = self._snapshot()
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['output_contract'] = {
+            'contract_status': 'limited',
+            'allowed_horizons': {
+                '1d': {'direction_allowed': False},
+                '3d': {'direction_allowed': False},
+                '5d': {'direction_allowed': False},
+            },
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        for row in context['world_model_predictions']:
+            self.assertEqual(row['bias'], '停止')
+            self.assertEqual(row['expected_return'], 'N/A')
+            self.assertEqual(row['expected_price'], 'N/A')
+            self.assertEqual(row['setup'], '方向判断停止')
 
     def test_explanation_template_removes_low_priority_duplicate_sections(self):
         context = snapshot_to_view(self._snapshot())
@@ -685,6 +722,11 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context['can_precompute_explanation'] = False
         context['trade_validation_summary'] = {
             'available': True,
+            'total_count': 1,
+            'actionable_count': 1,
+            'wait_count': 0,
+            'one_line': '検証 1件 / 売買候補 1件 / 待機観測 0件',
+            'horizon_rows': [{'label': '1d', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
             'side_rows': [{'label': 'Long', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
             'style_rows': [{'label': 'Trend', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
             'confidence_rows': [{'label': 'B', 'sample_count': 1, 'direction_hit_rate': '100%', 'target_1_hit_rate': '0%', 'stop_hit_rate': '0%'}],
@@ -702,7 +744,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('Macro / Basecalc 詳細', html)
         self.assertNotIn('理由の詳細', html)
         self.assertNotIn('シナリオ詳細', html)
-        self.assertNotIn('検証成績詳細', html)
+        self.assertIn('検証成績詳細', html)
         self.assertNotIn('見るべき水準の詳細', html)
         self.assertNotIn('Long / Short / No Trade 別', html)
         self.assertNotIn('Trend / Reversal 別', html)
@@ -725,7 +767,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         html = render_to_string('explanation/index.html', context)
 
-        self.assertIn('実運用結果はまだ0件です。', html)
+        self.assertIn('判定検証 0件', html)
+        self.assertIn('まだ保存済み判定の評価結果がありません。', html)
+        self.assertNotIn('実運用結果 0件', html)
+        self.assertNotIn('実運用結果はまだ0件です。', html)
         self.assertNotIn('検証状態: 少ない', html)
 
     def test_explanation_template_places_manual_price_before_final_decision(self):
@@ -776,7 +821,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('72,400円', top_html)
         self.assertNotIn('75,800円', top_html)
 
-    def test_explanation_template_renders_reference_candidate_as_separate_section(self):
+    def test_explanation_template_hides_reference_candidate_when_no_trade_has_blocked_reasons(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
             'selected_side': 'no_trade',
@@ -801,10 +846,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         html = render_to_string('explanation/index.html', context)
         top_html = html.split('詳細を表示', 1)[0]
 
-        self.assertIn('参考候補', top_html)
-        self.assertIn('参考ショート候補', top_html)
-        self.assertIn('71,800円', top_html)
-        self.assertLess(top_html.index('参考候補'), top_html.index('次に見る条件'))
+        self.assertNotIn('参考候補', top_html)
+        self.assertNotIn('参考ショート候補', top_html)
+        self.assertNotIn('71,800円', top_html)
 
     def test_decision_card_hides_reference_levels_when_no_trade_has_candidate_plan(self):
         snapshot = self._snapshot()
@@ -895,7 +939,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('信頼度不足', beginner['wait_reasons'])
         self.assertIn('ATR基準に届かないため、方向予測は参考表示にしています。', beginner['warnings'])
 
-    def test_beginner_decision_shows_reference_candidate_when_no_trade_keeps_plan(self):
+    def test_beginner_decision_hides_reference_candidate_when_no_trade_has_blocked_reasons(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
             'selected_side': 'no_trade',
@@ -918,13 +962,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
         candidate = context['beginner_decision']['reference_candidate']
 
-        self.assertTrue(candidate['available'])
-        self.assertEqual(candidate['label'], '参考ショート候補')
-        self.assertEqual(candidate['entry_display'], '72,376〜72,539円')
-        self.assertEqual(candidate['target_1_display'], '71,800円')
-        self.assertEqual(candidate['stop_display'], '72,950円')
-        self.assertEqual(candidate['reward_risk_display'], '0.95')
-        self.assertIn('最終判断ではありません。', candidate['note'])
+        self.assertFalse(candidate['available'])
 
     def test_beginner_decision_blocks_invalid_long_target_direction(self):
         snapshot = self._snapshot()
@@ -1082,19 +1120,29 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
     def test_static_snapshot_round_trips_for_json_artifact(self):
         from .services.static_snapshot import (
+            append_static_explanation_history,
+            load_static_snapshot_history,
             load_static_explanation_snapshot,
             write_static_explanation_snapshot,
         )
 
         with TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / 'latest_snapshot.json'
+            history = Path(tmpdir) / 'snapshot_history.json'
 
             write_static_explanation_snapshot(self._snapshot(), output)
             loaded = load_static_explanation_snapshot(output)
+            snapshot = self._snapshot()
+            first = append_static_explanation_history(snapshot, history)
+            second = append_static_explanation_history(snapshot, history)
+            rows = load_static_snapshot_history(history)
 
         self.assertEqual(loaded.final_label, '条件付き上昇優勢')
         self.assertEqual(loaded.trade_decision['selected_side'], 'long')
         self.assertEqual(loaded.source_snapshots['macro']['summary'], 'Macroは支援的。')
+        self.assertEqual(first['added'], True)
+        self.assertEqual(second['added'], False)
+        self.assertEqual(len(rows), 1)
 
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())
@@ -1129,8 +1177,11 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('value="42000"', html)
         self.assertNotIn('手入力価格を使用中: 42,000', html)
         self.assertIn('判定に使った材料', html)
-        self.assertIn('Macroデータ更新時刻', html)
-        self.assertIn('Basecalcデータ更新時刻', html)
+        self.assertIn('Macro判定作成時刻', html)
+        self.assertIn('Basecalc判定作成時刻', html)
+        self.assertIn('Basecalc市場価格取得時刻', html)
+        self.assertIn('表示価格', html)
+        self.assertIn('価格ソース', html)
         self.assertIn('米国3指数', html)
         self.assertNotIn('手入力価格による一時総合判定です。', html)
         self.assertNotIn('保存済み判断がないため', html)
@@ -1182,8 +1233,11 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(
             context['decision_inputs']['rows'][1:],
             [
-                {'label': 'Macroデータ更新時刻', 'value': '2026-06-19 17:30 JST'},
-                {'label': 'Basecalcデータ更新時刻', 'value': '2026-06-19 18:40 JST'},
+                {'label': 'Macro判定作成時刻', 'value': '2026-06-19 17:30 JST'},
+                {'label': 'Basecalc判定作成時刻', 'value': '2026-06-19 18:40 JST'},
+                {'label': 'Basecalc市場価格取得時刻', 'value': 'N/A'},
+                {'label': '表示価格', 'value': '69,400円'},
+                {'label': '価格ソース', 'value': 'market_data'},
                 {'label': '手入力価格', 'value': '42,000円'},
                 {'label': '米国3指数', 'value': 'あり'},
             ],
@@ -1307,6 +1361,53 @@ class ExplanationTradeOutcomeValidationTests(TestCase):
         self.assertEqual(outcome.expected_rr, 1.33)
         self.assertEqual(outcome.confidence_bucket, 'high')
         self.assertEqual(outcome.sample_count_at_decision, 24)
+
+    def test_validation_summary_reads_static_outcomes_and_excludes_no_trade_from_hit_rate(self):
+        static_rows = [
+            {
+                'explanation_as_of': timezone.now().isoformat(),
+                'horizon': '1d',
+                'evaluated_at': timezone.now().isoformat(),
+                'selected_side': 'no_trade',
+                'decision_type': 'no_trade_conflict',
+                'trend_or_reversal': 'no_trade',
+                'direction_hit': False,
+                'target_1_hit': False,
+                'stop_hit': False,
+                'expected_rr': 1.1,
+                'macro_regime': 'neutral',
+                'technical_regime': 'range',
+                'confidence_bucket': 'low',
+            },
+            {
+                'explanation_as_of': (timezone.now() - timedelta(hours=1)).isoformat(),
+                'horizon': '1d',
+                'evaluated_at': timezone.now().isoformat(),
+                'selected_side': 'long',
+                'decision_type': 'trend_follow',
+                'trend_or_reversal': 'trend',
+                'direction_hit': True,
+                'target_1_hit': True,
+                'stop_hit': False,
+                'expected_rr': 1.6,
+                'macro_regime': 'positive',
+                'technical_regime': 'bullish',
+                'confidence_bucket': 'high',
+            },
+        ]
+
+        with mock.patch('explanation.services.validation_engine.load_static_trade_outcomes', return_value=static_rows):
+            summary = build_trade_validation_summary(include_static=True)
+
+        self.assertTrue(summary['available'])
+        self.assertEqual(summary['total_count'], 2)
+        self.assertEqual(summary['actionable_count'], 1)
+        self.assertEqual(summary['wait_count'], 1)
+        self.assertIn('検証 2件 / 売買候補 1件 / 待機観測 1件', summary['one_line'])
+        no_trade_row = next(row for row in summary['side_rows'] if row['label'] == 'no_trade')
+        long_row = next(row for row in summary['side_rows'] if row['label'] == 'long')
+        self.assertEqual(no_trade_row['direction_hit_rate'], 'N/A')
+        self.assertEqual(long_row['direction_hit_rate'], '100%')
 
 
 class ExplanationSnapshotFactoryPersistenceTests(TestCase):
@@ -1698,6 +1799,10 @@ class ExplanationManualPriceViewTests(TestCase):
         self.assertEqual(raw['world_model']['price'], 42400)
         self.assertNotEqual(raw['world_model']['contract_status'], 'error')
         self.assertEqual(trade_decision['current_price'], 42400)
-        self.assertIsNotNone(trade_decision['entry_price'])
-        self.assertIsNotNone(trade_decision['target_1'])
-        self.assertIsNotNone(trade_decision['stop_price'])
+        if trade_decision['selected_side'] in {'long', 'short'}:
+            self.assertIsNotNone(trade_decision['entry_price'])
+            self.assertIsNotNone(trade_decision['target_1'])
+            self.assertIsNotNone(trade_decision['stop_price'])
+        else:
+            self.assertIsNone(trade_decision['target_1'])
+            self.assertIsNone(trade_decision['stop_price'])

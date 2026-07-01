@@ -98,24 +98,21 @@ def build_trade_decision_v2(
         )
 
     if _direction_stopped(basecalc):
-        likely_plan = long_plan if long_score >= short_score else short_plan
-        likely_side = 'long' if long_score >= short_score else 'short'
-        return _no_trade_decision_with_plan(
-            likely_side,
-            likely_plan,
-            decision_type='no_trade_conflict',
+        stopped_score = min(confidence_score, 49)
+        return no_trade_decision(
+            decision_type='no_trade_direction_stopped',
             current_price=current_price,
-            confidence_score=confidence_score,
-            confidence_grade=confidence_grade,
+            confidence_score=stopped_score,
+            confidence_grade=_grade_from_score(stopped_score),
             long_score=long_score,
             short_score=short_score,
-            no_trade_score=max(no_trade_score, 80),
+            no_trade_score=100,
             trend_follow_score=trend_follow_score,
             reversal_score=reversal_score,
             reasons=['basecalcの方向予測が停止しているため、売買候補にしない。'],
             blocked_reasons=list(basecalc.stop_reasons or ['方向予測停止']),
             counter_scenario=basecalc.counter_bias,
-            reversal_watch=reversal if reversal.get('status') != 'none' else {},
+            reversal_watch={},
             price_source=price_source,
         )
 

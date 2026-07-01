@@ -155,27 +155,31 @@ def _basecalc_state_label(value):
 
 
 def _alignment_label(alignment_status, macro_label, basecalc_label):
+    if alignment_status == 'blocked':
+        return '判定停止'
+    if macro_label == '中立' and basecalc_label in {'中立', 'レンジ'}:
+        return '方向なしで一致'
+    if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
+        return '片側中立'
     if alignment_status == 'aligned':
         return '同方向'
     if alignment_status == 'timeframe_divergence':
         return '時間軸分岐'
-    if alignment_status == 'blocked':
-        return '判定停止'
-    if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
-        return '片側中立'
-    return '時間軸分岐'
+    return '片側中立'
 
 
 def _alignment_action(alignment_status, macro_label, basecalc_label):
-    if alignment_status == 'aligned':
-        return 'Macroとbasecalcが同じ方向。条件がそろえば順張り候補。'
-    if alignment_status == 'timeframe_divergence':
-        return '短期はbasecalc、中期はMacroを分けて確認。上値追い・突っ込み売りは避ける。'
     if alignment_status == 'blocked':
         return '鮮度不足または主要データ不足のため、最終判断を止める。'
+    if macro_label == '中立' and basecalc_label in {'中立', 'レンジ'}:
+        return 'MacroもBasecalcも方向を出していないため、順張り候補ではなく待機を基本にする。'
     if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
-        return '片側が中立。方向がはっきりするまで条件待ち。'
-    return '短期と中期を分けて確認。過剰な売買判断は避ける。'
+        return '片方のみ方向あり。売買はbasecalcのゲートとR/Rを優先して条件待ち。'
+    if alignment_status == 'aligned':
+        return 'MacroとBasecalcの方向が一致。ゲート通過時のみ順張り候補。'
+    if alignment_status == 'timeframe_divergence':
+        return '短期と中期を分けて扱い、追撃を避ける。'
+    return '片方のみ方向あり。売買はbasecalcのゲートとR/Rを優先して条件待ち。'
 
 
 def _adoption_summary(decision_card, long_judgment, short_judgment, trade_decision, snapshot):
@@ -300,12 +304,32 @@ def _decision_inputs(snapshot, macro, basecalc, world_model, manual_price):
                 'value': _format_datetime(snapshot.as_of),
             },
             {
-                'label': 'Macroデータ更新時刻',
+                'label': 'Macro判定作成時刻',
                 'value': _format_datetime(macro_raw.get('generated_at') or macro.get('as_of')),
             },
             {
-                'label': 'Basecalcデータ更新時刻',
+                'label': 'Basecalc判定作成時刻',
                 'value': _basecalc_updated_display(basecalc_raw, world_model),
+            },
+            {
+                'label': 'Basecalc市場価格取得時刻',
+                'value': _format_datetime(
+                    basecalc_raw.get('fetched_at')
+                    or world_model.get('fetched_at')
+                    or ((world_model.get('features') or {}).get('fetched_at'))
+                ),
+            },
+            {
+                'label': '表示価格',
+                'value': _price_with_suffix(
+                    world_model.get('display_price')
+                    or world_model.get('price')
+                    or (snapshot.trade_decision or {}).get('current_price')
+                ),
+            },
+            {
+                'label': '価格ソース',
+                'value': (snapshot.trade_decision or {}).get('price_source') or 'saved_snapshot',
             },
             {
                 'label': '手入力価格',
@@ -439,17 +463,34 @@ def _world_model_predictions(world_model, manual_price=None, trade_decision=None
     output_contract = world_model.get('output_contract') or {}
     allowed = output_contract.get('allowed_horizons') or {}
     base_price = _prediction_base_price(world_model, manual_price or {}, trade_decision or {})
-    return [
-        {
+    rows = []
+    for horizon in ('1d', '3d', '5d'):
+        stopped = _world_model_horizon_stopped(world_model, output_contract, allowed, horizon)
+        expected_return = _expected_return_pct(world_model, horizons, horizon)
+        rows.append({
             'horizon': horizon,
-            'bias': '停止' if output_contract.get('contract_status') == 'error' or not (allowed.get(horizon) or {}).get('direction_allowed', True) else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
-            'expected_return': _format_percent(_expected_return_pct(world_model, horizons, horizon)),
-            'expected_price': _expected_price_display(base_price, _expected_return_pct(world_model, horizons, horizon)),
+            'bias': '停止' if stopped else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
+            'expected_return': 'N/A' if stopped else _format_percent(expected_return),
+            'expected_price': 'N/A' if stopped else _expected_price_display(base_price, expected_return),
             'base_price': _price_with_suffix(base_price),
-            'setup': '方向判断停止' if output_contract.get('contract_status') == 'error' else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
-        }
-        for horizon in ('1d', '3d', '5d')
-    ]
+            'setup': '方向判断停止' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
+        })
+    return rows
+
+
+def _world_model_horizon_stopped(world_model, output_contract, allowed, horizon):
+    if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
+        return True
+    horizon_gate = allowed.get(horizon)
+    if isinstance(horizon_gate, dict) and horizon_gate.get('direction_allowed') is False:
+        return True
+    if output_contract.get('directional_allowed') is False:
+        return True
+    if world_model.get('can_show_prediction') is False:
+        return True
+    if world_model.get('allowed_direction') in {'stopped', 'none'}:
+        return True
+    return False
 
 
 def _expected_return_pct(world_model, horizons, horizon):
@@ -591,6 +632,7 @@ def _decision_type_label(value):
         'no_chase_short': '突っ込み売り禁止',
         'no_trade_conflict': '条件不足',
         'no_trade_data_blocked': 'データ停止',
+        'no_trade_direction_stopped': '方向予測停止',
         'legacy_reference': '参考判断',
     }.get(value, value or '条件確認')
 

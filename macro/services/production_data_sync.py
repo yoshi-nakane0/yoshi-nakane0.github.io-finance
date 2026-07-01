@@ -27,6 +27,9 @@ REQUIRED_DATA_PATHS = (
     "explanation/data/latest_snapshot.json",
     "explanation/data/trade_outcomes.json",
 )
+OPTIONAL_DATA_PATHS = {
+    "explanation/data/snapshot_history.json",
+}
 
 
 class ProductionDataSyncError(Exception):
@@ -73,6 +76,7 @@ def sync_production_data(
     root = Path(base_dir or settings.BASE_DIR)
     target_paths = [str(path).replace("\\", "/") for path in (paths or discover_data_paths(root))]
     downloads = []
+    skipped_optional = []
 
     for relative_path in target_paths:
         url = source_url_for_path(relative_path)
@@ -81,6 +85,9 @@ def sync_production_data(
             if relative_path.endswith(".json"):
                 json.loads(content.decode("utf-8"))
         except Exception as exc:
+            if relative_path in OPTIONAL_DATA_PATHS and _is_not_found(exc):
+                skipped_optional.append(relative_path)
+                continue
             raise ProductionDataSyncError(
                 f"{relative_path} の取得に失敗しました: {exc}"
             ) from exc
@@ -121,10 +128,16 @@ def sync_production_data(
         "updated_count": len(updated),
         "unchanged_count": len(unchanged),
         "mirrored_count": len(mirrored),
+        "skipped_optional": skipped_optional,
         "forecast_snapshots_imported_count": forecast_snapshots_imported_count,
         "basecalc_history_imported_count": basecalc_history_imported_count,
         "explanation_snapshots_imported_count": explanation_snapshots_imported_count,
     }
+
+
+def _is_not_found(exc):
+    response = getattr(exc, "response", None)
+    return getattr(response, "status_code", None) == 404
 
 
 def _staticfiles_alias_path(root, relative_path):

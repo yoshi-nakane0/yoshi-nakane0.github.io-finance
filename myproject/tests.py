@@ -29,7 +29,7 @@ class SQLiteBootstrapTests(SimpleTestCase):
         with sqlite3.connect(path) as connection:
             return connection.execute('SELECT COUNT(*) FROM sample').fetchone()[0]
 
-    def test_bootstrap_replaces_existing_db_when_schema_matches_but_data_differs(self):
+    def test_bootstrap_keeps_existing_local_db(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
             source = tmpdir / 'source.sqlite3'
@@ -39,7 +39,7 @@ class SQLiteBootstrapTests(SimpleTestCase):
 
             bootstrap_sqlite_database(runtime, source)
 
-            self.assertEqual(self._sample_count(runtime), 2)
+            self.assertEqual(self._sample_count(runtime), 0)
 
     @mock.patch.dict('os.environ', {'VERCEL': '1'})
     def test_serverless_bootstrap_refreshes_existing_runtime_db(self):
@@ -100,6 +100,7 @@ class VercelFunctionPackagingTests(SimpleTestCase):
         self.assertIn('basecalc/data/latest_snapshot.json', include_files)
         self.assertIn('basecalc/data/basecalc_status.json', include_files)
         self.assertIn('explanation/data/latest_snapshot.json', include_files)
+        self.assertIn('explanation/data/snapshot_history.json', include_files)
         self.assertIn('explanation/data/trade_outcomes.json', include_files)
         self.assertIn('static/finance_data_manifest.json', include_files)
 

@@ -300,12 +300,32 @@
 
       <section class="common-section common-empty-state">
         <h2 class="common-section-title">検証成績</h2>
+        {% if readiness_score %}
+          <p class="common-kicker">{{ readiness_score.label }} / {{ readiness_score.score }}点</p>
+        {% endif %}
         {% if trade_validation_summary.available %}
-          <p class="common-muted">{{ validation_summary.one_line }}</p>
+          <p class="common-muted">{{ trade_validation_summary.one_line }}</p>
+          <div class="common-list common-list--compact">
+            <div class="common-row">
+              <span>判定検証</span>
+              <strong>{{ trade_validation_summary.total_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>売買候補</span>
+              <strong>{{ trade_validation_summary.actionable_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>待機観測</span>
+              <strong>{{ trade_validation_summary.wait_count }}件</strong>
+            </div>
+          </div>
         {% else %}
           <div class="common-empty-state__icon" aria-hidden="true">▥</div>
-          <strong>実運用結果 0件</strong>
-          <p class="common-muted">実運用結果はまだ0件です。検証データを保存すると結果が表示されます。</p>
+          <strong>判定検証 0件</strong>
+          <p class="common-muted">まだ保存済み判定の評価結果がありません。GitHub Actions の評価処理後に表示されます。</p>
+        {% endif %}
+        {% if readiness_score %}
+          <p class="common-muted">{{ readiness_score.note }}</p>
         {% endif %}
       </section>
 
@@ -395,6 +415,18 @@
             </div>
           {% endfor %}
         </div>
+
+        {% if trade_validation_summary.available %}
+          <h2 class="common-section-title">検証成績詳細</h2>
+          <div class="common-list">
+            {% for item in trade_validation_summary.horizon_rows %}
+              <div class="common-row">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.sample_count }}件 / 方向的中 {{ item.direction_hit_rate }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
 
         <h2 class="common-section-title">監査</h2>
         <ul class="common-bullet-list">

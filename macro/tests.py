@@ -2,6 +2,7 @@
 
 import gzip
 import json
+import requests
 import yaml
 from datetime import date, datetime, timedelta
 from io import StringIO
@@ -1647,6 +1648,31 @@ class ProductionDataSyncTest(SimpleTestCase):
             '/explanation/data/latest_snapshot.json',
             source_url_for_path('explanation/data/latest_snapshot.json'),
         )
+
+    def test_sync_skips_missing_optional_explanation_history(self):
+        from macro.services.production_data_sync import sync_production_data
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            history_path = base_dir / 'explanation' / 'data' / 'snapshot_history.json'
+
+            response = requests.Response()
+            response.status_code = 404
+            response.url = (
+                'https://raw.githubusercontent.com/yoshi-nakane0/'
+                'yoshi-nakane0.github.io-finance/main/'
+                'explanation/data/snapshot_history.json'
+            )
+            error = requests.HTTPError('404 Client Error: Not Found', response=response)
+
+            result = sync_production_data(
+                base_dir=base_dir,
+                paths=['explanation/data/snapshot_history.json'],
+                downloader=mock.Mock(side_effect=error),
+            )
+
+        self.assertFalse(history_path.exists())
+        self.assertEqual(result['skipped_optional'], ['explanation/data/snapshot_history.json'])
 
     def test_finance_manifest_export_combines_macro_basecalc_and_explanation_status(self):
         from macro.services.finance_manifest import build_finance_data_manifest, write_finance_data_manifest

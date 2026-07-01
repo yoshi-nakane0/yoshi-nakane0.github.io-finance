@@ -1,7 +1,6 @@
 import logging
 import os
 import shutil
-import sqlite3
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from dotenv import load_dotenv
@@ -90,11 +89,7 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
         )
         return
     if sqlite_path.exists() and not is_serverless_runtime():
-        try:
-            if sqlite_file_signature(sqlite_path) == sqlite_file_signature(bundled_sqlite_path):
-                return
-        except OSError:
-            pass
+        return
     try:
         shutil.copy2(bundled_sqlite_path, sqlite_path)
     except OSError:
@@ -104,24 +99,6 @@ def bootstrap_sqlite_database(sqlite_path, source_path=None):
             sqlite_path,
         )
 
-
-def sqlite_file_signature(sqlite_path):
-    stat = Path(sqlite_path).stat()
-    return stat.st_size, stat.st_mtime_ns
-
-
-def sqlite_schema_signature(sqlite_path):
-    sqlite_path = Path(sqlite_path)
-    with sqlite3.connect(sqlite_path) as connection:
-        rows = connection.execute(
-            """
-            SELECT type, name, IFNULL(sql, '')
-            FROM sqlite_master
-            WHERE name NOT LIKE 'sqlite_%'
-            ORDER BY type, name
-            """
-        ).fetchall()
-    return tuple(rows)
 
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
 

@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 BLOCKED_DECISION_TYPES = {
     'no_trade_conflict',
     'no_trade_data_blocked',
+    'no_trade_direction_stopped',
     'no_chase_long',
     'no_chase_short',
     'legacy_reference',
@@ -349,13 +350,20 @@ def _reference_candidate(
     wait_reasons,
 ):
     side = _reference_side(current_price, target_1_price, stop_price)
+    decision_type = decision.get('decision_type') or ''
+    if '方向予測停止' in wait_reasons:
+        return {'available': False}
+    if decision_type in {'no_trade_direction_stopped', 'no_trade_data_blocked'}:
+        return {'available': False}
+    if decision.get('selected_side') == 'no_trade' and decision.get('blocked_reasons'):
+        return {'available': False}
     if tradable or status not in {'wait', 'no_trade'} or side is None:
         return {'available': False}
     return {
         'available': True,
         'side': side,
-        'label': '参考ロング候補' if side == 'long' else '参考ショート候補',
-        'note': '最終判断ではありません。条件未達のため、監視用として扱います。',
+        'label': 'ロング監視ライン' if side == 'long' else 'ショート監視ライン',
+        'note': '監視ライン。売買候補ではありません。',
         'entry_display': _entry_display(decision),
         'target_1_display': _price_display(target_1_price),
         'stop_display': _price_display(stop_price),
