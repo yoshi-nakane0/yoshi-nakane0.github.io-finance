@@ -1478,10 +1478,10 @@ class ExplanationMacroAdapterTests(SimpleTestCase):
 
 
 class ExplanationPrecomputeViewTests(TestCase):
-    def test_latest_or_preview_prefers_database_snapshot_over_static_fallback(self):
+    def test_latest_or_preview_uses_static_snapshot_as_production_source(self):
         from explanation.views import _latest_or_preview
 
-        db_snapshot = ExplanationSnapshot.objects.create(
+        ExplanationSnapshot.objects.create(
             as_of=timezone.now(),
             final_label='DB最新判定',
             final_stance='conditional_bullish',
@@ -1513,38 +1513,27 @@ class ExplanationPrecomputeViewTests(TestCase):
         )
 
         with (
-            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=static_snapshot),
-            mock.patch('explanation.views.build_explanation_refresh_status', return_value={'needs_refresh': False}),
+            self.settings(DEBUG=False),
+            mock.patch(
+                'explanation.views.load_static_explanation_snapshot',
+                return_value=static_snapshot,
+            ),
+            mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot,
         ):
             snapshot, is_preview = _latest_or_preview()
 
         self.assertFalse(is_preview)
-        self.assertEqual(snapshot.pk, db_snapshot.pk)
-        self.assertEqual(snapshot.final_label, 'DB最新判定')
+        self.assertEqual(snapshot.final_label, '静的判定')
+        build_snapshot.assert_not_called()
 
-    def test_latest_or_preview_uses_current_preview_when_saved_snapshot_is_stale(self):
+    def test_latest_or_preview_does_not_rebuild_stale_static_snapshot_in_production(self):
         from explanation.views import _latest_or_preview
 
-        ExplanationSnapshot.objects.create(
-            as_of=timezone.now() - timedelta(hours=2),
-            final_label='古い判定',
-            final_stance='conditional_bullish',
-            action_posture='古い表示',
-            confidence_score=49,
-            confidence_grade='C',
-            macro_bias='positive',
-            basecalc_bias='bullish',
-            alignment_status='partial',
-            data_quality_score=70,
-            audit_level='warning',
-            source_snapshots={},
-            version='explanation_v2',
-        )
-        fresh = ExplanationSnapshot(
+        static_snapshot = ExplanationSnapshot(
             as_of=timezone.now(),
-            final_label='最新判定',
+            final_label='静的判定',
             final_stance='withhold',
-            action_posture='最新表示',
+            action_posture='静的表示',
             confidence_score=54,
             confidence_grade='C+',
             macro_bias='neutral',
@@ -1557,15 +1546,71 @@ class ExplanationPrecomputeViewTests(TestCase):
         )
 
         with (
-            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
-            mock.patch('explanation.views.build_explanation_refresh_status', return_value={'needs_refresh': True}),
-            mock.patch('explanation.views.build_explanation_snapshot', return_value=fresh) as build_snapshot,
+            self.settings(DEBUG=False),
+            mock.patch(
+                'explanation.views.load_static_explanation_snapshot',
+                return_value=static_snapshot,
+            ),
+            mock.patch(
+                'explanation.views.build_explanation_refresh_status',
+                return_value={'needs_refresh': True},
+            ),
+            mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot,
         ):
             snapshot, is_preview = _latest_or_preview()
 
-        self.assertTrue(is_preview)
-        self.assertEqual(snapshot.final_label, '最新判定')
-        build_snapshot.assert_called_once_with(save=False)
+        self.assertFalse(is_preview)
+        self.assertEqual(snapshot.final_label, '静的判定')
+        build_snapshot.assert_not_called()
+
+    def test_latest_or_preview_fails_closed_when_production_static_snapshot_is_missing(self):
+        from explanation.views import _latest_or_preview
+
+        with (
+            self.settings(DEBUG=False),
+            mock.patch(
+                'explanation.views.load_static_explanation_snapshot',
+                return_value=None,
+            ),
+            mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot,
+        ):
+            with self.assertRaises(RuntimeError):
+                _latest_or_preview()
+
+        build_snapshot.assert_not_called()
+
+    def test_latest_or_preview_ignores_manual_price_in_production_static_mode(self):
+        from explanation.views import _latest_or_preview
+
+        static_snapshot = ExplanationSnapshot(
+            as_of=timezone.now(),
+            final_label='静的判定',
+            final_stance='withhold',
+            action_posture='静的表示',
+            confidence_score=54,
+            confidence_grade='C+',
+            macro_bias='neutral',
+            basecalc_bias='range',
+            alignment_status='partial',
+            data_quality_score=80,
+            audit_level='warning',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+
+        with (
+            self.settings(DEBUG=False),
+            mock.patch(
+                'explanation.views.load_static_explanation_snapshot',
+                return_value=static_snapshot,
+            ),
+            mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot,
+        ):
+            snapshot, is_preview = _latest_or_preview(price_override=42000)
+
+        self.assertFalse(is_preview)
+        self.assertEqual(snapshot.final_label, '静的判定')
+        build_snapshot.assert_not_called()
 
     def test_staff_user_can_precompute_explanation(self):
         user = get_user_model().objects.create_user(
@@ -1700,6 +1745,7 @@ class ExplanationManualPriceViewTests(TestCase):
         }
 
         with (
+            self.settings(DEBUG=True),
             mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
             mock.patch(
                 'explanation.services.basecalc_adapter.load_basecalc_snapshot',
@@ -1737,6 +1783,7 @@ class ExplanationManualPriceViewTests(TestCase):
         )
 
         with (
+            self.settings(DEBUG=True),
             mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
             mock.patch(
                 'explanation.services.basecalc_adapter.load_basecalc_snapshot',
@@ -1779,6 +1826,7 @@ class ExplanationManualPriceViewTests(TestCase):
         )
 
         with (
+            self.settings(DEBUG=True),
             mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
             mock.patch(
                 'explanation.services.basecalc_adapter.load_basecalc_snapshot',

@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 def _latest_or_preview(price_override=None):
+    if _should_use_static_explanation_snapshot():
+        static_snapshot = load_static_explanation_snapshot()
+        if static_snapshot is None:
+            raise RuntimeError(
+                '保存済みExplanation JSONがありません。precompute_explanationで生成してください。'
+            )
+        return static_snapshot, False
+
     if price_override is not None:
         return build_explanation_snapshot(
             save=False,
@@ -45,6 +53,10 @@ def _latest_or_preview(price_override=None):
         if static_snapshot is not None:
             return static_snapshot, False
         raise
+
+
+def _should_use_static_explanation_snapshot():
+    return not settings.DEBUG
 
 
 def index(request):
