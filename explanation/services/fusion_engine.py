@@ -277,23 +277,8 @@ def build_trade_decision_v2(
     )
 
 
-def _no_trade_decision_with_plan(side, plan, **kwargs):
-    if not plan or not plan.target_1 or plan.stop_price is None:
-        return no_trade_decision(**kwargs)
-    low, high = _entry_zone(kwargs.get('current_price'), side)
-    return no_trade_decision(
-        **kwargs,
-        entry_price=kwargs.get('current_price'),
-        entry_zone_low=low,
-        entry_zone_high=high,
-        target_1=plan.target_1,
-        target_2=plan.target_2,
-        stop_price=plan.stop_price,
-        invalidation_price=plan.invalidation_price,
-        reward_risk=plan.reward_risk,
-        probability=plan.probability,
-        expected_value=plan.expected_value,
-    )
+def _no_trade_decision_with_plan(_side, _plan, **kwargs):
+    return no_trade_decision(**kwargs)
 
 
 def _matrix_label(macro_bias, basecalc_bias, audit):

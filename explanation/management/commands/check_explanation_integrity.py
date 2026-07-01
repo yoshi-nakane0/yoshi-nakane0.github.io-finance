@@ -45,10 +45,22 @@ class Command(BaseCommand):
                 raise CommandError(f'finance_data_manifest.json {key} must match latest_snapshot.json')
 
         decision = latest.get('trade_decision') or {}
-        if decision.get('decision_type') == 'no_trade_direction_stopped':
-            for key in ('target_1', 'target_2', 'stop_price', 'reward_risk'):
+        if _is_no_trade_decision(decision):
+            for key in (
+                'entry_price',
+                'entry_zone_low',
+                'entry_zone_high',
+                'target_1',
+                'target_2',
+                'stop_price',
+                'invalidation_price',
+                'reward_risk',
+                'probability',
+                'expected_value',
+                'expected_return_pct',
+            ):
                 if decision.get(key) is not None:
-                    raise CommandError(f'direction stopped decision must not include {key}')
+                    raise CommandError(f'no_trade decision must not include {key}')
 
         neutral_snapshot = ExplanationSnapshot(
             as_of=snapshot_from_payload(latest).as_of,
@@ -111,3 +123,8 @@ def _read_json(path):
     if not isinstance(payload, dict):
         raise CommandError(f'{path} must be a JSON object')
     return payload
+
+
+def _is_no_trade_decision(decision):
+    decision_type = decision.get('decision_type') or ''
+    return decision.get('selected_side') == 'no_trade' or decision_type.startswith('no_')

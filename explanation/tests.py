@@ -166,11 +166,38 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
 
         self.assertEqual(decision.selected_side, 'no_trade')
         self.assertEqual(decision.decision_type, 'no_trade_conflict')
-        self.assertEqual(decision.entry_price, 42000)
-        self.assertEqual(decision.target_1['price'], 42300)
-        self.assertEqual(decision.stop_price, 41400)
-        self.assertEqual(decision.invalidation_price, 41400)
+        self.assertIsNone(decision.entry_price)
+        self.assertIsNone(decision.target_1)
+        self.assertIsNone(decision.stop_price)
+        self.assertIsNone(decision.invalidation_price)
+        self.assertIsNone(decision.reward_risk)
         self.assertIn('R/R不足', decision.blocked_reasons)
+
+    def test_trade_decision_v2_no_trade_conflict_does_not_keep_reference_short_plan(self):
+        macro = self._macro('neutral')
+        basecalc = self._basecalc(
+            bias='bullish',
+            primary_direction='up',
+            primary_setup='trend_follow_long',
+            reversal_risk_score=78,
+            counter_bias={'direction': 'down', 'score': 78, 'label': '反落警戒'},
+            scenario_probabilities={'up_continuation': 38, 'range': 22, 'down_reversal': 40},
+            validated_targets={
+                'upside': [{'label': 'T1', 'price': 42800, 'probability': 0.54}],
+                'downside': [{'label': 'T1', 'price': 41000, 'probability': 0.62}],
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertTrue(decision.decision_type.startswith('no_'))
+        self.assertIsNone(decision.entry_price)
+        self.assertIsNone(decision.target_1)
+        self.assertIsNone(decision.target_2)
+        self.assertIsNone(decision.stop_price)
+        self.assertIsNone(decision.reward_risk)
 
     def test_trade_decision_v2_blocks_when_confidence_is_below_candidate_threshold(self):
         macro = self._macro('positive', confidence_score=49, confidence_grade='C')
@@ -1633,6 +1660,81 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
             )
             manifest.write_text(
                 '{"schema":"finance_data_manifest_v1","explanation_as_of":"2026-06-25T01:15:00+00:00"}',
+                encoding='utf-8',
+            )
+
+            with self.assertRaises(CommandError):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_no_trade_snapshot_with_execution_levels(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest.write_text(
+                """
+                {
+                  "snapshot_key": "snapshot-1",
+                  "schema": "explanation_snapshot_v1",
+                  "generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345",
+                  "as_of": "2026-06-25T01:15:00+00:00",
+                  "version": "explanation_v2",
+                  "final": {
+                    "label": "見送り",
+                    "stance": "neutral_wait",
+                    "action_posture": "待機",
+                    "confidence_score": 50,
+                    "confidence_grade": "C",
+                    "status": "limited"
+                  },
+                  "macro": {"bias": "neutral"},
+                  "basecalc": {"bias": "range"},
+                  "alignment_status": "aligned",
+                  "data_quality_score": 50,
+                  "audit": {"level": "valid", "items": []},
+                  "trade_decision": {
+                    "selected_side": "no_trade",
+                    "decision_type": "no_trade_conflict",
+                    "current_price": 70000,
+                    "target_1": {"label": "T1", "price": 69000},
+                    "stop_price": 70500,
+                    "reward_risk": 2.0
+                  },
+                  "source_snapshots": {},
+                  "score_breakdown": {}
+                }
+                """,
+                encoding='utf-8',
+            )
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
                 encoding='utf-8',
             )
 
