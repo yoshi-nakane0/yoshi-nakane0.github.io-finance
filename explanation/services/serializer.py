@@ -489,11 +489,11 @@ def _world_model_predictions(world_model, manual_price=None, trade_decision=None
         expected_return = _expected_return_pct(world_model, horizons, horizon)
         rows.append({
             'horizon': horizon,
-            'bias': '停止' if stopped else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
+            'bias': '停止 / 参考' if stopped else _bias_label((horizons.get(horizon) or {}).get('main_bias')),
             'expected_return': 'N/A' if stopped else _format_percent(expected_return),
             'expected_price': 'N/A' if stopped else _expected_price_display(base_price, expected_return),
             'base_price': _price_with_suffix(base_price),
-            'setup': '方向予測停止（売買判定には未使用）' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
+            'setup': '方向ゲート停止中（売買判定には未使用）' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
         })
     return rows
 

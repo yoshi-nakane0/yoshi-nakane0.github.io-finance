@@ -745,10 +745,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
 
         for row in context['world_model_predictions']:
-            self.assertEqual(row['bias'], '停止')
+            self.assertEqual(row['bias'], '停止 / 参考')
             self.assertEqual(row['expected_return'], 'N/A')
             self.assertEqual(row['expected_price'], 'N/A')
-            self.assertEqual(row['setup'], '方向予測停止（売買判定には未使用）')
+            self.assertEqual(row['setup'], '方向ゲート停止中（売買判定には未使用）')
 
     def test_world_model_predictions_hide_all_values_when_trade_decision_is_no_trade(self):
         snapshot = self._snapshot()
@@ -774,10 +774,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
 
         for row in context['world_model_predictions']:
-            self.assertEqual(row['bias'], '停止')
+            self.assertEqual(row['bias'], '停止 / 参考')
             self.assertEqual(row['expected_return'], 'N/A')
             self.assertEqual(row['expected_price'], 'N/A')
-            self.assertEqual(row['setup'], '方向予測停止（売買判定には未使用）')
+            self.assertEqual(row['setup'], '方向ゲート停止中（売買判定には未使用）')
 
     def test_reasons_are_normalized_before_display(self):
         snapshot = self._snapshot()

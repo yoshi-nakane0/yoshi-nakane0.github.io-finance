@@ -102,7 +102,7 @@ class Command(BaseCommand):
         view = snapshot_to_view(snapshot_from_payload(latest))
         if decision.get('selected_side') == 'no_trade' or (decision.get('decision_type') or '').startswith('no_'):
             for row in view.get('world_model_predictions') or []:
-                if row.get('bias') != '停止' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
+                if row.get('bias') != '停止 / 参考' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
                     raise CommandError('world model predictions must be stopped when trade decision is no_trade')
 
         rendered = json.dumps(latest, ensure_ascii=False)
