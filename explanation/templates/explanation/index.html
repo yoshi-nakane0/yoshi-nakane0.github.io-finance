@@ -56,18 +56,15 @@
         <div class="common-choice-grid" aria-label="実行可否">
           <div class="common-choice-card{% if beginner_decision.status != 'buy_candidate' and beginner_decision.status != 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
-            <strong>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %}</strong>
-            <span class="common-muted">待機 {{ trade_decision.no_trade_score|default:"0" }}点</span>
+            <strong>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %} {{ trade_decision.no_trade_score|default:"0" }}点</strong>
           </div>
           <div class="common-choice-card{% if beginner_decision.status == 'buy_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--long" aria-hidden="true">↑</span>
-            <strong>ロング</strong>
-            <span class="common-muted">ロング {{ trade_decision.long_score|default:"0" }}点</span>
+            <strong>ロング {{ trade_decision.long_score|default:"0" }}点</strong>
           </div>
           <div class="common-choice-card{% if beginner_decision.status == 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--short" aria-hidden="true">↓</span>
-            <strong>ショート</strong>
-            <span class="common-muted">ショート {{ trade_decision.short_score|default:"0" }}点</span>
+            <strong>ショート {{ trade_decision.short_score|default:"0" }}点</strong>
           </div>
         </div>
 

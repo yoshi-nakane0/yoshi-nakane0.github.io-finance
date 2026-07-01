@@ -1050,9 +1050,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         self.assertIn('日経先物 1日〜5日 現在判断', decision_card_html)
         self.assertIn('現在判断：見送り', decision_card_html)
-        self.assertIn('待機 70点', decision_card_html)
+        self.assertIn('入らない 70点', decision_card_html)
         self.assertIn('ロング 45点', decision_card_html)
         self.assertIn('ショート 30点', decision_card_html)
+        self.assertNotIn('待機 70点', decision_card_html)
         self.assertIn('エントリー', decision_card_html)
         self.assertIn('なし', decision_card_html)
         self.assertIn('売買可否', decision_card_html)
