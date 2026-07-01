@@ -1,6 +1,6 @@
 {
   "alignment_status": "partial",
-  "as_of": "2026-07-01T12:12:23.784471+00:00",
+  "as_of": "2026-07-01T13:23:32.598288+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -26,7 +26,7 @@
     "stance": "conditional_bullish",
     "status": "limited"
   },
-  "generated_at": "2026-07-01T12:12:23.802757+00:00",
+  "generated_at": "2026-07-01T13:23:32.605190+00:00",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -6467,7 +6467,7 @@
             "directional_allowed": true,
             "display_price": 70860.0,
             "explanation_allowed": true,
-            "generated_at": "2026-07-01T12:12:23.783353+00:00",
+            "generated_at": "2026-07-01T13:23:32.597765+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -6729,7 +6729,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 70860.0,
             "readiness_level": "ready",
-            "snapshot_id": "d0939197-03ce-41af-b228-4516769f0cc2",
+            "snapshot_id": "02e50a05-6394-4f43-b65c-87fc5222a791",
             "source_timestamp": "2026-07-01 19:01 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため",

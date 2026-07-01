@@ -93,8 +93,8 @@ def build_trade_validation_summary(include_static=True) -> Dict[str, object]:
     return _summarize_trade_outcomes(rows)
 
 
-def build_static_trade_validation_summary() -> Dict[str, object]:
-    return _summarize_trade_outcomes(_normalize_and_merge_outcomes([], load_static_trade_outcomes()))
+def build_static_trade_validation_summary(path=None) -> Dict[str, object]:
+    return _summarize_trade_outcomes(_normalize_and_merge_outcomes([], load_static_trade_outcomes(path)))
 
 
 def _summarize_trade_outcomes(rows):

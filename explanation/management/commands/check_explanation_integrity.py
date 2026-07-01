@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 raise CommandError(f'duplicate trade outcome key: {key}')
             seen.add(key)
 
-        summary = build_static_trade_validation_summary()
+        summary = build_static_trade_validation_summary(options['outcomes'])
         for row in summary.get('side_rows') or []:
             if row.get('label') == 'no_trade' and row.get('direction_hit_rate') != 'N/A':
                 raise CommandError('no_trade must not be included in direction hit denominator')

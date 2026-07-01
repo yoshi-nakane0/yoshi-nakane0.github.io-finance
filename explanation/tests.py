@@ -21,7 +21,7 @@ from .services.macro_adapter import load_macro_signal
 from .services.scenario_builder import build_scenarios
 from .services.serializer import snapshot_to_api, snapshot_to_view
 from .services.target_selector import select_trade_targets
-from .services.validation_engine import build_trade_validation_summary, evaluate_trade_outcome
+from .services.validation_engine import build_static_trade_validation_summary, build_trade_validation_summary, evaluate_trade_outcome
 
 
 class ExplanationDecisionEngineTests(SimpleTestCase):
@@ -1021,6 +1021,92 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(beginner['target_1_display'], '71,800円')
         self.assertEqual(beginner['stop_display'], '72,950円')
 
+    def test_template_top_badge_uses_trade_side_for_buy_candidate(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'reward_risk': 1.6,
+            'target_1': {'label': 'T1', 'price': 71180, 'probability': 0.62},
+            'stop_price': 67620,
+            'confidence_score': 68,
+            'confidence_grade': 'B-',
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        decision_card_html = html.split('</section>', 1)[0]
+
+        self.assertIn('最終判断：買い候補', decision_card_html)
+        self.assertIn('LONG', decision_card_html)
+        self.assertNotIn('WAIT', decision_card_html)
+
+    def test_template_top_badge_uses_trade_side_for_sell_candidate(self):
+        snapshot = self._snapshot()
+        snapshot.macro_bias = 'negative'
+        snapshot.basecalc_bias = 'bearish'
+        snapshot.trade_decision.update({
+            'selected_side': 'short',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72500,
+            'entry_zone_high': 72650,
+            'target_1': {'label': 'T1', 'price': 71800, 'probability': 0.62},
+            'stop_price': 72950,
+            'reward_risk': 1.55,
+            'confidence_score': 64,
+            'confidence_grade': 'B-',
+            'long_score': 35,
+            'short_score': 72,
+            'no_trade_score': 35,
+            'blocked_reasons': [],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        decision_card_html = html.split('</section>', 1)[0]
+
+        self.assertIn('最終判断：売り候補', decision_card_html)
+        self.assertIn('SHORT', decision_card_html)
+        self.assertNotIn('WAIT', decision_card_html)
+
+    def test_template_reference_candidate_labels_monitoring_line_not_reference_candidate(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72300,
+            'entry_zone_high': 72450,
+            'target_1': {'label': 'T1', 'price': 73100, 'probability': 0.62},
+            'stop_price': 71900,
+            'reward_risk': 1.34,
+            'confidence_score': 64,
+            'confidence_grade': 'B-',
+            'long_score': 58,
+            'short_score': 35,
+            'no_trade_score': 40,
+            'blocked_reasons': [],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        top_html = html.split('詳細を表示', 1)[0]
+
+        self.assertIn('監視ライン。売買候補ではありません。', top_html)
+        self.assertNotIn('参考候補', top_html)
+
     def test_beginner_decision_requires_side_score_to_clear_no_trade(self):
         snapshot = self._snapshot()
         snapshot.trade_decision.update({
@@ -1133,8 +1219,10 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             write_static_explanation_snapshot(self._snapshot(), output)
             loaded = load_static_explanation_snapshot(output)
             snapshot = self._snapshot()
+            repeated_snapshot = self._snapshot()
+            repeated_snapshot.as_of = snapshot.as_of + timedelta(minutes=5)
             first = append_static_explanation_history(snapshot, history)
-            second = append_static_explanation_history(snapshot, history)
+            second = append_static_explanation_history(repeated_snapshot, history)
             rows = load_static_snapshot_history(history)
 
         self.assertEqual(loaded.final_label, '条件付き上昇優勢')
@@ -1143,6 +1231,38 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(first['added'], True)
         self.assertEqual(second['added'], False)
         self.assertEqual(len(rows), 1)
+
+    def test_static_validation_summary_reads_requested_outcomes_path(self):
+        with TemporaryDirectory() as tmpdir:
+            outcomes = Path(tmpdir) / 'trade_outcomes.json'
+            outcomes.write_text(
+                '''
+                {
+                  "schema": "explanation_trade_outcomes_v1",
+                  "generated_at": "2026-07-01T00:00:00+09:00",
+                  "outcomes": [
+                    {
+                      "explanation_as_of": "2026-06-30T00:00:00+09:00",
+                      "horizon": "1d",
+                      "evaluated_at": "2026-07-01T00:00:00+09:00",
+                      "selected_side": "no_trade",
+                      "decision_type": "no_trade_direction_stopped",
+                      "direction_hit": false,
+                      "horizon_return_pct": 1.1
+                    }
+                  ]
+                }
+                ''',
+                encoding='utf-8',
+            )
+
+            summary = build_static_trade_validation_summary(outcomes)
+
+        self.assertTrue(summary['available'])
+        self.assertEqual(summary['total_count'], 1)
+        self.assertEqual(summary['actionable_count'], 0)
+        self.assertEqual(summary['wait_count'], 1)
+        self.assertEqual(summary['side_rows'][0]['direction_hit_rate'], 'N/A')
 
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())

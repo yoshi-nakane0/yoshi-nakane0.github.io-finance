@@ -119,16 +119,29 @@ jobs:
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'weekly-macro-validation-secret' }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SQLITE_DB_PATH: runtime/db.sqlite3
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       TZ: Asia/Tokyo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python without database
+        if: ${{ env.DATABASE_URL == '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies without database
+        if: ${{ env.DATABASE_URL == '' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       - name: Write validation warning without database
         if: ${{ env.DATABASE_URL == '' }}
         run: |
-          mkdir -p static/macro
+          mkdir -p runtime static/macro
           cat > static/macro/model_validation_report.json <<'JSON'
           {
             "freshness": {
@@ -154,13 +167,23 @@ jobs:
             ]
           }
           JSON
+          python manage.py migrate --noinput
+          python manage.py finalize_finance_display_data
+          python manage.py precompute_explanation \
+            --output explanation/data/latest_snapshot.json \
+            --history-output explanation/data/snapshot_history.json
+          python manage.py evaluate_explanation_outcomes \
+            --snapshot-history explanation/data/snapshot_history.json \
+            --input-outcomes explanation/data/trade_outcomes.json \
+            --output explanation/data/trade_outcomes.json
+          python manage.py check_explanation_integrity
 
       - name: Commit validation warning
         if: ${{ env.DATABASE_URL == '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/model_validation_report.json static/macro/model_cards.json
+          git add static/macro/model_validation_report.json static/macro/model_cards.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No validation warning changes."
             exit 0

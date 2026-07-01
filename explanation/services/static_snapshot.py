@@ -97,8 +97,10 @@ def append_static_explanation_history(snapshot, path=None, max_rows=500):
     rows = load_static_snapshot_history(payload_path)
     snapshot_payload = json.loads(json.dumps(explanation_snapshot_payload(snapshot), default=_json_default))
     key = _snapshot_history_key(snapshot_payload)
+    logical_key = _snapshot_history_logical_key(snapshot_payload)
     existing_keys = {_snapshot_history_key(row) for row in rows if isinstance(row, dict)}
-    added = key not in existing_keys
+    existing_logical_keys = {_snapshot_history_logical_key(row) for row in rows if isinstance(row, dict)}
+    added = key not in existing_keys and logical_key not in existing_logical_keys
     if added:
         rows.append(snapshot_payload)
     rows = rows[-max_rows:]
@@ -355,6 +357,53 @@ def _snapshot_history_key(payload):
             decision.get('decision_type'),
         )
     )
+
+
+def _snapshot_history_logical_key(payload):
+    final = payload.get('final') or {}
+    basecalc = payload.get('basecalc') or {}
+    macro = payload.get('macro') or {}
+    decision = payload.get('trade_decision') or {}
+    source = payload.get('source_snapshots') or {}
+    source_macro = source.get('macro') or {}
+    source_basecalc = source.get('basecalc') or {}
+    return '|'.join(
+        str(value or '')
+        for value in (
+            payload.get('version'),
+            final.get('stance'),
+            final.get('confidence_score'),
+            basecalc.get('bias'),
+            macro.get('bias'),
+            decision.get('selected_side'),
+            decision.get('decision_type'),
+            decision.get('current_price'),
+            decision.get('reward_risk'),
+            source_macro.get('as_of'),
+            source_basecalc.get('as_of'),
+            _stable_json(_logical_source_fingerprint(source)),
+        )
+    )
+
+
+def _logical_source_fingerprint(value):
+    volatile_keys = {'generated_at', 'snapshot_id', 'fetched_at', 'source_timestamp'}
+    if isinstance(value, dict):
+        return {
+            key: _logical_source_fingerprint(item)
+            for key, item in value.items()
+            if key not in volatile_keys
+        }
+    if isinstance(value, list):
+        return [_logical_source_fingerprint(item) for item in value]
+    return value
+
+
+def _stable_json(value):
+    try:
+        return json.dumps(value or {}, ensure_ascii=False, sort_keys=True, default=_json_default)
+    except (TypeError, ValueError):
+        return str(value or '')
 
 
 def _number(value):

@@ -41,14 +41,14 @@
         <span>日経先物価格</span>
       </div>
 
-      <section class="common-decision-card{% if beginner_decision.label == 'ロング' %} common-decision-card--long{% elif beginner_decision.label == 'ショート' %} common-decision-card--short{% else %} common-decision-card--wait{% endif %}">
+      <section class="common-decision-card{% if beginner_decision.status == 'buy_candidate' %} common-decision-card--long{% elif beginner_decision.status == 'sell_candidate' %} common-decision-card--short{% else %} common-decision-card--wait{% endif %}">
         <div class="common-decision-card__body">
           <div class="common-decision-card__copy">
             <p class="common-kicker">日経先物 1日〜5日 最終判断</p>
             <p class="common-kicker"><strong>最終判断：{{ beginner_decision.label }}</strong></p>
-            <div class="common-status-badge{% if beginner_decision.label == 'ロング' %} common-status-badge--long{% elif beginner_decision.label == 'ショート' %} common-status-badge--short{% else %} common-status-badge--wait{% endif %}">
-              <span class="common-status-icon" aria-hidden="true">{% if beginner_decision.label == 'ロング' %}↑{% elif beginner_decision.label == 'ショート' %}↓{% else %}Ⅱ{% endif %}</span>
-              <span>{% if beginner_decision.label == 'ロング' %}LONG{% elif beginner_decision.label == 'ショート' %}SHORT{% else %}WAIT{% endif %}</span>
+            <div class="common-status-badge{% if beginner_decision.status == 'buy_candidate' %} common-status-badge--long{% elif beginner_decision.status == 'sell_candidate' %} common-status-badge--short{% else %} common-status-badge--wait{% endif %}">
+              <span class="common-status-icon" aria-hidden="true">{% if beginner_decision.status == 'buy_candidate' %}↑{% elif beginner_decision.status == 'sell_candidate' %}↓{% else %}Ⅱ{% endif %}</span>
+              <span>{% if beginner_decision.status == 'buy_candidate' %}LONG{% elif beginner_decision.status == 'sell_candidate' %}SHORT{% else %}WAIT{% endif %}</span>
             </div>
             <p class="common-price-display">{{ beginner_decision.current_price_display }}</p>
             <p class="common-muted">現在値</p>
@@ -59,15 +59,15 @@
         </div>
 
         <div class="common-choice-grid" aria-label="実行可否">
-          <div class="common-choice-card{% if beginner_decision.label != 'ロング' and beginner_decision.label != 'ショート' %} is-active{% endif %}">
+          <div class="common-choice-card{% if beginner_decision.status != 'buy_candidate' and beginner_decision.status != 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
-            <strong>{{ beginner_decision.plain_action }}</strong>
+            <strong>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %}</strong>
           </div>
-          <div class="common-choice-card{% if beginner_decision.label == 'ロング' %} is-active{% endif %}">
+          <div class="common-choice-card{% if beginner_decision.status == 'buy_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--long" aria-hidden="true">↑</span>
             <strong>ロング</strong>
           </div>
-          <div class="common-choice-card{% if beginner_decision.label == 'ショート' %} is-active{% endif %}">
+          <div class="common-choice-card{% if beginner_decision.status == 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--short" aria-hidden="true">↓</span>
             <strong>ショート</strong>
           </div>
@@ -193,7 +193,7 @@
       {% if beginner_decision.reference_candidate.available %}
         <section class="common-section">
           <h2 class="common-section-title">監視用</h2>
-          <p class="common-kicker">参考候補</p>
+          <p class="common-kicker">{{ beginner_decision.reference_candidate.note }}</p>
           <h3 class="common-subtitle">{{ beginner_decision.reference_candidate.label }}</h3>
           <div class="common-list common-list--compact">
             <div class="common-row">

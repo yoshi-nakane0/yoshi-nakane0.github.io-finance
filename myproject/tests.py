@@ -127,6 +127,7 @@ class ExplanationRoutingTests(TestCase):
 
     def test_explanation_page_falls_back_when_snapshot_table_is_missing(self):
         with (
+            self.settings(DEBUG=True),
             mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
             mock.patch(
                 'explanation.views.ExplanationSnapshot.objects.order_by',
@@ -141,6 +142,7 @@ class ExplanationRoutingTests(TestCase):
 
     def test_explanation_api_falls_back_when_snapshot_table_is_missing(self):
         with (
+            self.settings(DEBUG=True),
             mock.patch('explanation.views.load_static_explanation_snapshot', return_value=None),
             mock.patch(
                 'explanation.views.ExplanationSnapshot.objects.order_by',
