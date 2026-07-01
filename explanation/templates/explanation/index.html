@@ -290,7 +290,7 @@
           <p class="common-muted">{{ trade_validation_summary.one_line }}</p>
           <div class="common-list common-list--compact">
             <div class="common-row">
-              <span>判定検証</span>
+              <span>本番判定検証</span>
               <strong>{{ trade_validation_summary.total_count }}件</strong>
             </div>
             <div class="common-row">
@@ -330,6 +330,20 @@
           <div class="common-empty-state__icon" aria-hidden="true">▥</div>
           <strong>判定検証 0件</strong>
           <p class="common-muted">まだ保存済み判定の評価結果がありません。GitHub Actions の評価処理後に表示されます。</p>
+        {% endif %}
+        {% if basecalc_validation_summary.available %}
+          <div class="common-list common-list--compact">
+            <div class="common-row common-row--stack">
+              <span>過去データ検証</span>
+              <strong>{{ basecalc_validation_summary.detail_line }}</strong>
+            </div>
+            {% for row in basecalc_validation_summary.rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.sample_count_display }} / 方向一致 {{ row.directional_accuracy_display }} / T1到達 {{ row.target_t1_hit_rate_display }}</strong>
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
         {% if readiness_score %}
           <p class="common-muted">{{ readiness_score.note }}</p>

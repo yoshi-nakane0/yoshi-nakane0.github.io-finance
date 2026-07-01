@@ -14,7 +14,11 @@ from .services.freshness import build_explanation_refresh_status
 from .services.readiness_score import build_readiness_score
 from .services.serializer import snapshot_to_api, snapshot_to_view
 from .services.static_snapshot import load_static_explanation_snapshot
-from .services.validation_engine import build_static_trade_validation_summary, build_trade_validation_summary
+from .services.validation_engine import (
+    build_basecalc_backtest_validation_summary,
+    build_static_trade_validation_summary,
+    build_trade_validation_summary,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +69,7 @@ def index(request):
     snapshot, is_preview = _latest_or_preview(price_override)
     context = snapshot_to_view(snapshot)
     context['trade_validation_summary'] = _safe_trade_validation_summary()
+    context['basecalc_validation_summary'] = build_basecalc_backtest_validation_summary()
     context['readiness_score'] = build_readiness_score(snapshot, context['trade_validation_summary'])
     context['is_preview'] = is_preview
     context['refresh_status'] = build_explanation_refresh_status(snapshot)
@@ -76,6 +81,7 @@ def audit(request):
     snapshot, is_preview = _latest_or_preview()
     context = snapshot_to_view(snapshot)
     context['trade_validation_summary'] = _safe_trade_validation_summary()
+    context['basecalc_validation_summary'] = build_basecalc_backtest_validation_summary()
     context['readiness_score'] = build_readiness_score(snapshot, context['trade_validation_summary'])
     context['is_preview'] = is_preview
     context['score_breakdown'] = snapshot.score_breakdown or {}

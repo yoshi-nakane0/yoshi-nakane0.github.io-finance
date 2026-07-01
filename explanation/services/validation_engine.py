@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from django.utils import timezone
 
 from basecalc.market_bars import market_bars_between, nearest_bar_for_horizon
+from basecalc.validation_report import load_validation_report
 
 from ..models import ExplanationSnapshot, ExplanationTradeOutcome
 from .static_snapshot import load_static_trade_outcomes, snapshot_from_payload, snapshot_key_for_payload
@@ -129,6 +130,53 @@ def build_trade_validation_summary(include_static=True) -> Dict[str, object]:
 
 def build_static_trade_validation_summary(path=None) -> Dict[str, object]:
     return _summarize_trade_outcomes(_normalize_and_merge_outcomes([], load_static_trade_outcomes(path)))
+
+
+def build_basecalc_backtest_validation_summary(path=None) -> Dict[str, object]:
+    report = load_validation_report(path) if path else load_validation_report()
+    if not isinstance(report, dict):
+        return {'available': False, 'rows': [], 'total_count': 0}
+    rows = []
+    for horizon in ('1d', '3d', '5d'):
+        summary = ((report.get('horizons') or {}).get(horizon) or {}).get('summary') or {}
+        sample_count = _safe_int(summary.get('total_predictions'))
+        if sample_count <= 0:
+            continue
+        rows.append(
+            {
+                'horizon': horizon,
+                'label': _horizon_label(horizon),
+                'sample_count': sample_count,
+                'sample_count_display': f'{sample_count:,}件',
+                'directional_accuracy_display': _percent_display(summary.get('directional_accuracy')),
+                'target_t1_hit_rate_display': _percent_display(summary.get('target_t1_hit_rate')),
+                'avg_return_pct_display': _signed_percent_display(summary.get('avg_return_pct')),
+            }
+        )
+    if not rows:
+        return {
+            'available': False,
+            'rows': [],
+            'total_count': 0,
+            'generated_at': report.get('generated_at') or '',
+        }
+    total_count = sum(row['sample_count'] for row in rows)
+    primary = rows[0]
+    detail_line = (
+        f"{total_count:,}件 / "
+        f"{primary['label']} 方向一致 {primary['directional_accuracy_display']} / "
+        f"T1到達 {primary['target_t1_hit_rate_display']}"
+    )
+    return {
+        'available': True,
+        'generated_at': report.get('generated_at') or '',
+        'is_backtest': bool((report.get('filters') or {}).get('is_backtest')),
+        'total_count': total_count,
+        'total_count_display': f'{total_count:,}件',
+        'rows': rows,
+        'detail_line': detail_line,
+        'one_line': f'過去データ検証 {detail_line}',
+    }
 
 
 def _pending_outcome_payload(snapshot, snapshot_key, horizon):
@@ -301,6 +349,31 @@ def _rate(hit, total):
     if not total:
         return 'N/A'
     return f'{hit / total * 100:.0f}%'
+
+
+def _percent_display(value):
+    number = _number(value)
+    if number is None:
+        return 'N/A'
+    return f'{number * 100:.0f}%'
+
+
+def _signed_percent_display(value):
+    number = _number(value)
+    if number is None:
+        return 'N/A'
+    return f'{number:.2f}%'
+
+
+def _safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _horizon_label(horizon):
+    return {'1d': '1日', '3d': '3日', '5d': '5日'}.get(horizon, horizon)
 
 
 def _symbol_context(snapshot):

@@ -24,7 +24,12 @@ from .services.macro_adapter import load_macro_signal
 from .services.scenario_builder import build_scenarios
 from .services.serializer import snapshot_to_api, snapshot_to_view
 from .services.target_selector import select_trade_targets
-from .services.validation_engine import build_static_trade_validation_summary, build_trade_validation_summary, evaluate_trade_outcome
+from .services.validation_engine import (
+    build_basecalc_backtest_validation_summary,
+    build_static_trade_validation_summary,
+    build_trade_validation_summary,
+    evaluate_trade_outcome,
+)
 
 
 class ExplanationDecisionEngineTests(SimpleTestCase):
@@ -858,6 +863,48 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('実運用結果 0件', html)
         self.assertNotIn('実運用結果はまだ0件です。', html)
         self.assertNotIn('検証状態: 少ない', html)
+
+    def test_explanation_template_separates_live_results_from_backtest_results(self):
+        context = snapshot_to_view(self._snapshot())
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {
+            'available': True,
+            'total_count': 8,
+            'actionable_count': 0,
+            'wait_count': 8,
+            'missed_opportunity_count': 0,
+            'risk_avoided_count': 0,
+            'pending_count': 0,
+            'one_line': '検証 8件 / 売買候補 0件 / 待機観測 8件 / 機会損失候補 0件',
+            'horizon_rows': [],
+        }
+        context['basecalc_validation_summary'] = {
+            'available': True,
+            'one_line': '過去データ検証 4,990件 / 1日 方向一致 39% / T1到達 25%',
+            'detail_line': '4,990件 / 1日 方向一致 39% / T1到達 25%',
+            'generated_at': '2026-06-25T13:25:11+00:00',
+            'rows': [
+                {
+                    'horizon': '1d',
+                    'sample_count_display': '4,990件',
+                    'directional_accuracy_display': '39%',
+                    'target_t1_hit_rate_display': '25%',
+                    'avg_return_pct_display': '0.05%',
+                },
+            ],
+        }
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('本番判定検証', html)
+        self.assertIn('売買候補', html)
+        self.assertIn('0件', html)
+        self.assertIn('過去データ検証', html)
+        self.assertIn('4,990件', html)
+        self.assertIn('1日 方向一致 39%', html)
+        self.assertLess(html.index('本番判定検証'), html.index('過去データ検証'))
 
     def test_explanation_template_places_manual_price_before_final_decision(self):
         context = snapshot_to_view(self._snapshot())
@@ -1863,6 +1910,42 @@ class ExplanationTradeOutcomeValidationTests(TestCase):
         long_row = next(row for row in summary['side_rows'] if row['label'] == 'long')
         self.assertEqual(no_trade_row['direction_hit_rate'], 'N/A')
         self.assertEqual(long_row['direction_hit_rate'], '100%')
+
+    def test_basecalc_backtest_validation_summary_uses_saved_report(self):
+        report = {
+            'schema': 'basecalc_validation_report_v1',
+            'generated_at': '2026-06-25T13:25:11+00:00',
+            'filters': {'is_backtest': True},
+            'horizons': {
+                '1d': {
+                    'summary': {
+                        'total_predictions': 4990,
+                        'directional_accuracy': 0.39,
+                        'target_t1_hit_rate': 0.25,
+                        'avg_return_pct': 0.05,
+                    },
+                },
+                '3d': {
+                    'summary': {
+                        'total_predictions': 4980,
+                        'directional_accuracy': 0.36,
+                        'target_t1_hit_rate': 0.47,
+                        'avg_return_pct': 0.09,
+                    },
+                },
+            },
+        }
+
+        with mock.patch('explanation.services.validation_engine.load_validation_report', return_value=report):
+            summary = build_basecalc_backtest_validation_summary()
+
+        self.assertTrue(summary['available'])
+        self.assertEqual(summary['total_count'], 9970)
+        self.assertEqual(summary['rows'][0]['horizon'], '1d')
+        self.assertEqual(summary['rows'][0]['sample_count_display'], '4,990件')
+        self.assertEqual(summary['rows'][0]['directional_accuracy_display'], '39%')
+        self.assertIn('過去データ検証 9,970件', summary['one_line'])
+        self.assertIn('1日 方向一致 39%', summary['one_line'])
 
 
 class ExplanationSnapshotFactoryPersistenceTests(TestCase):
