@@ -12,9 +12,9 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-07-01T10:16:51.294971+00:00",
+  "explanation_as_of": "2026-07-01T12:12:23.784471+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-07-01T10:16:51.329189+00:00",
+  "generated_at": "2026-07-01T12:12:23.914757+00:00",
   "macro_as_of": "2026-07-01T09:04:18.734169+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
