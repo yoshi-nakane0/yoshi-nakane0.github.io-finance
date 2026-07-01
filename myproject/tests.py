@@ -96,12 +96,10 @@ class VercelFunctionPackagingTests(SimpleTestCase):
         config = json.loads((BASE_DIR / 'vercel.json').read_text(encoding='utf-8'))
         include_files = config['functions']['api/index.py']['includeFiles']
 
+        self.assertLessEqual(len(include_files), 256)
         self.assertIn('runtime/db.sqlite3', include_files)
-        self.assertIn('basecalc/data/latest_snapshot.json', include_files)
-        self.assertIn('basecalc/data/basecalc_status.json', include_files)
-        self.assertIn('explanation/data/latest_snapshot.json', include_files)
-        self.assertIn('explanation/data/snapshot_history.json', include_files)
-        self.assertIn('explanation/data/trade_outcomes.json', include_files)
+        self.assertIn('basecalc/data/**', include_files)
+        self.assertIn('explanation/data/**', include_files)
         self.assertIn('static/finance_data_manifest.json', include_files)
 
 
