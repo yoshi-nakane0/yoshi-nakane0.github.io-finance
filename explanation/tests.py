@@ -2067,6 +2067,60 @@ class ExplanationPrecomputeViewTests(TestCase):
         self.assertEqual(snapshot.final_label, '静的判定')
         build_snapshot.assert_not_called()
 
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_latest_or_preview_uses_static_snapshot_on_vercel_even_when_debug_is_true(self):
+        from explanation.views import _latest_or_preview
+
+        static_snapshot = ExplanationSnapshot(
+            as_of=timezone.now(),
+            final_label='静的判定',
+            final_stance='withhold',
+            action_posture='静的表示',
+            confidence_score=54,
+            confidence_grade='C+',
+            macro_bias='neutral',
+            basecalc_bias='range',
+            alignment_status='partial',
+            data_quality_score=80,
+            audit_level='warning',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+
+        with (
+            self.settings(DEBUG=True),
+            mock.patch(
+                'explanation.views.load_static_explanation_snapshot',
+                return_value=static_snapshot,
+            ),
+            mock.patch('explanation.views.build_explanation_snapshot') as build_snapshot,
+        ):
+            snapshot, is_preview = _latest_or_preview(price_override=42000)
+
+        self.assertFalse(is_preview)
+        self.assertEqual(snapshot.final_label, '静的判定')
+        build_snapshot.assert_not_called()
+
+    @mock.patch.dict('os.environ', {'VERCEL': '1'})
+    def test_validation_summary_uses_static_outcomes_on_vercel_even_when_debug_is_true(self):
+        from explanation.views import _safe_trade_validation_summary
+
+        static_summary = {
+            'available': True,
+            'total_count': 8,
+            'one_line': '検証 8件 / 売買候補 0件 / 待機観測 8件 / 機会損失候補 0件',
+        }
+
+        with (
+            self.settings(DEBUG=True),
+            mock.patch('explanation.views.build_static_trade_validation_summary', return_value=static_summary),
+            mock.patch('explanation.views.build_trade_validation_summary') as db_summary,
+        ):
+            summary = _safe_trade_validation_summary()
+
+        self.assertEqual(summary['total_count'], 8)
+        db_summary.assert_not_called()
+
     def test_staff_user_can_precompute_explanation(self):
         user = get_user_model().objects.create_user(
             username='staff',

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from django.conf import settings
 from django.contrib import messages
@@ -56,7 +57,7 @@ def _latest_or_preview(price_override=None):
 
 
 def _should_use_static_explanation_snapshot():
-    return not settings.DEBUG
+    return _is_serverless_runtime() or not settings.DEBUG
 
 
 def index(request):
@@ -132,7 +133,16 @@ def _manual_price_from_request(request):
 
 
 def _safe_trade_validation_summary():
+    if _should_use_static_explanation_snapshot():
+        return build_static_trade_validation_summary()
     try:
         return build_trade_validation_summary(include_static=True)
     except (OperationalError, ProgrammingError):
         return build_static_trade_validation_summary()
+
+
+def _is_serverless_runtime():
+    return any(
+        os.getenv(name)
+        for name in ('VERCEL', 'AWS_LAMBDA_FUNCTION_NAME', 'LAMBDA_TASK_ROOT')
+    )
