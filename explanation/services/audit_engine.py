@@ -1,4 +1,11 @@
+from datetime import timedelta
+
+from django.utils import timezone
+
 from .contracts import AuditResult, BasecalcSignal, MacroSignal
+
+
+BASECALC_STALE_AFTER = timedelta(days=1)
 
 
 def evaluate_audit(macro: MacroSignal, basecalc: BasecalcSignal) -> AuditResult:
@@ -10,6 +17,11 @@ def evaluate_audit(macro: MacroSignal, basecalc: BasecalcSignal) -> AuditResult:
     if basecalc.contract_status == 'error':
         items.append('basecalcの方向判断は停止')
         items.extend(basecalc.stop_reasons[:2])
+        penalty += 30
+        confidence_cap = 'D'
+        level = 'blocked'
+    elif _basecalc_is_stale(basecalc):
+        items.append('Basecalcデータが古いため判定停止')
         penalty += 30
         confidence_cap = 'D'
         level = 'blocked'
@@ -53,12 +65,8 @@ def evaluate_audit(macro: MacroSignal, basecalc: BasecalcSignal) -> AuditResult:
         if level == 'valid':
             level = 'warning'
 
-    if alignment == 'conflict':
-        items.append('macroとbasecalcの方向が矛盾')
-        penalty += 10
-        confidence_cap = _stricter_cap(confidence_cap, 'B')
-        if level == 'valid':
-            level = 'warning'
+    if level != 'blocked' and alignment == 'timeframe_divergence':
+        items.append('macroとbasecalcは時間軸分岐')
 
     data_quality_score = min(macro.data_quality_score, basecalc.data_quality_score)
     if data_quality_score < 60:
@@ -72,10 +80,11 @@ def evaluate_audit(macro: MacroSignal, basecalc: BasecalcSignal) -> AuditResult:
         items.append('データ鮮度、品質、検証条件は許容範囲')
 
     status = 'blocked' if level == 'blocked' else 'limited' if level == 'warning' else 'valid'
+    result_alignment = 'blocked' if level == 'blocked' else alignment
     return AuditResult(
         level=level,
         status=status,
-        alignment_status=alignment,
+        alignment_status=result_alignment,
         items=items[:6],
         penalty=penalty,
         confidence_cap=confidence_cap,
@@ -92,7 +101,7 @@ def alignment_status(macro_bias, basecalc_bias):
         return 'aligned'
     if 'neutral' in {macro_direction, technical_direction}:
         return 'partial'
-    return 'conflict'
+    return 'timeframe_divergence'
 
 
 def _macro_direction(bias):
@@ -120,3 +129,12 @@ def _stricter_cap(current, candidate):
         return candidate
     order = {'A': 5, 'B': 4, 'B-': 3, 'C+': 2, 'C': 1, 'D': 0}
     return current if order.get(current, 0) <= order.get(candidate, 0) else candidate
+
+
+def _basecalc_is_stale(basecalc):
+    if basecalc.as_of is None:
+        return False
+    as_of = basecalc.as_of
+    if timezone.is_naive(as_of):
+        as_of = timezone.make_aware(as_of, timezone.get_current_timezone())
+    return timezone.now() - as_of > BASECALC_STALE_AFTER

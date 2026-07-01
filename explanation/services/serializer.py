@@ -156,20 +156,26 @@ def _basecalc_state_label(value):
 
 def _alignment_label(alignment_status, macro_label, basecalc_label):
     if alignment_status == 'aligned':
-        return '一致'
-    if alignment_status == 'conflict':
-        return '不一致'
+        return '同方向'
+    if alignment_status == 'timeframe_divergence':
+        return '時間軸分岐'
+    if alignment_status == 'blocked':
+        return '判定停止'
     if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
-        return '分裂'
-    return '不一致'
+        return '片側中立'
+    return '時間軸分岐'
 
 
 def _alignment_action(alignment_status, macro_label, basecalc_label):
     if alignment_status == 'aligned':
-        return '条件がそろえば採用候補。'
+        return 'Macroとbasecalcが同じ方向。条件がそろえば順張り候補。'
+    if alignment_status == 'timeframe_divergence':
+        return '短期はbasecalc、中期はMacroを分けて確認。上値追い・突っ込み売りは避ける。'
+    if alignment_status == 'blocked':
+        return '鮮度不足または主要データ不足のため、最終判断を止める。'
     if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
-        return '待機。方向がそろうまで条件待ち。'
-    return '不一致。過剰な売買判断を避け、短期だけ注意。'
+        return '片側が中立。方向がはっきりするまで条件待ち。'
+    return '短期と中期を分けて確認。過剰な売買判断は避ける。'
 
 
 def _adoption_summary(decision_card, long_judgment, short_judgment, trade_decision, snapshot):
@@ -289,6 +295,10 @@ def _decision_inputs(snapshot, macro, basecalc, world_model, manual_price):
     basecalc_raw = basecalc.get('raw') or {}
     return {
         'rows': [
+            {
+                'label': 'Explanation作成時刻',
+                'value': _format_datetime(snapshot.as_of),
+            },
             {
                 'label': 'Macroデータ更新時刻',
                 'value': _format_datetime(macro_raw.get('generated_at') or macro.get('as_of')),
@@ -499,6 +509,7 @@ def _trade_decision(snapshot, world_model):
         'reward_risk': None,
         'expected_return_pct': None,
         'probability': None,
+        'expected_value': None,
         'confidence_score': snapshot.confidence_score,
         'confidence_grade': snapshot.confidence_grade,
         'long_score': 0,

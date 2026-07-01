@@ -24,9 +24,6 @@ def _latest_or_preview(price_override=None):
             save=False,
             basecalc_price_override=price_override,
         ), True
-    static_snapshot = load_static_explanation_snapshot()
-    if static_snapshot is not None:
-        return static_snapshot, False
     try:
         snapshot = ExplanationSnapshot.objects.order_by('-as_of', '-created_at').first()
     except (OperationalError, ProgrammingError):
@@ -39,7 +36,14 @@ def _latest_or_preview(price_override=None):
         if refresh_status.get('needs_refresh'):
             return build_explanation_snapshot(save=False), True
         return snapshot, False
-    return build_explanation_snapshot(save=False), True
+    try:
+        return build_explanation_snapshot(save=False), True
+    except Exception:
+        logger.exception('failed to build explanation preview; falling back to static snapshot')
+        static_snapshot = load_static_explanation_snapshot()
+        if static_snapshot is not None:
+            return static_snapshot, False
+        raise
 
 
 def index(request):

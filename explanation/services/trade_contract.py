@@ -18,6 +18,7 @@ class TradeDecision:
     reward_risk: Optional[float]
     expected_return_pct: Optional[float]
     probability: Optional[float]
+    expected_value: Optional[float]
     confidence_score: int
     confidence_grade: str
     long_score: int
@@ -64,6 +65,7 @@ def no_trade_decision(
     reward_risk: Optional[float] = None,
     expected_return_pct: Optional[float] = None,
     probability: Optional[float] = None,
+    expected_value: Optional[float] = None,
 ) -> TradeDecision:
     return TradeDecision(
         selected_side='no_trade',
@@ -80,6 +82,7 @@ def no_trade_decision(
         reward_risk=reward_risk,
         expected_return_pct=expected_return_pct,
         probability=probability,
+        expected_value=expected_value,
         confidence_score=confidence_score,
         confidence_grade=confidence_grade,
         long_score=long_score,

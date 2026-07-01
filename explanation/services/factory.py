@@ -18,10 +18,7 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
     fusion = build_final_decision(macro, basecalc, audit)
     trade_decision = build_trade_decision_v2(macro, basecalc, audit)
     scenario = build_scenarios(macro, basecalc)
-    as_of = max(
-        [value for value in [macro.as_of, basecalc.as_of] if value is not None],
-        default=timezone.now(),
-    )
+    as_of = timezone.now()
     snapshot = ExplanationSnapshot(
         as_of=as_of,
         final_label=fusion.final_label,

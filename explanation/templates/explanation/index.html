@@ -78,18 +78,25 @@
             <span>エントリー</span>
             <strong>{{ beginner_decision.entry_display }}</strong>
           </div>
-          <div class="common-row">
-            <span>第1目標</span>
-            <strong>{{ beginner_decision.target_1_display }}</strong>
-          </div>
-          <div class="common-row">
-            <span>損切り</span>
-            <strong>{{ beginner_decision.stop_display }}</strong>
-          </div>
-          <div class="common-row">
-            <span>R/R</span>
-            <strong>{{ beginner_decision.reward_risk_display }}</strong>
-          </div>
+          {% if beginner_decision.tradable %}
+            <div class="common-row">
+              <span>第1目標</span>
+              <strong>{{ beginner_decision.target_1_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>損切り</span>
+              <strong>{{ beginner_decision.stop_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>R/R</span>
+              <strong>{{ beginner_decision.reward_risk_display }}</strong>
+            </div>
+          {% else %}
+            <div class="common-row">
+              <span>売買可否</span>
+              <strong>売買不可 / 条件待ち</strong>
+            </div>
+          {% endif %}
         </div>
       </section>
 
@@ -268,7 +275,7 @@
       </section>
 
       <section class="common-section">
-        <h2 class="common-section-title">macro × basecalc</h2>
+        <h2 class="common-section-title">Macro / Basecalc 統合関係</h2>
         <div class="common-summary-grid">
           <article class="common-summary-card">
             <span>macro</span>
@@ -281,7 +288,7 @@
         </div>
         <div class="common-list common-list--compact">
           <div class="common-row">
-            <span>一致度</span>
+            <span>統合関係</span>
             <strong>{{ alignment_summary.status }}</strong>
           </div>
           <div class="common-row common-row--stack">

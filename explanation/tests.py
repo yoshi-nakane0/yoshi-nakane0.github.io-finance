@@ -225,6 +225,79 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(short_plan.stop_price, 42600)
         self.assertEqual(short_plan.reward_risk, 1.67)
 
+    def test_target_selector_prefers_best_positive_expected_value_target(self):
+        basecalc = self._basecalc(
+            validated_targets={
+                'upside': [
+                    {'label': 'T1', 'price': 42300, 'probability': 0.45},
+                    {'label': 'T2', 'price': 43200, 'probability': 0.62},
+                ],
+            },
+        )
+
+        plan = select_trade_targets('long', 42000, basecalc)
+
+        self.assertEqual(plan.target_1['label'], 'T2')
+        self.assertEqual(plan.target_1['price'], 43200)
+        self.assertEqual(plan.target_2['label'], 'T1')
+        self.assertEqual(plan.reward_risk, 2.0)
+        self.assertGreater(plan.expected_value, 0)
+
+    def test_target_selector_blocks_when_best_target_expected_value_is_not_positive(self):
+        basecalc = self._basecalc(
+            validated_targets={
+                'upside': [
+                    {'label': 'T1', 'price': 42800, 'probability': 0.25},
+                    {'label': 'T2', 'price': 43200, 'probability': 0.30},
+                ],
+            },
+        )
+
+        plan = select_trade_targets('long', 42000, basecalc)
+
+        self.assertIn('期待値不足', plan.blocked_reasons)
+        self.assertLessEqual(plan.expected_value, 0)
+
+    def test_opposite_macro_and_basecalc_is_timeframe_divergence_not_conflict(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            bias='bearish',
+            summary='日経先物は下落優勢。',
+            direction_1d='down',
+            direction_3d='down',
+            direction_5d='down',
+            primary_direction='down',
+            primary_setup='trend_follow_short',
+            expected_return_1d=-0.4,
+            expected_return_3d=-0.8,
+            expected_return_5d=-1.0,
+            horizons={'1d': {'expected_return_pct': -0.4}, '3d': {'expected_return_pct': -0.8}, '5d': {'expected_return_pct': -1.0}},
+            validated_targets={
+                'upside': [{'label': 'T1', 'price': 43200, 'probability': 0.55}],
+                'downside': [{'label': 'T1', 'price': 41000, 'probability': 0.62}],
+            },
+        )
+
+        audit = evaluate_audit(macro, basecalc)
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(audit.alignment_status, 'timeframe_divergence')
+        self.assertNotIn('macroとbasecalcの方向が矛盾', audit.items)
+        self.assertEqual(decision.selected_side, 'short')
+
+    def test_stale_basecalc_blocks_final_trade_judgment(self):
+        macro = self._macro('positive', as_of=timezone.now())
+        basecalc = self._basecalc(as_of=timezone.now() - timedelta(days=2))
+
+        audit = evaluate_audit(macro, basecalc)
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(audit.status, 'blocked')
+        self.assertEqual(audit.alignment_status, 'blocked')
+        self.assertIn('Basecalcデータが古いため判定停止', audit.items)
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_type, 'no_trade_data_blocked')
+
     def test_bullish_basecalc_with_macro_inflation_risk_is_conditional_when_audit_warns(self):
         macro = MacroSignal(
             bias='neutral_inflation_risk',
@@ -587,12 +660,23 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(context['integrated_decision']['posture'], 'ロング候補')
         self.assertEqual(context['alignment_summary']['macro'], '追い風')
         self.assertEqual(context['alignment_summary']['basecalc'], '上方向')
-        self.assertEqual(context['alignment_summary']['status'], '一致')
+        self.assertEqual(context['alignment_summary']['status'], '同方向')
         self.assertEqual(context['adoption_summary']['primary'], 'ロング候補')
         self.assertLessEqual(len(context['adoption_summary']['reasons']), 3)
         self.assertLessEqual(len(context['adoption_summary']['warnings']), 3)
         self.assertIn('Long', context['adoption_summary']['long_condition'])
         self.assertIn('Short', context['adoption_summary']['short_condition'])
+
+    def test_view_context_labels_timeframe_divergence_as_integration_relation(self):
+        snapshot = self._snapshot()
+        snapshot.macro_bias = 'positive'
+        snapshot.basecalc_bias = 'bearish'
+        snapshot.alignment_status = 'timeframe_divergence'
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['alignment_summary']['status'], '時間軸分岐')
+        self.assertIn('短期はbasecalc', context['alignment_summary']['action'])
 
     def test_explanation_template_removes_low_priority_duplicate_sections(self):
         context = snapshot_to_view(self._snapshot())
@@ -624,7 +708,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('Trend / Reversal 別', html)
         self.assertNotIn('信頼度別', html)
         self.assertIn('採用理由 / 警戒理由', html)
-        self.assertIn('macro × basecalc', html)
+        self.assertIn('Macro / Basecalc 統合関係', html)
         self.assertIn('検証成績', html)
         self.assertIn('次に見る条件', html)
         self.assertIn('/macro/', html)
@@ -678,15 +762,16 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         html = render_to_string('explanation/index.html', context)
         top_html = html.split('詳細を表示', 1)[0]
+        decision_card_html = top_html.split('</section>', 1)[0]
 
-        self.assertIn('日経先物 1日〜5日 最終判断', top_html)
-        self.assertIn('最終判断：見送り', top_html)
-        self.assertIn('エントリー', top_html)
-        self.assertIn('なし', top_html)
-        self.assertIn('第1目標', top_html)
-        self.assertIn('—', top_html)
-        self.assertIn('R/R', top_html)
-        self.assertIn('不採用（1.2未満）', top_html)
+        self.assertIn('日経先物 1日〜5日 最終判断', decision_card_html)
+        self.assertIn('最終判断：見送り', decision_card_html)
+        self.assertIn('エントリー', decision_card_html)
+        self.assertIn('なし', decision_card_html)
+        self.assertIn('売買可否', decision_card_html)
+        self.assertIn('売買不可 / 条件待ち', decision_card_html)
+        self.assertNotIn('第1目標', decision_card_html)
+        self.assertNotIn('R/R', decision_card_html)
         self.assertNotIn('参考 72,376〜72,539円', top_html)
         self.assertNotIn('72,400円', top_html)
         self.assertNotIn('75,800円', top_html)
@@ -975,7 +1060,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         decision_index = html.index('最終判断')
         trigger_index = html.index('次に見る条件')
-        alignment_index = html.index('macro × basecalc')
+        alignment_index = html.index('Macro / Basecalc 統合関係')
         detail_index = html.index('詳細を表示')
         long_index = html.index('ロング条件詳細')
         short_index = html.index('ショート条件詳細')
@@ -1095,7 +1180,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         context = snapshot_to_view(snapshot)
 
         self.assertEqual(
-            context['decision_inputs']['rows'],
+            context['decision_inputs']['rows'][1:],
             [
                 {'label': 'Macroデータ更新時刻', 'value': '2026-06-19 17:30 JST'},
                 {'label': 'Basecalcデータ更新時刻', 'value': '2026-06-19 18:40 JST'},
@@ -1103,6 +1188,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
                 {'label': '米国3指数', 'value': 'あり'},
             ],
         )
+        self.assertEqual(context['decision_inputs']['rows'][0]['label'], 'Explanation作成時刻')
         self.assertEqual(
             context['decision_inputs']['materials'],
             ['Basecalcは上方向。', 'Macroは支援的。'],
@@ -1291,6 +1377,50 @@ class ExplanationMacroAdapterTests(SimpleTestCase):
 
 
 class ExplanationPrecomputeViewTests(TestCase):
+    def test_latest_or_preview_prefers_database_snapshot_over_static_fallback(self):
+        from explanation.views import _latest_or_preview
+
+        db_snapshot = ExplanationSnapshot.objects.create(
+            as_of=timezone.now(),
+            final_label='DB最新判定',
+            final_stance='conditional_bullish',
+            action_posture='DB表示',
+            confidence_score=68,
+            confidence_grade='B-',
+            macro_bias='positive',
+            basecalc_bias='bullish',
+            alignment_status='aligned',
+            data_quality_score=80,
+            audit_level='valid',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+        static_snapshot = ExplanationSnapshot(
+            as_of=timezone.now() - timedelta(days=2),
+            final_label='静的判定',
+            final_stance='withhold',
+            action_posture='静的表示',
+            confidence_score=38,
+            confidence_grade='D',
+            macro_bias='neutral',
+            basecalc_bias='range',
+            alignment_status='partial',
+            data_quality_score=40,
+            audit_level='blocked',
+            source_snapshots={},
+            version='explanation_v2',
+        )
+
+        with (
+            mock.patch('explanation.views.load_static_explanation_snapshot', return_value=static_snapshot),
+            mock.patch('explanation.views.build_explanation_refresh_status', return_value={'needs_refresh': False}),
+        ):
+            snapshot, is_preview = _latest_or_preview()
+
+        self.assertFalse(is_preview)
+        self.assertEqual(snapshot.pk, db_snapshot.pk)
+        self.assertEqual(snapshot.final_label, 'DB最新判定')
+
     def test_latest_or_preview_uses_current_preview_when_saved_snapshot_is_stale(self):
         from explanation.views import _latest_or_preview
 

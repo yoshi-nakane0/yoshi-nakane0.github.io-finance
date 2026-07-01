@@ -27,7 +27,7 @@ def build_final_decision(
         label, stance, posture = _matrix_label(macro.bias, basecalc.bias, audit)
 
     base_confidence = min(macro.confidence_score, basecalc.confidence_score)
-    alignment_bonus = {'aligned': 5, 'partial': 0, 'conflict': -10, 'blocked': -30}.get(
+    alignment_bonus = {'aligned': 5, 'partial': 0, 'timeframe_divergence': -3, 'blocked': -30}.get(
         audit.alignment_status,
         0,
     )
@@ -263,6 +263,7 @@ def build_trade_decision_v2(
         reward_risk=plan.reward_risk,
         expected_return_pct=expected_return,
         probability=plan.probability,
+        expected_value=plan.expected_value,
         confidence_score=confidence_score,
         confidence_grade=confidence_grade,
         long_score=long_score,
@@ -294,6 +295,7 @@ def _no_trade_decision_with_plan(side, plan, **kwargs):
         invalidation_price=plan.invalidation_price,
         reward_risk=plan.reward_risk,
         probability=plan.probability,
+        expected_value=plan.expected_value,
     )
 
 
@@ -302,13 +304,13 @@ def _matrix_label(macro_bias, basecalc_bias, audit):
         if macro_bias == 'positive' and audit.status == 'valid':
             return '強気継続', 'bullish', '上昇継続。ただし節目突破を確認する。'
         if macro_bias == 'negative':
-            return '戻り売り警戒', 'sell_rally_watch', '上昇局面でも追いかけず、戻り売りリスクを警戒。'
+            return '短期上昇・中期警戒', 'conditional_bullish', '短期はbasecalcの上方向を優先し、中期はmacroの逆風を警戒。'
         return '条件付き上昇優勢', 'conditional_bullish', '押し目待ち。高値追いは避ける。'
     if basecalc_bias == 'bearish':
         if macro_bias == 'negative':
             return '下落警戒', 'bearish_alert', '戻りは慎重に扱い、下値確認を優先。'
         if macro_bias == 'positive':
-            return '中立・様子見', 'neutral_wait', '下落が止まるまで新規判断を急がない。'
+            return '短期下落・中期反転待ち', 'sell_rally_watch', '短期はbasecalcの下方向を優先し、中期はmacroの追い風で反転を監視。'
         return '中立・様子見', 'neutral_wait', '方向がそろうまで様子見。'
     return '中立・様子見', 'neutral_wait', '方向が出るまで待つ。'
 
@@ -368,6 +370,8 @@ def _trade_scores(macro, basecalc, audit, long_plan, short_plan, reversal):
     short_score += _macro_points(macro, 'short')
     long_score += _rr_points(long_plan)
     short_score += _rr_points(short_plan)
+    long_score += _ev_points(long_plan)
+    short_score += _ev_points(short_plan)
 
     long_score += min(12, int((basecalc.continuation_score or 0) / 10)) if basecalc.bias == 'bullish' else 0
     short_score += min(12, int((basecalc.continuation_score or 0) / 10)) if basecalc.bias == 'bearish' else 0
@@ -393,9 +397,6 @@ def _trade_scores(macro, basecalc, audit, long_plan, short_plan, reversal):
     if basecalc.data_quality_score < 60:
         no_trade_score += 35
     no_trade_score += min(20, int((_number((macro.factor_vector or {}).get('event_risk_score')) or 0) / 5))
-    if audit.alignment_status == 'conflict':
-        no_trade_score += 15
-
     return _clamp(long_score), _clamp(short_score), _clamp(no_trade_score)
 
 
@@ -467,6 +468,17 @@ def _rr_points(plan):
     if plan.reward_risk >= 1.2:
         return 8
     return -18
+
+
+def _ev_points(plan):
+    value = getattr(plan, 'expected_value', None)
+    if value is None:
+        return 0
+    if value <= 0:
+        return -18
+    if value >= 300:
+        return 8
+    return 4
 
 
 def _select_side(long_score, short_score, no_trade_score):
