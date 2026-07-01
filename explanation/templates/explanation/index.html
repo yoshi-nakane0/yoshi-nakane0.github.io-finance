@@ -425,6 +425,16 @@
 
         <h2 class="common-section-title">world model 予測数値</h2>
         <div class="common-list">
+          {% if advanced_detail.world_model_gate.available %}
+            <div class="common-row common-row--stack">
+              <span>停止理由</span>
+              <strong>{{ advanced_detail.world_model_gate.stop_reason }}</strong>
+            </div>
+            <div class="common-row common-row--stack">
+              <span>表示再開条件</span>
+              <strong>{{ advanced_detail.world_model_gate.restart_condition }}</strong>
+            </div>
+          {% endif %}
           {% for item in advanced_detail.world_model_predictions %}
             <div class="common-row">
               <span>{{ item.horizon }} / {{ item.bias }}</span>

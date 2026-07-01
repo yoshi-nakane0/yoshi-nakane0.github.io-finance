@@ -27,6 +27,7 @@ def snapshot_to_view(snapshot):
     long_judgment = _trade_judgment('long', snapshot, world_model, trade_decision)
     short_judgment = _trade_judgment('short', snapshot, world_model, trade_decision)
     world_model_predictions = _world_model_predictions(world_model, manual_price, trade_decision)
+    world_model_gate = _world_model_gate_summary(world_model, trade_decision, snapshot)
     alignment_summary = _alignment_summary(snapshot)
     adoption_summary = _adoption_summary(
         decision_card,
@@ -60,6 +61,7 @@ def snapshot_to_view(snapshot):
             'long_judgment': long_judgment,
             'short_judgment': short_judgment,
             'world_model_predictions': world_model_predictions,
+            'world_model_gate': world_model_gate,
             'decision_inputs': _decision_inputs(snapshot, macro, basecalc, world_model, manual_price),
             'audit_items': snapshot.audit_items or [],
         },
@@ -67,6 +69,7 @@ def snapshot_to_view(snapshot):
         'long_judgment': long_judgment,
         'short_judgment': short_judgment,
         'world_model_predictions': world_model_predictions,
+        'world_model_gate': world_model_gate,
         'macro': {
             'bias': snapshot.macro_bias,
             'summary': macro.get('summary') or '',
@@ -496,6 +499,58 @@ def _world_model_predictions(world_model, manual_price=None, trade_decision=None
             'setup': '方向ゲート停止中（売買判定には未使用）' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
         })
     return rows
+
+
+def _world_model_gate_summary(world_model, trade_decision, snapshot):
+    trade_decision = trade_decision or {}
+    output_contract = world_model.get('output_contract') or {}
+    allowed = output_contract.get('allowed_horizons') or {}
+    gate_blocked = _direction_gate_blocked(world_model, trade_decision)
+    horizon_stopped = any(
+        _world_model_horizon_stopped(world_model, output_contract, allowed, horizon)
+        for horizon in ('1d', '3d', '5d')
+    )
+    if not gate_blocked and not horizon_stopped:
+        return {'available': False, 'stop_reason': '', 'restart_condition': ''}
+    reasons = _dedupe_nonempty(
+        _normalized_list(trade_decision.get('blocked_reasons') or [])
+        + _normalized_list(world_model.get('stop_reasons') or [])
+        + _normalized_list(output_contract.get('stop_reasons') or [])
+        + _normalized_list(getattr(snapshot, 'audit_items', []) or [])
+    )
+    if not reasons:
+        reasons = ['方向ゲート停止中']
+    conditions = _restart_conditions_for_reasons(reasons)
+    return {
+        'available': True,
+        'stop_reason': ' / '.join(reasons[:4]),
+        'restart_condition': ' / '.join(conditions),
+    }
+
+
+def _restart_conditions_for_reasons(reasons):
+    conditions = []
+    joined = ' '.join(reasons)
+    if '方向' in joined or '予測ゲート' in joined:
+        conditions.append('方向ゲート再開')
+    if '米国3指数' in joined:
+        conditions.append('米国3指数確認')
+    if '信頼度' in joined:
+        conditions.append('信頼度回復')
+    if '鮮度' in joined or 'データ' in joined:
+        conditions.append('データ不足解消')
+    if '重要指標' in joined:
+        conditions.append('重要指標通過')
+    return _dedupe_nonempty(conditions) or ['方向ゲート再開', 'データ不足解消', '信頼度回復']
+
+
+def _dedupe_nonempty(items):
+    result = []
+    for item in items or []:
+        value = str(item or '').strip()
+        if value and value not in result:
+            result.append(value)
+    return result
 
 
 def _direction_gate_blocked(world_model, trade_decision):

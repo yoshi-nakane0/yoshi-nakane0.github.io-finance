@@ -779,6 +779,33 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             self.assertEqual(row['expected_price'], 'N/A')
             self.assertEqual(row['setup'], '方向ゲート停止中（売買判定には未使用）')
 
+    def test_world_model_section_explains_stop_reason_and_restart_conditions(self):
+        snapshot = self._snapshot()
+        snapshot.audit_items = ['米国3指数確認不足', '予測ゲート停止中']
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_direction_stopped',
+            'target_1': None,
+            'target_2': None,
+            'stop_price': None,
+            'reward_risk': None,
+            'blocked_reasons': ['信頼度不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+
+        world_model_html = html.split('world model 予測数値', 1)[1]
+        self.assertIn('停止理由', world_model_html)
+        self.assertIn('信頼度不足 / 米国3指数確認不足 / 予測ゲート停止中', world_model_html)
+        self.assertIn('表示再開条件', world_model_html)
+        self.assertIn('方向ゲート再開 / 米国3指数確認 / 信頼度回復', world_model_html)
+        self.assertLess(world_model_html.index('停止理由'), world_model_html.index('1d / 停止 / 参考'))
+
     def test_reasons_are_normalized_before_display(self):
         snapshot = self._snapshot()
         snapshot.evidence = ['重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。']
