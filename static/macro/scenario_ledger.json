@@ -1,7 +1,7 @@
 {
   "scenario_ledger": [
     {
-      "as_of": "2026-06-30",
+      "as_of": "2026-07-01",
       "confirmation_rules": [
         "成長モメンタム",
         "物価圧力",
@@ -22,13 +22,13 @@
       ],
       "name": "基本",
       "outcome": null,
-      "probability": 0.5833,
-      "scenario_id": "baseline_2026-06-30",
+      "probability": 0.5847,
+      "scenario_id": "baseline_2026-07-01",
       "status": "open",
       "watch_window": "20 trading days"
     },
     {
-      "as_of": "2026-06-30",
+      "as_of": "2026-07-01",
       "confirmation_rules": [
         "雇用悪化",
         "信用スプレッド拡大",
@@ -47,13 +47,13 @@
       ],
       "name": "下振れ",
       "outcome": null,
-      "probability": 0.1422,
-      "scenario_id": "downside_2026-06-30",
+      "probability": 0.1401,
+      "scenario_id": "downside_2026-07-01",
       "status": "open",
       "watch_window": "20 trading days"
     },
     {
-      "as_of": "2026-06-30",
+      "as_of": "2026-07-01",
       "confirmation_rules": [
         "雇用安定",
         "インフレ鈍化",
@@ -71,8 +71,8 @@
       ],
       "name": "上振れ",
       "outcome": null,
-      "probability": 0.2745,
-      "scenario_id": "upside_2026-06-30",
+      "probability": 0.2752,
+      "scenario_id": "upside_2026-07-01",
       "status": "open",
       "watch_window": "20 trading days"
     }

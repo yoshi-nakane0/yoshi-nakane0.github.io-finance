@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-06-30",
+  "as_of": "2026-07-01",
   "blocking_issues": [],
   "confidence_grade": "B",
   "confidence_limit_reasons": [
@@ -7,7 +7,7 @@
   ],
   "confidence_score": 91,
   "data_quality_report": {
-    "as_of": "2026-06-30",
+    "as_of": "2026-07-01",
     "blocking_issues": [],
     "confidence_cap": "A",
     "display_allowed": true,
@@ -31,11 +31,11 @@
       "label": "Core PCE"
     },
     {
-      "detail": "現状 4.38%（2026-06-26）。判断変更目安 4.50%以上、あと +0.12pt",
+      "detail": "現状 4.38%（2026-06-29）。判断変更目安 4.50%以上、あと +0.12pt",
       "label": "米10年金利"
     },
     {
-      "detail": "現状 2.83%（2026-06-26）。判断変更目安 5.00%以上、あと +2.17pt",
+      "detail": "現状 2.80%（2026-06-29）。判断変更目安 5.00%以上、あと +2.20pt",
       "label": "信用スプレッド"
     }
   ],
@@ -66,20 +66,20 @@
         {
           "age_days": 1,
           "label": "5年期待インフレ率",
-          "observation_date": "2026-06-29",
+          "observation_date": "2026-06-30",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T5YIE",
           "source": "FRED",
-          "value": 2.24
+          "value": 2.26
         },
         {
           "age_days": 1,
           "label": "10年期待インフレ率",
-          "observation_date": "2026-06-29",
+          "observation_date": "2026-06-30",
           "proxy_type": "market_implied_inflation_expectation",
           "series_id": "T10YIE",
           "source": "FRED",
-          "value": 2.22
+          "value": 2.24
         }
       ],
       "reasons": [
@@ -99,6 +99,27 @@
           "event": "ISM製造業景況感指数",
           "impact": "★★★",
           "time": "23:00"
+        },
+        {
+          "currency": "USD",
+          "date": "2026-07-02",
+          "event": "失業率",
+          "impact": "★★★",
+          "time": "21:30"
+        },
+        {
+          "currency": "USD",
+          "date": "2026-07-02",
+          "event": "平均時給（前月比）",
+          "impact": "★★★",
+          "time": "21:30"
+        },
+        {
+          "currency": "USD",
+          "date": "2026-07-02",
+          "event": "非農業部門雇用者数変化",
+          "impact": "★★★",
+          "time": "21:30"
         }
       ]
     },
@@ -118,7 +139,7 @@
   "probabilities": {
     "contraction": 0.02018798202221658,
     "expansion": 0.6568708855634098,
-    "financial_stress": 0.23046277057138853,
+    "financial_stress": 0.21703998993430185,
     "inflation_reacceleration": 0.8988551038774872,
     "recovery": 0.17495960104105565,
     "slowdown": 0.147981531373318
@@ -139,6 +160,27 @@
       "event": "ISM製造業景況感指数",
       "impact": "★★★",
       "time": "23:00"
+    },
+    {
+      "currency": "USD",
+      "date": "2026-07-02",
+      "event": "失業率",
+      "impact": "★★★",
+      "time": "21:30"
+    },
+    {
+      "currency": "USD",
+      "date": "2026-07-02",
+      "event": "平均時給（前月比）",
+      "impact": "★★★",
+      "time": "21:30"
+    },
+    {
+      "currency": "USD",
+      "date": "2026-07-02",
+      "event": "非農業部門雇用者数変化",
+      "impact": "★★★",
+      "time": "21:30"
     }
   ]
 }

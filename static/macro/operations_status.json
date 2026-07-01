@@ -2,22 +2,22 @@
   "latest_update_status": {
     "failed": [],
     "failed_count": 0,
-    "finished_at": "2026-06-30T08:45:07.241946+00:00",
+    "finished_at": "2026-07-01T09:03:57.999125+00:00",
     "message": "日次更新を実行しました。",
-    "recorded_at": "2026-06-30T08:45:07.985118+00:00",
+    "recorded_at": "2026-07-01T09:03:58.758205+00:00",
     "source": "refresh_macro_data",
-    "started_at": "2026-06-30T08:42:32.800460+00:00",
+    "started_at": "2026-07-01T09:00:19.737326+00:00",
     "status": "success",
-    "status_cache_computed_at": "2026-06-30T08:45:07.985963+00:00",
+    "status_cache_computed_at": "2026-07-01T09:03:58.759008+00:00",
     "success_count": 66
   },
   "operations_status": [
     {
       "cadence": "daily",
       "error": "",
-      "finished_at": "2026-06-30T08:45:08.702968+00:00",
+      "finished_at": "2026-07-01T09:03:59.437318+00:00",
       "name": "compute_world_state",
-      "started_at": "2026-06-30T08:45:08.587460+00:00",
+      "started_at": "2026-07-01T09:03:59.325966+00:00",
       "status": "success",
       "steps": [
         {
@@ -26,17 +26,17 @@
         }
       ],
       "summary": {
-        "as_of_date": "2026-06-30",
-        "data_quality": 97.33,
+        "as_of_date": "2026-07-01",
+        "data_quality": 97.0,
         "message": "World State を更新しました。"
       }
     },
     {
       "cadence": "daily",
       "error": "",
-      "finished_at": "2026-06-30T08:45:07.987288+00:00",
+      "finished_at": "2026-07-01T09:03:58.760264+00:00",
       "name": "refresh_macro_data",
-      "started_at": "2026-06-30T08:42:32.796388+00:00",
+      "started_at": "2026-07-01T09:00:19.733240+00:00",
       "status": "success",
       "steps": [
         {
