@@ -40,7 +40,9 @@
           <div class="common-decision-card__copy">
             <p class="common-kicker">日経先物 1日〜5日 現在判断</p>
             <p class="common-kicker"><strong>現在判断：{{ integrated_decision.posture }}</strong></p>
-            <p class="common-kicker"><strong>判断状態：{{ integrated_decision.judgment_state }}</strong></p>
+            {% if integrated_decision.judgment_state == '検証中' or integrated_decision.judgment_state == '限定' or integrated_decision.judgment_state == '判定停止' %}
+              <p class="common-kicker"><strong>判断状態：{{ integrated_decision.judgment_state }}</strong></p>
+            {% endif %}
             <div class="common-status-badge{% if beginner_decision.status == 'buy_candidate' %} common-status-badge--long{% elif beginner_decision.status == 'sell_candidate' %} common-status-badge--short{% else %} common-status-badge--wait{% endif %}">
               <span class="common-status-icon" aria-hidden="true">{% if beginner_decision.status == 'buy_candidate' %}↑{% elif beginner_decision.status == 'sell_candidate' %}↓{% else %}Ⅱ{% endif %}</span>
               <span>{% if beginner_decision.status == 'buy_candidate' %}LONG{% elif beginner_decision.status == 'sell_candidate' %}SHORT{% else %}WAIT{% endif %}</span>
@@ -56,15 +58,24 @@
         <div class="common-choice-grid" aria-label="実行可否">
           <div class="common-choice-card{% if beginner_decision.status != 'buy_candidate' and beginner_decision.status != 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
-            <strong>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %} {{ trade_decision.no_trade_score|default:"0" }}点</strong>
+            <strong>
+              <span>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %}</span>
+              <span class="common-choice-card__score">{{ trade_decision.no_trade_score|default:"0" }}点</span>
+            </strong>
           </div>
           <div class="common-choice-card{% if beginner_decision.status == 'buy_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--long" aria-hidden="true">↑</span>
-            <strong>ロング {{ trade_decision.long_score|default:"0" }}点</strong>
+            <strong>
+              <span>ロング</span>
+              <span class="common-choice-card__score">{{ trade_decision.long_score|default:"0" }}点</span>
+            </strong>
           </div>
           <div class="common-choice-card{% if beginner_decision.status == 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--short" aria-hidden="true">↓</span>
-            <strong>ショート {{ trade_decision.short_score|default:"0" }}点</strong>
+            <strong>
+              <span>ショート</span>
+              <span class="common-choice-card__score">{{ trade_decision.short_score|default:"0" }}点</span>
+            </strong>
           </div>
         </div>
 
