@@ -16,16 +16,33 @@ class Command(BaseCommand):
         parser.add_argument('--latest', default='explanation/data/latest_snapshot.json')
         parser.add_argument('--history', default='explanation/data/snapshot_history.json')
         parser.add_argument('--outcomes', default='explanation/data/trade_outcomes.json')
+        parser.add_argument('--manifest', default='static/finance_data_manifest.json')
 
     def handle(self, *args, **options):
         latest = _read_json(options['latest'])
         history = _read_json(options['history'])
         outcomes = _read_json(options['outcomes'])
+        manifest = _read_json(options['manifest'])
 
         if history.get('schema') != 'explanation_snapshot_history_v1':
             raise CommandError('snapshot_history.json schema must be explanation_snapshot_history_v1')
         if outcomes.get('schema') != 'explanation_trade_outcomes_v1':
             raise CommandError('trade_outcomes.json schema must be explanation_trade_outcomes_v1')
+        if manifest.get('schema') != 'finance_data_manifest_v1':
+            raise CommandError('finance_data_manifest.json schema must be finance_data_manifest_v1')
+        if not latest.get('snapshot_key'):
+            raise CommandError('latest_snapshot.json must include snapshot_key')
+        if not isinstance(outcomes.get('summary'), dict):
+            raise CommandError('trade_outcomes.json must include summary')
+        if manifest.get('explanation_as_of') != latest.get('as_of'):
+            raise CommandError('finance_data_manifest.json explanation_as_of must match latest_snapshot.json')
+        if manifest.get('explanation_generated_at') != latest.get('generated_at'):
+            raise CommandError('finance_data_manifest.json explanation_generated_at must match latest_snapshot.json')
+        for key in ('git_sha', 'workflow_run_id'):
+            if key not in manifest:
+                raise CommandError(f'finance_data_manifest.json must include {key}')
+            if manifest.get(key) != (latest.get(key) or ''):
+                raise CommandError(f'finance_data_manifest.json {key} must match latest_snapshot.json')
 
         decision = latest.get('trade_decision') or {}
         if decision.get('decision_type') == 'no_trade_direction_stopped':
@@ -54,15 +71,31 @@ class Command(BaseCommand):
 
         seen = set()
         for row in outcomes.get('outcomes') or []:
-            key = '|'.join(str(row.get(item) or '') for item in ('explanation_as_of', 'horizon', 'selected_side', 'decision_type'))
+            if not row.get('snapshot_key'):
+                raise CommandError('trade outcome must include snapshot_key')
+            key = '|'.join(str(row.get(item) or '') for item in ('snapshot_key', 'horizon'))
             if key in seen:
                 raise CommandError(f'duplicate trade outcome key: {key}')
             seen.add(key)
+            if (row.get('selected_side') or '') == 'no_trade':
+                for item in ('direction_hit', 'target_1_hit', 'target_2_hit', 'stop_hit', 'realized_rr', 'expected_rr'):
+                    if row.get(item) is not None:
+                        raise CommandError(f'no_trade outcome must not include {item}')
 
         summary = build_static_trade_validation_summary(options['outcomes'])
         for row in summary.get('side_rows') or []:
             if row.get('label') == 'no_trade' and row.get('direction_hit_rate') != 'N/A':
                 raise CommandError('no_trade must not be included in direction hit denominator')
+
+        view = snapshot_to_view(snapshot_from_payload(latest))
+        if decision.get('selected_side') == 'no_trade' or (decision.get('decision_type') or '').startswith('no_'):
+            for row in view.get('world_model_predictions') or []:
+                if row.get('bias') != '停止' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
+                    raise CommandError('world model predictions must be stopped when trade decision is no_trade')
+
+        rendered = json.dumps(latest, ensure_ascii=False)
+        if '。のため' in rendered or 'ます。のため' in rendered:
+            raise CommandError('latest_snapshot.json contains unnatural reason text')
 
         self.stdout.write(self.style.SUCCESS('Explanation integrity OK'))
 

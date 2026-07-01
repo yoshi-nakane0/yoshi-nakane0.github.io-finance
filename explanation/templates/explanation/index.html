@@ -18,12 +18,6 @@
         {% endfor %}
       {% endif %}
 
-      {% if is_preview %}
-        {% if not manual_price.active %}
-          <p class="common-notice">保存済み判断がないため、保存済みデータから一時表示しています。</p>
-        {% endif %}
-      {% endif %}
-
       {% if refresh_status.needs_refresh %}
         <section class="common-section">
           <p class="common-notice">{{ refresh_status.message }}</p>
@@ -190,28 +184,17 @@
         </section>
       {% endif %}
 
-      {% if beginner_decision.reference_candidate.available %}
+      {% if beginner_decision.watch_levels.available %}
         <section class="common-section">
-          <h2 class="common-section-title">監視用</h2>
-          <p class="common-kicker">{{ beginner_decision.reference_candidate.note }}</p>
-          <h3 class="common-subtitle">{{ beginner_decision.reference_candidate.label }}</h3>
+          <h2 class="common-section-title">監視水準</h2>
+          <p class="common-muted">{{ beginner_decision.watch_levels.note }}</p>
           <div class="common-list common-list--compact">
+            {% for row in beginner_decision.watch_levels.rows %}
             <div class="common-row">
-              <span>エントリー目安</span>
-              <strong>{{ beginner_decision.reference_candidate.entry_display }}</strong>
+              <span>{{ row.label }}</span>
+              <strong>{{ row.value }}</strong>
             </div>
-            <div class="common-row">
-              <span>第1目標</span>
-              <strong>{{ beginner_decision.reference_candidate.target_1_display }}</strong>
-            </div>
-            <div class="common-row">
-              <span>損切り</span>
-              <strong>{{ beginner_decision.reference_candidate.stop_display }}</strong>
-            </div>
-            <div class="common-row">
-              <span>R/R</span>
-              <strong>{{ beginner_decision.reference_candidate.reward_risk_display }}</strong>
-            </div>
+            {% endfor %}
           </div>
         </section>
       {% endif %}
@@ -318,6 +301,30 @@
               <span>待機観測</span>
               <strong>{{ trade_validation_summary.wait_count }}件</strong>
             </div>
+            <div class="common-row">
+              <span>機会損失候補</span>
+              <strong>{{ trade_validation_summary.missed_opportunity_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>リスク回避候補</span>
+              <strong>{{ trade_validation_summary.risk_avoided_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>保留中</span>
+              <strong>{{ trade_validation_summary.pending_count }}件</strong>
+            </div>
+            {% if readiness_score.remaining_results_to_90 %}
+              <div class="common-row">
+                <span>90点条件まで</span>
+                <strong>あと{{ readiness_score.remaining_results_to_90 }}件</strong>
+              </div>
+            {% endif %}
+            {% if trade_validation_summary.last_evaluated_at %}
+              <div class="common-row">
+                <span>最終評価</span>
+                <strong>{{ trade_validation_summary.last_evaluated_at }}</strong>
+              </div>
+            {% endif %}
           </div>
         {% else %}
           <div class="common-empty-state__icon" aria-hidden="true">▥</div>

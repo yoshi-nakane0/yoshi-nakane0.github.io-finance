@@ -79,7 +79,7 @@ def snapshot_to_view(snapshot):
             'invalidation': (scenario.get('levels') or {}).get('invalidation_display'),
         },
         'scenario': scenario,
-        'reasons': list(snapshot.evidence or [])[:3],
+        'reasons': _normalized_list(snapshot.evidence or [])[:3],
         'audit_links': [
             {'label': 'Macro', 'url': '/macro/'},
             {'label': 'Basecalc', 'url': '/basecalc/'},
@@ -174,12 +174,12 @@ def _alignment_action(alignment_status, macro_label, basecalc_label):
     if macro_label == '中立' and basecalc_label in {'中立', 'レンジ'}:
         return 'MacroもBasecalcも方向を出していないため、順張り候補ではなく待機を基本にする。'
     if macro_label == '中立' or basecalc_label in {'中立', 'レンジ'}:
-        return '片方のみ方向あり。売買はbasecalcのゲートとR/Rを優先して条件待ち。'
+        return '片方のみ方向あり。方向がはっきりするまで条件待ち。'
     if alignment_status == 'aligned':
         return 'MacroとBasecalcの方向が一致。ゲート通過時のみ順張り候補。'
     if alignment_status == 'timeframe_divergence':
         return '短期と中期を分けて扱い、追撃を避ける。'
-    return '片方のみ方向あり。売買はbasecalcのゲートとR/Rを優先して条件待ち。'
+    return '片方のみ方向あり。方向がはっきりするまで条件待ち。'
 
 
 def _adoption_summary(decision_card, long_judgment, short_judgment, trade_decision, snapshot):
@@ -297,6 +297,7 @@ def _manual_price_from_basecalc(basecalc):
 def _decision_inputs(snapshot, macro, basecalc, world_model, manual_price):
     macro_raw = macro.get('raw') or {}
     basecalc_raw = basecalc.get('raw') or {}
+    static_metadata = getattr(snapshot, 'static_metadata', {}) or {}
     return {
         'rows': [
             {
@@ -339,8 +340,20 @@ def _decision_inputs(snapshot, macro, basecalc, world_model, manual_price):
                 'label': '米国3指数',
                 'value': _us_index_availability(basecalc_raw, world_model),
             },
+            {
+                'label': 'Snapshot Key',
+                'value': static_metadata.get('snapshot_key') or 'N/A',
+            },
+            {
+                'label': 'Git SHA',
+                'value': _short_sha(static_metadata.get('git_sha')),
+            },
+            {
+                'label': 'Workflow Run ID',
+                'value': static_metadata.get('workflow_run_id') or 'N/A',
+            },
         ],
-        'materials': list(snapshot.evidence or [])[:6],
+        'materials': _normalized_list(snapshot.evidence or [])[:6],
     }
 
 
@@ -389,6 +402,11 @@ def _format_datetime(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=JST)
     return parsed.astimezone(JST).strftime('%Y-%m-%d %H:%M JST')
+
+
+def _short_sha(value):
+    value = str(value or '').strip()
+    return value[:12] if value else 'N/A'
 
 
 def _confidence_display(snapshot, manual_price):
@@ -462,10 +480,12 @@ def _world_model_predictions(world_model, manual_price=None, trade_decision=None
     horizons = world_model.get('horizons') or {}
     output_contract = world_model.get('output_contract') or {}
     allowed = output_contract.get('allowed_horizons') or {}
+    trade_decision = trade_decision or {}
+    gate_blocked = _direction_gate_blocked(world_model, trade_decision)
     base_price = _prediction_base_price(world_model, manual_price or {}, trade_decision or {})
     rows = []
     for horizon in ('1d', '3d', '5d'):
-        stopped = _world_model_horizon_stopped(world_model, output_contract, allowed, horizon)
+        stopped = gate_blocked or _world_model_horizon_stopped(world_model, output_contract, allowed, horizon)
         expected_return = _expected_return_pct(world_model, horizons, horizon)
         rows.append({
             'horizon': horizon,
@@ -473,9 +493,27 @@ def _world_model_predictions(world_model, manual_price=None, trade_decision=None
             'expected_return': 'N/A' if stopped else _format_percent(expected_return),
             'expected_price': 'N/A' if stopped else _expected_price_display(base_price, expected_return),
             'base_price': _price_with_suffix(base_price),
-            'setup': '方向判断停止' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
+            'setup': '方向予測停止（売買判定には未使用）' if stopped else (horizons.get(horizon) or {}).get('setup_label') or 'N/A',
         })
     return rows
+
+
+def _direction_gate_blocked(world_model, trade_decision):
+    output_contract = world_model.get('output_contract') or {}
+    decision_type = trade_decision.get('decision_type') or ''
+    if output_contract.get('contract_status') == 'error' or world_model.get('contract_status') == 'error':
+        return True
+    if output_contract.get('directional_allowed') is False:
+        return True
+    if trade_decision.get('selected_side') == 'no_trade' and decision_type.startswith('no_'):
+        return True
+    if trade_decision.get('blocked_reasons'):
+        return True
+    if world_model.get('can_show_prediction') is False:
+        return True
+    if world_model.get('allowed_direction') in {'stopped', 'none'}:
+        return True
+    return False
 
 
 def _world_model_horizon_stopped(world_model, output_contract, allowed, horizon):
@@ -560,7 +598,7 @@ def _trade_decision(snapshot, world_model):
         'reversal_score': 0,
         'counter_scenario': world_model.get('counter_bias') or {},
         'reversal_watch': {},
-        'reasons': list(snapshot.evidence or [])[:3],
+        'reasons': _normalized_list(snapshot.evidence or [])[:3],
         'warnings': [],
         'blocked_reasons': [],
         'model_version': snapshot.version,
@@ -771,6 +809,19 @@ def _format_probability(target):
     if 0 <= number <= 1:
         return f'{number * 100:.0f}%'
     return f'{number:.0f}%'
+
+
+def _normalized_list(items):
+    return [_normalize_reason_text(item) for item in items if item]
+
+
+def _normalize_reason_text(text):
+    text = str(text or '').strip()
+    text = text.replace('重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    text = text.replace('ます。のため', 'ます。そのため')
+    text = text.replace('。のため', '。そのため')
+    text = text.replace('ため一段階下げます。そのため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    return text
 
 
 def _bias_label(value):

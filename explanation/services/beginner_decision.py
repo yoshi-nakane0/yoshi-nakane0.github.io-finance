@@ -42,6 +42,7 @@ class BeginnerDecision:
     wait_reasons: List[str] = field(default_factory=list)
     wait_reason_summary: str = ''
     reference_candidate: Dict[str, Any] = field(default_factory=dict)
+    watch_levels: Dict[str, Any] = field(default_factory=dict)
     reasons: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     next_triggers: Dict[str, List[str]] = field(default_factory=dict)
@@ -172,6 +173,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         confidence_score=confidence_score,
         wait_reasons=wait_reasons,
     )
+    watch_levels = _watch_levels(basecalc, world_model, snapshot, status, tradable)
 
     return BeginnerDecision(
         status=status,
@@ -193,6 +195,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         wait_reasons=wait_reasons,
         wait_reason_summary=_wait_reason_summary(status, wait_reasons),
         reference_candidate=reference_candidate,
+        watch_levels=watch_levels,
         reasons=reasons,
         warnings=warnings or ['条件がそろうまで待機。'],
         next_triggers=_next_triggers(basecalc, world_model, reward_risk, directional_allowed),
@@ -351,6 +354,10 @@ def _reference_candidate(
 ):
     side = _reference_side(current_price, target_1_price, stop_price)
     decision_type = decision.get('decision_type') or ''
+    if status in {'wait', 'no_trade', 'data_blocked'}:
+        return {'available': False}
+    if not tradable:
+        return {'available': False}
     if '方向予測停止' in wait_reasons:
         return {'available': False}
     if decision_type in {'no_trade_direction_stopped', 'no_trade_data_blocked'}:
@@ -369,6 +376,30 @@ def _reference_candidate(
         'stop_display': _price_display(stop_price),
         'reward_risk_display': 'N/A' if reward_risk is None else f'{float(reward_risk):.2f}',
         'confidence_display': f'{confidence_grade} / {confidence_score}%（参考）',
+    }
+
+
+def _watch_levels(basecalc, world_model, snapshot, status, tradable):
+    if tradable or status not in {'wait', 'no_trade', 'data_blocked'}:
+        return {'available': False}
+    lines = world_model.get('practical_lines') or {}
+    scenario = snapshot.scenario or {}
+    levels = scenario.get('levels') or {}
+    resistance = basecalc.get('resistance') or levels.get('resistance') or lines.get('upside_resistance')
+    support = basecalc.get('support') or levels.get('support') or lines.get('downside_support')
+    rows = []
+    if resistance is not None:
+        rows.append({'label': '上値抵抗', 'value': _price_display(resistance)})
+    if support is not None:
+        rows.append({'label': '下値支持', 'value': _price_display(support)})
+    if scenario.get('change_condition'):
+        rows.append({'label': '判断変更条件', 'value': scenario.get('change_condition')})
+    rows.append({'label': '米国3指数確認', 'value': '改善または失速の確認待ち'})
+    rows.append({'label': 'データ品質回復条件', 'value': '方向予測ゲートと鮮度の回復'})
+    return {
+        'available': bool(rows),
+        'note': 'この水準は売買候補ではありません。条件変化を確認するための目安です。',
+        'rows': _limited_rows(rows, 5),
     }
 
 
@@ -393,8 +424,8 @@ def _next_triggers(basecalc, world_model, reward_risk, directional_allowed):
         long_items[0] = f'上値抵抗 {_price_display(resistance)} を終値で突破'
     if support is not None:
         short_items[0] = f'下値支持 {_price_display(support)} を終値で割り込み'
-    long_items.extend(['米国3指数が改善', 'R/R 1.2以上'])
-    short_items.extend(['米国3指数が失速', 'R/R 1.2以上'])
+    long_items.append('米国3指数が改善')
+    short_items.append('米国3指数が失速')
     if directional_allowed is False:
         wait_items.append('方向予測停止')
     if reward_risk is not None and reward_risk < 1.2:
@@ -511,7 +542,20 @@ def _format_price(value):
 
 
 def _limited(items, limit=3):
-    return [str(item) for item in items if item][:limit]
+    return [_normalize_reason_text(item) for item in items if item][:limit]
+
+
+def _limited_rows(rows, limit=5):
+    return rows[:limit]
+
+
+def _normalize_reason_text(text):
+    text = str(text or '').strip()
+    text = text.replace('重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    text = text.replace('ます。のため', 'ます。そのため')
+    text = text.replace('。のため', '。そのため')
+    text = text.replace('ため一段階下げます。そのため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    return text
 
 
 def _dedupe(items):

@@ -1,4 +1,6 @@
 import json
+import os
+from hashlib import sha256
 from datetime import date, datetime
 from pathlib import Path
 
@@ -25,9 +27,13 @@ def _path(path, default):
 
 
 def explanation_snapshot_payload(snapshot):
+    snapshot_key = snapshot_key_for_snapshot(snapshot)
     return {
+        'snapshot_key': snapshot_key,
         'schema': 'explanation_snapshot_v1',
         'generated_at': timezone.now().isoformat(),
+        'git_sha': os.environ.get('GITHUB_SHA') or '',
+        'workflow_run_id': os.environ.get('GITHUB_RUN_ID') or '',
         'as_of': snapshot.as_of.isoformat(),
         'version': snapshot.version,
         'final': {
@@ -94,13 +100,15 @@ def load_static_snapshot_history(path=None):
 def append_static_explanation_history(snapshot, path=None, max_rows=500):
     payload_path = _path(path, DEFAULT_EXPLANATION_SNAPSHOT_HISTORY_PATH)
     payload_path.parent.mkdir(parents=True, exist_ok=True)
-    rows = load_static_snapshot_history(payload_path)
+    rows = [
+        _normalize_snapshot_history_payload(row)
+        for row in load_static_snapshot_history(payload_path)
+        if isinstance(row, dict)
+    ]
     snapshot_payload = json.loads(json.dumps(explanation_snapshot_payload(snapshot), default=_json_default))
     key = _snapshot_history_key(snapshot_payload)
-    logical_key = _snapshot_history_logical_key(snapshot_payload)
     existing_keys = {_snapshot_history_key(row) for row in rows if isinstance(row, dict)}
-    existing_logical_keys = {_snapshot_history_logical_key(row) for row in rows if isinstance(row, dict)}
-    added = key not in existing_keys and logical_key not in existing_logical_keys
+    added = key not in existing_keys
     if added:
         rows.append(snapshot_payload)
     rows = rows[-max_rows:]
@@ -122,7 +130,7 @@ def snapshot_from_payload(payload):
     macro = payload.get('macro') or {}
     basecalc = payload.get('basecalc') or {}
     audit = payload.get('audit') or {}
-    return ExplanationSnapshot(
+    snapshot = ExplanationSnapshot(
         as_of=_parse_datetime(payload.get('as_of')) or timezone.now(),
         final_label=final.get('label') or '',
         final_stance=final.get('stance') or '',
@@ -142,6 +150,13 @@ def snapshot_from_payload(payload):
         score_breakdown=payload.get('score_breakdown') or {},
         version=payload.get('version') or 'explanation_v2',
     )
+    snapshot.static_metadata = {
+        'snapshot_key': payload.get('snapshot_key') or '',
+        'git_sha': payload.get('git_sha') or '',
+        'workflow_run_id': payload.get('workflow_run_id') or '',
+        'generated_at': payload.get('generated_at') or '',
+    }
+    return snapshot
 
 
 def import_static_explanation_snapshot(path=None):
@@ -186,18 +201,21 @@ def trade_outcomes_payload(outcomes=None, static_rows=None):
     merged = {}
     for row in static_rows or []:
         if isinstance(row, dict):
-            merged[_trade_outcome_key(row)] = row
+            payload = _sanitize_trade_outcome_payload(row)
+            merged[_trade_outcome_key(payload)] = payload
     for row in rows:
-        payload = _trade_outcome_payload(row)
+        payload = _sanitize_trade_outcome_payload(_trade_outcome_payload(row))
         merged[_trade_outcome_key(payload)] = payload
+    outcome_rows = sorted(
+        merged.values(),
+        key=lambda row: (row.get('evaluated_at') or '', row.get('explanation_as_of') or '', row.get('horizon') or ''),
+        reverse=True,
+    )
     return {
         'schema': 'explanation_trade_outcomes_v1',
         'generated_at': timezone.now().isoformat(),
-        'outcomes': sorted(
-            merged.values(),
-            key=lambda row: (row.get('evaluated_at') or '', row.get('explanation_as_of') or '', row.get('horizon') or ''),
-            reverse=True,
-        ),
+        'summary': _trade_outcomes_summary(outcome_rows),
+        'outcomes': outcome_rows,
     }
 
 
@@ -277,6 +295,7 @@ def _trade_outcome_payload(outcome):
     if isinstance(outcome, dict):
         return dict(outcome)
     return {
+        'snapshot_key': snapshot_key_for_snapshot(outcome.explanation),
         'explanation_as_of': outcome.explanation.as_of.isoformat(),
         'horizon': outcome.horizon,
         'evaluated_at': outcome.evaluated_at.isoformat(),
@@ -386,6 +405,60 @@ def _snapshot_history_logical_key(payload):
     )
 
 
+def snapshot_key_for_snapshot(snapshot):
+    decision = snapshot.trade_decision or {}
+    source = snapshot.source_snapshots or {}
+    basecalc = source.get('basecalc') or {}
+    return snapshot_key_for_payload({
+        'as_of': snapshot.as_of.isoformat() if snapshot.as_of else '',
+        'version': snapshot.version,
+        'final': {'stance': snapshot.final_stance},
+        'macro': {'bias': snapshot.macro_bias},
+        'basecalc': {'bias': snapshot.basecalc_bias},
+        'trade_decision': decision,
+        'source_snapshots': source,
+        'basecalc_updated_at': basecalc.get('as_of') or '',
+    })
+
+
+def snapshot_key_for_payload(payload):
+    decision = payload.get('trade_decision') or {}
+    source = payload.get('source_snapshots') or {}
+    basecalc = source.get('basecalc') or {}
+    raw = basecalc.get('raw') or {}
+    world_model = raw.get('world_model') or (raw.get('data') or {}).get('world_model') or {}
+    basecalc_updated_at = (
+        payload.get('basecalc_updated_at')
+        or basecalc.get('as_of')
+        or raw.get('generated_at')
+        or world_model.get('as_of')
+        or world_model.get('generated_at')
+        or ''
+    )
+    parts = [
+        payload.get('as_of') or '',
+        payload.get('version') or '',
+        str(decision.get('current_price') or ''),
+        (payload.get('macro') or {}).get('bias') or '',
+        (payload.get('basecalc') or {}).get('bias') or '',
+        (payload.get('final') or {}).get('stance') or '',
+        decision.get('selected_side') or '',
+        decision.get('decision_type') or '',
+        str(basecalc_updated_at or ''),
+    ]
+    return sha256('|'.join(parts).encode('utf-8')).hexdigest()
+
+
+def _normalize_snapshot_history_payload(row):
+    payload = dict(row)
+    payload['snapshot_key'] = payload.get('snapshot_key') or snapshot_key_for_payload(payload)
+    payload['evidence'] = [_normalize_reason_text(item) for item in payload.get('evidence') or []]
+    audit = dict(payload.get('audit') or {})
+    audit['items'] = [_normalize_reason_text(item) for item in audit.get('items') or []]
+    payload['audit'] = audit
+    return payload
+
+
 def _logical_source_fingerprint(value):
     volatile_keys = {'generated_at', 'snapshot_id', 'fetched_at', 'source_timestamp'}
     if isinstance(value, dict):
@@ -404,6 +477,70 @@ def _stable_json(value):
         return json.dumps(value or {}, ensure_ascii=False, sort_keys=True, default=_json_default)
     except (TypeError, ValueError):
         return str(value or '')
+
+
+def _normalize_reason_text(text):
+    text = str(text or '').strip()
+    text = text.replace('重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    text = text.replace('ます。のため', 'ます。そのため')
+    text = text.replace('。のため', '。そのため')
+    text = text.replace('ため一段階下げます。そのため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    return text
+
+
+def _sanitize_trade_outcome_payload(row):
+    payload = dict(row)
+    payload['snapshot_key'] = payload.get('snapshot_key') or _legacy_snapshot_key(payload)
+    selected_side = payload.get('selected_side') or 'no_trade'
+    if selected_side not in {'long', 'short'}:
+        payload['selected_side'] = 'no_trade'
+        payload['direction_hit'] = None
+        payload['target_1_hit'] = None
+        payload['target_2_hit'] = None
+        payload['stop_hit'] = None
+        payload['target_1_price'] = None
+        payload['target_2_price'] = None
+        payload['stop_price'] = None
+        payload['realized_rr'] = None
+        payload['expected_rr'] = None
+        payload['is_actionable'] = False
+        payload['outcome_kind'] = payload.get('outcome_kind') or 'wait_valid'
+        payload['missed_opportunity'] = bool(payload.get('missed_opportunity'))
+    else:
+        payload['is_actionable'] = True
+        payload['outcome_kind'] = payload.get('outcome_kind') or 'actionable_observed'
+    return payload
+
+
+def _trade_outcomes_summary(rows):
+    actionable = [row for row in rows if row.get('is_actionable')]
+    wait_rows = [row for row in rows if not row.get('is_actionable')]
+    pending = [row for row in rows if row.get('outcome_kind') == 'pending']
+    missed = [row for row in wait_rows if row.get('missed_opportunity')]
+    risk_avoided = [row for row in wait_rows if row.get('outcome_kind') == 'risk_avoided']
+    wait_valid = [
+        row for row in wait_rows
+        if row.get('outcome_kind') in {'wait_valid', 'noise_avoided', 'wait_observed'}
+    ]
+    evaluated_at = [row.get('evaluated_at') for row in rows if row.get('evaluated_at')]
+    return {
+        'total_count': len(rows),
+        'actionable_count': len(actionable),
+        'wait_count': len(wait_rows),
+        'missed_opportunity_count': len(missed),
+        'pending_count': len(pending),
+        'risk_avoided_count': len(risk_avoided),
+        'wait_valid_count': len(wait_valid),
+        'last_evaluated_at': max(evaluated_at) if evaluated_at else None,
+    }
+
+
+def _legacy_snapshot_key(row):
+    value = '|'.join(
+        str(row.get(item) or '')
+        for item in ('explanation_as_of', 'selected_side', 'decision_type', 'entry_price')
+    )
+    return sha256(value.encode('utf-8')).hexdigest()
 
 
 def _number(value):
@@ -432,6 +569,8 @@ def _outcome_kind(row):
 
 
 def _trade_outcome_key(row):
+    if row.get('snapshot_key'):
+        return '|'.join(str(row.get(item) or '') for item in ('snapshot_key', 'horizon'))
     return '|'.join(
         str(row.get(item) or '')
         for item in ('explanation_as_of', 'horizon', 'selected_side', 'decision_type')

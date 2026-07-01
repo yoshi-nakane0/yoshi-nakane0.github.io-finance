@@ -1,6 +1,6 @@
 {
   "alignment_status": "partial",
-  "as_of": "2026-07-01T13:23:32.598288+00:00",
+  "as_of": "2026-07-01T14:04:10.288981+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -16,7 +16,7 @@
   "evidence": [
     "basecalcは日経先物を上昇優勢と判断し、1d/3d/5dも上方向。",
     "macroは景気判断が中立だが、物価再加速リスクと金利上昇リスクが残る。",
-    "米国3指数確認が不足、予測ゲート停止中、重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。"
+    "米国3指数確認が不足、予測ゲート停止中、重要指標の発表前後のため、強い判断にはしない。"
   ],
   "final": {
     "action_posture": "押し目待ち。高値追いは避ける。",
@@ -26,7 +26,8 @@
     "stance": "conditional_bullish",
     "status": "limited"
   },
-  "generated_at": "2026-07-01T13:23:32.605190+00:00",
+  "generated_at": "2026-07-01T14:04:10.295652+00:00",
+  "git_sha": "",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -63,6 +64,7 @@
     "confidence_cap": "B-",
     "macro_confidence": 91
   },
+  "snapshot_key": "a16b84db6b8be47e4a7f6b3731d556972daa8a63479224d7351e352bf563adbf",
   "source_snapshots": {
     "basecalc": {
       "allowed_direction": "up",
@@ -6467,7 +6469,7 @@
             "directional_allowed": true,
             "display_price": 70860.0,
             "explanation_allowed": true,
-            "generated_at": "2026-07-01T13:23:32.597765+00:00",
+            "generated_at": "2026-07-01T14:04:10.288495+00:00",
             "invalidated_targets": {
               "downside": [
                 {
@@ -6729,7 +6731,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 70860.0,
             "readiness_level": "ready",
-            "snapshot_id": "02e50a05-6394-4f43-b65c-87fc5222a791",
+            "snapshot_id": "670540a9-709b-4267-8f8a-c3c526695db3",
             "source_timestamp": "2026-07-01 19:01 JST",
             "stop_reasons": [
               "現行モデルがATRベースラインを下回るため",
@@ -8421,5 +8423,6 @@
     "trend_follow_score": 86,
     "warnings": []
   },
-  "version": "explanation_v2"
+  "version": "explanation_v2",
+  "workflow_run_id": ""
 }

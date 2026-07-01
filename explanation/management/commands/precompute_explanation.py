@@ -1,4 +1,5 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db import DatabaseError
 
 from explanation.services.factory import build_explanation_snapshot
 from explanation.services.static_snapshot import append_static_explanation_history, write_static_explanation_snapshot
@@ -31,14 +32,23 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        snapshot = build_explanation_snapshot(save=True)
+        export_warning = ''
+        try:
+            snapshot = build_explanation_snapshot(save=True)
+        except DatabaseError:
+            snapshot = build_explanation_snapshot(save=False)
+            export_warning = ' db_save_failed_json_only'
+        except Exception as exc:
+            raise CommandError(f'Explanation precompute failed: {exc}') from exc
         if not options['no_export_json']:
             write_static_explanation_snapshot(snapshot, options['output'])
-            append_static_explanation_history(
+            history_result = append_static_explanation_history(
                 snapshot,
                 options['history_output'],
                 max_rows=options['max_history_rows'],
             )
+        else:
+            history_result = {'added': False, 'count': 0}
         decision = snapshot.trade_decision or {}
         self.stdout.write(
             self.style.SUCCESS(
@@ -46,6 +56,8 @@ class Command(BaseCommand):
                 f'{snapshot.final_label} {snapshot.confidence_grade}/{snapshot.confidence_score} '
                 f"side={decision.get('selected_side') or 'N/A'} "
                 f"type={decision.get('decision_type') or 'N/A'} "
-                f"confidence={decision.get('confidence_score', snapshot.confidence_score)}"
+                f"confidence={decision.get('confidence_score', snapshot.confidence_score)} "
+                f"history_added={history_result.get('added')} history_count={history_result.get('count')}"
+                f"{export_warning}"
             )
         )

@@ -1,5 +1,6 @@
 def build_readiness_score(snapshot, validation_summary):
     validation_summary = validation_summary or {}
+    total_count = validation_summary.get('total_count') or 0
     score = 0
     score += 25 if snapshot.audit_level != 'blocked' else 0
     score += _gate_sync_score(snapshot)
@@ -7,10 +8,12 @@ def build_readiness_score(snapshot, validation_summary):
     score += 15 if snapshot.as_of else 0
     score += 10
     score += 10 if validation_summary.get('available') else 5
-    score = min(score, _validation_cap(validation_summary.get('total_count') or 0))
+    score = min(score, _validation_cap(total_count))
     return {
         'score': score,
         'label': _label(score),
+        'minimum_required_results': 50,
+        'remaining_results_to_90': max(0, 50 - total_count),
         'note': '検証件数と表示整合性から見たページ状態です。売買結果を保証するものではありません。',
     }
 

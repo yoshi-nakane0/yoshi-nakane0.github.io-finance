@@ -11,6 +11,7 @@ REQUIRED_DISPLAY_FILES = (
     'basecalc/data/basecalc_status.json',
     'basecalc/data/basecalc_history.json',
     'explanation/data/latest_snapshot.json',
+    'explanation/data/snapshot_history.json',
     'explanation/data/trade_outcomes.json',
     'static/finance_data_manifest.json',
 )

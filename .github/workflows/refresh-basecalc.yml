@@ -43,7 +43,13 @@ jobs:
         run: |
           python manage.py precompute_explanation \
             --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json
+            --history-output explanation/data/snapshot_history.json \
+            --max-history-rows 500
+      - name: Check explanation files exist
+        run: |
+          test -f explanation/data/latest_snapshot.json
+          test -f explanation/data/snapshot_history.json
+          test -f explanation/data/trade_outcomes.json
       - name: Evaluate explanation outcomes
         run: |
           python manage.py evaluate_explanation_outcomes \

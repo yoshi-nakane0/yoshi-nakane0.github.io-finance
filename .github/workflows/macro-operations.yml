@@ -76,7 +76,11 @@ jobs:
           python manage.py finalize_finance_display_data
           python manage.py precompute_explanation \
             --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json
+            --history-output explanation/data/snapshot_history.json \
+            --max-history-rows 500
+          test -f explanation/data/latest_snapshot.json
+          test -f explanation/data/snapshot_history.json
+          test -f explanation/data/trade_outcomes.json
           python manage.py evaluate_explanation_outcomes \
             --snapshot-history explanation/data/snapshot_history.json \
             --input-outcomes explanation/data/trade_outcomes.json \
@@ -171,7 +175,11 @@ jobs:
           python manage.py finalize_finance_display_data
           python manage.py precompute_explanation \
             --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json
+            --history-output explanation/data/snapshot_history.json \
+            --max-history-rows 500
+          test -f explanation/data/latest_snapshot.json
+          test -f explanation/data/snapshot_history.json
+          test -f explanation/data/trade_outcomes.json
           python manage.py evaluate_explanation_outcomes \
             --snapshot-history explanation/data/snapshot_history.json \
             --input-outcomes explanation/data/trade_outcomes.json \
@@ -222,7 +230,11 @@ jobs:
           python manage.py finalize_finance_display_data
           python manage.py precompute_explanation \
             --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json
+            --history-output explanation/data/snapshot_history.json \
+            --max-history-rows 500
+          test -f explanation/data/latest_snapshot.json
+          test -f explanation/data/snapshot_history.json
+          test -f explanation/data/trade_outcomes.json
           python manage.py evaluate_explanation_outcomes \
             --snapshot-history explanation/data/snapshot_history.json \
             --input-outcomes explanation/data/trade_outcomes.json \

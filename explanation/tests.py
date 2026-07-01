@@ -1,10 +1,13 @@
 from datetime import timedelta, timezone as dt_timezone
 from pathlib import Path
+from io import StringIO
 from tempfile import TemporaryDirectory
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -713,7 +716,63 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             self.assertEqual(row['bias'], '停止')
             self.assertEqual(row['expected_return'], 'N/A')
             self.assertEqual(row['expected_price'], 'N/A')
-            self.assertEqual(row['setup'], '方向判断停止')
+            self.assertEqual(row['setup'], '方向予測停止（売買判定には未使用）')
+
+    def test_world_model_predictions_hide_all_values_when_trade_decision_is_no_trade(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_direction_stopped',
+            'target_1': None,
+            'target_2': None,
+            'stop_price': None,
+            'reward_risk': None,
+            'blocked_reasons': ['方向予測停止'],
+        })
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['output_contract'] = {
+            'contract_status': 'limited',
+            'directional_allowed': True,
+            'allowed_horizons': {
+                '1d': {'direction_allowed': False},
+                '3d': {'direction_allowed': True},
+                '5d': {'direction_allowed': True},
+            },
+        }
+
+        context = snapshot_to_view(snapshot)
+
+        for row in context['world_model_predictions']:
+            self.assertEqual(row['bias'], '停止')
+            self.assertEqual(row['expected_return'], 'N/A')
+            self.assertEqual(row['expected_price'], 'N/A')
+            self.assertEqual(row['setup'], '方向予測停止（売買判定には未使用）')
+
+    def test_reasons_are_normalized_before_display(self):
+        snapshot = self._snapshot()
+        snapshot.evidence = ['重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。']
+
+        context = snapshot_to_view(snapshot)
+
+        rendered_text = ' '.join(context['beginner_decision']['reasons'] + context['advanced_detail']['decision_inputs']['materials'])
+        self.assertNotIn('。のため', rendered_text)
+        self.assertNotIn('ます。のため', rendered_text)
+        self.assertIn('重要指標の発表前後のため、強い判断にはしない。', rendered_text)
+
+    def test_static_metadata_is_exposed_in_decision_inputs(self):
+        snapshot = self._snapshot()
+        snapshot.static_metadata = {
+            'snapshot_key': 'snapshot-key',
+            'git_sha': 'abcdef1234567890',
+            'workflow_run_id': '12345',
+            'generated_at': '2026-07-01T12:00:00+00:00',
+        }
+
+        context = snapshot_to_view(snapshot)
+        rows = {row['label']: row['value'] for row in context['decision_inputs']['rows']}
+
+        self.assertEqual(rows['Snapshot Key'], 'snapshot-key')
+        self.assertEqual(rows['Git SHA'], 'abcdef123456')
+        self.assertEqual(rows['Workflow Run ID'], '12345')
 
     def test_explanation_template_removes_low_priority_duplicate_sections(self):
         context = snapshot_to_view(self._snapshot())
@@ -1104,7 +1163,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         html = render_to_string('explanation/index.html', context)
         top_html = html.split('詳細を表示', 1)[0]
 
-        self.assertIn('監視ライン。売買候補ではありません。', top_html)
+        self.assertIn('この水準は売買候補ではありません。条件変化を確認するための目安です。', top_html)
         self.assertNotIn('参考候補', top_html)
 
     def test_beginner_decision_requires_side_score_to_clear_no_trade(self):
@@ -1226,11 +1285,14 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             rows = load_static_snapshot_history(history)
 
         self.assertEqual(loaded.final_label, '条件付き上昇優勢')
+        self.assertTrue(loaded.source_snapshots)
         self.assertEqual(loaded.trade_decision['selected_side'], 'long')
         self.assertEqual(loaded.source_snapshots['macro']['summary'], 'Macroは支援的。')
+        self.assertIn('snapshot_key', rows[0])
         self.assertEqual(first['added'], True)
-        self.assertEqual(second['added'], False)
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(second['added'], True)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[-1]['as_of'], repeated_snapshot.as_of.isoformat())
 
     def test_static_validation_summary_reads_requested_outcomes_path(self):
         with TemporaryDirectory() as tmpdir:
@@ -1242,6 +1304,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
                   "generated_at": "2026-07-01T00:00:00+09:00",
                   "outcomes": [
                     {
+                      "snapshot_key": "abc",
                       "explanation_as_of": "2026-06-30T00:00:00+09:00",
                       "horizon": "1d",
                       "evaluated_at": "2026-07-01T00:00:00+09:00",
@@ -1263,6 +1326,107 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(summary['actionable_count'], 0)
         self.assertEqual(summary['wait_count'], 1)
         self.assertEqual(summary['side_rows'][0]['direction_hit_rate'], 'N/A')
+        self.assertIn('pending_count', summary)
+        self.assertIn('wait_quality_rows', summary)
+
+    def test_trade_outcomes_json_payload_has_summary_snapshot_key_and_sanitized_wait_rows(self):
+        from .services.static_snapshot import trade_outcomes_payload
+
+        payload = trade_outcomes_payload(outcomes=[], static_rows=[
+            {
+                'snapshot_key': 'abc',
+                'explanation_as_of': '2026-06-30T00:00:00+09:00',
+                'horizon': '1d',
+                'evaluated_at': '2026-07-01T00:00:00+09:00',
+                'selected_side': 'no_trade',
+                'decision_type': 'no_trade_direction_stopped',
+                'direction_hit': False,
+                'target_1_hit': False,
+                'target_1_price': 71000,
+                'target_2_hit': False,
+                'stop_hit': False,
+                'stop_price': 70000,
+                'realized_rr': 1.2,
+                'expected_rr': 1.5,
+                'horizon_return_pct': 0.2,
+            },
+        ])
+
+        row = payload['outcomes'][0]
+        self.assertEqual(payload['summary']['total_count'], 1)
+        self.assertEqual(payload['summary']['wait_count'], 1)
+        self.assertEqual(row['snapshot_key'], 'abc')
+        self.assertIsNone(row['direction_hit'])
+        self.assertIsNone(row['target_1_hit'])
+        self.assertIsNone(row['target_2_hit'])
+        self.assertIsNone(row['stop_hit'])
+        self.assertIsNone(row['target_1_price'])
+        self.assertIsNone(row['stop_price'])
+        self.assertIsNone(row['realized_rr'])
+        self.assertIsNone(row['expected_rr'])
+
+    def test_due_snapshot_without_market_price_is_kept_as_pending_outcome(self):
+        from .services.static_snapshot import explanation_snapshot_payload
+        from .services.validation_engine import build_pending_trade_outcomes
+
+        snapshot = self._snapshot()
+        snapshot.as_of = timezone.now() - timedelta(days=2)
+        payload = explanation_snapshot_payload(snapshot)
+
+        with mock.patch('explanation.services.validation_engine.nearest_bar_for_horizon', return_value=None):
+            rows = build_pending_trade_outcomes([payload], [], horizon='1d', now=timezone.now())
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['snapshot_key'], payload['snapshot_key'])
+        self.assertEqual(rows[0]['horizon'], '1d')
+        self.assertEqual(rows[0]['outcome_kind'], 'pending')
+        self.assertEqual(rows[0]['selected_side'], 'long')
+
+    def test_not_due_snapshot_is_not_written_as_pending(self):
+        from .services.static_snapshot import explanation_snapshot_payload
+        from .services.validation_engine import build_pending_trade_outcomes
+
+        snapshot = self._snapshot()
+        snapshot.as_of = timezone.now()
+        payload = explanation_snapshot_payload(snapshot)
+
+        rows = build_pending_trade_outcomes([payload], [], horizon='1d', now=timezone.now())
+
+        self.assertEqual(rows, [])
+
+    def test_wait_missed_opportunity_uses_horizon_specific_thresholds(self):
+        from .services.validation_engine import _outcome_metrics
+
+        decision = {
+            'selected_side': 'no_trade',
+            'current_price': 100,
+            'counter_scenario': {'direction': 'up'},
+        }
+
+        one_day = _outcome_metrics(decision, [], 100.8, horizon='1d')
+        three_day_small = _outcome_metrics(decision, [], 101.0, horizon='3d')
+        three_day_large = _outcome_metrics(decision, [], 101.3, horizon='3d')
+        five_day_small = _outcome_metrics(decision, [], 101.4, horizon='5d')
+        five_day_large = _outcome_metrics(decision, [], 101.6, horizon='5d')
+
+        self.assertTrue(one_day['missed_opportunity'])
+        self.assertFalse(three_day_small['missed_opportunity'])
+        self.assertTrue(three_day_large['missed_opportunity'])
+        self.assertFalse(five_day_small['missed_opportunity'])
+        self.assertTrue(five_day_large['missed_opportunity'])
+
+    def test_readiness_score_cannot_reach_90_with_less_than_50_results(self):
+        from .services.readiness_score import build_readiness_score
+
+        snapshot = self._snapshot()
+        summary = {'available': True, 'total_count': 49}
+
+        readiness = build_readiness_score(snapshot, summary)
+
+        self.assertLess(readiness['score'], 90)
+        self.assertNotEqual(readiness['label'], '実用運用可')
+        self.assertEqual(readiness['minimum_required_results'], 50)
+        self.assertEqual(readiness['remaining_results_to_90'], 1)
 
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())
@@ -1360,6 +1524,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
                 {'label': '価格ソース', 'value': 'market_data'},
                 {'label': '手入力価格', 'value': '42,000円'},
                 {'label': '米国3指数', 'value': 'あり'},
+                {'label': 'Snapshot Key', 'value': 'N/A'},
+                {'label': 'Git SHA', 'value': 'N/A'},
+                {'label': 'Workflow Run ID', 'value': 'N/A'},
             ],
         )
         self.assertEqual(context['decision_inputs']['rows'][0]['label'], 'Explanation作成時刻')
@@ -1412,6 +1579,72 @@ class ExplanationFreshnessTests(SimpleTestCase):
         )
 
         self.assertFalse(status['needs_refresh'])
+
+
+class ExplanationIntegrityCommandTests(SimpleTestCase):
+    def test_integrity_requires_manifest_explanation_tracking_metadata(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest.write_text(
+                """
+                {
+                  "snapshot_key": "snapshot-1",
+                  "schema": "explanation_snapshot_v1",
+                  "generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345",
+                  "as_of": "2026-06-25T01:15:00+00:00",
+                  "version": "explanation_v2",
+                  "final": {
+                    "label": "見送り",
+                    "stance": "neutral_wait",
+                    "action_posture": "待機",
+                    "confidence_score": 50,
+                    "confidence_grade": "C",
+                    "status": "limited"
+                  },
+                  "macro": {"bias": "neutral"},
+                  "basecalc": {"bias": "range"},
+                  "alignment_status": "aligned",
+                  "data_quality_score": 50,
+                  "audit": {"level": "limited", "items": []},
+                  "trade_decision": {
+                    "selected_side": "no_trade",
+                    "decision_type": "no_trade_direction_stopped",
+                    "current_price": 70000
+                  },
+                  "source_snapshots": {},
+                  "score_breakdown": {}
+                }
+                """,
+                encoding='utf-8',
+            )
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                '{"schema":"finance_data_manifest_v1","explanation_as_of":"2026-06-25T01:15:00+00:00"}',
+                encoding='utf-8',
+            )
+
+            with self.assertRaises(CommandError):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
 
 
 class ExplanationTradeOutcomeValidationTests(TestCase):

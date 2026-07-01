@@ -31,10 +31,10 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
         alignment_status=audit.alignment_status,
         data_quality_score=audit.data_quality_score,
         audit_level=audit.level,
-        audit_items=_json_safe(audit.items),
+        audit_items=_json_safe(_normalize_text_list(audit.items)),
         scenario=_json_safe(scenario),
         trade_decision=_json_safe(trade_decision.to_dict()),
-        evidence=_json_safe(fusion.evidence),
+        evidence=_json_safe(_normalize_text_list(fusion.evidence)),
         source_snapshots=_json_safe({
             'macro': {
                 'bias': macro.bias,
@@ -102,3 +102,16 @@ def _json_default(value):
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     raise TypeError(f'Object of type {type(value).__name__} is not JSON serializable')
+
+
+def _normalize_text_list(items):
+    return [_normalize_reason_text(item) for item in items or []]
+
+
+def _normalize_reason_text(text):
+    text = str(text or '').strip()
+    text = text.replace('重要指標の発表前後のため一段階下げます。のため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    text = text.replace('ます。のため', 'ます。そのため')
+    text = text.replace('。のため', '。そのため')
+    text = text.replace('ため一段階下げます。そのため、強い判断にはしない。', '重要指標の発表前後のため、強い判断にはしない。')
+    return text

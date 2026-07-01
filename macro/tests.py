@@ -89,6 +89,8 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('--export-snapshot-path basecalc/data/latest_snapshot.json', workflow)
         self.assertIn('basecalc/data/latest_snapshot.json', workflow)
         self.assertIn('explanation/data/latest_snapshot.json', workflow)
+        self.assertIn('explanation/data/snapshot_history.json', workflow)
+        self.assertIn('explanation/data/trade_outcomes.json', workflow)
         self.assertIn('static/finance_data_manifest.json', workflow)
 
     def test_refresh_basecalc_tests_run_before_runtime_history_import(self):
@@ -118,7 +120,22 @@ class MacroRuntimeConfigTest(SimpleTestCase):
 
         self.assertIn('python manage.py finalize_finance_display_data', workflow)
         self.assertIn('explanation/data/latest_snapshot.json', workflow)
+        self.assertIn('explanation/data/snapshot_history.json', workflow)
+        self.assertIn('explanation/data/trade_outcomes.json', workflow)
         self.assertIn('static/finance_data_manifest.json', workflow)
+
+    def test_update_nikkei_per_commits_explanation_history_and_outcomes(self):
+        workflow = (
+            Path(settings.BASE_DIR)
+            / '.github'
+            / 'workflows'
+            / 'update_nikkei_per_data.yml'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('python manage.py finalize_finance_display_data --evaluate-outcomes', workflow)
+        self.assertIn('explanation/data/latest_snapshot.json', workflow)
+        self.assertIn('explanation/data/snapshot_history.json', workflow)
+        self.assertIn('explanation/data/trade_outcomes.json', workflow)
 
     def test_lightweight_update_workflows_call_shared_finance_finalize(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -390,6 +407,11 @@ class MacroRuntimeConfigTest(SimpleTestCase):
             'evaluate_explanation_outcomes',
             'export_finance_data_manifest',
         ])
+
+    def test_finalize_finance_display_data_requires_snapshot_history(self):
+        from macro.management.commands.finalize_finance_display_data import REQUIRED_DISPLAY_FILES
+
+        self.assertIn('explanation/data/snapshot_history.json', REQUIRED_DISPLAY_FILES)
 
     def test_update_local_data_includes_basecalc_and_explanation_entrypoints(self):
         with (
@@ -1688,7 +1710,17 @@ class ProductionDataSyncTest(SimpleTestCase):
             explanation_path.parent.mkdir(parents=True)
             macro_path.write_text('{"generated_at":"2026-06-25T00:00:00+00:00","stale":false,"model_version":"macro_v1"}', encoding='utf-8')
             basecalc_path.write_text('{"decision_price_as_of":"2026-06-25T01:15:00+00:00","world_model":{"output_contract":{"contract_status":"limited","stop_reasons":["米国3指数確認が不足"]},"model_version":"wm_v2.0.0"}}', encoding='utf-8')
-            explanation_path.write_text('{"as_of":"2026-06-25T01:15:00+00:00","final":{"status":"reference"},"version":"explanation_v2"}', encoding='utf-8')
+            explanation_path.write_text(
+                (
+                    '{"as_of":"2026-06-25T01:15:00+00:00",'
+                    '"generated_at":"2026-06-25T01:16:00+00:00",'
+                    '"git_sha":"abcdef1234567890",'
+                    '"workflow_run_id":"12345",'
+                    '"final":{"status":"reference"},'
+                    '"version":"explanation_v2"}'
+                ),
+                encoding='utf-8',
+            )
 
             manifest = build_finance_data_manifest(base_dir=base_dir)
             write_finance_data_manifest(manifest, output_path)
@@ -1698,6 +1730,9 @@ class ProductionDataSyncTest(SimpleTestCase):
         self.assertEqual(saved['macro_as_of'], '2026-06-25T00:00:00+00:00')
         self.assertEqual(saved['basecalc_status'], 'limited')
         self.assertEqual(saved['explanation_status'], 'reference')
+        self.assertEqual(saved['explanation_generated_at'], '2026-06-25T01:16:00+00:00')
+        self.assertEqual(saved['git_sha'], 'abcdef1234567890')
+        self.assertEqual(saved['workflow_run_id'], '12345')
         self.assertIn('米国3指数確認が不足', saved['blocking_reasons'])
 
     def test_sync_mirrors_static_data_to_existing_staticfiles_alias(self):
