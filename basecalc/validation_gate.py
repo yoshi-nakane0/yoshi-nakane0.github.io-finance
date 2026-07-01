@@ -1,6 +1,8 @@
 HORIZONS = ("1d", "3d", "5d")
 MIN_DIRECTION_SIGNAL_ACCURACY = 0.55
 MIN_DIRECTION_SIGNAL_SAMPLES = 30
+LOW_VALIDATION_PENALTY = 15
+SOFT_VALIDATION_PENALTY = 10
 
 
 def build_validation_gate(world_model, validation_report=None, performance_by_horizon=None):
@@ -17,14 +19,21 @@ def build_validation_gate(world_model, validation_report=None, performance_by_ho
         if state_direction_gate.get("has_direction_signal"):
             allowed = state_direction_gate["direction_allowed"]
             reasons = state_direction_gate["reasons"]
+            warnings = baseline["warnings"] + state_direction_gate["warnings"]
+            confidence_penalty = baseline.get("confidence_penalty", 0) + state_direction_gate.get("confidence_penalty", 0)
         else:
             allowed = baseline["direction_allowed"] and state_gate["direction_allowed"]
             reasons = baseline["reasons"] + state_gate["reasons"]
+            warnings = baseline["warnings"] + state_gate["warnings"]
+            confidence_penalty = baseline.get("confidence_penalty", 0) + state_gate.get("confidence_penalty", 0)
         result[horizon] = {
             "direction_allowed": allowed,
             "target_probability_allowed": allowed,
             "display_mode": "directional" if allowed else "range_only",
             "reasons": reasons,
+            "warnings": warnings,
+            "validation_level": _validation_level(allowed, warnings),
+            "confidence_penalty": min(30, confidence_penalty),
             "model_vs_baseline": baseline,
             "state_gate": state_gate,
             "state_direction_gate": state_direction_gate,
@@ -47,14 +56,18 @@ def _baseline_gate(summary):
         return {
             "direction_allowed": True,
             "reasons": [],
+            "warnings": [],
+            "confidence_penalty": 0,
             "sample_count": comparison.get("sample_count"),
         }
     model_score = _score_row(model)
     atr_score = _score_row(atr)
     if atr_score > model_score:
         return {
-            "direction_allowed": False,
-            "reasons": ["現行モデルがATRベースラインを下回るため"],
+            "direction_allowed": True,
+            "reasons": [],
+            "warnings": ["現行モデルがATRベースラインを下回るため"],
+            "confidence_penalty": SOFT_VALIDATION_PENALTY,
             "sample_count": comparison.get("sample_count"),
             "model_score": model_score,
             "atr_score": atr_score,
@@ -62,6 +75,8 @@ def _baseline_gate(summary):
     return {
         "direction_allowed": True,
         "reasons": [],
+        "warnings": [],
+        "confidence_penalty": 0,
         "sample_count": comparison.get("sample_count"),
         "model_score": model_score,
         "atr_score": atr_score,
@@ -72,20 +87,44 @@ def _state_gate(world_model, report):
     state_key = (world_model or {}).get("state_key")
     state_label = (world_model or {}).get("state_label") or "現在局面"
     if not state_key:
-        return {"direction_allowed": True, "reasons": []}
+        return {"direction_allowed": True, "reasons": [], "warnings": [], "confidence_penalty": 0}
     for row in report.get("state_summaries") or []:
         if not isinstance(row, dict) or row.get("state_key") != state_key:
             continue
+        sample_count = int(row.get("total_predictions") or 0)
         avg_return = _float(row.get("avg_return_pct"))
         accuracy = _float(row.get("directional_accuracy"))
-        if (avg_return is not None and avg_return < 0) or (accuracy is not None and accuracy < 0.5):
+        if sample_count and sample_count < MIN_DIRECTION_SIGNAL_SAMPLES:
             return {
-                "direction_allowed": False,
-                "reasons": [f"{state_label}の過去成績が弱いため"],
+                "direction_allowed": True,
+                "reasons": [],
+                "warnings": [f"{state_label}の検証件数が不足しているため"],
+                "confidence_penalty": LOW_VALIDATION_PENALTY,
+                "sample_count": sample_count,
                 "avg_return_pct": avg_return,
                 "directional_accuracy": accuracy,
             }
-    return {"direction_allowed": True, "reasons": []}
+        if (avg_return is not None and avg_return < 0) or (accuracy is not None and accuracy < 0.5):
+            if sample_count < MIN_DIRECTION_SIGNAL_SAMPLES:
+                return {
+                    "direction_allowed": True,
+                    "reasons": [],
+                    "warnings": [f"{state_label}の過去成績が弱い可能性があるため"],
+                    "confidence_penalty": SOFT_VALIDATION_PENALTY,
+                    "sample_count": sample_count,
+                    "avg_return_pct": avg_return,
+                    "directional_accuracy": accuracy,
+                }
+            return {
+                "direction_allowed": False,
+                "reasons": [f"{state_label}の過去成績が弱いため"],
+                "warnings": [],
+                "confidence_penalty": 0,
+                "sample_count": sample_count,
+                "avg_return_pct": avg_return,
+                "directional_accuracy": accuracy,
+            }
+    return {"direction_allowed": True, "reasons": [], "warnings": [], "confidence_penalty": 0}
 
 
 def _state_direction_gate(world_model, report):
@@ -93,9 +132,9 @@ def _state_direction_gate(world_model, report):
     state_key = (world_model or {}).get("state_key")
     state_label = (world_model or {}).get("state_label") or "現在局面"
     if "state_direction_summaries" not in report:
-        return {"direction_allowed": True, "reasons": [], "has_direction_signal": False}
+        return {"direction_allowed": True, "reasons": [], "warnings": [], "confidence_penalty": 0, "has_direction_signal": False}
     if direction not in {"up", "down"} or not state_key:
-        return {"direction_allowed": False, "reasons": [], "has_direction_signal": False}
+        return {"direction_allowed": True, "reasons": [], "warnings": [], "confidence_penalty": 0, "has_direction_signal": False}
     direction_label = "上方向" if direction == "up" else "下方向"
     for row in report.get("state_direction_summaries") or []:
         if (
@@ -108,11 +147,18 @@ def _state_direction_gate(world_model, report):
         accuracy = _float(row.get("directional_accuracy"))
         avg_return = _float(row.get("avg_return_pct"))
         reasons = []
+        warnings = []
+        confidence_penalty = 0
         if sample_count < MIN_DIRECTION_SIGNAL_SAMPLES:
-            reasons.append(f"{state_label}の{direction_label}検証件数が不足しているため")
-        if accuracy is not None and accuracy < MIN_DIRECTION_SIGNAL_ACCURACY:
+            warnings.append(f"{state_label}の{direction_label}検証件数が不足しているため")
+            confidence_penalty = max(confidence_penalty, LOW_VALIDATION_PENALTY)
+        if (
+            sample_count >= MIN_DIRECTION_SIGNAL_SAMPLES
+            and accuracy is not None
+            and accuracy < MIN_DIRECTION_SIGNAL_ACCURACY
+        ):
             reasons.append(f"{state_label}の{direction_label}精度が基準未達のため")
-        if avg_return is not None and (
+        if sample_count >= MIN_DIRECTION_SIGNAL_SAMPLES and avg_return is not None and (
             (direction == "up" and avg_return < 0)
             or (direction == "down" and avg_return > 0)
         ):
@@ -120,6 +166,8 @@ def _state_direction_gate(world_model, report):
         return {
             "direction_allowed": not reasons,
             "reasons": reasons,
+            "warnings": warnings,
+            "confidence_penalty": confidence_penalty,
             "has_direction_signal": True,
             "sample_count": sample_count,
             "directional_accuracy": accuracy,
@@ -127,12 +175,24 @@ def _state_direction_gate(world_model, report):
             "required_accuracy": MIN_DIRECTION_SIGNAL_ACCURACY,
         }
     return {
-        "direction_allowed": False,
-        "reasons": [f"{state_label}の{direction_label}検証が不足しているため"],
+        "direction_allowed": True,
+        "reasons": [],
+        "warnings": [f"{state_label}の{direction_label}検証が不足しているため"],
+        "confidence_penalty": LOW_VALIDATION_PENALTY,
         "has_direction_signal": True,
         "sample_count": 0,
         "required_accuracy": MIN_DIRECTION_SIGNAL_ACCURACY,
     }
+
+
+def _validation_level(allowed, warnings):
+    if not allowed:
+        return "blocked"
+    if any("検証件数が不足" in reason or "検証が不足" in reason for reason in warnings):
+        return "low"
+    if warnings:
+        return "limited"
+    return "confirmed"
 
 
 def _row_by_key(rows, key):

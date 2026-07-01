@@ -1366,7 +1366,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
             hydrate_saved_snapshot_context(context)
 
-        self.assertEqual(context['world_model']['confidence_score'], 69)
+        self.assertEqual(context['world_model']['confidence_score'], 64)
         self.assertEqual(context['world_model']['similar_summary']['case_count'], 30)
         build_model.assert_called_once()
 
@@ -3794,7 +3794,7 @@ class BasecalcUpdateSecurityTests(TestCase):
 
             payload = json.loads(snapshot_path.read_text(encoding='utf-8'))
 
-        self.assertEqual(payload['world_model']['confidence_score'], 69)
+        self.assertEqual(payload['world_model']['confidence_score'], 64)
         self.assertEqual(payload['world_model']['similar_summary']['case_count'], 30)
         self.assertFalse(_saved_world_model_needs_rebuild(payload['world_model']))
 

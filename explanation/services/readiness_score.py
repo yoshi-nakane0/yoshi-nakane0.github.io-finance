@@ -12,9 +12,11 @@ def build_readiness_score(snapshot, validation_summary):
     return {
         'score': score,
         'label': _label(score),
+        'score_type': 'validation_readiness_score',
+        'title': '検証 readiness',
         'minimum_required_results': 50,
         'remaining_results_to_90': max(0, 50 - total_count),
-        'note': '検証件数と表示整合性から見たページ状態です。売買結果を保証するものではありません。',
+        'note': '検証件数と表示整合性から見た補助指標です。現在判断を止める条件ではありません。',
     }
 
 
@@ -54,9 +56,9 @@ def _validation_cap(total):
 
 def _label(score):
     if score >= 90:
-        return '実用運用可'
+        return '実績確認済み'
     if score >= 70:
         return '検証運用中'
     if score >= 50:
-        return '参考表示'
-    return '判定停止'
+        return '検証参考'
+    return '検証不足'

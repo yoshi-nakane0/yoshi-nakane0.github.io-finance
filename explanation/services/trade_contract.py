@@ -33,6 +33,8 @@ class TradeDecision:
     blocked_reasons: List[str] = field(default_factory=list)
     model_version: str = 'explanation_v2'
     price_source: str = 'market_data'
+    decision_status: str = 'wait'
+    position_size_cap: str = 'none'
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -66,6 +68,8 @@ def no_trade_decision(
     expected_return_pct: Optional[float] = None,
     probability: Optional[float] = None,
     expected_value: Optional[float] = None,
+    decision_status: str = 'wait',
+    position_size_cap: str = 'none',
 ) -> TradeDecision:
     return TradeDecision(
         selected_side='no_trade',
@@ -96,4 +100,6 @@ def no_trade_decision(
         warnings=warnings or [],
         blocked_reasons=blocked_reasons or [],
         price_source=price_source,
+        decision_status=decision_status,
+        position_size_cap=position_size_cap,
     )

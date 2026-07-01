@@ -108,7 +108,7 @@ class ExplanationRoutingTests(TestCase):
         response = self.client.get('/explanation/')
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '最終判断')
+        self.assertContains(response, '現在判断')
         self.assertContains(response, 'Macro')
         self.assertContains(response, 'Basecalc')
         self.assertContains(response, 'Audit')
@@ -136,7 +136,7 @@ class ExplanationRoutingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, '保存済み判断がないため')
-        self.assertContains(response, '最終判断')
+        self.assertContains(response, '現在判断')
 
     def test_explanation_api_falls_back_when_snapshot_table_is_missing(self):
         with (

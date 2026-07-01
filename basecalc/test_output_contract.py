@@ -118,14 +118,120 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
 
-        self.assertEqual(contract['validation_gate_status']['1d']['display_mode'], 'range_only')
-        self.assertFalse(contract['allowed_horizons']['1d']['direction_allowed'])
-        self.assertFalse(contract['directional_allowed'])
+        self.assertEqual(contract['validation_gate_status']['1d']['display_mode'], 'directional')
+        self.assertTrue(contract['allowed_horizons']['1d']['direction_allowed'])
+        self.assertTrue(contract['directional_allowed'])
         self.assertTrue(contract['target_display_allowed'])
         self.assertTrue(contract['probability_display_allowed'])
-        self.assertEqual(contract['available_display'], 'ATRレンジ・支持抵抗・反転警戒')
-        self.assertIn('現行モデルがATRベースラインを下回るため', contract['stop_reasons'])
-        self.assertIn('過熱・反落警戒の過去成績が弱いため', contract['stop_reasons'])
+        self.assertEqual(contract['available_display'], '方向・目標・レンジ')
+        self.assertIn('現行モデルがATRベースラインを下回るため', contract['soft_warning_reasons'])
+        self.assertIn('過熱・反落警戒の過去成績が弱い可能性があるため', contract['soft_warning_reasons'])
+
+    def test_validation_gate_keeps_direction_when_evidence_is_insufficient(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 35, 'is_statistically_valid': True},
+            'confidence': 'High',
+            'confidence_score': 72,
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        validation_report = {
+            'horizons': {
+                '1d': {
+                    'summary': {
+                        'baseline_comparison': {
+                            'sample_count': 24,
+                            'rows': [
+                                {'key': 'model', 'risk_adjusted_return_pct': 0.1, 'balanced_accuracy': 0.49},
+                                {'key': 'atr_range', 'risk_adjusted_return_pct': 0.2, 'balanced_accuracy': 0.52},
+                            ],
+                        },
+                    },
+                    'state_direction_summaries': [
+                        {
+                            'state_key': 'dip_buy',
+                            'direction': 'up',
+                            'total_predictions': 8,
+                            'directional_accuracy': 0.48,
+                            'avg_return_pct': 0.03,
+                        },
+                    ],
+                },
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertTrue(contract['allowed_horizons']['1d']['direction_allowed'])
+        self.assertTrue(contract['directional_allowed'])
+        self.assertEqual(contract['allowed_direction'], 'up')
+        self.assertEqual(contract['validation_gate_status']['1d']['validation_level'], 'low')
+        self.assertIn('押し目買いの上方向検証件数が不足しているため', contract['soft_warning_reasons'])
+        self.assertIn('現行モデルがATRベースラインを下回るため', contract['soft_warning_reasons'])
+        self.assertEqual(contract['hard_block_reasons'], [])
+        self.assertGreaterEqual(world_model['confidence_score'], 50)
+
+    def test_validation_gate_blocks_only_when_sufficient_evidence_is_bad(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 35, 'is_statistically_valid': True},
+            'confidence_score': 65,
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        validation_report = {
+            'horizons': {
+                '1d': {
+                    'state_direction_summaries': [
+                        {
+                            'state_key': 'dip_buy',
+                            'direction': 'up',
+                            'total_predictions': 90,
+                            'directional_accuracy': 0.42,
+                            'avg_return_pct': -0.18,
+                        },
+                    ],
+                },
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertFalse(contract['allowed_horizons']['1d']['direction_allowed'])
+        self.assertFalse(contract['directional_allowed'])
+        self.assertIn('押し目買いの上方向精度が基準未達のため', contract['hard_block_reasons'])
+        self.assertIn('押し目買いの上方向平均損益が逆方向のため', contract['hard_block_reasons'])
 
     def test_direction_gate_uses_state_direction_precision_when_available(self):
         from .output_contract import apply_output_contract
@@ -236,10 +342,10 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         self.assertFalse(contract['confidence_calibrated'])
         self.assertEqual(contract['confidence_status'], '未較正')
-        self.assertEqual(world_model['confidence_score'], 49)
-        self.assertEqual(world_model['confidence'], 'Low')
+        self.assertEqual(world_model['confidence_score'], 59)
+        self.assertEqual(world_model['confidence'], 'Middle')
         self.assertIn('信頼度が未較正です', contract['stop_reasons'])
-        self.assertIn('類似事例不足のため信頼度を50未満に制限', contract['stop_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
 
     def test_warning_only_contract_keeps_direction_and_targets_visible(self):
         from .output_contract import apply_output_contract
@@ -270,7 +376,7 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertTrue(contract['target_display_allowed'])
         self.assertFalse(contract['probability_display_allowed'])
         self.assertEqual(contract['allowed_direction'], 'up')
-        self.assertIn('類似事例不足のため信頼度を50未満に制限', contract['stop_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
 
 
 class BasecalcOutputContractCommandTests(TestCase):

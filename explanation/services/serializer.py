@@ -121,8 +121,19 @@ def _integrated_posture(label, final_stance):
 
 
 def _integrated_status(snapshot, trade_decision, manual_price):
+    status = trade_decision.get('decision_status')
     if snapshot.audit_level == 'blocked' or trade_decision.get('decision_type') == 'no_trade_data_blocked':
         return '判定停止'
+    if status == 'blocked':
+        return '判定停止'
+    if status == 'candidate_unvalidated':
+        return '検証中'
+    if status == 'candidate_limited':
+        return '限定'
+    if status == 'candidate_confirmed':
+        return '通常'
+    if status == 'wait':
+        return '見送り'
     if manual_price.get('active') or _is_reference_decision(trade_decision):
         return '参考'
     return '判定可'

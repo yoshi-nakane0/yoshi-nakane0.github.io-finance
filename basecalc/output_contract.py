@@ -32,13 +32,20 @@ def apply_output_contract(
 
     errors = []
     warnings = []
-    gate_reasons = []
+    gate_hard_reasons = []
+    gate_soft_warnings = []
     validation_gate = build_validation_gate(
         world_model,
         validation_report=validation_report,
         performance_by_horizon=performance_by_horizon,
     )
-    allowed_horizons = _audit_horizons(world_model, validation_gate, errors, gate_reasons)
+    allowed_horizons = _audit_horizons(
+        world_model,
+        validation_gate,
+        errors,
+        gate_hard_reasons,
+        gate_soft_warnings,
+    )
 
     if model_price is None or display_price is None:
         errors.append("現在値または計算基準価格がありません")
@@ -56,7 +63,9 @@ def apply_output_contract(
     if readiness_level != "ready":
         errors.append("判定可能なデータ状態ではありません")
 
-    status = "error" if errors else "limited" if warnings or gate_reasons else "ok"
+    hard_block_reasons = _dedupe(errors + gate_hard_reasons)
+    soft_warning_reasons = _dedupe(gate_soft_warnings + warnings)
+    status = "error" if errors else "limited" if soft_warning_reasons or gate_hard_reasons else "ok"
     direction = world_model.get("direction")
     model_horizon_keys = set((world_model.get("horizons") or {}).keys()) or set(allowed_horizons.keys())
     directional_allowed = status != "error" and direction in {"up", "down"} and any(
@@ -96,7 +105,9 @@ def apply_output_contract(
         "invalidated_targets": _invalidated_targets(world_model),
         "us_index_status": us_index_status,
         "contract_status": status,
-        "stop_reasons": _dedupe(errors + gate_reasons + warnings),
+        "hard_block_reasons": hard_block_reasons,
+        "soft_warning_reasons": soft_warning_reasons,
+        "stop_reasons": _dedupe(hard_block_reasons + soft_warning_reasons),
         "target_display_allowed": target_display_allowed,
         "probability_display_allowed": probability_display_allowed,
         "explanation_allowed": directional_allowed,
@@ -157,7 +168,7 @@ def _audit_ranges(world_model, display_price, errors):
             errors.append("レンジ下限が現在値より上にあります")
 
 
-def _audit_horizons(world_model, validation_gate, errors, gate_reasons):
+def _audit_horizons(world_model, validation_gate, errors, gate_hard_reasons, gate_soft_warnings):
     horizons = world_model.get("horizons") or {}
     allowed = {}
     for horizon in HORIZONS:
@@ -176,12 +187,17 @@ def _audit_horizons(world_model, validation_gate, errors, gate_reasons):
         if gate and not gate.get("direction_allowed", True):
             direction_allowed = False
             reasons.extend(gate.get("reasons") or [])
-            gate_reasons.extend(gate.get("reasons") or [])
+            gate_hard_reasons.extend(gate.get("reasons") or [])
+        if gate:
+            gate_soft_warnings.extend(gate.get("warnings") or [])
         allowed[horizon] = {
             "direction_allowed": direction_allowed,
             "target_probability_allowed": True,
             "display_mode": "directional" if direction_allowed else "range_only",
             "reasons": _dedupe(reasons),
+            "warnings": _dedupe((gate or {}).get("warnings") or []),
+            "validation_level": (gate or {}).get("validation_level") or ("confirmed" if direction_allowed else "blocked"),
+            "confidence_penalty": (gate or {}).get("confidence_penalty") or 0,
         }
     return allowed
 
@@ -233,14 +249,17 @@ def _audit_us_indices(world_model, warnings):
 def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, warnings):
     cap = 100
     if not confidence_calibrated and _number(world_model.get("confidence_score")) is not None:
-        cap = min(cap, 69)
+        cap = min(cap, 64)
     similar = world_model.get("similar_summary") or {}
     if int(similar.get("case_count") or 0) < LOW_SAMPLE_THRESHOLD:
-        cap = min(cap, 49)
-        warnings.append("類似事例不足のため信頼度を50未満に制限")
-    if _current_state_is_weak(validation_gate):
+        cap = min(cap, 59)
+        warnings.append("類似事例不足のため信頼度を限定")
+    if _current_state_is_blocked(validation_gate):
         cap = min(cap, 49)
         warnings.append("局面別成績が弱いため信頼度を50未満に制限")
+    elif _current_state_is_limited(validation_gate):
+        cap = min(cap, 59)
+        warnings.append("局面別検証不足のため信頼度を限定")
     score = _number(world_model.get("confidence_score"))
     if score is None or score <= cap:
         return
@@ -248,7 +267,7 @@ def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, w
     world_model["confidence"] = _confidence_label(cap)
 
 
-def _current_state_is_weak(validation_gate):
+def _current_state_is_blocked(validation_gate):
     for row in (validation_gate or {}).values():
         state_gate = row.get("state_gate") if isinstance(row, dict) else {}
         if isinstance(state_gate, dict) and not state_gate.get("direction_allowed", True):
@@ -259,6 +278,15 @@ def _current_state_is_weak(validation_gate):
             and state_direction_gate.get("has_direction_signal")
             and not state_direction_gate.get("direction_allowed", True)
         ):
+            return True
+    return False
+
+
+def _current_state_is_limited(validation_gate):
+    for row in (validation_gate or {}).values():
+        if not isinstance(row, dict):
+            continue
+        if (row.get("validation_level") or "") in {"low", "limited"}:
             return True
     return False
 
@@ -310,6 +338,8 @@ def _empty_contract(display_price):
         "directional_allowed": False,
         "target_display_allowed": False,
         "probability_display_allowed": False,
+        "hard_block_reasons": ["world model がありません"],
+        "soft_warning_reasons": [],
         "stop_reasons": ["world model がありません"],
     }
 
