@@ -2,6 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .beginner_decision import build_beginner_decision
+from .readiness_score import build_readiness_score
 
 
 JST = ZoneInfo('Asia/Tokyo')
@@ -228,6 +229,9 @@ def snapshot_to_api(snapshot):
     basecalc = source.get('basecalc') or {}
     levels = (snapshot.scenario or {}).get('levels') or {}
     trade_decision = _trade_decision(snapshot, _world_model_from_basecalc(basecalc))
+    score_bundle = (snapshot.score_breakdown or {}).get('score_bundle')
+    if not score_bundle:
+        score_bundle = build_readiness_score(snapshot, {'available': False})
     return {
         'as_of': snapshot.as_of.isoformat(),
         'version': snapshot.version,
@@ -254,6 +258,7 @@ def snapshot_to_api(snapshot):
             'level': snapshot.audit_level,
             'items': snapshot.audit_items or [],
         },
+        'score_bundle': score_bundle,
         'trade_decision': trade_decision,
     }
 

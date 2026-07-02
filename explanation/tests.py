@@ -2209,6 +2209,47 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(payload['trade_decision']['selected_side'], 'long')
         self.assertEqual(payload['trade_decision']['target_1']['price'], 71180)
 
+    def test_api_includes_separated_readiness_score_bundle(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': [],
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+
+        payload = snapshot_to_api(snapshot)
+
+        score_bundle = payload['score_bundle']
+        self.assertEqual(score_bundle['score_type'], 'score_bundle')
+        self.assertGreaterEqual(score_bundle['system_quality_score'], 90)
+        self.assertEqual(score_bundle['decision_confidence_score'], 58)
+        self.assertIn('validation_readiness_score', score_bundle)
+        self.assertEqual(score_bundle['decision_confidence_label'], '限定候補')
+
+    def test_api_prefers_persisted_score_bundle_from_static_snapshot(self):
+        snapshot = self._snapshot()
+        snapshot.score_breakdown = {
+            'score_bundle': {
+                'score_type': 'score_bundle',
+                'system_quality_score': 91,
+                'system_quality_label': '保存済み',
+                'decision_confidence_score': 52,
+                'decision_confidence_label': '保存済み限定',
+                'validation_readiness_score': 33,
+                'validation_readiness_label': '保存済み検証',
+                'system_quality_components': [],
+            },
+        }
+
+        payload = snapshot_to_api(snapshot)
+
+        self.assertEqual(payload['score_bundle']['system_quality_score'], 91)
+        self.assertEqual(payload['score_bundle']['system_quality_label'], '保存済み')
+        self.assertEqual(payload['score_bundle']['decision_confidence_label'], '保存済み限定')
+
     def test_static_snapshot_round_trips_for_json_artifact(self):
         from .services.static_snapshot import (
             append_static_explanation_history,
@@ -2221,7 +2262,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
             output = Path(tmpdir) / 'latest_snapshot.json'
             history = Path(tmpdir) / 'snapshot_history.json'
 
-            write_static_explanation_snapshot(self._snapshot(), output)
+            written_payload = write_static_explanation_snapshot(self._snapshot(), output)
             loaded = load_static_explanation_snapshot(output)
             snapshot = self._snapshot()
             repeated_snapshot = self._snapshot()
@@ -2233,6 +2274,8 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(loaded.final_label, '条件付き上昇優勢')
         self.assertTrue(loaded.source_snapshots)
         self.assertEqual(loaded.trade_decision['selected_side'], 'long')
+        self.assertEqual(written_payload['score_bundle']['score_type'], 'score_bundle')
+        self.assertEqual(loaded.score_breakdown['score_bundle']['score_type'], 'score_bundle')
         self.assertEqual(loaded.source_snapshots['macro']['summary'], 'Macroは支援的。')
         self.assertIn('snapshot_key', rows[0])
         self.assertEqual(first['added'], True)
@@ -2391,6 +2434,143 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(enough['validation_state_display'], '検証済み')
         self.assertEqual(enough['actionable_result_display'], '十分')
         self.assertEqual(enough['validation_attention_display'], '検証済み。通常のリスク管理を継続')
+
+    def test_readiness_score_separates_system_quality_decision_confidence_and_live_validation(self):
+        from .services.readiness_score import build_readiness_score
+
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': [],
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+
+        readiness = build_readiness_score(snapshot, {'available': True, 'total_count': 8, 'actionable_count': 2})
+
+        self.assertEqual(readiness['score_type'], 'score_bundle')
+        self.assertGreaterEqual(readiness['system_quality_score'], 90)
+        self.assertEqual(readiness['system_quality_label'], '実用表示可')
+        self.assertEqual(readiness['decision_confidence_score'], 58)
+        self.assertEqual(readiness['decision_confidence_label'], '限定候補')
+        self.assertLess(readiness['validation_readiness_score'], 90)
+        self.assertEqual(readiness['validation_readiness_label'], '検証参考')
+        self.assertEqual(readiness['score'], readiness['validation_readiness_score'])
+        labels = [row['label'] for row in readiness['system_quality_components']]
+        values = [row['value'] for row in readiness['system_quality_components']]
+        self.assertEqual(labels, ['判断材料', '理由分離', '停止状態', '判定契約', '表示文言'])
+        self.assertIn('20/20', values)
+        self.assertTrue(all(row['status'] == 'OK' for row in readiness['system_quality_components']))
+
+    def test_readiness_score_prioritizes_hard_block_over_stale_candidate_status(self):
+        from .services.readiness_score import build_readiness_score
+
+        snapshot = self._snapshot()
+        snapshot.audit_level = 'blocked'
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+            'soft_warning_reasons': [],
+        })
+
+        readiness = build_readiness_score(snapshot, {'available': True, 'total_count': 70, 'actionable_count': 12})
+
+        self.assertLess(readiness['system_quality_score'], 90)
+        self.assertEqual(readiness['system_quality_label'], '改善中')
+        self.assertLess(readiness['decision_confidence_score'], 40)
+        self.assertEqual(readiness['decision_confidence_label'], '判定停止')
+        stopped = next(row for row in readiness['system_quality_components'] if row['label'] == '停止状態')
+        self.assertEqual(stopped['status'], '要確認')
+        self.assertIn('判定停止', stopped['message'])
+
+    def test_template_renders_separate_quality_confidence_and_validation_scores(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': [],
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': True, 'total_count': 8, 'actionable_count': 2, 'horizon_rows': []}
+        from .services.readiness_score import build_readiness_score
+        context['readiness_score'] = build_readiness_score(snapshot, context['trade_validation_summary'])
+
+        html = render_to_string('explanation/index.html', context)
+        validation_section = html.split('<h2 class="common-section-title">検証成績</h2>', 1)[1].split('</section>', 1)[0]
+
+        self.assertIn('ページ完成度', validation_section)
+        self.assertIn('今回の判断信頼度', validation_section)
+        self.assertIn('ライブ検証', validation_section)
+        self.assertIn('実用表示可', validation_section)
+        self.assertIn('限定候補', validation_section)
+        self.assertIn('ページ完成度内訳', validation_section)
+        self.assertIn('理由分離', validation_section)
+        self.assertIn('OK', validation_section)
+
+    def test_template_renders_system_quality_component_messages_when_attention_is_needed(self):
+        snapshot = self._snapshot()
+        snapshot.audit_level = 'blocked'
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+            'soft_warning_reasons': [],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': True, 'total_count': 70, 'actionable_count': 12, 'horizon_rows': []}
+        from .services.readiness_score import build_readiness_score
+        context['readiness_score'] = build_readiness_score(snapshot, context['trade_validation_summary'])
+
+        html = render_to_string('explanation/index.html', context)
+        validation_section = html.split('<h2 class="common-section-title">検証成績</h2>', 1)[1].split('</section>', 1)[0]
+
+        self.assertIn('停止状態 要確認 8/20', validation_section)
+        self.assertIn('判定停止理由あり', validation_section)
+        self.assertIn('判定停止', validation_section)
+
+    def test_template_keeps_quality_scores_visible_without_live_validation_results(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'confidence_score': 58,
+            'confidence_grade': 'C+',
+            'hard_block_reasons': [],
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+        from .services.readiness_score import build_readiness_score
+        context['readiness_score'] = build_readiness_score(snapshot, context['trade_validation_summary'])
+
+        html = render_to_string('explanation/index.html', context)
+        validation_section = html.split('<h2 class="common-section-title">検証成績</h2>', 1)[1].split('</section>', 1)[0]
+
+        self.assertIn('ページ完成度', validation_section)
+        self.assertIn('今回の判断信頼度', validation_section)
+        self.assertIn('ライブ検証', validation_section)
+        self.assertIn('判定検証 0件', validation_section)
+        self.assertIn('実用表示可', validation_section)
+        self.assertIn('限定候補', validation_section)
 
     def test_template_shows_refresh_warning_and_precompute_button(self):
         context = snapshot_to_view(self._snapshot())

@@ -325,6 +325,38 @@
 
       <section class="common-section common-empty-state">
         <h2 class="common-section-title">検証成績</h2>
+        {% if readiness_score %}
+          <div class="common-list common-list--compact">
+            {% if readiness_score.system_quality_score is not None %}
+              <div class="common-row">
+                <span>ページ完成度</span>
+                <strong>{{ readiness_score.system_quality_score }} / {{ readiness_score.system_quality_label }}</strong>
+              </div>
+            {% endif %}
+            {% if readiness_score.decision_confidence_score is not None %}
+              <div class="common-row">
+                <span>今回の判断信頼度</span>
+                <strong>{{ readiness_score.decision_confidence_score }} / {{ readiness_score.decision_confidence_label }}</strong>
+              </div>
+            {% endif %}
+            {% if readiness_score.validation_readiness_score is not None %}
+              <div class="common-row">
+                <span>ライブ検証</span>
+                <strong>{{ readiness_score.validation_readiness_score }} / {{ readiness_score.validation_readiness_label }}</strong>
+              </div>
+            {% endif %}
+            {% if readiness_score.system_quality_components %}
+              <div class="common-row common-row--stack">
+                <span>ページ完成度内訳</span>
+                <strong>
+                  {% for row in readiness_score.system_quality_components %}
+                    {{ row.label }} {{ row.status }} {{ row.value }}（{{ row.message }}）{% if not forloop.last %} / {% endif %}
+                  {% endfor %}
+                </strong>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
         {% if trade_validation_summary.available %}
           <div class="common-list common-list--compact">
             <div class="common-row">

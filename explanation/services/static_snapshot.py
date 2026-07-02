@@ -9,6 +9,7 @@ from django.db import OperationalError, ProgrammingError
 from django.utils import timezone
 
 from ..models import ExplanationSnapshot, ExplanationTradeOutcome
+from .readiness_score import build_readiness_score
 
 
 DEFAULT_EXPLANATION_SNAPSHOT_PATH = Path('explanation/data/latest_snapshot.json')
@@ -28,6 +29,7 @@ def _path(path, default):
 
 def explanation_snapshot_payload(snapshot):
     snapshot_key = snapshot_key_for_snapshot(snapshot)
+    score_bundle = build_readiness_score(snapshot, {'available': False})
     return {
         'snapshot_key': snapshot_key,
         'schema': 'explanation_snapshot_v1',
@@ -60,6 +62,7 @@ def explanation_snapshot_payload(snapshot):
         'trade_decision': snapshot.trade_decision or {},
         'evidence': snapshot.evidence or [],
         'source_snapshots': snapshot.source_snapshots or {},
+        'score_bundle': score_bundle,
         'score_breakdown': snapshot.score_breakdown or {},
     }
 
@@ -130,6 +133,9 @@ def snapshot_from_payload(payload):
     macro = payload.get('macro') or {}
     basecalc = payload.get('basecalc') or {}
     audit = payload.get('audit') or {}
+    score_breakdown = payload.get('score_breakdown') or {}
+    if payload.get('score_bundle'):
+        score_breakdown = {**score_breakdown, 'score_bundle': payload.get('score_bundle')}
     snapshot = ExplanationSnapshot(
         as_of=_parse_datetime(payload.get('as_of')) or timezone.now(),
         final_label=final.get('label') or '',
@@ -147,7 +153,7 @@ def snapshot_from_payload(payload):
         trade_decision=payload.get('trade_decision') or {},
         evidence=payload.get('evidence') or [],
         source_snapshots=payload.get('source_snapshots') or {},
-        score_breakdown=payload.get('score_breakdown') or {},
+        score_breakdown=score_breakdown,
         version=payload.get('version') or 'explanation_v2',
     )
     snapshot.static_metadata = {
