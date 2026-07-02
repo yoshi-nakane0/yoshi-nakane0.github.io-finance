@@ -4108,12 +4108,44 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     'validation_readiness_label': '検証参考',
                     'system_quality_components': [
                         {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
                             'label': '判定契約',
                             'score': 20,
                             'max_score': 20,
                             'value': '20/20',
                             'status': 'OK',
                             'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '表示文言あり',
                         },
                     ],
                 },
@@ -4205,12 +4237,44 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     'validation_readiness_label': '検証参考',
                     'system_quality_components': [
                         {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
                             'label': '判定契約',
                             'score': 20,
                             'max_score': 20,
                             'value': '20/20',
                             'status': 'OK',
                             'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 12,
+                            'max_score': 20,
+                            'value': '12/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
                         },
                     ],
                 },
@@ -4722,6 +4786,1272 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
             )
 
             with self.assertRaisesMessage(CommandError, 'score_bundle label must match validation_readiness_label'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_system_quality_score_mismatching_components(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 12,
+                            'max_score': 20,
+                            'value': '12/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_score must match system_quality_components'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_missing_system_quality_component_labels(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 100,
+                            'max_score': 100,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components must include required labels'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_value_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '19/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '表示文言あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components value must match score and max_score'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_status_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 92,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 12,
+                            'max_score': 20,
+                            'value': '12/20',
+                            'status': 'OK',
+                            'message': '表示文言が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components status must match score and max_score'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_duplicate_system_quality_component_labels(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 0,
+                            'max_score': 20,
+                            'value': '0/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '重複した表示文言',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components labels must match required labels'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_max_score_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 100,
+                            'value': '20/100',
+                            'status': '要確認',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '表示文言あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components max_score must be 20'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_score_over_max_score(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 25,
+                            'max_score': 20,
+                            'value': '25/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 15,
+                            'max_score': 20,
+                            'value': '15/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components score must be between 0 and max_score'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_non_object_system_quality_component(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 100,
+                    'system_quality_label': '実用表示可',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '表示文言あり',
+                        },
+                        '不正な内訳行',
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components must contain JSON objects only'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_missing_required_keys(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 80,
+                    'system_quality_label': '改善中',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'max_score': 20,
+                            'value': '0/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components must include required fields'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_score_bundle_component_non_numeric_score(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'confidence_score': 58,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'score': 69,
+                    'label': '検証参考',
+                    'system_quality_score': 80,
+                    'system_quality_label': '改善中',
+                    'decision_confidence_score': 58,
+                    'decision_confidence_label': '限定候補',
+                    'validation_readiness_score': 69,
+                    'validation_readiness_label': '検証参考',
+                    'system_quality_components': [
+                        {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 'bad',
+                            'max_score': 20,
+                            'value': 'bad/20',
+                            'status': '要確認',
+                            'message': '表示文言が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'score_bundle system_quality_components score and max_score must be numeric'):
                 call_command(
                     'check_explanation_integrity',
                     latest=str(latest),
@@ -7376,12 +8706,44 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     'validation_readiness_label': '検証参考',
                     'system_quality_components': [
                         {
+                            'label': '判断材料',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '根拠あり',
+                        },
+                        {
+                            'label': '理由分離',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': 'hard/soft分離済み',
+                        },
+                        {
+                            'label': '停止状態',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '判定継続可',
+                        },
+                        {
                             'label': '判定契約',
                             'score': 20,
                             'max_score': 20,
                             'value': '20/20',
                             'status': 'OK',
                             'message': '状態契約あり',
+                        },
+                        {
+                            'label': '表示文言',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '表示文言あり',
                         },
                     ],
                 },

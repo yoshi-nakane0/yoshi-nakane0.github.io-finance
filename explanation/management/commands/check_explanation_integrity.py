@@ -24,6 +24,7 @@ BASECALC_DISPLAY_EXPLANATION_ALLOWED = {
     'candidate_limited': {'allowed', 'limited'},
     'candidate_confirmed': {'confirmed'},
 }
+REQUIRED_SYSTEM_QUALITY_COMPONENT_LABELS = ('判断材料', '理由分離', '停止状態', '判定契約', '表示文言')
 
 
 class Command(BaseCommand):
@@ -188,11 +189,52 @@ def _assert_score_bundle_contract(payload, source):
     if score_bundle.get('decision_confidence_label') != expected_label:
         raise CommandError(f'{source} score_bundle decision_confidence_label must match trade_decision')
     rows = score_bundle.get('system_quality_components') or []
+    if not isinstance(rows, list):
+        raise CommandError(f'{source} score_bundle system_quality_components must be a list')
+    if any(not isinstance(row, dict) for row in rows):
+        raise CommandError(f'{source} score_bundle system_quality_components must contain JSON objects only')
     contract_row = next((row for row in rows if isinstance(row, dict) and row.get('label') == '判定契約'), None)
     if not contract_row:
         raise CommandError(f'{source} score_bundle must include 判定契約 row')
     if contract_row.get('status') != 'OK' or contract_row.get('value') != '20/20':
         raise CommandError(f'{source} score_bundle 判定契約 must be OK 20/20')
+    component_label_list = [row.get('label') for row in rows if isinstance(row, dict)]
+    component_labels = set(component_label_list)
+    required_component_labels = set(REQUIRED_SYSTEM_QUALITY_COMPONENT_LABELS)
+    if not required_component_labels.issubset(component_labels):
+        raise CommandError(f'{source} score_bundle system_quality_components must include required labels')
+    if component_labels != required_component_labels or len(component_label_list) != len(REQUIRED_SYSTEM_QUALITY_COMPONENT_LABELS):
+        raise CommandError(f'{source} score_bundle system_quality_components labels must match required labels')
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if not {'label', 'score', 'max_score', 'value', 'status', 'message'}.issubset(row):
+            raise CommandError(f'{source} score_bundle system_quality_components must include required fields')
+        row_score = _int_value(row.get('score'))
+        row_max_score = _int_value(row.get('max_score'))
+        if row_score is None or row_max_score is None:
+            raise CommandError(f'{source} score_bundle system_quality_components score and max_score must be numeric')
+        if row_max_score != 20:
+            raise CommandError(f'{source} score_bundle system_quality_components max_score must be 20')
+        if row_score < 0 or row_score > row_max_score:
+            raise CommandError(
+                f'{source} score_bundle system_quality_components score must be between 0 and max_score'
+            )
+        if row.get('value') != f'{row_score}/{row_max_score}':
+            raise CommandError(
+                f'{source} score_bundle system_quality_components value must match score and max_score'
+            )
+        expected_status = 'OK' if row_score >= row_max_score else '要確認'
+        if row.get('status') != expected_status:
+            raise CommandError(
+                f'{source} score_bundle system_quality_components status must match score and max_score'
+            )
+    component_score = min(
+        100,
+        sum(_int_value(row.get('score')) or 0 for row in rows if isinstance(row, dict)),
+    )
+    if _int_value(score_bundle.get('system_quality_score')) != component_score:
+        raise CommandError(f'{source} score_bundle system_quality_score must match system_quality_components')
 
 
 def _score_bundle_decision_blocked(payload):
