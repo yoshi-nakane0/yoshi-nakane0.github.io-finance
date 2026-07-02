@@ -1,6 +1,7 @@
 def build_readiness_score(snapshot, validation_summary):
     validation_summary = validation_summary or {}
-    total_count = validation_summary.get('total_count') or 0
+    total_count = _safe_int(validation_summary.get('total_count'))
+    actionable_count = _safe_int(validation_summary.get('actionable_count'))
     score = 0
     score += 25 if snapshot.audit_level != 'blocked' else 0
     score += _gate_sync_score(snapshot)
@@ -16,6 +17,9 @@ def build_readiness_score(snapshot, validation_summary):
         'title': '検証 readiness',
         'minimum_required_results': 50,
         'remaining_results_to_90': max(0, 50 - total_count),
+        'validation_state_display': _validation_state_display(total_count),
+        'actionable_result_display': _actionable_result_display(total_count, actionable_count),
+        'validation_attention_display': _validation_attention_display(total_count, actionable_count),
         'note': '検証件数と表示整合性から見た補助指標です。現在判断を止める条件ではありません。',
     }
 
@@ -32,7 +36,7 @@ def _gate_sync_score(snapshot):
 
 
 def _validation_score(summary):
-    total = summary.get('total_count') or 0
+    total = _safe_int(summary.get('total_count'))
     if total >= 50:
         return 20
     if total >= 30:
@@ -54,6 +58,30 @@ def _validation_cap(total):
     return 100
 
 
+def _validation_state_display(total):
+    if total >= 50:
+        return '検証済み'
+    if total >= 10:
+        return '一部検証済み'
+    return '検証中'
+
+
+def _actionable_result_display(total, actionable):
+    if total < 10 or actionable <= 0:
+        return '不足'
+    if total >= 50 and actionable >= 10:
+        return '十分'
+    return '蓄積中'
+
+
+def _validation_attention_display(total, actionable):
+    if total < 50:
+        return '検証不足のため建玉サイズを制限'
+    if actionable < 10:
+        return '売買候補の実績が少ないため建玉サイズを確認'
+    return '検証済み。通常のリスク管理を継続'
+
+
 def _label(score):
     if score >= 90:
         return '実績確認済み'
@@ -62,3 +90,10 @@ def _label(score):
     if score >= 50:
         return '検証参考'
     return '検証不足'
+
+
+def _safe_int(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0

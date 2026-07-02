@@ -33,6 +33,7 @@ class BeginnerDecision:
     current_price_display: str
     tradable: bool
     candidate_visible: bool
+    execution_allowed: bool
     position_allowed: bool
     entry_permission: str
     position_size_pct: Optional[int]
@@ -44,7 +45,9 @@ class BeginnerDecision:
     invalidation_display: str
     reward_risk_display: str
     trade_availability_display: str
+    no_candidate_reason_display: str
     confidence_display: str
+    entry_permission_label: str
     position_size_display: str
     top_next_condition_summary: str
     confidence_component_rows: List[Dict[str, str]]
@@ -172,6 +175,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         status = 'buy_candidate'
     elif candidate_visible and selected_side == 'short':
         status = 'sell_candidate'
+    execution_allowed = candidate_visible and entry_permission in {'limited_entry', 'full_entry'}
     position_allowed = entry_permission == 'full_entry' and tradable
 
     wait_reasons = _wait_reasons(
@@ -189,7 +193,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     plain_action = _plain_action(status, reward_risk, entry_permission, selected_side, position_size_pct)
     top_reasons = _top_reasons(reasons, warnings)
 
-    entry_display = _entry_display(trade_decision) if candidate_visible else ('停止' if status == 'data_blocked' else 'なし')
+    entry_display = _entry_display_for_permission(trade_decision, candidate_visible, entry_permission, status)
     target_1_display = _price_display(target_1_price) if candidate_visible else '—'
     target_2_display = _price_display(target_2_price) if candidate_visible and target_2_price is not None else '—'
     stop_display = _price_display(stop_price) if candidate_visible else '—'
@@ -209,6 +213,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     )
     watch_levels = _watch_levels(basecalc, world_model, snapshot, status, tradable)
     next_triggers = _next_triggers(basecalc, world_model, reward_risk, directional_allowed)
+    confidence_display = _confidence_display(confidence_grade, confidence_score, manual_price, status)
 
     return BeginnerDecision(
         status=status,
@@ -221,6 +226,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         current_price_display=_price_display(current_price),
         tradable=tradable,
         candidate_visible=candidate_visible,
+        execution_allowed=execution_allowed,
         position_allowed=position_allowed,
         entry_permission=entry_permission,
         position_size_pct=position_size_pct,
@@ -232,10 +238,15 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         invalidation_display=invalidation_display,
         reward_risk_display=reward_risk_display,
         trade_availability_display=_trade_availability_display(status, decision_status),
-        confidence_display=_confidence_display(confidence_grade, confidence_score, manual_price, status),
+        no_candidate_reason_display=_no_candidate_reason_display(candidate_visible, wait_reasons, warnings, top_reasons),
+        confidence_display=confidence_display,
+        entry_permission_label=_entry_permission_label(entry_permission, status),
         position_size_display=_position_size_display(position_size_pct, entry_permission, status),
         top_next_condition_summary=' / '.join(_top_next_conditions(next_triggers, selected_side)),
-        confidence_component_rows=_confidence_component_rows(trade_decision.get('confidence_components') or {}),
+        confidence_component_rows=_confidence_component_rows(
+            trade_decision.get('confidence_components') or {},
+            confidence_display,
+        ),
         data_state=_data_state(snapshot.audit_level, manual_price, confidence_score),
         wait_reasons=wait_reasons,
         wait_reason_cards=_wait_reason_cards(wait_reasons, warnings),
@@ -358,10 +369,10 @@ def _top_next_conditions(next_triggers, selected_side):
     return result or ['条件変化を待つ']
 
 
-def _confidence_component_rows(components):
+def _confidence_component_rows(components, confidence_display=''):
     if not isinstance(components, dict) or not components:
         return []
-    rows = []
+    rows = [{'label': '総合信頼度', 'value': confidence_display}] if confidence_display else []
     mapping = [
         ('basecalc_direction', 'basecalc方向', 1),
         ('macro_alignment', 'macro整合', 1),
@@ -381,7 +392,7 @@ def _confidence_component_rows(components):
             rows.append({'label': label, 'value': str(value)})
             continue
         display_value = int(numeric * sign) if float(numeric * sign).is_integer() else round(numeric * sign, 1)
-        rows.append({'label': label, 'value': str(display_value)})
+        rows.append({'label': label, 'value': f'{display_value}点'})
     target_hit_rate = _rate_component_display(components.get('target_hit_rate'))
     if target_hit_rate:
         rows.append({'label': 'T1到達率', 'value': target_hit_rate})
@@ -430,6 +441,30 @@ def _trade_availability_display(status, decision_status):
     return STATUS_LABELS.get(status, '条件確認中')
 
 
+def _no_candidate_reason_display(candidate_visible, wait_reasons, warnings, top_reasons):
+    if candidate_visible:
+        return ''
+    for source in (wait_reasons, warnings, top_reasons):
+        for item in source or []:
+            if item:
+                return str(item)
+    return '条件未達'
+
+
+def _entry_permission_label(entry_permission, status):
+    if status == 'data_blocked':
+        return '停止'
+    if entry_permission == 'full_entry':
+        return '入る'
+    if entry_permission == 'limited_entry':
+        return '条件付きで入る'
+    if entry_permission == 'watch_only':
+        return '監視のみ'
+    if status in {'buy_candidate', 'sell_candidate'}:
+        return '入る候補'
+    return '入らない'
+
+
 def _position_size_display(value, entry_permission, status):
     if status == 'data_blocked':
         return 'なし'
@@ -450,6 +485,14 @@ def _entry_display(decision):
     if low is not None and high is not None:
         return f'{_format_price(low)}〜{_format_price(high)}円'
     return _price_display(_number(decision.get('entry_price')))
+
+
+def _entry_display_for_permission(decision, candidate_visible, entry_permission, status):
+    if not candidate_visible:
+        return '停止' if status == 'data_blocked' else 'なし'
+    if entry_permission == 'watch_only':
+        return '監視のみ'
+    return _entry_display(decision)
 
 
 def _direction_warning(side, current_price, target_price, stop_price):

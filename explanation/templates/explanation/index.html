@@ -46,27 +46,11 @@
               </div>
               <div class="common-row common-row--stack">
                 <span>行動</span>
-                <strong>行動：{{ beginner_decision.plain_action }}</strong>
-              </div>
-              <div class="common-row common-row--stack">
-                <span>信頼度</span>
-                <strong>信頼度：{{ beginner_decision.confidence_display }}</strong>
-              </div>
-              <div class="common-row common-row--stack">
-                <span>建玉上限</span>
-                <strong>建玉上限：{{ beginner_decision.position_size_display }}</strong>
-              </div>
-              <div class="common-row common-row--stack">
-                <span>無効化</span>
-                <strong>無効化：{{ beginner_decision.invalidation_display }}</strong>
+                <strong>行動：{{ beginner_decision.entry_permission_label }}</strong>
               </div>
               <div class="common-row common-row--stack">
                 <span>理由</span>
                 <strong>理由：{{ beginner_decision.top_reason_summary }}</strong>
-              </div>
-              <div class="common-row common-row--stack">
-                <span>次の条件</span>
-                <strong>次の条件：{{ beginner_decision.top_next_condition_summary }}</strong>
               </div>
             </div>
           </div>
@@ -106,6 +90,10 @@
           </div>
           {% if beginner_decision.candidate_visible %}
             <div class="common-row">
+              <span>売買可否</span>
+              <strong>{{ beginner_decision.trade_availability_display }}</strong>
+            </div>
+            <div class="common-row">
               <span>第1目標</span>
               <strong>{{ beginner_decision.target_1_display }}</strong>
             </div>
@@ -117,10 +105,26 @@
               <span>R/R</span>
               <strong>{{ beginner_decision.reward_risk_display }}</strong>
             </div>
+            <div class="common-row">
+              <span>建玉上限</span>
+              <strong>{{ beginner_decision.position_size_display }}</strong>
+            </div>
+            <div class="common-row">
+              <span>無効化</span>
+              <strong>{{ beginner_decision.invalidation_display }}</strong>
+            </div>
+            <div class="common-row common-row--stack">
+              <span>次の条件</span>
+              <strong>{{ beginner_decision.top_next_condition_summary }}</strong>
+            </div>
           {% else %}
             <div class="common-row">
               <span>売買可否</span>
               <strong>{{ beginner_decision.trade_availability_display }}</strong>
+            </div>
+            <div class="common-row common-row--stack">
+              <span>候補外理由</span>
+              <strong>{{ beginner_decision.no_candidate_reason_display }}</strong>
             </div>
           {% endif %}
         </div>
@@ -325,15 +329,15 @@
           <div class="common-list common-list--compact">
             <div class="common-row">
               <span>検証状態</span>
-              <strong>{% if readiness_score %}{{ readiness_score.label }}{% else %}検証中{% endif %}</strong>
+              <strong>{% if readiness_score %}{{ readiness_score.validation_state_display }}{% else %}検証中{% endif %}</strong>
             </div>
             <div class="common-row">
               <span>売買候補の実績</span>
-              <strong>{{ trade_validation_summary.actionable_count }}件 / 全{{ trade_validation_summary.total_count }}件</strong>
+              <strong>{% if readiness_score %}{{ readiness_score.actionable_result_display }}{% else %}不足{% endif %}</strong>
             </div>
             <div class="common-row common-row--stack">
               <span>注意</span>
-              <strong>{% if readiness_score.remaining_results_to_90 %}検証不足のため建玉サイズを制限{% else %}検証済み。通常のリスク管理を継続{% endif %}</strong>
+              <strong>{% if readiness_score %}{{ readiness_score.validation_attention_display }}{% else %}検証不足のため建玉サイズを制限{% endif %}</strong>
             </div>
           </div>
         {% else %}
