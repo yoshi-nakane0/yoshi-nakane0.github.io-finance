@@ -65,7 +65,16 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         world_model = context.get('world_model') or {}
     output_contract = world_model.get('output_contract') or {}
     decision = context.get('decision') or {}
-    confidence_score = _safe_int(decision.get('confidence_score') or world_model.get('confidence_score'), 0)
+    basecalc_signal = world_model.get('basecalc_signal') or {}
+    confidence_score = _safe_int(
+        _first_present(
+            output_contract.get('confidence_score'),
+            basecalc_signal.get('confidence_score'),
+            decision.get('confidence_score'),
+            world_model.get('confidence_score'),
+        ),
+        0,
+    )
     data_quality_score = _safe_int(
         decision.get('data_quality_score') or world_model.get('data_quality_score'),
         confidence_score,
@@ -75,7 +84,6 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         or world_model.get('intermarket_technicals')
         or {}
     )
-    basecalc_signal = world_model.get('basecalc_signal') or {}
     hard_block_reasons = output_contract.get('hard_block_reasons') or basecalc_signal.get('hard_block_reasons') or []
     soft_warning_reasons = output_contract.get('soft_warning_reasons') or basecalc_signal.get('soft_warning_reasons') or []
     validation_warnings = output_contract.get('validation_warnings') or basecalc_signal.get('validation_warnings') or []
@@ -104,7 +112,13 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         bias=_technical_bias(world_model, decision, output_contract),
         summary=_summary(world_model, decision, output_contract),
         confidence_score=confidence_score,
-        confidence_grade=decision.get('confidence') or world_model.get('confidence') or _grade_from_score(confidence_score),
+        confidence_grade=(
+            output_contract.get('confidence_label')
+            or basecalc_signal.get('confidence_label')
+            or decision.get('confidence')
+            or world_model.get('confidence')
+            or _grade_from_score(confidence_score)
+        ),
         data_quality_score=data_quality_score,
         readiness_level=decision.get('readiness_level') or world_model.get('readiness_level') or 'blocked',
         can_show_prediction=bool(decision.get('can_show_prediction')) and output_contract.get('contract_status') != 'error',
@@ -434,6 +448,13 @@ def _safe_float(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _first_present(*values):
+    for value in values:
+        if value is not None and value != '':
+            return value
+    return None
 
 
 def _safe_int(value, default):

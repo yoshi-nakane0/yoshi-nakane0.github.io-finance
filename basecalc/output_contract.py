@@ -82,6 +82,7 @@ def apply_output_contract(
         available_display = "方向・目標・レンジ" if directional_allowed else "ATRレンジ・支持抵抗・反転警戒"
     if status == "ok" and _confirmed_contract(confidence_calibrated, validation_gate, us_index_status, directional_allowed):
         status = "confirmed"
+    contract_confidence_score, contract_confidence_label = _contract_confidence(world_model, status)
     contract = {
         "snapshot_id": world_model.get("snapshot_id") or str(uuid4()),
         "model_version": world_model.get("model_version") or BASECALC_MODEL_VERSION,
@@ -95,6 +96,8 @@ def apply_output_contract(
         "ohlcv_bar_count": _ohlcv_bar_count(world_model),
         "data_quality_score": world_model.get("data_quality_score"),
         "readiness_level": readiness_level,
+        "confidence_score": contract_confidence_score,
+        "confidence_label": contract_confidence_label,
         "directional_allowed": directional_allowed,
         "target_calculated_from_price": model_price,
         "range_calculated_from_price": model_price,
@@ -341,6 +344,12 @@ def _validation_is_confirmed(validation_gate):
     if not rows:
         return False
     return all((row.get("validation_level") or "") == "confirmed" for row in rows)
+
+
+def _contract_confidence(world_model, status):
+    if status == "error":
+        return 0, "D"
+    return world_model.get("confidence_score"), world_model.get("confidence")
 
 
 def _display_status(status, directional_allowed):

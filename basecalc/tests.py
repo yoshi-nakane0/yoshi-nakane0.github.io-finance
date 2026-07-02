@@ -53,6 +53,7 @@ from .outcomes import (
 from .persistence import export_basecalc_history, import_basecalc_history
 from .readiness import evaluate_world_model_readiness
 from .scoring import calculate_sentiment_score
+from .signal_contract import build_basecalc_signal_contract
 from .similarity import find_similar_cases
 from .status import intermarket_status_entry, status_display_rows
 from .state_machine import STATE_DEFINITIONS, estimate_expected_returns, estimate_transition_probabilities
@@ -4652,6 +4653,22 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertIn('validation_warnings', result['basecalc_signal'])
         self.assertIn('confidence_cap_reason', result['basecalc_signal'])
         self.assertIn('display_status', result['basecalc_signal'])
+
+    def test_basecalc_signal_contract_prefers_output_contract_capped_confidence(self):
+        signal = build_basecalc_signal_contract({
+            'price': 41000,
+            'confidence_score': 78,
+            'confidence': 'High',
+            'output_contract': {
+                'confidence_score': 64,
+                'confidence_label': 'Middle',
+                'confidence_cap_reason': '信頼度が未較正です',
+            },
+        })
+
+        self.assertEqual(signal['confidence_score'], 64)
+        self.assertEqual(signal['confidence_label'], 'Middle')
+        self.assertEqual(signal['confidence_cap_reason'], '信頼度が未較正です')
 
 
 class BasecalcReliabilitySpecTests(TestCase):

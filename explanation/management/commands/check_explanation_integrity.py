@@ -160,6 +160,13 @@ def _assert_status_names(payload, source):
         raise CommandError(f'{source} trade_decision decision_status is not allowed: {decision_status}')
     basecalc_raw = ((payload.get('source_snapshots') or {}).get('basecalc') or {}).get('raw') or {}
     world_model = basecalc_raw.get('world_model') or {}
-    display_status = (world_model.get('output_contract') or {}).get('display_status') or world_model.get('display_status') or ''
+    output_contract = world_model.get('output_contract') or {}
+    display_status = output_contract.get('display_status') or world_model.get('display_status') or ''
     if display_status and display_status not in ALLOWED_BASECALC_DISPLAY_STATUSES:
         raise CommandError(f'{source} basecalc display_status is not allowed: {display_status}')
+    if output_contract.get('contract_status') == 'error':
+        if display_status and display_status != 'blocked':
+            raise CommandError(f'{source} basecalc error contract display_status must be blocked')
+        confidence_score = output_contract.get('confidence_score')
+        if confidence_score not in (None, '', 0, 0.0):
+            raise CommandError(f'{source} basecalc error contract confidence_score must be 0')

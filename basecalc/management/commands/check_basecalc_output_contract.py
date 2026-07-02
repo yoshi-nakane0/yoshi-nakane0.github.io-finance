@@ -42,15 +42,13 @@ class Command(BaseCommand):
             or world_model.get("display_price")
             or world_model.get("price")
         )
-        saved_display_status = (
-            (world_model.get("output_contract") or {}).get("display_status")
-            or world_model.get("display_status")
-            or ""
-        )
+        output_contract = world_model.get("output_contract") or {}
+        saved_display_status = output_contract.get("display_status") or world_model.get("display_status") or ""
         if saved_display_status and saved_display_status not in ALLOWED_DISPLAY_STATUSES:
             raise CommandError(
                 f"basecalc output contract failed: display_status is not allowed: {saved_display_status}"
             )
+        _assert_saved_contract_consistency(output_contract)
         contract = apply_output_contract(
             world_model,
             display_price=display_price,
@@ -83,3 +81,17 @@ class Command(BaseCommand):
                 )
             )
         self.stdout.write(self.style.SUCCESS("basecalc output contract ok"))
+
+
+def _assert_saved_contract_consistency(output_contract):
+    if not isinstance(output_contract, dict):
+        return
+    if output_contract.get("contract_status") != "error":
+        return
+    display_status = output_contract.get("display_status")
+    if display_status and display_status != "blocked":
+        raise CommandError("basecalc output contract failed: error contract display_status must be blocked")
+    confidence_score = output_contract.get("confidence_score")
+    if confidence_score in (None, "", 0, 0.0):
+        return
+    raise CommandError("basecalc output contract failed: error contract confidence_score must be 0")

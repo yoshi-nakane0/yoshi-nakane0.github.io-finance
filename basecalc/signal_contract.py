@@ -56,8 +56,8 @@ def build_basecalc_signal_contract(outlook: dict) -> dict:
         "technical_regime": outlook.get("technical_regime"),
         "nikkei_technical_score": outlook.get("nikkei_technical_score"),
         "us_index_confirmation_score": outlook.get("us_index_confirmation_score"),
-        "confidence_score": outlook.get("confidence_score"),
-        "confidence_label": outlook.get("confidence"),
+        "confidence_score": output_contract.get("confidence_score", outlook.get("confidence_score")),
+        "confidence_label": output_contract.get("confidence_label") or outlook.get("confidence"),
         "horizons": outlook.get("horizons") or {},
         "scenarios": outlook.get("scenarios") or {},
         "levels": {
