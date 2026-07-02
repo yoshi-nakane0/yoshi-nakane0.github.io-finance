@@ -1,10 +1,8 @@
 {
-  "basecalc_as_of": "2026-07-02T05:23:00+00:00",
+  "basecalc_as_of": "2026-07-02T14:15:00+00:00",
   "basecalc_status": "limited",
   "blocking_reasons": [
-    "現行モデルがATRベースラインを下回るため",
     "米国3指数確認が不足",
-    "局面別検証不足のため信頼度を限定",
     "予測ゲート停止中",
     "重要指標の発表前後のため一段階下げます。"
   ],
@@ -13,11 +11,11 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-07-02T11:38:16.410068+00:00",
-  "explanation_generated_at": "2026-07-02T11:38:16.418863+00:00",
+  "explanation_as_of": "2026-07-02T14:31:08.824336+00:00",
+  "explanation_generated_at": "2026-07-02T14:31:08.833753+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-07-02T11:38:16.821574+00:00",
-  "git_sha": "837c5910088556912017db7962c9bd42a267503f",
+  "generated_at": "2026-07-02T14:31:09.298003+00:00",
+  "git_sha": "0f4e40d33244c02c1eeec4e308e726d56893007c",
   "macro_as_of": "2026-07-02T08:32:33.998206+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
@@ -26,5 +24,5 @@
     "explanation": "explanation_v2",
     "macro": "regime_v2_score"
   },
-  "workflow_run_id": "28587030847"
+  "workflow_run_id": "28597900566"
 }
