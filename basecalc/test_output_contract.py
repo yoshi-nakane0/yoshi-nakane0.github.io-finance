@@ -9,6 +9,38 @@ from .snapshot import write_basecalc_snapshot
 
 
 class BasecalcOutputContractTests(SimpleTestCase):
+    def test_validation_gate_penalizes_low_sample_direction_evidence_by_ten_without_blocking(self):
+        from .validation_gate import build_validation_gate
+
+        gate = build_validation_gate(
+            {
+                'direction': 'up',
+                'state_key': 'dip_buy',
+                'state_label': '押し目買い',
+            },
+            validation_report={
+                'horizons': {
+                    '1d': {
+                        'state_direction_summaries': [
+                            {
+                                'state_key': 'dip_buy',
+                                'direction': 'up',
+                                'total_predictions': 8,
+                                'directional_accuracy': 0.48,
+                                'avg_return_pct': 0.03,
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        self.assertTrue(gate['1d']['direction_allowed'])
+        self.assertEqual(gate['1d']['validation_level'], 'low')
+        self.assertEqual(gate['1d']['confidence_penalty'], 10)
+        self.assertEqual(gate['1d']['reasons'], [])
+        self.assertIn('押し目買いの上方向検証件数が不足しているため', gate['1d']['warnings'])
+
     def test_contract_blocks_stale_targets_after_display_price_changes(self):
         from .output_contract import apply_output_contract
 
@@ -41,6 +73,36 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertIn('現在値と計算基準価格が不一致', contract['stop_reasons'])
         self.assertIn('上値目標が現在値より下にあります', contract['stop_reasons'])
         self.assertIn('レンジ上限が現在値より下にあります', contract['stop_reasons'])
+
+    def test_contract_exposes_hard_stop_reasons_separately_from_soft_warnings(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 66670,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'upside_targets': [{'label': 'T1', 'price': 68570, 'probability': None}],
+            'downside_targets': [{'label': 'T1', 'price': 64770, 'probability': None}],
+            'target_ranges': [{'horizon': '1d', 'low': 64960, 'high': 68380}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 42, 'is_statistically_valid': True},
+            'confidence_score': 72,
+            'us_index_confirmation': {
+                'readiness': {'usable': False},
+                'components': {},
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=71620)
+
+        self.assertEqual(contract['contract_status'], 'error')
+        self.assertIn('現在値と計算基準価格が不一致', contract['hard_stop_reasons'])
+        self.assertIn('上値目標が現在値より下にあります', contract['hard_stop_reasons'])
+        self.assertNotIn('米国3指数確認が不足', contract['hard_stop_reasons'])
+        self.assertIn('米国3指数確認が不足', contract['soft_warning_reasons'])
+        self.assertEqual(contract['hard_stop_reasons'], contract['hard_block_reasons'])
 
     def test_contract_stops_direction_when_expected_return_conflicts(self):
         from .output_contract import apply_output_contract

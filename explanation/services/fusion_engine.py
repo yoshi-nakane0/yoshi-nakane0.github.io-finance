@@ -69,16 +69,24 @@ def build_trade_decision_v2(
 ) -> TradeDecision:
     current_price = basecalc.current_price
     price_source = basecalc.price_source or 'market_data'
-    confidence_score = _trade_confidence(macro, basecalc, audit)
-    confidence_grade = _grade_from_score(confidence_score)
     long_plan = select_trade_targets('long', current_price, basecalc)
     short_plan = select_trade_targets('short', current_price, basecalc)
     reversal = evaluate_reversal(macro, basecalc)
+    validation_level = _validation_level(basecalc)
+    hard_block_reasons, soft_warning_reasons = _reason_groups(basecalc)
+    confidence_score = _trade_confidence(
+        macro,
+        basecalc,
+        audit,
+        validation_level,
+        long_plan,
+        short_plan,
+        hard_block_reasons,
+    )
+    confidence_grade = _grade_from_score(confidence_score)
     long_score, short_score, no_trade_score = _trade_scores(macro, basecalc, audit, long_plan, short_plan, reversal)
     trend_follow_score = _clamp((basecalc.continuation_score or 0) + _macro_trend_bonus(macro, basecalc))
     reversal_score = _clamp(reversal.get('score') or 0)
-    validation_level = _validation_level(basecalc)
-    hard_block_reasons, soft_warning_reasons = _reason_groups(basecalc)
     confidence_components = _confidence_components(
         macro,
         basecalc,
@@ -87,6 +95,7 @@ def build_trade_decision_v2(
         validation_level,
         long_plan,
         short_plan,
+        hard_block_reasons,
     )
 
     if audit.status == 'blocked' or basecalc.contract_status == 'error':
@@ -615,6 +624,8 @@ def _direction_stopped(basecalc, hard_block_reasons=None):
 
 
 def _candidate_status(basecalc, confidence_score, validation_level):
+    if basecalc.allowed_direction in {'stopped', 'none'}:
+        return 'watch_only'
     if confidence_score < 50:
         return 'watch_only'
     warnings = list(basecalc.soft_warning_reasons or []) + list(basecalc.warnings or [])
@@ -723,7 +734,23 @@ def _looks_like_hard_stop(reason):
     )
 
 
-def _confidence_components(macro, basecalc, audit, score, validation_level, long_plan, short_plan):
+def _confidence_components(macro, basecalc, audit, score, validation_level, long_plan, short_plan, hard_block_reasons=None):
+    components = _confidence_component_values(macro, basecalc, audit, validation_level, long_plan, short_plan, hard_block_reasons)
+    return {
+        **components,
+        'confidence_cap_reason': basecalc.confidence_cap_reason or audit.confidence_cap or '',
+        'raw_score': score,
+        'confidence_formula': 'weighted_components_v1',
+        'basecalc_weight': 0.35,
+        'macro_weight': 0.2,
+        'validation_weight': 0.15,
+        'target_weight': 0.15,
+        'data_quality_weight': 0.1,
+        'intermarket_weight': 0.05,
+    }
+
+
+def _confidence_component_values(macro, basecalc, audit, validation_level, long_plan, short_plan, hard_block_reasons=None):
     best_rr = max(
         [value for value in (long_plan.reward_risk, short_plan.reward_risk) if value is not None],
         default=0,
@@ -745,8 +772,7 @@ def _confidence_components(macro, basecalc, audit, score, validation_level, long
         'intermarket_confirmation': 10 if basecalc.us_index_available else -5,
         'event_penalty': int((_number((macro.factor_vector or {}).get('event_risk_score')) or 0) / 10),
         'audit_penalty': audit.penalty,
-        'confidence_cap_reason': basecalc.confidence_cap_reason or audit.confidence_cap or '',
-        'raw_score': score,
+        'hard_block_penalty': 30 if hard_block_reasons else 0,
     }
 
 
@@ -803,10 +829,32 @@ def _entry_zone(current_price, side):
     return round(current_price - width / 2), round(current_price + width)
 
 
-def _trade_confidence(macro, basecalc, audit):
-    score = min(macro.confidence_score, basecalc.confidence_score) - audit.penalty
+def _trade_confidence(macro, basecalc, audit, validation_level, long_plan, short_plan, hard_block_reasons=None):
+    components = _confidence_component_values(
+        macro,
+        basecalc,
+        audit,
+        validation_level,
+        long_plan,
+        short_plan,
+        hard_block_reasons,
+    )
+    intermarket_quality = 100 if basecalc.us_index_available else 0
+    score = (
+        components['basecalc_direction'] * 0.35
+        + components['macro_alignment'] * 0.20
+        + components['validation_quality'] * 0.15
+        + components['target_quality'] * 0.15
+        + components['data_quality'] * 0.10
+        + intermarket_quality * 0.05
+        - components['event_penalty']
+        - components['audit_penalty']
+        - components['hard_block_penalty']
+    )
     if audit.confidence_cap:
         score = min(score, GRADE_MAX_SCORE.get(audit.confidence_cap, score))
+    if macro.confidence_score < 50 and basecalc.confidence_score < 50:
+        score = min(score, 49)
     if macro.factor_vector.get('macro_stale'):
         score = min(score, 59)
     return _clamp(score)

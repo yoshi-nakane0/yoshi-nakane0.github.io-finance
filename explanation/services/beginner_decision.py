@@ -13,8 +13,8 @@ BLOCKED_DECISION_TYPES = {
 
 
 STATUS_LABELS = {
-    'buy_candidate': '買い候補',
-    'sell_candidate': '売り候補',
+    'buy_candidate': 'ロング候補',
+    'sell_candidate': 'ショート候補',
     'wait': '待機',
     'no_trade': '見送り',
     'data_blocked': '判定停止',
@@ -26,6 +26,8 @@ class BeginnerDecision:
     status: str
     label: str
     plain_action: str
+    top_reasons: List[str]
+    top_reason_summary: str
     headline: str
     current_price: Optional[float]
     current_price_display: str
@@ -42,6 +44,7 @@ class BeginnerDecision:
     invalidation_display: str
     reward_risk_display: str
     confidence_display: str
+    confidence_component_rows: List[Dict[str, str]]
     data_state: str
     wait_reasons: List[str] = field(default_factory=list)
     wait_reason_summary: str = ''
@@ -179,6 +182,8 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     if reward_risk is not None and reward_risk < 1.2 and 'R/R不足' not in warnings:
         warnings.append('R/R不足')
     warnings = _limited(warnings)
+    plain_action = _plain_action(status, reward_risk, entry_permission)
+    top_reasons = _top_reasons(reasons, warnings)
 
     entry_display = _entry_display(trade_decision) if candidate_visible else ('停止' if status == 'data_blocked' else 'なし')
     target_1_display = _price_display(target_1_price) if candidate_visible else '—'
@@ -203,7 +208,9 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     return BeginnerDecision(
         status=status,
         label=_status_label(status, selected_side, decision_status),
-        plain_action=_plain_action(status, reward_risk),
+        plain_action=plain_action,
+        top_reasons=top_reasons,
+        top_reason_summary=' / '.join(top_reasons),
         headline=_headline(status, warnings, selected_side, contract_status, directional_allowed),
         current_price=current_price,
         current_price_display=_price_display(current_price),
@@ -220,6 +227,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         invalidation_display=invalidation_display,
         reward_risk_display=reward_risk_display,
         confidence_display=_confidence_display(confidence_grade, confidence_score, manual_price, status),
+        confidence_component_rows=_confidence_component_rows(trade_decision.get('confidence_components') or {}),
         data_state=_data_state(snapshot.audit_level, manual_price, confidence_score),
         wait_reasons=wait_reasons,
         wait_reason_summary=_wait_reason_summary(status, wait_reasons),
@@ -265,8 +273,12 @@ def _status(
     return 'no_trade'
 
 
-def _plain_action(status, reward_risk):
+def _plain_action(status, reward_risk, entry_permission='no_entry'):
     if status in {'buy_candidate', 'sell_candidate'}:
+        if entry_permission == 'limited_entry':
+            return '条件付きで入る'
+        if entry_permission == 'watch_only':
+            return '監視のみ'
         if reward_risk is not None and reward_risk < 1.5:
             return '条件付きで入る'
         return '入る候補'
@@ -277,9 +289,9 @@ def _plain_action(status, reward_risk):
 
 def _status_label(status, selected_side, decision_status):
     if decision_status == 'candidate_limited' and selected_side == 'long':
-        return '限定買い候補'
+        return '限定ロング候補'
     if decision_status == 'candidate_limited' and selected_side == 'short':
-        return '限定売り候補'
+        return '限定ショート候補'
     if decision_status == 'watch_only':
         return '監視のみ'
     if decision_status == 'candidate_confirmed' and selected_side == 'long':
@@ -302,6 +314,46 @@ def _headline(status, warnings, selected_side, contract_status, directional_allo
     if selected_side == 'no_trade' or status == 'no_trade':
         return f'今は入らない。理由は {reason} です。'
     return f'今は待機。理由は {reason} です。'
+
+
+def _top_reasons(reasons, warnings):
+    combined = []
+    for item in list(reasons or []) + list(warnings or []):
+        if item and item not in combined:
+            combined.append(item)
+    if not combined:
+        combined.append('条件がそろうまで待機。')
+    return combined[:3]
+
+
+def _confidence_component_rows(components):
+    if not isinstance(components, dict) or not components:
+        return []
+    rows = []
+    mapping = [
+        ('basecalc_direction', 'basecalc方向', 1),
+        ('macro_alignment', 'macro整合', 1),
+        ('validation_quality', '検証品質', 1),
+        ('target_quality', 'target品質', 1),
+        ('data_quality', 'データ品質', 1),
+        ('intermarket_confirmation', '米国指数', 1),
+        ('event_penalty', 'イベント', -1),
+        ('audit_penalty', '監査', -1),
+    ]
+    for key, label, sign in mapping:
+        value = components.get(key)
+        if value is None or value == '':
+            continue
+        numeric = _number(value)
+        if numeric is None:
+            rows.append({'label': label, 'value': str(value)})
+            continue
+        display_value = int(numeric * sign) if float(numeric * sign).is_integer() else round(numeric * sign, 1)
+        rows.append({'label': label, 'value': str(display_value)})
+    cap_reason = components.get('confidence_cap_reason')
+    if cap_reason:
+        rows.append({'label': '上限理由', 'value': str(cap_reason)})
+    return rows
 
 
 def _reward_risk_display(value, tradable, status):

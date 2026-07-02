@@ -196,7 +196,7 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(decision.position_size_cap, 'max_25_percent')
         self.assertNotEqual(decision.decision_type, 'no_trade_direction_stopped')
 
-    def test_trade_decision_v2_keeps_candidate_when_soft_validation_caps_confidence_below_50(self):
+    def test_trade_decision_v2_raises_low_basecalc_to_limited_candidate_when_macro_and_plan_support(self):
         macro = self._macro('positive', confidence_score=91, confidence_grade='A')
         basecalc = self._basecalc(
             confidence_score=44,
@@ -217,12 +217,43 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
         self.assertEqual(decision.selected_side, 'long')
-        self.assertEqual(decision.decision_status, 'watch_only')
-        self.assertEqual(decision.entry_permission, 'watch_only')
-        self.assertEqual(decision.position_size_pct, 0)
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.entry_permission, 'limited_entry')
+        self.assertEqual(decision.position_size_pct, 25)
         self.assertEqual(decision.position_size_cap, 'max_25_percent')
-        self.assertLess(decision.confidence_score, 50)
+        self.assertGreaterEqual(decision.confidence_score, 50)
+        self.assertLessEqual(decision.confidence_score, 59)
         self.assertFalse(decision.blocked_reasons)
+
+    def test_trade_confidence_uses_weighted_components_instead_of_simple_minimum(self):
+        macro = self._macro('positive', confidence_score=91, confidence_grade='A', data_quality_score=90)
+        basecalc = self._basecalc(
+            confidence_score=44,
+            confidence_grade='Low',
+            data_quality_score=82,
+            contract_status='limited',
+            allowed_direction='up',
+            can_show_prediction=True,
+            soft_warning_reasons=['局面別検証不足'],
+            validation_gate_status={
+                '1d': {'direction_allowed': True, 'validation_level': 'low'},
+                '3d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '5d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+            },
+            confidence_calibrated=False,
+            us_index_available=True,
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertGreater(decision.confidence_components['raw_score'], 44)
+        self.assertLessEqual(decision.confidence_score, 59)
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.confidence_components['confidence_formula'], 'weighted_components_v1')
+        self.assertEqual(decision.confidence_components['basecalc_weight'], 0.35)
+        self.assertEqual(decision.confidence_components['macro_weight'], 0.2)
+        self.assertEqual(decision.confidence_components['validation_weight'], 0.15)
 
     def test_soft_warning_direction_stop_does_not_become_hard_block(self):
         macro = self._macro('positive', confidence_score=91, confidence_grade='A')
@@ -1104,14 +1135,23 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         }
 
         html = render_to_string('explanation/index.html', context)
+        validation_section = html.split('<h2 class="common-section-title">検証成績</h2>', 1)[1].split('</section>', 1)[0]
+        validation_detail = html.split('<h2 class="common-section-title">検証成績詳細</h2>', 1)[1]
 
-        self.assertIn('本番判定検証', html)
-        self.assertIn('売買候補', html)
-        self.assertIn('0件', html)
-        self.assertIn('過去データ検証', html)
-        self.assertIn('4,990件', html)
-        self.assertIn('1日 方向一致 39%', html)
-        self.assertLess(html.index('本番判定検証'), html.index('過去データ検証'))
+        self.assertIn('検証状態', validation_section)
+        self.assertIn('売買候補の実績', validation_section)
+        self.assertIn('注意', validation_section)
+        self.assertNotIn('本番判定検証', validation_section)
+        self.assertNotIn('待機観測', validation_section)
+        self.assertNotIn('機会損失候補', validation_section)
+        self.assertNotIn('90点条件まで', validation_section)
+        self.assertNotIn('過去データ検証', validation_section)
+        self.assertIn('本番判定検証', validation_detail)
+        self.assertIn('売買候補', validation_detail)
+        self.assertIn('0件', validation_detail)
+        self.assertIn('過去データ検証', validation_detail)
+        self.assertIn('4,990件', validation_detail)
+        self.assertIn('1日 方向一致 39%', validation_detail)
 
     def test_explanation_template_places_manual_price_before_final_decision(self):
         context = snapshot_to_view(self._snapshot())
@@ -1154,22 +1194,62 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         self.assertIn('日経先物 1日〜5日 現在判断', decision_card_html)
         self.assertIn('現在判断：見送り', decision_card_html)
-        self.assertNotIn('判断状態：', decision_card_html)
-        self.assertIn('<span>入らない</span>', decision_card_html)
-        self.assertIn('<span>ロング</span>', decision_card_html)
-        self.assertIn('<span>ショート</span>', decision_card_html)
-        self.assertIn('<span class="common-choice-card__score">70点</span>', decision_card_html)
-        self.assertIn('<span class="common-choice-card__score">45点</span>', decision_card_html)
-        self.assertIn('<span class="common-choice-card__score">30点</span>', decision_card_html)
-        self.assertIn('エントリー', decision_card_html)
-        self.assertIn('なし', decision_card_html)
-        self.assertIn('売買可否', decision_card_html)
-        self.assertIn('売買不可 / 条件待ち', decision_card_html)
+        self.assertIn('行動：入らない', decision_card_html)
+        self.assertIn('理由：ロング採用。 / R/R不足', decision_card_html)
+        self.assertNotIn('common-choice-card__score', decision_card_html)
+        self.assertNotIn('<span>ロング</span>', decision_card_html)
+        self.assertNotIn('<span>ショート</span>', decision_card_html)
+        self.assertNotIn('エントリー', decision_card_html)
+        self.assertNotIn('売買可否', decision_card_html)
         self.assertNotIn('第1目標', decision_card_html)
-        self.assertNotIn('R/R', decision_card_html)
+        self.assertNotIn('<span>R/R</span>', decision_card_html)
+        self.assertIn('売買条件', top_html)
+        self.assertIn('<span class="common-choice-card__score">70点</span>', top_html)
+        self.assertIn('売買不可 / 条件待ち', top_html)
         self.assertNotIn('参考 72,376〜72,539円', top_html)
         self.assertNotIn('72,400円', top_html)
         self.assertNotIn('75,800円', top_html)
+
+    def test_explanation_template_top_card_is_three_line_decision_summary(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'position_size_pct': 25,
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 73800, 'probability': 0.62},
+            'stop_price': 71600,
+            'invalidation_price': 71600,
+            'reward_risk': 1.65,
+            'confidence_score': 55,
+            'confidence_grade': 'C+',
+            'long_score': 70,
+            'short_score': 30,
+            'no_trade_score': 45,
+            'reasons': ['basecalcは上方向', 'target/stop/R/Rは成立'],
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+        decision_card_html = html.split('</section>', 1)[0]
+
+        self.assertIn('現在判断：限定ロング候補', decision_card_html)
+        self.assertIn('行動：条件付きで入る', decision_card_html)
+        self.assertIn('理由：basecalcは上方向 / target/stop/R/Rは成立 / 局面別検証不足', decision_card_html)
+        self.assertNotIn('common-choice-card__score', decision_card_html)
+        self.assertNotIn('エントリー', decision_card_html)
+        self.assertNotIn('第1目標', decision_card_html)
+        self.assertNotIn('<span>R/R</span>', decision_card_html)
 
     def test_explanation_template_hides_reference_candidate_when_no_trade_has_blocked_reasons(self):
         snapshot = self._snapshot()
@@ -1280,7 +1360,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         beginner = context['beginner_decision']
 
         self.assertEqual(beginner['status'], 'buy_candidate')
-        self.assertEqual(beginner['label'], '限定買い候補')
+        self.assertEqual(beginner['label'], '限定ロング候補')
         self.assertTrue(beginner['candidate_visible'])
         self.assertFalse(beginner['position_allowed'])
         self.assertEqual(beginner['entry_permission'], 'limited_entry')
@@ -1289,6 +1369,81 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotEqual(beginner['stop_display'], '—')
         self.assertEqual(beginner['reward_risk_display'], '1.65')
         self.assertIn('局面別検証不足', beginner['warnings'])
+
+    def test_beginner_decision_exposes_confidence_component_rows(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'position_size_pct': 25,
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 73800, 'probability': 0.62},
+            'stop_price': 71600,
+            'invalidation_price': 71600,
+            'reward_risk': 1.65,
+            'confidence_score': 55,
+            'confidence_grade': 'C+',
+            'long_score': 70,
+            'short_score': 30,
+            'no_trade_score': 45,
+            'confidence_components': {
+                'basecalc_direction': 44,
+                'macro_alignment': 62,
+                'validation_quality': 35,
+                'target_quality': 80,
+                'data_quality': 71,
+                'intermarket_confirmation': -5,
+                'event_penalty': 6,
+                'audit_penalty': 4,
+                'confidence_cap_reason': '検証不足のため信頼度を限定',
+            },
+        })
+
+        context = snapshot_to_view(snapshot)
+        rows = context['beginner_decision']['confidence_component_rows']
+
+        self.assertIn({'label': 'basecalc方向', 'value': '44'}, rows)
+        self.assertIn({'label': 'macro整合', 'value': '62'}, rows)
+        self.assertIn({'label': '検証品質', 'value': '35'}, rows)
+        self.assertIn({'label': 'target品質', 'value': '80'}, rows)
+        self.assertIn({'label': '米国指数', 'value': '-5'}, rows)
+        self.assertIn({'label': 'イベント', 'value': '-6'}, rows)
+        self.assertIn({'label': '監査', 'value': '-4'}, rows)
+        self.assertIn({'label': '上限理由', 'value': '検証不足のため信頼度を限定'}, rows)
+
+    def test_template_renders_confidence_component_rows(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'confidence_components': {
+                'basecalc_direction': 44,
+                'macro_alignment': 62,
+                'validation_quality': 35,
+                'target_quality': 80,
+                'data_quality': 71,
+                'intermarket_confirmation': -5,
+                'event_penalty': 6,
+                'audit_penalty': 4,
+                'confidence_cap_reason': '検証不足のため信頼度を限定',
+            },
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('信頼度内訳', html)
+        self.assertIn('basecalc方向', html)
+        self.assertIn('macro整合', html)
+        self.assertIn('上限理由', html)
+        self.assertIn('検証不足のため信頼度を限定', html)
 
     def test_beginner_decision_splits_wait_reasons_for_direction_rr_and_confidence(self):
         snapshot = self._snapshot()
@@ -1405,7 +1560,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         self.assertTrue(beginner['tradable'])
         self.assertEqual(beginner['status'], 'sell_candidate')
-        self.assertEqual(beginner['label'], '売り候補')
+        self.assertEqual(beginner['label'], 'ショート候補')
         self.assertEqual(beginner['target_1_display'], '71,800円')
         self.assertEqual(beginner['stop_display'], '72,950円')
 
@@ -1428,8 +1583,8 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         decision_card_html = html.split('</section>', 1)[0]
 
         self.assertIn('現在判断：ロング候補', decision_card_html)
-        self.assertIn('LONG', decision_card_html)
-        self.assertNotIn('WAIT', decision_card_html)
+        self.assertIn('行動：入る候補', decision_card_html)
+        self.assertNotIn('common-choice-card__score', decision_card_html)
 
     def test_template_top_badge_uses_trade_side_for_sell_candidate(self):
         snapshot = self._snapshot()
@@ -1461,8 +1616,8 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         decision_card_html = html.split('</section>', 1)[0]
 
         self.assertIn('現在判断：ショート候補', decision_card_html)
-        self.assertIn('SHORT', decision_card_html)
-        self.assertNotIn('WAIT', decision_card_html)
+        self.assertIn('行動：入る候補', decision_card_html)
+        self.assertNotIn('common-choice-card__score', decision_card_html)
 
     def test_template_reference_candidate_labels_monitoring_line_not_reference_candidate(self):
         snapshot = self._snapshot()

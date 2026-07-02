@@ -39,22 +39,26 @@
         <div class="common-decision-card__body">
           <div class="common-decision-card__copy">
             <p class="common-kicker">日経先物 1日〜5日 現在判断</p>
-            <p class="common-kicker"><strong>現在判断：{{ integrated_decision.posture }}</strong></p>
-            {% if integrated_decision.judgment_state == '検証中' or integrated_decision.judgment_state == '限定' or integrated_decision.judgment_state == '判定停止' %}
-              <p class="common-kicker"><strong>判断状態：{{ integrated_decision.judgment_state }}</strong></p>
-            {% endif %}
-            <div class="common-status-badge{% if beginner_decision.status == 'buy_candidate' %} common-status-badge--long{% elif beginner_decision.status == 'sell_candidate' %} common-status-badge--short{% else %} common-status-badge--wait{% endif %}">
-              <span class="common-status-icon" aria-hidden="true">{% if beginner_decision.status == 'buy_candidate' %}↑{% elif beginner_decision.status == 'sell_candidate' %}↓{% else %}Ⅱ{% endif %}</span>
-              <span>{% if beginner_decision.status == 'buy_candidate' %}LONG{% elif beginner_decision.status == 'sell_candidate' %}SHORT{% else %}WAIT{% endif %}</span>
+            <div class="common-list common-list--compact">
+              <div class="common-row common-row--stack">
+                <span>現在判断</span>
+                <strong>現在判断：{{ beginner_decision.label }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>行動</span>
+                <strong>行動：{{ beginner_decision.plain_action }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>理由</span>
+                <strong>理由：{{ beginner_decision.top_reason_summary }}</strong>
+              </div>
             </div>
-            <p class="common-price-display">{{ beginner_decision.current_price_display }}</p>
-            <p class="common-muted">現在値</p>
-          </div>
-          <div class="common-chart-ghost" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span>
           </div>
         </div>
+      </section>
 
+      <section class="common-section">
+        <h2 class="common-section-title">売買条件</h2>
         <div class="common-choice-grid" aria-label="実行可否">
           <div class="common-choice-card{% if beginner_decision.status != 'buy_candidate' and beginner_decision.status != 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
@@ -269,6 +273,20 @@
         </div>
       </section>
 
+      {% if beginner_decision.confidence_component_rows %}
+        <section class="common-section">
+          <h2 class="common-section-title">信頼度内訳</h2>
+          <div class="common-list common-list--compact">
+            {% for row in beginner_decision.confidence_component_rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.value }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
       <section class="common-section">
         <h2 class="common-section-title">Macro / Basecalc 統合関係</h2>
         <div class="common-summary-grid">
@@ -295,67 +313,25 @@
 
       <section class="common-section common-empty-state">
         <h2 class="common-section-title">検証成績</h2>
-        {% if readiness_score %}
-          <p class="common-kicker">{{ readiness_score.label }} / {{ readiness_score.score }}点</p>
-        {% endif %}
         {% if trade_validation_summary.available %}
-          <p class="common-muted">{{ trade_validation_summary.one_line }}</p>
           <div class="common-list common-list--compact">
             <div class="common-row">
-              <span>本番判定検証</span>
-              <strong>{{ trade_validation_summary.total_count }}件</strong>
+              <span>検証状態</span>
+              <strong>{% if readiness_score %}{{ readiness_score.label }}{% else %}検証中{% endif %}</strong>
             </div>
             <div class="common-row">
-              <span>売買候補</span>
-              <strong>{{ trade_validation_summary.actionable_count }}件</strong>
+              <span>売買候補の実績</span>
+              <strong>{{ trade_validation_summary.actionable_count }}件 / 全{{ trade_validation_summary.total_count }}件</strong>
             </div>
-            <div class="common-row">
-              <span>待機観測</span>
-              <strong>{{ trade_validation_summary.wait_count }}件</strong>
+            <div class="common-row common-row--stack">
+              <span>注意</span>
+              <strong>{% if readiness_score.remaining_results_to_90 %}検証不足のため建玉サイズを制限{% else %}検証済み。通常のリスク管理を継続{% endif %}</strong>
             </div>
-            <div class="common-row">
-              <span>機会損失候補</span>
-              <strong>{{ trade_validation_summary.missed_opportunity_count }}件</strong>
-            </div>
-            <div class="common-row">
-              <span>リスク回避候補</span>
-              <strong>{{ trade_validation_summary.risk_avoided_count }}件</strong>
-            </div>
-            <div class="common-row">
-              <span>保留中</span>
-              <strong>{{ trade_validation_summary.pending_count }}件</strong>
-            </div>
-            {% if readiness_score.remaining_results_to_90 %}
-              <div class="common-row">
-                <span>90点条件まで</span>
-                <strong>あと{{ readiness_score.remaining_results_to_90 }}件</strong>
-              </div>
-            {% endif %}
-            {% if trade_validation_summary.last_evaluated_at %}
-              <div class="common-row">
-                <span>最終評価</span>
-                <strong>{{ trade_validation_summary.last_evaluated_at }}</strong>
-              </div>
-            {% endif %}
           </div>
         {% else %}
           <div class="common-empty-state__icon" aria-hidden="true">▥</div>
           <strong>判定検証 0件</strong>
           <p class="common-muted">まだ保存済み判定の評価結果がありません。GitHub Actions の評価処理後に表示されます。</p>
-        {% endif %}
-        {% if basecalc_validation_summary.available %}
-          <div class="common-list common-list--compact">
-            <div class="common-row common-row--stack">
-              <span>過去データ検証</span>
-              <strong>{{ basecalc_validation_summary.detail_line }}</strong>
-            </div>
-            {% for row in basecalc_validation_summary.rows %}
-              <div class="common-row">
-                <span>{{ row.label }}</span>
-                <strong>{{ row.sample_count_display }} / 方向一致 {{ row.directional_accuracy_display }} / T1到達 {{ row.target_t1_hit_rate_display }}</strong>
-              </div>
-            {% endfor %}
-          </div>
         {% endif %}
         {% if readiness_score %}
           <p class="common-muted">{{ readiness_score.note }}</p>
@@ -462,10 +438,61 @@
         {% if trade_validation_summary.available %}
           <h2 class="common-section-title">検証成績詳細</h2>
           <div class="common-list">
+            <div class="common-row">
+              <span>本番判定検証</span>
+              <strong>{{ trade_validation_summary.total_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>売買候補</span>
+              <strong>{{ trade_validation_summary.actionable_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>待機観測</span>
+              <strong>{{ trade_validation_summary.wait_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>機会損失候補</span>
+              <strong>{{ trade_validation_summary.missed_opportunity_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>リスク回避候補</span>
+              <strong>{{ trade_validation_summary.risk_avoided_count }}件</strong>
+            </div>
+            <div class="common-row">
+              <span>保留中</span>
+              <strong>{{ trade_validation_summary.pending_count }}件</strong>
+            </div>
+            {% if readiness_score.remaining_results_to_90 %}
+              <div class="common-row">
+                <span>90点条件まで</span>
+                <strong>あと{{ readiness_score.remaining_results_to_90 }}件</strong>
+              </div>
+            {% endif %}
+            {% if trade_validation_summary.last_evaluated_at %}
+              <div class="common-row">
+                <span>最終評価</span>
+                <strong>{{ trade_validation_summary.last_evaluated_at }}</strong>
+              </div>
+            {% endif %}
             {% for item in trade_validation_summary.horizon_rows %}
               <div class="common-row">
                 <span>{{ item.label }}</span>
                 <strong>{{ item.sample_count }}件 / 方向的中 {{ item.direction_hit_rate }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if basecalc_validation_summary.available %}
+          <h2 class="common-section-title">過去データ検証</h2>
+          <div class="common-list">
+            <div class="common-row common-row--stack">
+              <span>過去データ検証</span>
+              <strong>{{ basecalc_validation_summary.detail_line }}</strong>
+            </div>
+            {% for row in basecalc_validation_summary.rows %}
+              <div class="common-row">
+                <span>{{ row.label }}</span>
+                <strong>{{ row.sample_count_display }} / 方向一致 {{ row.directional_accuracy_display }} / T1到達 {{ row.target_t1_hit_rate_display }}</strong>
               </div>
             {% endfor %}
           </div>
