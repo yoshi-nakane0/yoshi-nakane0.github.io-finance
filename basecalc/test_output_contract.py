@@ -1276,3 +1276,89 @@ class BasecalcOutputContractCommandTests(TestCase):
 
             with self.assertRaisesMessage(CommandError, 'hard_stop_reasons must match output_contract'):
                 call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_world_model_display_status_mismatch(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 58,
+                        'display_status': 'blocked',
+                        'explanation_allowed': 'limited',
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'limited',
+                            'display_status': 'candidate_limited',
+                            'explanation_allowed': 'limited',
+                            'hard_stop_reasons': [],
+                            'hard_block_reasons': [],
+                            'soft_warning_reasons': ['米国3指数確認が不足'],
+                            'validation_warnings': [],
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'display_status must match output_contract'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_world_model_explanation_allowed_mismatch(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 58,
+                        'display_status': 'candidate_limited',
+                        'explanation_allowed': 'blocked',
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'limited',
+                            'display_status': 'candidate_limited',
+                            'explanation_allowed': 'limited',
+                            'hard_stop_reasons': [],
+                            'hard_block_reasons': [],
+                            'soft_warning_reasons': ['米国3指数確認が不足'],
+                            'validation_warnings': [],
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'explanation_allowed must match output_contract'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))

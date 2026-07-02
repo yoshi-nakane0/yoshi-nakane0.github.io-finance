@@ -86,6 +86,7 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
                 'validation_warnings': basecalc.validation_warnings,
                 'confidence_cap_reason': basecalc.confidence_cap_reason,
                 'display_status': basecalc.display_status,
+                'explanation_allowed': basecalc.explanation_allowed,
                 'confidence_calibrated': basecalc.confidence_calibrated,
                 'validation_gate_status': basecalc.validation_gate_status,
                 'warnings': basecalc.warnings,

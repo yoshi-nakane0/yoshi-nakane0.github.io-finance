@@ -3357,6 +3357,386 @@ class ExplanationFreshnessTests(SimpleTestCase):
 
 
 class ExplanationIntegrityCommandTests(SimpleTestCase):
+    def test_integrity_rejects_trade_decision_missing_extended_contract_fields(self):
+        required_fields = (
+            'decision_status',
+            'entry_permission',
+            'validation_level',
+            'hard_block_reasons',
+            'soft_warning_reasons',
+            'confidence_components',
+            'position_size_pct',
+        )
+        for missing_key in required_fields:
+            with self.subTest(missing_key=missing_key), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                latest = root / 'latest_snapshot.json'
+                history = root / 'snapshot_history.json'
+                outcomes = root / 'trade_outcomes.json'
+                manifest = root / 'finance_data_manifest.json'
+                trade_decision = {
+                    'selected_side': 'no_trade',
+                    'decision_type': 'wait_conditions_not_met',
+                    'model_version': 'explanation_v2',
+                    'confidence_score': 50,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'wait',
+                    'entry_permission': 'no_entry',
+                    'validation_level': 'none',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': [],
+                    'confidence_components': {},
+                    'position_size_pct': 0,
+                }
+                trade_decision.pop(missing_key)
+                latest_payload = {
+                    'snapshot_key': 'snapshot-1',
+                    'schema': 'explanation_snapshot_v1',
+                    'generated_at': '2026-06-25T01:16:00+00:00',
+                    'git_sha': 'abcdef1234567890',
+                    'workflow_run_id': '12345',
+                    'as_of': '2026-06-25T01:15:00+00:00',
+                    'version': 'explanation_v2',
+                    'final': {
+                        'label': '中立・様子見',
+                        'stance': 'neutral_wait',
+                        'action_posture': '条件待ち。',
+                        'confidence_score': 50,
+                        'confidence_grade': 'C+',
+                        'status': 'limited',
+                    },
+                    'macro': {'bias': 'neutral'},
+                    'basecalc': {'bias': 'range'},
+                    'alignment_status': 'aligned',
+                    'data_quality_score': 80,
+                    'audit': {'level': 'valid', 'items': []},
+                    'trade_decision': trade_decision,
+                    'evidence': ['条件待ち。'],
+                    'source_snapshots': {},
+                    'score_bundle': {
+                        'score_type': 'score_bundle',
+                        'system_quality_components': [
+                            {
+                                'label': '判定契約',
+                                'score': 20,
+                                'max_score': 20,
+                                'value': '20/20',
+                                'status': 'OK',
+                                'message': '状態契約あり',
+                            },
+                        ],
+                    },
+                }
+                latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+                history.write_text(
+                    '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                    encoding='utf-8',
+                )
+                outcomes.write_text(
+                    '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                    encoding='utf-8',
+                )
+                manifest.write_text(
+                    """
+                    {
+                      "schema": "finance_data_manifest_v1",
+                      "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                      "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                      "git_sha": "abcdef1234567890",
+                      "workflow_run_id": "12345"
+                    }
+                    """,
+                    encoding='utf-8',
+                )
+
+                with self.assertRaisesMessage(CommandError, f'trade_decision must include {missing_key}'):
+                    call_command(
+                        'check_explanation_integrity',
+                        latest=str(latest),
+                        history=str(history),
+                        outcomes=str(outcomes),
+                        manifest=str(manifest),
+                        stdout=StringIO(),
+                    )
+
+    def test_integrity_rejects_trade_decision_extended_contract_field_type_mismatch(self):
+        invalid_cases = (
+            ('hard_block_reasons', '現在値不一致', 'trade_decision hard_block_reasons must be a list'),
+            ('soft_warning_reasons', '検証不足', 'trade_decision soft_warning_reasons must be a list'),
+            ('confidence_components', [], 'trade_decision confidence_components must be a dict'),
+        )
+        for key, invalid_value, expected_message in invalid_cases:
+            with self.subTest(key=key), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                latest = root / 'latest_snapshot.json'
+                history = root / 'snapshot_history.json'
+                outcomes = root / 'trade_outcomes.json'
+                manifest = root / 'finance_data_manifest.json'
+                trade_decision = {
+                    'selected_side': 'long',
+                    'decision_type': 'wait_conditions_not_met',
+                    'model_version': 'explanation_v2',
+                    'confidence_score': 50,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'wait',
+                    'entry_permission': 'no_entry',
+                    'validation_level': 'none',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': [],
+                    'confidence_components': {},
+                    'position_size_pct': 0,
+                }
+                trade_decision[key] = invalid_value
+                latest_payload = {
+                    'snapshot_key': 'snapshot-1',
+                    'schema': 'explanation_snapshot_v1',
+                    'generated_at': '2026-06-25T01:16:00+00:00',
+                    'git_sha': 'abcdef1234567890',
+                    'workflow_run_id': '12345',
+                    'as_of': '2026-06-25T01:15:00+00:00',
+                    'version': 'explanation_v2',
+                    'final': {
+                        'label': '中立・様子見',
+                        'stance': 'neutral_wait',
+                        'action_posture': '条件待ち。',
+                        'confidence_score': 50,
+                        'confidence_grade': 'C+',
+                        'status': 'limited',
+                    },
+                    'macro': {'bias': 'neutral'},
+                    'basecalc': {'bias': 'range'},
+                    'alignment_status': 'aligned',
+                    'data_quality_score': 80,
+                    'audit': {'level': 'valid', 'items': []},
+                    'trade_decision': trade_decision,
+                    'evidence': ['条件待ち。'],
+                    'source_snapshots': {},
+                    'score_bundle': {
+                        'score_type': 'score_bundle',
+                        'system_quality_components': [
+                            {
+                                'label': '判定契約',
+                                'score': 20,
+                                'max_score': 20,
+                                'value': '20/20',
+                                'status': 'OK',
+                                'message': '状態契約あり',
+                            },
+                        ],
+                    },
+                }
+                latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+                history.write_text(
+                    '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                    encoding='utf-8',
+                )
+                outcomes.write_text(
+                    '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                    encoding='utf-8',
+                )
+                manifest.write_text(
+                    """
+                    {
+                      "schema": "finance_data_manifest_v1",
+                      "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                      "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                      "git_sha": "abcdef1234567890",
+                      "workflow_run_id": "12345"
+                    }
+                    """,
+                    encoding='utf-8',
+                )
+
+                with self.assertRaisesMessage(CommandError, expected_message):
+                    call_command(
+                        'check_explanation_integrity',
+                        latest=str(latest),
+                        history=str(history),
+                        outcomes=str(outcomes),
+                        manifest=str(manifest),
+                        stdout=StringIO(),
+                    )
+
+    def test_integrity_rejects_trade_decision_unknown_validation_level(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '中立・様子見',
+                    'stance': 'neutral_wait',
+                    'action_posture': '条件待ち。',
+                    'confidence_score': 50,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'neutral'},
+                'basecalc': {'bias': 'range'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'wait_conditions_not_met',
+                    'model_version': 'explanation_v2',
+                    'confidence_score': 50,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'wait',
+                    'entry_permission': 'no_entry',
+                    'validation_level': 'confirmed',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': [],
+                    'confidence_components': {},
+                    'position_size_pct': 0,
+                },
+                'evidence': ['条件待ち。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'trade_decision validation_level is not allowed: confirmed'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_trade_decision_unknown_entry_permission(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '限定ロング候補',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 55,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'trend_follow',
+                    'model_version': 'explanation_v2',
+                    'confidence_score': 55,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'paper_entry',
+                    'validation_level': 'low',
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': ['局面別検証不足'],
+                    'confidence_components': {},
+                    'position_size_pct': 25,
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'trade_decision entry_permission is not allowed: paper_entry'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
     def test_integrity_requires_manifest_explanation_tracking_metadata(self):
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -5609,6 +5989,220 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     stdout=StringIO(),
                 )
 
+    def test_integrity_rejects_basecalc_raw_world_model_display_status_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'raw': {
+                            'world_model': {
+                                'display_status': 'blocked',
+                                'explanation_allowed': 'limited',
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'confidence_score': 52,
+                                    'confidence_label': 'C+',
+                                    'hard_stop_reasons': [],
+                                    'hard_block_reasons': [],
+                                    'soft_warning_reasons': ['米国3指数確認が不足'],
+                                    'validation_warnings': [],
+                                    'confidence_cap_reason': '',
+                                    'stop_reasons': [],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc world_model display_status must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_basecalc_raw_world_model_explanation_allowed_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'raw': {
+                            'world_model': {
+                                'display_status': 'candidate_limited',
+                                'explanation_allowed': 'blocked',
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'confidence_score': 52,
+                                    'confidence_label': 'C+',
+                                    'hard_stop_reasons': [],
+                                    'hard_block_reasons': [],
+                                    'soft_warning_reasons': ['米国3指数確認が不足'],
+                                    'validation_warnings': [],
+                                    'confidence_cap_reason': '',
+                                    'stop_reasons': [],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc world_model explanation_allowed must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
     def test_integrity_rejects_basecalc_top_level_soft_warning_reason_mismatch(self):
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -5814,6 +6408,113 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     stdout=StringIO(),
                 )
 
+    def test_integrity_rejects_basecalc_top_level_explanation_allowed_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'decision_status': 'candidate_limited',
+                    'entry_permission': 'limited_entry',
+                    'position_size_pct': 25,
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'display_status': 'candidate_limited',
+                        'explanation_allowed': 'blocked',
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'confidence_score': 52,
+                                    'confidence_label': 'C+',
+                                    'hard_stop_reasons': [],
+                                    'hard_block_reasons': [],
+                                    'soft_warning_reasons': ['米国3指数確認が不足'],
+                                    'validation_warnings': [],
+                                    'confidence_cap_reason': '',
+                                    'stop_reasons': [],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc explanation_allowed must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
 
 class ExplanationTradeOutcomeValidationTests(TestCase):
     def test_evaluate_trade_outcome_records_target_stop_direction_and_rr(self):
@@ -6007,7 +6708,7 @@ class ExplanationSnapshotFactoryPersistenceTests(TestCase):
             '2026-06-25',
         )
 
-    def test_build_snapshot_persists_basecalc_hard_stop_reasons(self):
+    def test_build_snapshot_persists_basecalc_contract_display_fields(self):
         from .services.contracts import BasecalcSignal, MacroSignal
         from .services.factory import build_explanation_snapshot
 
@@ -6031,6 +6732,8 @@ class ExplanationSnapshotFactoryPersistenceTests(TestCase):
             hard_stop_reasons=['現在値と計算基準価格が不一致'],
             hard_block_reasons=[],
             stop_reasons=[],
+            display_status='blocked',
+            explanation_allowed='blocked',
             source={'world_model': {'model_version': 'wm_test'}},
             as_of=timezone.now(),
         )
@@ -6044,6 +6747,8 @@ class ExplanationSnapshotFactoryPersistenceTests(TestCase):
         saved_basecalc = snapshot.source_snapshots['basecalc']
         self.assertEqual(saved_basecalc['hard_stop_reasons'], ['現在値と計算基準価格が不一致'])
         self.assertEqual(saved_basecalc['hard_block_reasons'], [])
+        self.assertEqual(saved_basecalc['display_status'], 'blocked')
+        self.assertEqual(saved_basecalc['explanation_allowed'], 'blocked')
 
 
 class ExplanationMacroAdapterTests(SimpleTestCase):

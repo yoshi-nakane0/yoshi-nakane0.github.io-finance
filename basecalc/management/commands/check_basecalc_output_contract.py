@@ -134,7 +134,8 @@ def _assert_world_model_contract_consistency(world_model, output_contract):
         return
     for key in ("hard_stop_reasons", "hard_block_reasons", "soft_warning_reasons", "validation_warnings"):
         _assert_reason_match(world_model, output_contract, key)
-    _assert_text_match(world_model, output_contract, "confidence_cap_reason")
+    for key in ("confidence_cap_reason", "display_status", "explanation_allowed"):
+        _assert_text_match(world_model, output_contract, key)
 
 
 def _assert_reason_match(world_model, output_contract, key):

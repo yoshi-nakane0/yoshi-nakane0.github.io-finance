@@ -195,8 +195,10 @@ def _assert_status_names(payload, source):
     for key in ('hard_stop_reasons', 'hard_block_reasons', 'soft_warning_reasons', 'validation_warnings'):
         _assert_basecalc_reason_snapshot_match(basecalc_snapshot, output_contract, key, source)
         _assert_basecalc_reason_snapshot_match(world_model, output_contract, key, source, prefix='world_model ')
-    _assert_basecalc_text_snapshot_match(basecalc_snapshot, output_contract, 'confidence_cap_reason', source)
-    _assert_basecalc_text_snapshot_match(world_model, output_contract, 'confidence_cap_reason', source, prefix='world_model ')
+    for key in ('confidence_cap_reason', 'display_status', 'explanation_allowed'):
+        _assert_basecalc_text_snapshot_match(basecalc_snapshot, output_contract, key, source)
+    for key in ('confidence_cap_reason', 'display_status', 'explanation_allowed'):
+        _assert_basecalc_text_snapshot_match(world_model, output_contract, key, source, prefix='world_model ')
     if output_contract.get('contract_status') == 'error':
         if display_status and display_status != 'blocked':
             raise CommandError(f'{source} basecalc error contract display_status must be blocked')
@@ -231,6 +233,29 @@ def _reason_list(items):
 def _assert_trade_decision_status_contract(trade_decision, source):
     if not isinstance(trade_decision, dict):
         return
+    if trade_decision.get('model_version') == 'explanation_v2':
+        for key in (
+            'decision_status',
+            'entry_permission',
+            'validation_level',
+            'hard_block_reasons',
+            'soft_warning_reasons',
+            'confidence_components',
+            'position_size_pct',
+        ):
+            if key not in trade_decision:
+                raise CommandError(f'{source} trade_decision must include {key}')
+        for key in ('hard_block_reasons', 'soft_warning_reasons'):
+            if not isinstance(trade_decision.get(key), list):
+                raise CommandError(f'{source} trade_decision {key} must be a list')
+        if not isinstance(trade_decision.get('confidence_components'), dict):
+            raise CommandError(f'{source} trade_decision confidence_components must be a dict')
+        validation_level = trade_decision.get('validation_level')
+        if validation_level not in {'none', 'low', 'medium', 'high'}:
+            raise CommandError(f'{source} trade_decision validation_level is not allowed: {validation_level}')
+        entry_permission_value = trade_decision.get('entry_permission')
+        if entry_permission_value not in {'no_entry', 'watch_only', 'limited_entry', 'full_entry'}:
+            raise CommandError(f'{source} trade_decision entry_permission is not allowed: {entry_permission_value}')
     decision_status = trade_decision.get('decision_status') or ''
     entry_permission = trade_decision.get('entry_permission') or ''
     if decision_status == 'candidate_limited' and entry_permission != 'limited_entry':
