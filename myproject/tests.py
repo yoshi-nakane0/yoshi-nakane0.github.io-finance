@@ -103,6 +103,24 @@ class VercelFunctionPackagingTests(SimpleTestCase):
         self.assertIn('static/finance_data_manifest.json', include_files)
 
 
+class FinanceWorkflowConsistencyTests(SimpleTestCase):
+    def test_finance_workflows_do_not_recompute_explanation_after_manifest_export(self):
+        workflow_paths = (
+            BASE_DIR / '.github' / 'workflows' / 'refresh-basecalc.yml',
+            BASE_DIR / '.github' / 'workflows' / 'macro-operations.yml',
+        )
+
+        for workflow_path in workflow_paths:
+            with self.subTest(workflow=workflow_path.name):
+                workflow = workflow_path.read_text(encoding='utf-8')
+
+                self.assertNotIn(
+                    'python manage.py finalize_finance_display_data\n'
+                    '          python manage.py precompute_explanation',
+                    workflow,
+                )
+
+
 class ExplanationRoutingTests(TestCase):
     def test_explanation_page_exists(self):
         response = self.client.get('/explanation/')

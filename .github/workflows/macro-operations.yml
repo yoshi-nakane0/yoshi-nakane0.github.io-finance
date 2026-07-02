@@ -73,18 +73,7 @@ jobs:
           python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json --source-payload static/macro/latest_dashboard.json
           python manage.py export_macro_vintage_quality --output static/macro/vintage_quality_report.json
           python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
-          python manage.py finalize_finance_display_data
-          python manage.py precompute_explanation \
-            --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json \
-            --max-history-rows 500
-          test -f explanation/data/latest_snapshot.json
-          test -f explanation/data/snapshot_history.json
-          test -f explanation/data/trade_outcomes.json
-          python manage.py evaluate_explanation_outcomes \
-            --snapshot-history explanation/data/snapshot_history.json \
-            --input-outcomes explanation/data/trade_outcomes.json \
-            --output explanation/data/trade_outcomes.json
+          python manage.py finalize_finance_display_data --evaluate-outcomes
           python manage.py check_explanation_integrity
 
       - name: Commit generated data
@@ -172,18 +161,7 @@ jobs:
           }
           JSON
           python manage.py migrate --noinput
-          python manage.py finalize_finance_display_data
-          python manage.py precompute_explanation \
-            --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json \
-            --max-history-rows 500
-          test -f explanation/data/latest_snapshot.json
-          test -f explanation/data/snapshot_history.json
-          test -f explanation/data/trade_outcomes.json
-          python manage.py evaluate_explanation_outcomes \
-            --snapshot-history explanation/data/snapshot_history.json \
-            --input-outcomes explanation/data/trade_outcomes.json \
-            --output explanation/data/trade_outcomes.json
+          python manage.py finalize_finance_display_data --evaluate-outcomes
           python manage.py check_explanation_integrity
 
       - name: Commit validation warning
@@ -227,18 +205,7 @@ jobs:
           python manage.py export_macro_model_cards --output static/macro/model_cards.json
           python manage.py export_macro_house_view_validation --output static/macro/house_view_validation.json
           python manage.py export_macro_validation_weights --output static/macro/validation_weights.json
-          python manage.py finalize_finance_display_data
-          python manage.py precompute_explanation \
-            --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json \
-            --max-history-rows 500
-          test -f explanation/data/latest_snapshot.json
-          test -f explanation/data/snapshot_history.json
-          test -f explanation/data/trade_outcomes.json
-          python manage.py evaluate_explanation_outcomes \
-            --snapshot-history explanation/data/snapshot_history.json \
-            --input-outcomes explanation/data/trade_outcomes.json \
-            --output explanation/data/trade_outcomes.json
+          python manage.py finalize_finance_display_data --evaluate-outcomes
           python manage.py check_explanation_integrity
 
       - name: Commit weekly forecast ledger

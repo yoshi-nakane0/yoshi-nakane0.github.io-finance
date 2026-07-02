@@ -36,26 +36,9 @@ jobs:
       - name: Refresh basecalc
         run: python manage.py refresh_basecalc_data --export-history --export-path basecalc/data/basecalc_history.json
       - name: Finalize finance display data
-        run: python manage.py finalize_finance_display_data
+        run: python manage.py finalize_finance_display_data --evaluate-outcomes
       - name: Output contract check
         run: python manage.py check_basecalc_output_contract --snapshot basecalc/data/latest_snapshot.json
-      - name: Precompute explanation
-        run: |
-          python manage.py precompute_explanation \
-            --output explanation/data/latest_snapshot.json \
-            --history-output explanation/data/snapshot_history.json \
-            --max-history-rows 500
-      - name: Check explanation files exist
-        run: |
-          test -f explanation/data/latest_snapshot.json
-          test -f explanation/data/snapshot_history.json
-          test -f explanation/data/trade_outcomes.json
-      - name: Evaluate explanation outcomes
-        run: |
-          python manage.py evaluate_explanation_outcomes \
-            --snapshot-history explanation/data/snapshot_history.json \
-            --input-outcomes explanation/data/trade_outcomes.json \
-            --output explanation/data/trade_outcomes.json
       - name: Check explanation integrity
         run: python manage.py check_explanation_integrity
       - name: Data integrity check
