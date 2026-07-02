@@ -1,6 +1,37 @@
 {
-  "generated_at": "2026-07-02T14:31:09.285693+00:00",
+  "generated_at": "2026-07-02T19:54:15.061185+00:00",
   "outcomes": [
+    {
+      "confidence_bucket": "low",
+      "decision_type": "no_trade_conflict",
+      "direction_hit": null,
+      "entry_price": 70860.0,
+      "evaluated_at": "2026-07-02T19:38:00+00:00",
+      "exit_price": 67970.0,
+      "exit_reason": "wait_observed",
+      "expected_rr": null,
+      "explanation_as_of": "2026-07-01T17:24:07.666635+00:00",
+      "horizon": "1d",
+      "horizon_return_pct": -4.08,
+      "is_actionable": false,
+      "macro_regime": "neutral_inflation_risk",
+      "max_adverse_excursion": null,
+      "max_favorable_excursion": null,
+      "missed_opportunity": true,
+      "outcome_kind": "missed_opportunity_down",
+      "realized_rr": null,
+      "sample_count_at_decision": 30,
+      "selected_side": "no_trade",
+      "snapshot_key": "948af180a51547f2fd826f0a2322dc9bb3a1206dc719e42771c99e21af3abc48",
+      "stop_hit": null,
+      "stop_price": null,
+      "target_1_hit": null,
+      "target_1_price": null,
+      "target_2_hit": null,
+      "target_2_price": null,
+      "technical_regime": "bullish",
+      "trend_or_reversal": "no_trade"
+    },
     {
       "confidence_bucket": "low",
       "decision_type": "no_trade_direction_stopped",
@@ -307,12 +338,12 @@
   "schema": "explanation_trade_outcomes_v1",
   "summary": {
     "actionable_count": 0,
-    "last_evaluated_at": "2026-07-02T14:15:00+00:00",
-    "missed_opportunity_count": 2,
+    "last_evaluated_at": "2026-07-02T19:38:00+00:00",
+    "missed_opportunity_count": 3,
     "pending_count": 0,
     "risk_avoided_count": 0,
-    "total_count": 10,
-    "wait_count": 10,
+    "total_count": 11,
+    "wait_count": 11,
     "wait_valid_count": 8
   }
 }

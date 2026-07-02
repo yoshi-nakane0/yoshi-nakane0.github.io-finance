@@ -1,5 +1,5 @@
 {
-  "basecalc_as_of": "2026-07-02T14:15:00+00:00",
+  "basecalc_as_of": "2026-07-02T19:38:00+00:00",
   "basecalc_status": "limited",
   "blocking_reasons": [
     "米国3指数確認が不足",
@@ -11,11 +11,11 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-07-02T14:31:08.824336+00:00",
-  "explanation_generated_at": "2026-07-02T14:31:08.833753+00:00",
+  "explanation_as_of": "2026-07-02T19:54:14.570456+00:00",
+  "explanation_generated_at": "2026-07-02T19:54:14.579857+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-07-02T14:31:09.298003+00:00",
-  "git_sha": "0f4e40d33244c02c1eeec4e308e726d56893007c",
+  "generated_at": "2026-07-02T19:54:15.072973+00:00",
+  "git_sha": "87f1e32ca7fc9a773f6795a3a5e91298d4632fa4",
   "macro_as_of": "2026-07-02T08:32:33.998206+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
@@ -24,5 +24,5 @@
     "explanation": "explanation_v2",
     "macro": "regime_v2_score"
   },
-  "workflow_run_id": "28597900566"
+  "workflow_run_id": "28617534298"
 }
