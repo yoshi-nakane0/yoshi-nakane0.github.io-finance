@@ -80,7 +80,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/*.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
+          git add static/macro/*.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json staticfiles/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No generated data changes."
             exit 0
@@ -169,7 +169,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/model_validation_report.json static/macro/model_cards.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
+          git add static/macro/model_validation_report.json static/macro/model_cards.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json staticfiles/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No validation warning changes."
             exit 0
@@ -213,7 +213,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/macro/*.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
+          git add static/macro/*.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json staticfiles/finance_data_manifest.json
           if git diff --cached --quiet; then
             echo "No weekly forecast ledger changes."
             exit 0

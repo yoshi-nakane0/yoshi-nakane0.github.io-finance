@@ -55,11 +55,27 @@ def write_finance_data_manifest(manifest, path=None):
     output_path = Path(path) if path else settings.BASE_DIR / DEFAULT_MANIFEST_PATH
     output_path.parent.mkdir(parents=True, exist_ok=True)
     serialized = json.loads(json.dumps(manifest, default=_json_default))
+    _write_manifest(output_path, serialized)
+    _mirror_staticfiles_manifest(output_path, serialized)
+    return serialized
+
+
+def _write_manifest(output_path, serialized):
     output_path.write_text(
         json.dumps(serialized, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
         encoding='utf-8',
     )
-    return serialized
+
+
+def _mirror_staticfiles_manifest(output_path, serialized):
+    parts = output_path.parts
+    try:
+        static_index = parts.index('static')
+    except ValueError:
+        return
+    staticfiles_path = Path(*parts[:static_index]) / 'staticfiles' / Path(*parts[static_index + 1:])
+    if staticfiles_path.exists():
+        _write_manifest(staticfiles_path, serialized)
 
 
 def _load_json(path):

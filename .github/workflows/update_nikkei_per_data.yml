@@ -52,12 +52,12 @@ jobs:
         run: python manage.py check_explanation_integrity
       - name: Publish data file
         run: |
-          if git diff --quiet -- basecalc/data/nikkei_per.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json; then
+          if git diff --quiet -- basecalc/data/nikkei_per.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json staticfiles/finance_data_manifest.json; then
             echo "No changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add basecalc/data/nikkei_per.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json
+          git add basecalc/data/nikkei_per.json explanation/data/latest_snapshot.json explanation/data/snapshot_history.json explanation/data/trade_outcomes.json static/finance_data_manifest.json staticfiles/finance_data_manifest.json
           git commit -m "Update Nikkei PER data"
           git push

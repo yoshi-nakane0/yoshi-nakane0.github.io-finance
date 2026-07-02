@@ -92,6 +92,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('explanation/data/snapshot_history.json', workflow)
         self.assertIn('explanation/data/trade_outcomes.json', workflow)
         self.assertIn('static/finance_data_manifest.json', workflow)
+        self.assertIn('staticfiles/finance_data_manifest.json', workflow)
 
     def test_refresh_basecalc_tests_run_before_runtime_history_import(self):
         workflow = (
@@ -123,6 +124,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('explanation/data/snapshot_history.json', workflow)
         self.assertIn('explanation/data/trade_outcomes.json', workflow)
         self.assertIn('static/finance_data_manifest.json', workflow)
+        self.assertIn('staticfiles/finance_data_manifest.json', workflow)
 
     def test_update_nikkei_per_commits_explanation_history_and_outcomes(self):
         workflow = (
@@ -136,6 +138,7 @@ class MacroRuntimeConfigTest(SimpleTestCase):
         self.assertIn('explanation/data/latest_snapshot.json', workflow)
         self.assertIn('explanation/data/snapshot_history.json', workflow)
         self.assertIn('explanation/data/trade_outcomes.json', workflow)
+        self.assertIn('staticfiles/finance_data_manifest.json', workflow)
 
     def test_lightweight_update_workflows_call_shared_finance_finalize(self):
         workflows_dir = Path(settings.BASE_DIR) / '.github' / 'workflows'
@@ -1734,6 +1737,29 @@ class ProductionDataSyncTest(SimpleTestCase):
         self.assertEqual(saved['git_sha'], 'abcdef1234567890')
         self.assertEqual(saved['workflow_run_id'], '12345')
         self.assertIn('米国3指数確認が不足', saved['blocking_reasons'])
+
+    def test_finance_manifest_export_mirrors_existing_staticfiles_manifest(self):
+        from macro.services.finance_manifest import write_finance_data_manifest
+
+        with TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            output_path = base_dir / 'static' / 'finance_data_manifest.json'
+            staticfiles_path = base_dir / 'staticfiles' / 'finance_data_manifest.json'
+            staticfiles_path.parent.mkdir(parents=True)
+            staticfiles_path.write_text('{"schema":"old"}', encoding='utf-8')
+
+            write_finance_data_manifest(
+                {
+                    'schema': 'finance_data_manifest_v1',
+                    'generated_at': '2026-07-02T00:00:00+00:00',
+                },
+                output_path,
+            )
+
+            self.assertEqual(
+                staticfiles_path.read_text(encoding='utf-8'),
+                output_path.read_text(encoding='utf-8'),
+            )
 
     def test_sync_mirrors_static_data_to_existing_staticfiles_alias(self):
         from macro.services.production_data_sync import sync_production_data
