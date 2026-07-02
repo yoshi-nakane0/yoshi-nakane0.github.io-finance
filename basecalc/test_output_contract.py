@@ -840,6 +840,7 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertEqual(contract['contract_status'], 'ok')
         self.assertEqual(contract['display_status'], 'watch_only')
         self.assertEqual(contract['explanation_allowed'], 'allowed')
+        self.assertEqual(world_model['explanation_allowed'], 'allowed')
 
 
 class BasecalcOutputContractCommandTests(TestCase):
@@ -920,6 +921,153 @@ class BasecalcOutputContractCommandTests(TestCase):
             )
 
             with self.assertRaisesMessage(CommandError, 'display_status is not allowed'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_legacy_boolean_explanation_allowed(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 58,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'display_status': 'candidate_limited',
+                            'explanation_allowed': True,
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'explanation_allowed is not allowed'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_display_status_explanation_allowed_mismatch(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 78,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'display_status': 'candidate_confirmed',
+                            'explanation_allowed': 'limited',
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'candidate_confirmed explanation_allowed must be confirmed'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_accepts_uncapped_candidate_allowed_explanation_status(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 68,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'ok',
+                            'display_status': 'candidate_limited',
+                            'explanation_allowed': 'allowed',
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            out = StringIO()
+            call_command('check_basecalc_output_contract', '--snapshot', str(path), stdout=out)
+
+            self.assertIn('basecalc output contract ok', out.getvalue())
+
+    def test_check_command_rejects_contract_status_explanation_allowed_mismatch_without_display_status(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 78,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'confirmed',
+                            'explanation_allowed': 'allowed',
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'confirmed contract explanation_allowed must be confirmed'):
                 call_command('check_basecalc_output_contract', '--snapshot', str(path))
 
     def test_check_command_rejects_error_contract_with_nonzero_confidence(self):

@@ -11,6 +11,19 @@ from explanation.services.validation_engine import build_static_trade_validation
 
 ALLOWED_DECISION_STATUSES = {'blocked', 'wait', 'watch_only', 'candidate_limited', 'candidate_confirmed'}
 ALLOWED_BASECALC_DISPLAY_STATUSES = {'blocked', 'watch_only', 'candidate_limited', 'candidate_confirmed'}
+ALLOWED_BASECALC_EXPLANATION_ALLOWED = {'blocked', 'limited', 'allowed', 'confirmed'}
+BASECALC_CONTRACT_EXPLANATION_ALLOWED = {
+    'error': {'blocked'},
+    'limited': {'limited'},
+    'ok': {'allowed'},
+    'confirmed': {'confirmed'},
+}
+BASECALC_DISPLAY_EXPLANATION_ALLOWED = {
+    'blocked': {'blocked'},
+    'watch_only': {'allowed', 'limited'},
+    'candidate_limited': {'allowed', 'limited'},
+    'candidate_confirmed': {'confirmed'},
+}
 
 
 class Command(BaseCommand):
@@ -167,9 +180,16 @@ def _assert_status_names(payload, source):
     display_status = output_contract.get('display_status') or world_model.get('display_status') or ''
     if display_status and display_status not in ALLOWED_BASECALC_DISPLAY_STATUSES:
         raise CommandError(f'{source} basecalc display_status is not allowed: {display_status}')
+    explanation_allowed = _contract_value(output_contract, world_model, 'explanation_allowed')
+    if explanation_allowed not in (None, '') and explanation_allowed not in ALLOWED_BASECALC_EXPLANATION_ALLOWED:
+        raise CommandError(f'{source} basecalc explanation_allowed is not allowed: {explanation_allowed}')
+    _assert_basecalc_contract_explanation_allowed_match(output_contract.get('contract_status') or '', explanation_allowed, source)
+    _assert_basecalc_display_explanation_allowed_match(display_status, explanation_allowed, source)
     if output_contract.get('contract_status') == 'error':
         if display_status and display_status != 'blocked':
             raise CommandError(f'{source} basecalc error contract display_status must be blocked')
+        if explanation_allowed and explanation_allowed != 'blocked':
+            raise CommandError(f'{source} basecalc error contract explanation_allowed must be blocked')
         confidence_score = output_contract.get('confidence_score')
         if confidence_score not in (None, '', 0, 0.0):
             raise CommandError(f'{source} basecalc error contract confidence_score must be 0')
@@ -210,3 +230,29 @@ def _int_value(value):
         return int(float(value))
     except (TypeError, ValueError):
         return None
+
+
+def _contract_value(output_contract, world_model, key):
+    if isinstance(output_contract, dict) and key in output_contract:
+        return output_contract.get(key)
+    if isinstance(world_model, dict) and key in world_model:
+        return world_model.get(key)
+    return None
+
+
+def _assert_basecalc_display_explanation_allowed_match(display_status, explanation_allowed, source):
+    if not display_status or explanation_allowed in (None, ''):
+        return
+    allowed = BASECALC_DISPLAY_EXPLANATION_ALLOWED.get(display_status)
+    if allowed and explanation_allowed not in allowed:
+        expected = ' or '.join(sorted(allowed))
+        raise CommandError(f'{source} basecalc {display_status} explanation_allowed must be {expected}')
+
+
+def _assert_basecalc_contract_explanation_allowed_match(contract_status, explanation_allowed, source):
+    if not contract_status or explanation_allowed in (None, ''):
+        return
+    allowed = BASECALC_CONTRACT_EXPLANATION_ALLOWED.get(contract_status)
+    if allowed and explanation_allowed not in allowed:
+        expected = ' or '.join(sorted(allowed))
+        raise CommandError(f'{source} basecalc {contract_status} contract explanation_allowed must be {expected}')

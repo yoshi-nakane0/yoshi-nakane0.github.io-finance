@@ -62,6 +62,7 @@ class BasecalcSignal:
     validation_warnings: List[str] = field(default_factory=list)
     confidence_cap_reason: str = ''
     display_status: str = ''
+    explanation_allowed: str = ''
     confidence_calibrated: bool = False
     validation_gate_status: Dict[str, Any] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)

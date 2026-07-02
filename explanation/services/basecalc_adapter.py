@@ -89,6 +89,11 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     validation_warnings = output_contract.get('validation_warnings') or basecalc_signal.get('validation_warnings') or []
     confidence_cap_reason = output_contract.get('confidence_cap_reason') or basecalc_signal.get('confidence_cap_reason') or ''
     display_status = _normalize_display_status(output_contract.get('display_status') or basecalc_signal.get('display_status') or '')
+    explanation_allowed = _first_present(
+        output_contract.get('explanation_allowed'),
+        basecalc_signal.get('explanation_allowed'),
+        world_model.get('explanation_allowed'),
+    ) or ''
     warnings = []
     warnings.extend(soft_warning_reasons or output_contract.get('stop_reasons') or [])
     warnings.extend(validation_warnings)
@@ -163,6 +168,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         validation_warnings=validation_warnings,
         confidence_cap_reason=confidence_cap_reason,
         display_status=display_status,
+        explanation_allowed=explanation_allowed,
         confidence_calibrated=bool(output_contract.get('confidence_calibrated')),
         validation_gate_status=output_contract.get('validation_gate_status') or {},
         warnings=_dedupe(warnings),

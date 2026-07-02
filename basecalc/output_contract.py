@@ -138,6 +138,7 @@ def _apply_contract_to_world_model(world_model, contract):
     world_model["validation_warnings"] = contract["validation_warnings"]
     world_model["confidence_cap_reason"] = contract["confidence_cap_reason"]
     world_model["display_status"] = contract["display_status"]
+    world_model["explanation_allowed"] = contract["explanation_allowed"]
     world_model["display_price"] = contract["display_price"]
     world_model["model_price"] = contract["model_price"]
     if contract["contract_status"] != "error":

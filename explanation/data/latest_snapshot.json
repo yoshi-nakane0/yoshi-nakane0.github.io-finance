@@ -2820,7 +2820,7 @@
               "data_quality_score": 76,
               "directional_allowed": false,
               "display_price": 69720.0,
-              "explanation_allowed": false,
+              "explanation_allowed": "limited",
               "generated_at": "2026-07-02T05:38:40.329940+00:00",
               "hard_block_reasons": [],
               "invalidated_targets": {
