@@ -1,6 +1,6 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-07-02T08:43:45.218439+00:00",
+  "as_of": "2026-07-02T11:38:16.410068+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -26,8 +26,8 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-07-02T08:43:45.225148+00:00",
-  "git_sha": "",
+  "generated_at": "2026-07-02T11:38:16.418863+00:00",
+  "git_sha": "837c5910088556912017db7962c9bd42a267503f",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -64,7 +64,67 @@
     "confidence_cap": "B-",
     "macro_confidence": 91
   },
-  "snapshot_key": "b7a7a29337984375cf33cf95f936e4a24bd01fbb8d7e73f527c56e2a5b21aba7",
+  "score_bundle": {
+    "actionable_result_display": "不足",
+    "decision_confidence_label": "待機",
+    "decision_confidence_score": 57,
+    "label": "検証参考",
+    "minimum_required_results": 50,
+    "note": "ページ完成度、今回判断の信頼度、ライブ検証の蓄積度を分けた補助指標です。現在判断を止める条件ではありません。",
+    "remaining_results_to_90": 50,
+    "score": 69,
+    "score_type": "score_bundle",
+    "system_quality_components": [
+      {
+        "label": "判断材料",
+        "max_score": 20,
+        "message": "根拠あり",
+        "score": 20,
+        "status": "OK",
+        "value": "20/20"
+      },
+      {
+        "label": "理由分離",
+        "max_score": 20,
+        "message": "hard/soft分離済み",
+        "score": 20,
+        "status": "OK",
+        "value": "20/20"
+      },
+      {
+        "label": "停止状態",
+        "max_score": 20,
+        "message": "判定継続可",
+        "score": 20,
+        "status": "OK",
+        "value": "20/20"
+      },
+      {
+        "label": "判定契約",
+        "max_score": 20,
+        "message": "状態契約あり",
+        "score": 20,
+        "status": "OK",
+        "value": "20/20"
+      },
+      {
+        "label": "表示文言",
+        "max_score": 20,
+        "message": "表示文言あり",
+        "score": 20,
+        "status": "OK",
+        "value": "20/20"
+      }
+    ],
+    "system_quality_label": "実用表示可",
+    "system_quality_score": 100,
+    "title": "判定スコア",
+    "validation_attention_display": "検証不足のため建玉サイズを制限",
+    "validation_readiness_label": "検証参考",
+    "validation_readiness_score": 69,
+    "validation_state_display": "検証中"
+  },
+  "snapshot_key": "fef5c755af604dbd39f033aa897433ffed6b66a2a2311c66d1fb0a609ce58519",
   "source_snapshots": {
     "basecalc": {
       "allowed_direction": "stopped",
@@ -73,7 +133,11 @@
           "confidence_penalty": 10,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "reasons": [],
+          "soft_reasons": [
+            "現行モデルがATRベースラインを下回るため"
+          ],
           "target_probability_allowed": true,
           "validation_level": "limited",
           "warnings": [
@@ -84,7 +148,9 @@
           "confidence_penalty": 0,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "reasons": [],
+          "soft_reasons": [],
           "target_probability_allowed": true,
           "validation_level": "confirmed",
           "warnings": []
@@ -93,7 +159,9 @@
           "confidence_penalty": 0,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "reasons": [],
+          "soft_reasons": [],
           "target_probability_allowed": true,
           "validation_level": "confirmed",
           "warnings": []
@@ -885,7 +953,7 @@
         "basecalc_top": {
           "action": {
             "allowed": "支持抵抗・ATRレンジ・反転警戒",
-            "caution": "現行モデルがATRベースラインを下回るため / 米国3指数確認が不足",
+            "caution": "方向予測の検証条件が未達",
             "judgment": "レンジ・節目確認",
             "note": "方向予測は使わず、現在値に近い支持抵抗、ATRレンジ、反転警戒を確認します。",
             "prohibited": "方向の断定・高値追い・追撃買い"
@@ -915,9 +983,9 @@
           ],
           "confidence": {
             "data_quality": "データ中 76/100 / 信頼度低 44/100",
-            "direction": "停止（検証未達）",
+            "direction": "参考（信頼度 44/100）",
             "range": "中",
-            "validation_note": "方向予測停止: 現行モデルがATRベースラインを下回るため。検証ページで詳細確認。"
+            "validation_note": "方向予測停止: 検証条件が未達。検証ページで詳細確認。"
           },
           "external": {
             "chase_risk": "中程度",
@@ -930,22 +998,22 @@
             "direction": "方向予測停止中",
             "headline": "現在は売買方向を出さず、支持抵抗とレンジだけ確認",
             "setup": "レンジ確認モード",
-            "supplement": "理由: 現行モデルがATRベースラインを下回るため"
+            "supplement": "理由: 検証ゲート停止中"
           },
           "horizons": [
             {
               "label": "1日",
-              "note": "現行モデルがATRベースラインを下回るため / 米国3指数確認が不足",
+              "note": "方向予測の検証条件が未達",
               "summary": "方向予測停止。ATRレンジ・支持抵抗を確認"
             },
             {
               "label": "3日",
-              "note": "現行モデルがATRベースラインを下回るため / 米国3指数確認が不足",
+              "note": "方向予測の検証条件が未達",
               "summary": "方向予測停止。ATRレンジ・支持抵抗を確認"
             },
             {
               "label": "5日",
-              "note": "現行モデルがATRベースラインを下回るため / 米国3指数確認が不足",
+              "note": "方向予測の検証条件が未達",
               "summary": "方向予測停止。ATRレンジ・支持抵抗を確認"
             }
           ],
@@ -1034,9 +1102,7 @@
             "allowed": "支持抵抗・ATRレンジ・反転警戒",
             "prohibited": "方向の断定・高値追い・追撃買い",
             "stop_reasons": [
-              "現行モデルがATRベースラインを下回るため",
-              "米国3指数確認が不足",
-              "局面別検証不足のため信頼度を限定"
+              "方向予測の検証条件が未達"
             ],
             "subtitle": "現在は売買方向を出さず、支持抵抗とレンジだけ確認",
             "title": "方向予測停止中"
@@ -4056,9 +4122,6 @@
             ]
           },
           "prediction_stop_reasons": [
-            "現行モデルがATRベースラインを下回るため",
-            "米国3指数確認が不足",
-            "局面別検証不足のため信頼度を限定",
             "信頼度不足",
             "ベースライン比較未達"
           ],
@@ -4075,13 +4138,14 @@
           "risk_reason": [
             "目立つ警戒点は限定的です"
           ],
-          "state_label": "レンジ中立",
-          "status_summary": "主要データは判定可能",
-          "stop_reasons": [
+          "soft_warning_reasons": [
             "現行モデルがATRベースラインを下回るため",
             "米国3指数確認が不足",
             "局面別検証不足のため信頼度を限定"
           ],
+          "state_label": "レンジ中立",
+          "status_summary": "主要データは判定可能",
+          "stop_reasons": [],
           "upside_target": {
             "label": "第1候補",
             "price": 72110,
@@ -4093,7 +4157,12 @@
             "reasons": [
               "米国3指数データなし"
             ]
-          }
+          },
+          "validation_warnings": [
+            "現行モデルがATRベースラインを下回るため",
+            "信頼度が未較正です",
+            "局面別検証不足のため信頼度を限定"
+          ]
         },
         "decision_base_price": 69720,
         "decision_price": {
@@ -4807,7 +4876,11 @@
                 "confidence_penalty": 10,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [
+                  "現行モデルがATRベースラインを下回るため"
+                ],
                 "target_probability_allowed": true,
                 "validation_level": "limited",
                 "warnings": [
@@ -4818,7 +4891,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [],
                 "target_probability_allowed": true,
                 "validation_level": "confirmed",
                 "warnings": []
@@ -4827,7 +4902,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [],
                 "target_probability_allowed": true,
                 "validation_level": "confirmed",
                 "warnings": []
@@ -4835,6 +4912,7 @@
             },
             "as_of": "2026-07-02 14:23 JST",
             "confidence_calibrated": false,
+            "confidence_cap_reason": "信頼度が未較正です / 局面別検証不足のため信頼度を限定",
             "confidence_label": "Low",
             "confidence_score": 44,
             "contract_status": "limited",
@@ -4846,6 +4924,7 @@
             },
             "directional_allowed": false,
             "display_price": 69720.0,
+            "display_status": "watch_only",
             "excluded_inputs": [
               "macro",
               "valuation",
@@ -4856,6 +4935,8 @@
               "oil",
               "news"
             ],
+            "hard_block_reasons": [],
+            "hard_stop_reasons": [],
             "horizons": {
               "1d": {
                 "expected_return_pct": 0.01,
@@ -5669,12 +5750,13 @@
               }
             },
             "scope": "technical_with_us_index_confirmation",
-            "source": "basecalc",
-            "stop_reasons": [
+            "soft_warning_reasons": [
               "現行モデルがATRベースラインを下回るため",
               "米国3指数確認が不足",
               "局面別検証不足のため信頼度を限定"
             ],
+            "source": "basecalc",
+            "stop_reasons": [],
             "technical_regime": "range",
             "us_index_confirmation_score": 0,
             "validated_targets": {
@@ -5928,7 +6010,9 @@
                 "confidence_penalty": 10,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": 0.030000000000000027,
                   "atr_score": 0.67,
                   "confidence_penalty": 10,
                   "direction_allowed": true,
@@ -5940,6 +6024,9 @@
                   ]
                 },
                 "reasons": [],
+                "soft_reasons": [
+                  "現行モデルがATRベースラインを下回るため"
+                ],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -5963,7 +6050,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": -0.07999999999999996,
                   "atr_score": 0.44000000000000006,
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -5973,6 +6062,7 @@
                   "warnings": []
                 },
                 "reasons": [],
+                "soft_reasons": [],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -5994,7 +6084,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": -0.10999999999999999,
                   "atr_score": 0.4,
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -6004,6 +6096,7 @@
                   "warnings": []
                 },
                 "reasons": [],
+                "soft_reasons": [],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -6021,7 +6114,12 @@
                 "validation_level": "confirmed",
                 "warnings": []
               }
-            }
+            },
+            "validation_warnings": [
+              "現行モデルがATRベースラインを下回るため",
+              "信頼度が未較正です",
+              "局面別検証不足のため信頼度を限定"
+            ]
           },
           "chase_risk": "medium",
           "chase_risk_label": "中程度",
@@ -6040,6 +6138,7 @@
             "volatility": 2
           },
           "confidence": "Low",
+          "confidence_cap_reason": "信頼度が未較正です / 局面別検証不足のため信頼度を限定",
           "confidence_components": {
             "continuation": 4.5,
             "data_quality": 15.2,
@@ -6083,6 +6182,7 @@
           "direction_label": "中立",
           "directional_allowed": true,
           "display_price": 69720.0,
+          "display_status": "watch_only",
           "downside_targets": [
             {
               "confidence": "High",
@@ -6353,6 +6453,8 @@
             "vwap": 54288.7832,
             "vwap_gap_pct": 28.4243
           },
+          "hard_block_reasons": [],
+          "hard_stop_reasons": [],
           "horizons": {
             "1d": {
               "expected_return_pct": 0.01,
@@ -6534,7 +6636,11 @@
                 "confidence_penalty": 10,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [
+                  "現行モデルがATRベースラインを下回るため"
+                ],
                 "target_probability_allowed": true,
                 "validation_level": "limited",
                 "warnings": [
@@ -6545,7 +6651,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [],
                 "target_probability_allowed": true,
                 "validation_level": "confirmed",
                 "warnings": []
@@ -6554,7 +6662,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "reasons": [],
+                "soft_reasons": [],
                 "target_probability_allowed": true,
                 "validation_level": "confirmed",
                 "warnings": []
@@ -6570,9 +6680,10 @@
             "directional_allowed": false,
             "display_price": 69720.0,
             "display_status": "watch_only",
-            "explanation_allowed": false,
-            "generated_at": "2026-07-02T08:43:45.217937+00:00",
+            "explanation_allowed": "limited",
+            "generated_at": "2026-07-02T11:38:16.409014+00:00",
             "hard_block_reasons": [],
+            "hard_stop_reasons": [],
             "invalidated_targets": {
               "downside": [
                 {
@@ -6828,18 +6939,14 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 69720.0,
             "readiness_level": "ready",
-            "snapshot_id": "bba94244-6f5f-4786-b110-bd8521334db2",
+            "snapshot_id": "c049fb4a-bfb2-48ee-b82a-62634855b386",
             "soft_warning_reasons": [
               "現行モデルがATRベースラインを下回るため",
               "米国3指数確認が不足",
               "局面別検証不足のため信頼度を限定"
             ],
             "source_timestamp": "2026-07-02 14:23 JST",
-            "stop_reasons": [
-              "現行モデルがATRベースラインを下回るため",
-              "米国3指数確認が不足",
-              "局面別検証不足のため信頼度を限定"
-            ],
+            "stop_reasons": [],
             "target_calculated_from_price": 69720.0,
             "target_display_allowed": true,
             "us_index_status": "missing",
@@ -7094,7 +7201,9 @@
                 "confidence_penalty": 10,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": 0.030000000000000027,
                   "atr_score": 0.67,
                   "confidence_penalty": 10,
                   "direction_allowed": true,
@@ -7106,6 +7215,9 @@
                   ]
                 },
                 "reasons": [],
+                "soft_reasons": [
+                  "現行モデルがATRベースラインを下回るため"
+                ],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -7129,7 +7241,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": -0.07999999999999996,
                   "atr_score": 0.44000000000000006,
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -7139,6 +7253,7 @@
                   "warnings": []
                 },
                 "reasons": [],
+                "soft_reasons": [],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -7160,7 +7275,9 @@
                 "confidence_penalty": 0,
                 "direction_allowed": true,
                 "display_mode": "directional",
+                "hard_reasons": [],
                 "model_vs_baseline": {
+                  "atr_margin": -0.10999999999999999,
                   "atr_score": 0.4,
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -7170,6 +7287,7 @@
                   "warnings": []
                 },
                 "reasons": [],
+                "soft_reasons": [],
                 "state_direction_gate": {
                   "confidence_penalty": 0,
                   "direction_allowed": true,
@@ -7678,6 +7796,11 @@
             "used_case_count": 30,
             "worst_case_pct": -8.23
           },
+          "soft_warning_reasons": [
+            "現行モデルがATRベースラインを下回るため",
+            "米国3指数確認が不足",
+            "局面別検証不足のため信頼度を限定"
+          ],
           "source_status": {
             "fallback_used": false,
             "instrument_key": "cme_nikkei_futures",
@@ -7689,11 +7812,7 @@
           "stale_minutes": 15,
           "state_key": "range_neutral",
           "state_label": "レンジ中立",
-          "stop_reasons": [
-            "現行モデルがATRベースラインを下回るため",
-            "米国3指数確認が不足",
-            "局面別検証不足のため信頼度を限定"
-          ],
+          "stop_reasons": [],
           "strength_label": "弱い",
           "sub_scenario": "レンジ上限または下限を終値で抜けるか確認",
           "target_1_display": "72,110",
@@ -7920,7 +8039,12 @@
             "risk_label": "technical_confirm"
           },
           "us_index_confirmation_label": "mixed",
-          "us_index_confirmation_score": 0
+          "us_index_confirmation_score": 0,
+          "validation_warnings": [
+            "現行モデルがATRベースラインを下回るため",
+            "信頼度が未較正です",
+            "局面別検証不足のため信頼度を限定"
+          ]
         }
       },
       "readiness_level": "ready",
@@ -7937,11 +8061,7 @@
         "米国3指数確認が不足",
         "局面別検証不足のため信頼度を限定"
       ],
-      "stop_reasons": [
-        "現行モデルがATRベースラインを下回るため",
-        "米国3指数確認が不足",
-        "局面別検証不足のため信頼度を限定"
-      ],
+      "stop_reasons": [],
       "summary": "日経先物は中立。短期方向はまちまち。",
       "validated_targets": {
         "downside": [
@@ -8194,7 +8314,9 @@
           "confidence_penalty": 10,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "model_vs_baseline": {
+            "atr_margin": 0.030000000000000027,
             "atr_score": 0.67,
             "confidence_penalty": 10,
             "direction_allowed": true,
@@ -8206,6 +8328,9 @@
             ]
           },
           "reasons": [],
+          "soft_reasons": [
+            "現行モデルがATRベースラインを下回るため"
+          ],
           "state_direction_gate": {
             "confidence_penalty": 0,
             "direction_allowed": true,
@@ -8229,7 +8354,9 @@
           "confidence_penalty": 0,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "model_vs_baseline": {
+            "atr_margin": -0.07999999999999996,
             "atr_score": 0.44000000000000006,
             "confidence_penalty": 0,
             "direction_allowed": true,
@@ -8239,6 +8366,7 @@
             "warnings": []
           },
           "reasons": [],
+          "soft_reasons": [],
           "state_direction_gate": {
             "confidence_penalty": 0,
             "direction_allowed": true,
@@ -8260,7 +8388,9 @@
           "confidence_penalty": 0,
           "direction_allowed": true,
           "display_mode": "directional",
+          "hard_reasons": [],
           "model_vs_baseline": {
+            "atr_margin": -0.10999999999999999,
             "atr_score": 0.4,
             "confidence_penalty": 0,
             "direction_allowed": true,
@@ -8270,6 +8400,7 @@
             "warnings": []
           },
           "reasons": [],
+          "soft_reasons": [],
           "state_direction_gate": {
             "confidence_penalty": 0,
             "direction_allowed": true,
@@ -8297,11 +8428,11 @@
         "現行モデルがATRベースラインを下回るため",
         "米国3指数確認が不足",
         "局面別検証不足のため信頼度を限定",
+        "信頼度が未較正です",
         "データ鮮度または取得元に注意が必要です",
         "無料公開ソースのため公式価格と同じ重みでは扱いません",
         "データ品質が限定的です",
-        "信頼度不足",
-        "ベースライン比較未達"
+        "信頼度不足"
       ]
     },
     "macro": {
@@ -8498,20 +8629,31 @@
     "confidence_components": {
       "audit_penalty": 6,
       "basecalc_direction": 44,
+      "basecalc_weight": 0.35,
       "confidence_cap_reason": "信頼度が未較正です / 局面別検証不足のため信頼度を限定",
+      "confidence_formula": "weighted_components_v1",
       "data_quality": 76,
+      "data_quality_weight": 0.1,
       "decision_status": "watch_only",
       "event_penalty": 0,
-      "final_score": 38,
+      "final_score": 57,
+      "hard_block_penalty": 0,
       "intermarket_confirmation": -5,
+      "intermarket_weight": 0.05,
       "macro_alignment": 91,
-      "raw_score": 38,
+      "macro_weight": 0.2,
+      "raw_score": 57,
       "risk_reward": 11.26,
-      "target_quality": 80,
-      "validation_quality": 65
+      "stop_hit_rate": 0.1,
+      "target_hit_rate": 0.39,
+      "target_quality": 78,
+      "target_weight": 0.15,
+      "validation_level": "medium",
+      "validation_quality": 65,
+      "validation_weight": 0.15
     },
-    "confidence_grade": "D",
-    "confidence_score": 38,
+    "confidence_grade": "C+",
+    "confidence_score": 57,
     "counter_scenario": {
       "direction": "both",
       "label": "上下の反転材料を確認",
@@ -8549,12 +8691,11 @@
       "現行モデルがATRベースラインを下回るため",
       "米国3指数確認が不足",
       "局面別検証不足のため信頼度を限定",
+      "信頼度が未較正です",
       "データ鮮度または取得元に注意が必要です",
       "無料公開ソースのため公式価格と同じ重みでは扱いません",
       "データ品質が限定的です",
-      "信頼度不足",
-      "ベースライン比較未達",
-      "信頼度が未較正です"
+      "信頼度不足"
     ],
     "stop_price": null,
     "target_1": null,
@@ -8564,5 +8705,5 @@
     "warnings": []
   },
   "version": "explanation_v2",
-  "workflow_run_id": ""
+  "workflow_run_id": "28587030847"
 }
