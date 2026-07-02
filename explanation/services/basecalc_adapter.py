@@ -67,6 +67,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     soft_warning_reasons = output_contract.get('soft_warning_reasons') or []
     warnings = []
     warnings.extend(soft_warning_reasons or output_contract.get('stop_reasons') or [])
+    warnings.extend(output_contract.get('validation_warnings') or [])
     warnings.extend(world_model.get('confidence_warnings') or [])
     warnings.extend(world_model.get('warnings') or [])
     warnings.extend((world_model.get('readiness') or {}).get('warnings') or [])

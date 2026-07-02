@@ -1,19 +1,35 @@
 HORIZONS = ("1d", "3d", "5d")
 MIN_DIRECTION_SIGNAL_ACCURACY = 0.55
+HARD_BAD_DIRECTION_SIGNAL_ACCURACY = 0.48
 MIN_DIRECTION_SIGNAL_SAMPLES = 30
 LOW_VALIDATION_PENALTY = 10
 SOFT_VALIDATION_PENALTY = 10
+HARD_BASELINE_UNDERPERFORMANCE_MARGIN = 0.75
+HARD_BASELINE_UNDERPERFORMANCE_MIN_HORIZONS = 2
 
 
 def build_validation_gate(world_model, validation_report=None, performance_by_horizon=None):
     world_model = world_model or {}
     validation_report = validation_report or {}
     performance_by_horizon = performance_by_horizon or {}
-    result = {}
+    baseline_by_horizon = {}
+    hard_baseline_horizons = set()
     for horizon in HORIZONS:
         report = _horizon_report(validation_report, horizon)
         summary = report.get("summary") or performance_by_horizon.get(horizon) or {}
         baseline = _baseline_gate(summary)
+        baseline_by_horizon[horizon] = baseline
+        if baseline.get("atr_margin", 0) >= HARD_BASELINE_UNDERPERFORMANCE_MARGIN:
+            hard_baseline_horizons.add(horizon)
+    if len(hard_baseline_horizons) < HARD_BASELINE_UNDERPERFORMANCE_MIN_HORIZONS:
+        hard_baseline_horizons = set()
+
+    result = {}
+    for horizon in HORIZONS:
+        report = _horizon_report(validation_report, horizon)
+        baseline = baseline_by_horizon[horizon]
+        if horizon in hard_baseline_horizons:
+            baseline = _hard_baseline_gate(baseline)
         state_gate = _state_gate(world_model, report)
         state_direction_gate = _state_direction_gate(world_model, report)
         if state_direction_gate.get("has_direction_signal"):
@@ -41,6 +57,15 @@ def build_validation_gate(world_model, validation_report=None, performance_by_ho
             "state_direction_gate": state_direction_gate,
         }
     return result
+
+
+def _hard_baseline_gate(baseline):
+    baseline = dict(baseline or {})
+    baseline["direction_allowed"] = False
+    baseline["reasons"] = ["ATRベースラインに複数期間で大幅劣後"]
+    baseline["warnings"] = []
+    baseline["confidence_penalty"] = 0
+    return baseline
 
 
 def _horizon_report(validation_report, horizon):
@@ -73,6 +98,7 @@ def _baseline_gate(summary):
             "sample_count": comparison.get("sample_count"),
             "model_score": model_score,
             "atr_score": atr_score,
+            "atr_margin": atr_score - model_score,
         }
     return {
         "direction_allowed": True,
@@ -82,6 +108,7 @@ def _baseline_gate(summary):
         "sample_count": comparison.get("sample_count"),
         "model_score": model_score,
         "atr_score": atr_score,
+        "atr_margin": atr_score - model_score,
     }
 
 
@@ -159,7 +186,11 @@ def _state_direction_gate(world_model, report):
             and accuracy is not None
             and accuracy < MIN_DIRECTION_SIGNAL_ACCURACY
         ):
-            reasons.append(f"{state_label}の{direction_label}精度が基準未達のため")
+            if accuracy < HARD_BAD_DIRECTION_SIGNAL_ACCURACY:
+                reasons.append(f"{state_label}の{direction_label}精度が基準未達のため")
+            else:
+                warnings.append(f"{state_label}の{direction_label}精度が基準未達のため")
+                confidence_penalty = max(confidence_penalty, SOFT_VALIDATION_PENALTY)
         if sample_count >= MIN_DIRECTION_SIGNAL_SAMPLES and avg_return is not None and (
             (direction == "up" and avg_return < 0)
             or (direction == "down" and avg_return > 0)

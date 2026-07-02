@@ -42,6 +42,8 @@ def build_basecalc_decision_context(
         "prediction_stop_reasons": prediction_stop_reasons(world_model, performance),
         "contract_status": output_contract.get("contract_status") or "unchecked",
         "stop_reasons": output_contract.get("stop_reasons") or [],
+        "soft_warning_reasons": output_contract.get("soft_warning_reasons") or [],
+        "validation_warnings": output_contract.get("validation_warnings") or [],
     }
 
 
@@ -96,7 +98,13 @@ def _top_status(decision, status_rows):
     if decision.get("contract_status") == "error":
         attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or "出力整合性エラー"
     elif decision.get("contract_status") == "limited":
-        attention = " / ".join((decision.get("stop_reasons") or [])[:2]) or attention
+        warning_reasons = (
+            decision.get("soft_warning_reasons")
+            or decision.get("validation_warnings")
+            or decision.get("stop_reasons")
+            or []
+        )
+        attention = " / ".join(warning_reasons[:2]) or attention
     return {
         "readiness": "停止" if decision.get("contract_status") == "error" else decision.get("readiness_label") or "判定不可",
         "judgment_state": _judgment_state(decision),

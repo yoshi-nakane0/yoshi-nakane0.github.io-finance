@@ -125,7 +125,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         blocking_reasons.append('basecalc データ品質不足')
     if snapshot.audit_level == 'blocked':
         blocking_reasons.extend(_limited(snapshot.audit_items or ['監査で判定停止']))
-    if contract_status == 'error':
+    if contract_status == 'error' or decision_status == 'blocked':
         blocking_reasons.extend(_limited(basecalc.get('stop_reasons') or output_contract.get('stop_reasons') or ['basecalc 出力契約エラー']))
 
     direction_warning = _direction_warning(selected_side, current_price, target_1_price, stop_price)
@@ -151,7 +151,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         tradable=tradable,
         selected_side=selected_side,
         decision_type=decision_type,
-        contract_status=contract_status,
+        contract_status='error' if decision_status == 'blocked' else contract_status,
         directional_allowed=directional_allowed,
         reward_risk=reward_risk,
         blocking_reasons=blocking_reasons,
@@ -165,7 +165,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         tradable or decision_status in {'watch_only', 'candidate_limited', 'candidate_confirmed'},
         target_1_price is not None,
         stop_price is not None,
-        reward_risk is not None and reward_risk >= 1.2,
+        reward_risk is not None and (reward_risk >= 1.2 or decision_status == 'watch_only'),
         contract_status != 'error',
         direction_warning is None,
     ])
@@ -198,7 +198,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     target_2_display = _price_display(target_2_price) if candidate_visible and target_2_price is not None else '—'
     stop_display = _price_display(stop_price) if candidate_visible else '—'
     invalidation_display = _price_display(invalidation_price) if candidate_visible and invalidation_price is not None else '—'
-    reward_risk_display = _reward_risk_display(reward_risk, candidate_visible, status)
+    reward_risk_display = _reward_risk_display(reward_risk, execution_allowed, status)
     reference_candidate = _reference_candidate(
         status=status,
         tradable=tradable,

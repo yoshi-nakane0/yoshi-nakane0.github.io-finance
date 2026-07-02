@@ -132,6 +132,34 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertIn('局面別検証不足', decision.warnings)
         self.assertFalse(decision.blocked_reasons)
 
+    def test_trade_decision_v2_keeps_soft_warning_visible_when_stop_reasons_are_hard_only(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            confidence_score=72,
+            confidence_grade='B',
+            contract_status='limited',
+            allowed_direction='up',
+            can_show_prediction=True,
+            stop_reasons=[],
+            soft_warning_reasons=['局面別精度が基準未達のため信頼度を限定'],
+            validation_warnings=['局面別精度が基準未達のため信頼度を限定'],
+            validation_gate_status={
+                '1d': {'direction_allowed': True, 'validation_level': 'limited'},
+                '3d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '5d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+            },
+            confidence_calibrated=True,
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.hard_block_reasons, [])
+        self.assertEqual(decision.blocked_reasons, [])
+        self.assertIn('局面別精度が基準未達のため信頼度を限定', decision.soft_warning_reasons)
+        self.assertIn('局面別精度が基準未達のため信頼度を限定', decision.warnings)
+
     def test_trade_decision_confidence_components_include_basecalc_cap_reason(self):
         macro = self._macro('positive')
         basecalc = self._basecalc(
@@ -149,6 +177,31 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
             '類似事例不足のため信頼度を限定',
         )
         self.assertIn('類似事例不足のため信頼度を限定', decision.soft_warning_reasons)
+
+    def test_trade_decision_v2_keeps_validation_warning_high_confidence_as_limited_candidate(self):
+        macro = self._macro('positive', confidence_score=88, data_quality_score=90)
+        basecalc = self._basecalc(
+            confidence_score=88,
+            data_quality_score=90,
+            contract_status='ok',
+            confidence_calibrated=True,
+            validation_gate_status={
+                '1d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '3d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '5d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+            },
+            validation_warnings=['confidence calibration 不足'],
+            us_index_available=True,
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'long')
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.entry_permission, 'limited_entry')
+        self.assertEqual(decision.position_size_pct, 50)
+        self.assertIn('confidence calibration 不足', decision.soft_warning_reasons)
 
     def test_no_trade_decision_includes_extended_status_contract(self):
         decision = build_trade_decision_v2(
@@ -846,6 +899,65 @@ class ExplanationBasecalcAdapterTests(SimpleTestCase):
         self.assertEqual(signal.confidence_grade, 'Middle')
         self.assertNotIn('局面別成績が弱いため信頼度を50未満に制限', signal.warnings)
 
+    def test_load_basecalc_signal_keeps_validation_warnings_visible_when_stop_reasons_are_hard_only(self):
+        snapshot = {
+            'generated_at': '2026-06-23T09:39:11+00:00',
+            'world_model': {
+                'direction': 'up',
+                'direction_label': '上昇優勢',
+                'price': 69770,
+                'confidence': 'Middle',
+                'confidence_score': 59,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'similar_summary': {'case_count': 30, 'is_statistically_valid': True},
+                'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                'near_levels': {
+                    'upside': [{'price': 69800}],
+                    'downside': [{'price': 69700}],
+                },
+                'us_index_confirmation': {
+                    'readiness': {'usable': True},
+                    'components': {'nasdaq100_futures': {}, 'sp500_futures': {}, 'dow_futures': {}},
+                    'evidence': [],
+                },
+                'output_contract': {
+                    'contract_status': 'limited',
+                    'display_price': 69770,
+                    'directional_allowed': True,
+                    'allowed_direction': 'up',
+                    'stop_reasons': [],
+                    'hard_block_reasons': [],
+                    'soft_warning_reasons': [],
+                    'validation_warnings': ['局面別精度が基準未達のため信頼度を限定'],
+                    'confidence_cap_reason': '局面別精度が基準未達のため信頼度を限定',
+                },
+            },
+            'decision': {
+                'confidence': 'Middle',
+                'confidence_score': 59,
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'can_show_prediction': True,
+            },
+            'basecalc_status_rows': [],
+            'market_shock': {'has_data': False},
+            'backtest_performance_by_horizon': {},
+        }
+
+        with (
+            mock.patch('explanation.services.basecalc_adapter.load_basecalc_snapshot', return_value=snapshot),
+            mock.patch('explanation.services.basecalc_adapter.load_validation_report', return_value=None),
+            mock.patch('explanation.services.basecalc_adapter.apply_output_contract'),
+        ):
+            signal = load_basecalc_signal()
+
+        self.assertEqual(signal.stop_reasons, [])
+        self.assertEqual(signal.hard_block_reasons, [])
+        self.assertEqual(signal.validation_warnings, ['局面別精度が基準未達のため信頼度を限定'])
+        self.assertIn('局面別精度が基準未達のため信頼度を限定', signal.warnings)
+
 
 class ExplanationViewCompositionTests(SimpleTestCase):
     def _snapshot(self):
@@ -1540,6 +1652,73 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(beginner['stop_display'], '—')
         self.assertEqual(beginner['reward_risk_display'], '不採用（1.2未満）')
         self.assertIn('R/R不足', beginner['warnings'])
+
+    def test_beginner_decision_keeps_watch_only_reference_levels_when_reward_risk_is_low(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'decision_status': 'watch_only',
+            'entry_permission': 'watch_only',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'target_1': {'label': 'T1', 'price': 72800, 'probability': 0.42},
+            'stop_price': 71600,
+            'invalidation_price': 71600,
+            'reward_risk': 0.45,
+            'confidence_score': 45,
+            'confidence_grade': 'C',
+            'long_score': 58,
+            'short_score': 30,
+            'no_trade_score': 52,
+            'warnings': ['R/R不足のため監視のみ'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertEqual(beginner['label'], '監視のみ')
+        self.assertEqual(beginner['entry_permission_label'], '監視のみ')
+        self.assertTrue(beginner['candidate_visible'])
+        self.assertFalse(beginner['execution_allowed'])
+        self.assertEqual(beginner['entry_display'], '監視のみ')
+        self.assertEqual(beginner['target_1_display'], '72,800円')
+        self.assertEqual(beginner['stop_display'], '71,600円')
+        self.assertEqual(beginner['reward_risk_display'], '不採用（1.2未満）')
+
+    def test_beginner_decision_prioritizes_blocked_decision_status_over_leftover_candidate_prices(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'decision_status': 'blocked',
+            'entry_permission': 'no_entry',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'target_1': {'label': 'T1', 'price': 73800, 'probability': 0.62},
+            'stop_price': 71600,
+            'invalidation_price': 71600,
+            'reward_risk': 1.65,
+            'confidence_score': 72,
+            'confidence_grade': 'B',
+            'long_score': 70,
+            'short_score': 30,
+            'no_trade_score': 35,
+            'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertEqual(beginner['status'], 'data_blocked')
+        self.assertEqual(beginner['label'], '判定停止')
+        self.assertEqual(beginner['entry_permission_label'], '停止')
+        self.assertFalse(beginner['candidate_visible'])
+        self.assertFalse(beginner['execution_allowed'])
+        self.assertEqual(beginner['entry_display'], '停止')
+        self.assertEqual(beginner['target_1_display'], '—')
+        self.assertEqual(beginner['stop_display'], '—')
+        self.assertEqual(beginner['reward_risk_display'], '—')
 
     def test_explanation_template_shows_no_candidate_reason_when_not_visible(self):
         snapshot = self._snapshot()

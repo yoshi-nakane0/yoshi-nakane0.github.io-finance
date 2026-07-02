@@ -69,7 +69,8 @@ def apply_output_contract(
     status = "error" if errors else "limited" if soft_warning_reasons or gate_hard_reasons else "ok"
     direction = world_model.get("direction")
     model_horizon_keys = set((world_model.get("horizons") or {}).keys()) or set(allowed_horizons.keys())
-    directional_allowed = status != "error" and direction in {"up", "down"} and any(
+    severe_direction_stop = "ATRベースラインに複数期間で大幅劣後" in gate_hard_reasons
+    directional_allowed = status != "error" and not severe_direction_stop and direction in {"up", "down"} and any(
         item.get("direction_allowed")
         for horizon, item in allowed_horizons.items()
         if horizon in model_horizon_keys
@@ -114,7 +115,7 @@ def apply_output_contract(
         "validation_warnings": _dedupe(gate_soft_warnings + confidence_cap_reasons),
         "confidence_cap_reason": " / ".join(_dedupe(confidence_cap_reasons)),
         "display_status": _display_status(status, directional_allowed),
-        "stop_reasons": _dedupe(hard_block_reasons + soft_warning_reasons),
+        "stop_reasons": hard_block_reasons,
         "target_display_allowed": target_display_allowed,
         "probability_display_allowed": probability_display_allowed,
         "explanation_allowed": _explanation_allowed_status(status, directional_allowed),
@@ -274,7 +275,7 @@ def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, w
         cap_reasons.append(reason)
     elif _current_state_is_limited(validation_gate):
         cap = min(cap, 59)
-        reason = "局面別検証不足のため信頼度を限定"
+        reason = _limited_validation_cap_reason(validation_gate)
         warnings.append(reason)
         cap_reasons.append(reason)
     score = _number(world_model.get("confidence_score"))
@@ -306,6 +307,16 @@ def _current_state_is_limited(validation_gate):
         if (row.get("validation_level") or "") in {"low", "limited"}:
             return True
     return False
+
+
+def _limited_validation_cap_reason(validation_gate):
+    reasons = []
+    for row in (validation_gate or {}).values():
+        if isinstance(row, dict):
+            reasons.extend(row.get("soft_reasons") or row.get("warnings") or [])
+    if any("精度が基準未達" in reason for reason in reasons):
+        return "局面別精度が基準未達のため信頼度を限定"
+    return "局面別検証不足のため信頼度を限定"
 
 
 def _confirmed_contract(confidence_calibrated, validation_gate, us_index_status, directional_allowed):

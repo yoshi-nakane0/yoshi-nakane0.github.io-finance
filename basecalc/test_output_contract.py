@@ -87,6 +87,38 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertEqual(gate['3d']['hard_reasons'], [])
         self.assertIn('押し目買いの上方向検証件数が不足しているため', gate['3d']['soft_reasons'])
 
+    def test_validation_gate_warns_without_blocking_when_accuracy_is_slightly_below_standard(self):
+        from .validation_gate import build_validation_gate
+
+        gate = build_validation_gate(
+            {
+                'direction': 'up',
+                'state_key': 'dip_buy',
+                'state_label': '押し目買い',
+            },
+            validation_report={
+                'horizons': {
+                    '1d': {
+                        'state_direction_summaries': [
+                            {
+                                'state_key': 'dip_buy',
+                                'direction': 'up',
+                                'total_predictions': 60,
+                                'directional_accuracy': 0.52,
+                                'avg_return_pct': 0.08,
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        self.assertTrue(gate['1d']['direction_allowed'])
+        self.assertEqual(gate['1d']['validation_level'], 'limited')
+        self.assertEqual(gate['1d']['confidence_penalty'], 10)
+        self.assertEqual(gate['1d']['hard_reasons'], [])
+        self.assertIn('押し目買いの上方向精度が基準未達のため', gate['1d']['soft_reasons'])
+
     def test_contract_blocks_stale_targets_after_display_price_changes(self):
         from .output_contract import apply_output_contract
 
@@ -410,6 +442,68 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertEqual(contract['available_display'], '方向・目標・レンジ')
         self.assertIn('押し目買いの上方向精度が基準未達のため', contract['stop_reasons'])
 
+    def test_validation_gate_hard_blocks_when_atr_baseline_beats_model_by_large_margin_on_multiple_horizons(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {
+                '1d': {'main_bias': 'up', 'expected_return_pct': 0.4},
+                '3d': {'main_bias': 'up', 'expected_return_pct': 0.8},
+                '5d': {'main_bias': 'up', 'expected_return_pct': 1.0},
+            },
+            'similar_summary': {'case_count': 35, 'is_statistically_valid': True},
+            'confidence_score': 65,
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        weak_baseline = {
+            'baseline_comparison': {
+                'sample_count': 300,
+                'rows': [
+                    {'key': 'model', 'risk_adjusted_return_pct': -0.10, 'balanced_accuracy': 0.36, 'directional_accuracy': 0.40},
+                    {'key': 'atr_range', 'risk_adjusted_return_pct': 0.55, 'balanced_accuracy': 0.68, 'directional_accuracy': 0.67},
+                ],
+            },
+        }
+        ok_baseline = {
+            'baseline_comparison': {
+                'sample_count': 300,
+                'rows': [
+                    {'key': 'model', 'risk_adjusted_return_pct': 0.20, 'balanced_accuracy': 0.58, 'directional_accuracy': 0.59},
+                    {'key': 'atr_range', 'risk_adjusted_return_pct': 0.18, 'balanced_accuracy': 0.55, 'directional_accuracy': 0.56},
+                ],
+            },
+        }
+        validation_report = {
+            'horizons': {
+                '1d': {'summary': weak_baseline},
+                '3d': {'summary': weak_baseline},
+                '5d': {'summary': ok_baseline},
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertFalse(contract['allowed_horizons']['1d']['direction_allowed'])
+        self.assertFalse(contract['allowed_horizons']['3d']['direction_allowed'])
+        self.assertTrue(contract['allowed_horizons']['5d']['direction_allowed'])
+        self.assertFalse(contract['directional_allowed'])
+        self.assertIn('ATRベースラインに複数期間で大幅劣後', contract['hard_block_reasons'])
+        self.assertNotIn('ATRベースラインに複数期間で大幅劣後', contract['soft_warning_reasons'])
+
     def test_confidence_is_capped_when_uncalibrated_or_state_is_weak(self):
         from .output_contract import apply_output_contract
 
@@ -453,8 +547,10 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertEqual(contract['confidence_status'], '未較正')
         self.assertEqual(world_model['confidence_score'], 59)
         self.assertEqual(world_model['confidence'], 'Middle')
-        self.assertIn('信頼度が未較正です', contract['stop_reasons'])
-        self.assertIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
+        self.assertNotIn('信頼度が未較正です', contract['stop_reasons'])
+        self.assertNotIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
+        self.assertIn('信頼度が未較正です', contract['soft_warning_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['soft_warning_reasons'])
 
     def test_warning_only_contract_keeps_direction_and_targets_visible(self):
         from .output_contract import apply_output_contract
@@ -487,9 +583,63 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertTrue(contract['target_display_allowed'])
         self.assertFalse(contract['probability_display_allowed'])
         self.assertEqual(contract['allowed_direction'], 'up')
-        self.assertIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
+        self.assertNotIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['soft_warning_reasons'])
         self.assertIn('類似事例不足のため信頼度を限定', contract['confidence_cap_reason'])
         self.assertIn('類似事例不足のため信頼度を限定', contract['validation_warnings'])
+        self.assertEqual(contract['hard_block_reasons'], [])
+
+    def test_precision_warning_cap_reason_names_accuracy_not_missing_validation(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'confidence': 'High',
+            'confidence_score': 78,
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 35, 'is_statistically_valid': True},
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'horizons': {
+                '1d': {
+                    'state_direction_summaries': [
+                        {
+                            'state_key': 'dip_buy',
+                            'direction': 'up',
+                            'total_predictions': 60,
+                            'directional_accuracy': 0.52,
+                            'avg_return_pct': 0.08,
+                        },
+                    ],
+                    'confidence_calibration_rows': [
+                        {'bucket': '50台', 'avg_return_pct': 0.1},
+                        {'bucket': '70台', 'avg_return_pct': 0.2},
+                    ],
+                },
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertTrue(contract['directional_allowed'])
+        self.assertEqual(world_model['confidence_score'], 59)
+        self.assertIn('局面別精度が基準未達のため信頼度を限定', contract['confidence_cap_reason'])
+        self.assertNotIn('局面別検証不足のため信頼度を限定', contract['confidence_cap_reason'])
         self.assertEqual(contract['hard_block_reasons'], [])
 
     def test_output_contract_exposes_confirmed_display_status_when_no_limits_remain(self):

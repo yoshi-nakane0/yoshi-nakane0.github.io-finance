@@ -628,7 +628,11 @@ def _candidate_status(basecalc, confidence_score, validation_level):
         return 'watch_only'
     if confidence_score < 50:
         return 'watch_only'
-    warnings = list(basecalc.soft_warning_reasons or []) + list(basecalc.warnings or [])
+    warnings = (
+        list(basecalc.soft_warning_reasons or [])
+        + list(basecalc.validation_warnings or [])
+        + list(basecalc.warnings or [])
+    )
     gate_rows = (basecalc.validation_gate_status or {}).values()
     if any((row.get('validation_level') if isinstance(row, dict) else '') == 'low' for row in gate_rows):
         return 'candidate_limited'
@@ -647,7 +651,11 @@ def _candidate_confidence_cap(decision_status, basecalc=None, validation_level='
     if decision_status == 'watch_only':
         return 59
     if decision_status == 'candidate_limited':
-        warnings = list(getattr(basecalc, 'soft_warning_reasons', None) or []) + list(getattr(basecalc, 'warnings', None) or [])
+        warnings = (
+            list(getattr(basecalc, 'soft_warning_reasons', None) or [])
+            + list(getattr(basecalc, 'validation_warnings', None) or [])
+            + list(getattr(basecalc, 'warnings', None) or [])
+        )
         weak_validation = validation_level in {'none', 'low'}
         low_basecalc = getattr(basecalc, 'confidence_score', 0) < 50
         uncalibrated = not getattr(basecalc, 'confidence_calibrated', False)
@@ -895,7 +903,12 @@ def _decision_warnings(macro, basecalc, reversal):
         warnings.append(reversal.get('label') or '逆張りWATCH')
     if basecalc.shock_score >= 55:
         warnings.append('ショックリスク上昇')
-    for reason in list(basecalc.stop_reasons or []) + list(basecalc.warnings or []):
+    for reason in (
+        list(basecalc.stop_reasons or [])
+        + list(basecalc.soft_warning_reasons or [])
+        + list(basecalc.validation_warnings or [])
+        + list(basecalc.warnings or [])
+    ):
         if reason and reason not in warnings:
             warnings.append(reason)
     return warnings[:4]
