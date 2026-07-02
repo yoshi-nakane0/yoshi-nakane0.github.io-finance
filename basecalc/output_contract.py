@@ -129,6 +129,12 @@ def _apply_contract_to_world_model(world_model, contract):
     world_model["output_contract"] = contract
     world_model["contract_status"] = contract["contract_status"]
     world_model["stop_reasons"] = contract["stop_reasons"]
+    world_model["hard_stop_reasons"] = contract["hard_stop_reasons"]
+    world_model["hard_block_reasons"] = contract["hard_block_reasons"]
+    world_model["soft_warning_reasons"] = contract["soft_warning_reasons"]
+    world_model["validation_warnings"] = contract["validation_warnings"]
+    world_model["confidence_cap_reason"] = contract["confidence_cap_reason"]
+    world_model["display_status"] = contract["display_status"]
     world_model["display_price"] = contract["display_price"]
     world_model["model_price"] = contract["model_price"]
     if contract["contract_status"] != "error":

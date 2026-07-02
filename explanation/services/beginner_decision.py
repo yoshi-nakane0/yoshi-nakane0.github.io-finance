@@ -131,7 +131,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     direction_warning = _direction_warning(selected_side, current_price, target_1_price, stop_price)
     if direction_warning:
         blocking_reasons.append(direction_warning)
-    blocking_reasons.extend(_score_gate_reasons(selected_side, trade_decision))
+    blocking_reasons.extend(_score_gate_reasons(selected_side, trade_decision, decision_status))
 
     tradable = all([
         selected_side in {'long', 'short'},
@@ -393,6 +393,15 @@ def _confidence_component_rows(components, confidence_display=''):
             continue
         display_value = int(numeric * sign) if float(numeric * sign).is_integer() else round(numeric * sign, 1)
         rows.append({'label': label, 'value': f'{display_value}点'})
+    validation_level = _validation_level_display(components.get('validation_level'))
+    if validation_level:
+        rows.append({'label': '検証状態', 'value': validation_level})
+    risk_reward = _number(components.get('risk_reward'))
+    if risk_reward is not None:
+        rows.append({'label': 'R/R', 'value': f'{risk_reward:.2f}'})
+    hard_block_penalty = _number(components.get('hard_block_penalty'))
+    if hard_block_penalty:
+        rows.append({'label': '停止減点', 'value': f'-{int(hard_block_penalty)}点'})
     target_hit_rate = _rate_component_display(components.get('target_hit_rate'))
     if target_hit_rate:
         rows.append({'label': 'T1到達率', 'value': target_hit_rate})
@@ -406,6 +415,15 @@ def _confidence_component_rows(components, confidence_display=''):
     if cap_reason:
         rows.append({'label': '上限理由', 'value': str(cap_reason)})
     return rows
+
+
+def _validation_level_display(value):
+    return {
+        'none': '未検証',
+        'low': '検証少',
+        'medium': '一部検証',
+        'high': '検証済み',
+    }.get(value or '', '')
 
 
 def _rate_component_display(value):
@@ -432,7 +450,9 @@ def _trade_availability_display(status, decision_status):
         return '判定停止'
     if status == 'no_trade':
         return '見送り / 条件未達'
-    if status == 'wait' or decision_status == 'watch_only':
+    if decision_status == 'watch_only':
+        return '監視のみ'
+    if status == 'wait':
         return '待機 / 条件待ち'
     if decision_status == 'candidate_limited':
         return '限定候補'
@@ -505,7 +525,9 @@ def _direction_warning(side, current_price, target_price, stop_price):
     return None
 
 
-def _score_gate_reasons(selected_side, trade_decision):
+def _score_gate_reasons(selected_side, trade_decision, decision_status='wait'):
+    if decision_status in {'watch_only', 'candidate_limited', 'candidate_confirmed'}:
+        return []
     if selected_side not in {'long', 'short'}:
         return []
     side_score = _int_or_none(trade_decision.get(f'{selected_side}_score'))

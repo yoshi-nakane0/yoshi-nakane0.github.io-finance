@@ -754,6 +754,7 @@ def _confidence_components(macro, basecalc, audit, score, validation_level, long
     return {
         **components,
         'confidence_cap_reason': basecalc.confidence_cap_reason or audit.confidence_cap or '',
+        'validation_level': validation_level,
         'raw_score': score,
         'confidence_formula': 'weighted_components_v1',
         'basecalc_weight': 0.35,

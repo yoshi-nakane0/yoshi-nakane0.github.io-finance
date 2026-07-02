@@ -41,6 +41,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         context = enrich_basecalc_context(dict(snapshot)) if snapshot else {}
     world_model = context.get('world_model') or {}
     if isinstance(world_model, dict):
+        existing_basecalc_signal = dict(world_model.get('basecalc_signal') or {})
         validation_report = _validation_report_for_basecalc_context(context, world_model)
         apply_output_contract(
             world_model,
@@ -48,7 +49,18 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
             validation_report=validation_report,
             performance_by_horizon=context.get('backtest_performance_by_horizon') or {},
         )
-        world_model['basecalc_signal'] = build_basecalc_signal_contract(world_model)
+        generated_basecalc_signal = build_basecalc_signal_contract(world_model)
+        for key in (
+            'hard_stop_reasons',
+            'hard_block_reasons',
+            'soft_warning_reasons',
+            'validation_warnings',
+            'confidence_cap_reason',
+            'display_status',
+        ):
+            if not generated_basecalc_signal.get(key) and existing_basecalc_signal.get(key):
+                generated_basecalc_signal[key] = existing_basecalc_signal.get(key)
+        world_model['basecalc_signal'] = generated_basecalc_signal
         context = enrich_basecalc_context(context)
         world_model = context.get('world_model') or {}
     output_contract = world_model.get('output_contract') or {}
@@ -63,18 +75,21 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         or world_model.get('intermarket_technicals')
         or {}
     )
-    hard_block_reasons = output_contract.get('hard_block_reasons') or []
-    soft_warning_reasons = output_contract.get('soft_warning_reasons') or []
+    basecalc_signal = world_model.get('basecalc_signal') or {}
+    hard_block_reasons = output_contract.get('hard_block_reasons') or basecalc_signal.get('hard_block_reasons') or []
+    soft_warning_reasons = output_contract.get('soft_warning_reasons') or basecalc_signal.get('soft_warning_reasons') or []
+    validation_warnings = output_contract.get('validation_warnings') or basecalc_signal.get('validation_warnings') or []
+    confidence_cap_reason = output_contract.get('confidence_cap_reason') or basecalc_signal.get('confidence_cap_reason') or ''
+    display_status = output_contract.get('display_status') or basecalc_signal.get('display_status') or ''
     warnings = []
     warnings.extend(soft_warning_reasons or output_contract.get('stop_reasons') or [])
-    warnings.extend(output_contract.get('validation_warnings') or [])
+    warnings.extend(validation_warnings)
     warnings.extend(world_model.get('confidence_warnings') or [])
     warnings.extend(world_model.get('warnings') or [])
     warnings.extend((world_model.get('readiness') or {}).get('warnings') or [])
     warnings.extend(decision.get('prediction_stop_reasons') or [])
     warnings.extend(intermarket.get('evidence') or [])
 
-    basecalc_signal = world_model.get('basecalc_signal') or {}
     current_price = _safe_float(
         output_contract.get('display_price')
         or basecalc_signal.get('display_price')
@@ -131,9 +146,9 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         stop_reasons=output_contract.get('stop_reasons') or [],
         hard_block_reasons=hard_block_reasons,
         soft_warning_reasons=soft_warning_reasons,
-        validation_warnings=output_contract.get('validation_warnings') or [],
-        confidence_cap_reason=output_contract.get('confidence_cap_reason') or '',
-        display_status=output_contract.get('display_status') or '',
+        validation_warnings=validation_warnings,
+        confidence_cap_reason=confidence_cap_reason,
+        display_status=display_status,
         confidence_calibrated=bool(output_contract.get('confidence_calibrated')),
         validation_gate_status=output_contract.get('validation_gate_status') or {},
         warnings=_dedupe(warnings),

@@ -183,6 +183,39 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertIn('米国3指数確認が不足', contract['soft_warning_reasons'])
         self.assertEqual(contract['hard_stop_reasons'], contract['hard_block_reasons'])
 
+    def test_contract_syncs_reason_separation_to_world_model(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': None}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': None}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 5, 'is_statistically_valid': False},
+            'confidence_score': 72,
+            'us_index_confirmation': {
+                'readiness': {'usable': False},
+                'components': {},
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000)
+
+        self.assertEqual(world_model['hard_block_reasons'], contract['hard_block_reasons'])
+        self.assertEqual(world_model['hard_stop_reasons'], contract['hard_stop_reasons'])
+        self.assertEqual(world_model['soft_warning_reasons'], contract['soft_warning_reasons'])
+        self.assertEqual(world_model['validation_warnings'], contract['validation_warnings'])
+        self.assertEqual(world_model['confidence_cap_reason'], contract['confidence_cap_reason'])
+        self.assertEqual(world_model['display_status'], contract['display_status'])
+        self.assertEqual(world_model['stop_reasons'], [])
+        self.assertIn('米国3指数確認が不足', world_model['soft_warning_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', world_model['confidence_cap_reason'])
+
     def test_contract_stops_direction_when_expected_return_conflicts(self):
         from .output_contract import apply_output_contract
 

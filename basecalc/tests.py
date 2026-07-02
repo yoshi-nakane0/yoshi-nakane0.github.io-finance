@@ -4647,6 +4647,11 @@ class BasecalcWorldModelV2SupportTests(TestCase):
         self.assertIn('vix', result['basecalc_signal']['excluded_inputs'])
         self.assertIn('nasdaq100_futures_price_action', result['basecalc_signal']['included_inputs'])
         self.assertIn('us_index_confirmation_score', result['features'])
+        self.assertIn('hard_block_reasons', result['basecalc_signal'])
+        self.assertIn('soft_warning_reasons', result['basecalc_signal'])
+        self.assertIn('validation_warnings', result['basecalc_signal'])
+        self.assertIn('confidence_cap_reason', result['basecalc_signal'])
+        self.assertIn('display_status', result['basecalc_signal'])
 
 
 class BasecalcReliabilitySpecTests(TestCase):
