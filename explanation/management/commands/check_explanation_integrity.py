@@ -174,6 +174,14 @@ def _assert_status_names(payload, source):
     if decision_status and decision_status not in ALLOWED_DECISION_STATUSES:
         raise CommandError(f'{source} trade_decision decision_status is not allowed: {decision_status}')
     _assert_trade_decision_status_contract(trade_decision, source)
+    final_status = ((payload.get('final') or {}).get('status') or '')
+    if final_status == 'blocked' and decision_status and decision_status != 'blocked':
+        raise CommandError(f'{source} final blocked status requires blocked trade_decision')
+    if decision_status == 'blocked' and final_status and final_status != 'blocked':
+        raise CommandError(f'{source} blocked trade_decision requires blocked final status')
+    audit_level = ((payload.get('audit') or {}).get('level') or '')
+    if audit_level == 'blocked' and (final_status != 'blocked' or decision_status != 'blocked'):
+        raise CommandError(f'{source} blocked audit requires blocked final and trade_decision statuses')
     basecalc_snapshot = (payload.get('source_snapshots') or {}).get('basecalc') or {}
     basecalc_raw = basecalc_snapshot.get('raw') or {}
     world_model = basecalc_raw.get('world_model') or {}
@@ -200,6 +208,9 @@ def _assert_status_names(payload, source):
     for key in ('confidence_cap_reason', 'display_status', 'explanation_allowed'):
         _assert_basecalc_text_snapshot_match(world_model, output_contract, key, source, prefix='world_model ')
     if output_contract.get('contract_status') == 'error':
+        audit_level = ((payload.get('audit') or {}).get('level') or '')
+        if final_status != 'blocked' or decision_status != 'blocked' or audit_level != 'blocked':
+            raise CommandError(f'{source} basecalc error contract requires blocked Explanation statuses')
         if display_status and display_status != 'blocked':
             raise CommandError(f'{source} basecalc error contract display_status must be blocked')
         if explanation_allowed and explanation_allowed != 'blocked':
@@ -210,6 +221,10 @@ def _assert_status_names(payload, source):
         confidence_label = output_contract.get('confidence_label')
         if confidence_label and confidence_label != 'D':
             raise CommandError(f'{source} basecalc error contract confidence_label must be D')
+    if display_status == 'blocked' or explanation_allowed == 'blocked':
+        audit_level = ((payload.get('audit') or {}).get('level') or '')
+        if final_status != 'blocked' or decision_status != 'blocked' or audit_level != 'blocked':
+            raise CommandError(f'{source} basecalc blocked display requires blocked Explanation statuses')
 
 
 def _assert_basecalc_reason_snapshot_match(basecalc_snapshot, output_contract, key, source, prefix=''):
@@ -273,6 +288,8 @@ def _assert_trade_decision_status_contract(trade_decision, source):
         raise CommandError(f'{source} trade_decision watch_only position_size_pct must be 0')
     if decision_status == 'wait' and entry_permission != 'no_entry':
         raise CommandError(f'{source} trade_decision wait entry_permission must be no_entry')
+    if decision_status == 'wait' and selected_side != 'no_trade':
+        raise CommandError(f'{source} trade_decision wait selected_side must be no_trade')
     if decision_status == 'wait' and _int_value(trade_decision.get('position_size_pct')) != 0:
         raise CommandError(f'{source} trade_decision wait position_size_pct must be 0')
     if decision_status == 'blocked' and entry_permission != 'no_entry':
@@ -280,6 +297,8 @@ def _assert_trade_decision_status_contract(trade_decision, source):
     if decision_status == 'blocked' and _int_value(trade_decision.get('position_size_pct')) != 0:
         raise CommandError(f'{source} trade_decision blocked position_size_pct must be 0')
     if trade_decision.get('model_version') == 'explanation_v2' and decision_status == 'blocked':
+        if selected_side != 'no_trade':
+            raise CommandError(f'{source} trade_decision blocked selected_side must be no_trade')
         if not _reason_list(trade_decision.get('hard_block_reasons') or []):
             raise CommandError(f'{source} trade_decision blocked hard_block_reasons must not be empty')
     if decision_status == 'candidate_confirmed' and entry_permission != 'full_entry':
