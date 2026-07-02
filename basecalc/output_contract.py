@@ -117,7 +117,7 @@ def apply_output_contract(
         "stop_reasons": _dedupe(hard_block_reasons + soft_warning_reasons),
         "target_display_allowed": target_display_allowed,
         "probability_display_allowed": probability_display_allowed,
-        "explanation_allowed": directional_allowed,
+        "explanation_allowed": _explanation_allowed_status(status, directional_allowed),
         "available_display": available_display,
     }
     _apply_contract_to_world_model(world_model, contract)
@@ -193,16 +193,19 @@ def _audit_horizons(world_model, validation_gate, errors, gate_hard_reasons, gat
         gate = validation_gate.get(horizon) or {}
         if gate and not gate.get("direction_allowed", True):
             direction_allowed = False
-            reasons.extend(gate.get("reasons") or [])
-            gate_hard_reasons.extend(gate.get("reasons") or [])
+            hard_reasons = gate.get("hard_reasons") or gate.get("reasons") or []
+            reasons.extend(hard_reasons)
+            gate_hard_reasons.extend(hard_reasons)
         if gate:
-            gate_soft_warnings.extend(gate.get("warnings") or [])
+            gate_soft_warnings.extend(gate.get("soft_reasons") or gate.get("warnings") or [])
         allowed[horizon] = {
             "direction_allowed": direction_allowed,
             "target_probability_allowed": True,
             "display_mode": "directional" if direction_allowed else "range_only",
             "reasons": _dedupe(reasons),
             "warnings": _dedupe((gate or {}).get("warnings") or []),
+            "hard_reasons": _dedupe(reasons),
+            "soft_reasons": _dedupe((gate or {}).get("soft_reasons") or (gate or {}).get("warnings") or []),
             "validation_level": (gate or {}).get("validation_level") or ("confirmed" if direction_allowed else "blocked"),
             "confidence_penalty": (gate or {}).get("confidence_penalty") or 0,
         }
@@ -333,6 +336,16 @@ def _display_status(status, directional_allowed):
     return "candidate_ok"
 
 
+def _explanation_allowed_status(status, directional_allowed):
+    if status == "error":
+        return "blocked"
+    if status == "confirmed":
+        return "confirmed"
+    if status == "limited":
+        return "limited"
+    return "allowed"
+
+
 def _confidence_label(score):
     if score >= 70:
         return "High"
@@ -387,6 +400,7 @@ def _empty_contract(display_price):
         "confidence_cap_reason": "",
         "display_status": "blocked",
         "stop_reasons": ["world model がありません"],
+        "explanation_allowed": "blocked",
     }
 
 

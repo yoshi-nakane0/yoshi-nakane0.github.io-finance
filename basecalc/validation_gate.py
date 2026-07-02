@@ -32,6 +32,8 @@ def build_validation_gate(world_model, validation_report=None, performance_by_ho
             "display_mode": "directional" if allowed else "range_only",
             "reasons": reasons,
             "warnings": warnings,
+            "hard_reasons": reasons,
+            "soft_reasons": warnings,
             "validation_level": _validation_level(allowed, warnings),
             "confidence_penalty": min(30, confidence_penalty),
             "model_vs_baseline": baseline,

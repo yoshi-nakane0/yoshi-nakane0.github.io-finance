@@ -49,8 +49,24 @@
                 <strong>行動：{{ beginner_decision.plain_action }}</strong>
               </div>
               <div class="common-row common-row--stack">
+                <span>信頼度</span>
+                <strong>信頼度：{{ beginner_decision.confidence_display }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>建玉上限</span>
+                <strong>建玉上限：{{ beginner_decision.position_size_display }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>無効化</span>
+                <strong>無効化：{{ beginner_decision.invalidation_display }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
                 <span>理由</span>
                 <strong>理由：{{ beginner_decision.top_reason_summary }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>次の条件</span>
+                <strong>次の条件：{{ beginner_decision.top_next_condition_summary }}</strong>
               </div>
             </div>
           </div>
@@ -104,7 +120,7 @@
           {% else %}
             <div class="common-row">
               <span>売買可否</span>
-              <strong>売買不可 / 条件待ち</strong>
+              <strong>{{ beginner_decision.trade_availability_display }}</strong>
             </div>
           {% endif %}
         </div>
@@ -139,22 +155,22 @@
             <span class="common-info-dot" aria-label="待機理由の補足">i</span>
           </div>
           <div class="common-wait-reason-grid">
-            {% for reason in beginner_decision.wait_reasons|slice:":3" %}
+            {% for card in beginner_decision.wait_reason_cards|slice:":4" %}
               <article class="common-wait-reason-card">
                 <div class="common-wait-reason-card__head">
                   <span class="common-wait-reason-card__icon" aria-hidden="true">
-                    {% if reason == '方向予測停止' %}
+                    {% if card.label == '方向優位なし' %}
                       <svg viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="8"></circle>
                         <path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z"></path>
                       </svg>
-                    {% elif reason == 'R/R不足' %}
+                    {% elif card.label == 'R/R不足' or card.label == 'データ異常' %}
                       <svg viewBox="0 0 24 24">
                         <path d="M12 3 19 6v5c0 4.6-2.7 8.3-7 10-4.3-1.7-7-5.4-7-10V6z"></path>
                         <path d="M12 8v5"></path>
                         <path d="M12 16h.01"></path>
                       </svg>
-                    {% elif reason == '信頼度不足' %}
+                    {% elif card.label == '信頼度不足' or card.label == '検証不足' %}
                       <svg viewBox="0 0 24 24">
                         <path d="M5 19V13"></path>
                         <path d="M10 19V9"></path>
@@ -168,19 +184,10 @@
                       </svg>
                     {% endif %}
                   </span>
-                  <strong>{{ reason }}</strong>
+                  <strong>{{ card.label }}</strong>
                 </div>
-                <p>
-                  {% if reason == '方向予測停止' %}
-                    方向の明確な優位性が確認できません
-                  {% elif reason == 'R/R不足' %}
-                    期待値が基準を下回っています
-                  {% elif reason == '信頼度不足' %}
-                    信頼度が基準に届いていません
-                  {% else %}
-                    条件がそろうまで待機します
-                  {% endif %}
-                </p>
+                <p>{{ card.detail }}</p>
+                <p class="common-muted">解除条件：{{ card.unlock_condition }}</p>
               </article>
             {% empty %}
               <article class="common-wait-reason-card">
@@ -194,6 +201,7 @@
                   <strong>待機継続</strong>
                 </div>
                 <p>条件がそろうまで待機します</p>
+                <p class="common-muted">解除条件：条件変化後に再判定</p>
               </article>
             {% endfor %}
           </div>

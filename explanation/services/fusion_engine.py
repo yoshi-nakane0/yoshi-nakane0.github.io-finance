@@ -152,7 +152,7 @@ def build_trade_decision_v2(
         )
 
     candidate_status = _candidate_status(basecalc, confidence_score, validation_level)
-    confidence_score = min(confidence_score, _candidate_confidence_cap(candidate_status))
+    confidence_score = min(confidence_score, _candidate_confidence_cap(candidate_status, basecalc, validation_level))
     confidence_grade = _grade_from_score(confidence_score)
     confidence_components = {
         **confidence_components,
@@ -643,9 +643,16 @@ def _candidate_status(basecalc, confidence_score, validation_level):
     return 'candidate_confirmed'
 
 
-def _candidate_confidence_cap(decision_status):
-    if decision_status in {'watch_only', 'candidate_limited'}:
+def _candidate_confidence_cap(decision_status, basecalc=None, validation_level='none'):
+    if decision_status == 'watch_only':
         return 59
+    if decision_status == 'candidate_limited':
+        warnings = list(getattr(basecalc, 'soft_warning_reasons', None) or []) + list(getattr(basecalc, 'warnings', None) or [])
+        weak_validation = validation_level in {'none', 'low'}
+        low_basecalc = getattr(basecalc, 'confidence_score', 0) < 50
+        uncalibrated = not getattr(basecalc, 'confidence_calibrated', False)
+        validation_warning = any('検証不足' in reason or '検証件数が不足' in reason for reason in warnings)
+        return 59 if weak_validation or low_basecalc or uncalibrated or validation_warning else 69
     return 100
 
 
@@ -761,8 +768,9 @@ def _confidence_component_values(macro, basecalc, audit, validation_level, long_
         'medium': 65,
         'high': 90,
     }.get(validation_level, 50)
-    target_quality = 80 if best_rr >= 1.2 else 35
-    return {
+    target_metrics = _target_validation_metrics(basecalc)
+    target_quality = _target_quality(target_metrics, best_rr)
+    components = {
         'basecalc_direction': basecalc.confidence_score,
         'macro_alignment': macro.confidence_score,
         'validation_quality': validation_quality,
@@ -774,6 +782,88 @@ def _confidence_component_values(macro, basecalc, audit, validation_level, long_
         'audit_penalty': audit.penalty,
         'hard_block_penalty': 30 if hard_block_reasons else 0,
     }
+    if target_metrics:
+        if target_metrics.get('target_hit_rate') is not None:
+            components['target_hit_rate'] = round(target_metrics['target_hit_rate'], 2)
+        if target_metrics.get('stop_hit_rate') is not None:
+            components['stop_hit_rate'] = round(target_metrics['stop_hit_rate'], 2)
+        if target_metrics.get('avg_realized_rr') is not None:
+            components['avg_realized_rr'] = round(target_metrics['avg_realized_rr'], 2)
+    return components
+
+
+def _target_validation_metrics(basecalc):
+    rows = []
+    validation_gate_status = getattr(basecalc, 'validation_gate_status', None) or {}
+    if isinstance(validation_gate_status, dict):
+        for horizon in ('1d', '3d', '5d'):
+            row = validation_gate_status.get(horizon)
+            if isinstance(row, dict):
+                rows.extend(_target_metric_row_candidates(row))
+    source = getattr(basecalc, 'source', None) or {}
+    if isinstance(source, dict):
+        performance_by_horizon = source.get('backtest_performance_by_horizon') or {}
+        if isinstance(performance_by_horizon, dict):
+            for horizon in ('1d', '3d', '5d'):
+                row = performance_by_horizon.get(horizon)
+                if isinstance(row, dict):
+                    rows.extend(_target_metric_row_candidates(row))
+    metrics = {
+        'target_hit_rate': _average_metric(rows, ('target_t1_hit_rate', 'target_1_hit_rate', 'target_hit_rate')),
+        'stop_hit_rate': _average_metric(rows, ('stop_hit_rate', 'invalidation_rate', 'stop_rate')),
+        'avg_realized_rr': _average_metric(rows, ('avg_realized_rr', 'realized_rr', 'avg_reward_risk')),
+    }
+    return {key: value for key, value in metrics.items() if value is not None}
+
+
+def _target_metric_row_candidates(row):
+    rows = [row]
+    for key in ('model_vs_baseline', 'state_gate', 'state_direction_gate', 'summary'):
+        nested = row.get(key)
+        if isinstance(nested, dict):
+            rows.append(nested)
+    return rows
+
+
+def _average_metric(rows, keys):
+    values = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in keys:
+            value = _number(row.get(key))
+            if value is None:
+                continue
+            if 'rate' in key and value > 1:
+                value = value / 100
+            values.append(value)
+            break
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _target_quality(metrics, planned_rr):
+    if not metrics:
+        return 80 if planned_rr >= 1.2 else 35
+    target_hit = metrics.get('target_hit_rate')
+    stop_hit = metrics.get('stop_hit_rate')
+    realized_rr = metrics.get('avg_realized_rr')
+    score = 10
+    if target_hit is not None:
+        score += _clamp(target_hit * 100) * 0.40
+    else:
+        score += 20
+    if stop_hit is not None:
+        score += _clamp((1 - stop_hit) * 100) * 0.30
+    else:
+        score += 15
+    rr = realized_rr if realized_rr is not None else planned_rr
+    if rr is not None:
+        score += _clamp((rr / 1.5) * 100) * 0.25
+    else:
+        score += 10
+    return _clamp(score)
 
 
 def _decision_type(selected_side, basecalc, reversal):

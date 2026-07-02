@@ -255,6 +255,56 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(decision.confidence_components['macro_weight'], 0.2)
         self.assertEqual(decision.confidence_components['validation_weight'], 0.15)
 
+    def test_trade_confidence_target_quality_uses_target_stop_and_realized_rr_results(self):
+        macro = self._macro('positive', confidence_score=72, data_quality_score=88)
+        basecalc = self._basecalc(
+            confidence_score=68,
+            data_quality_score=84,
+            allowed_direction='up',
+            validation_gate_status={
+                '1d': {
+                    'direction_allowed': True,
+                    'validation_level': 'confirmed',
+                    'target_t1_hit_rate': 0.62,
+                    'stop_hit_rate': 0.18,
+                    'avg_realized_rr': 1.42,
+                },
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.confidence_components['target_hit_rate'], 0.62)
+        self.assertEqual(decision.confidence_components['stop_hit_rate'], 0.18)
+        self.assertEqual(decision.confidence_components['avg_realized_rr'], 1.42)
+        self.assertGreater(decision.confidence_components['target_quality'], 80)
+
+    def test_trade_confidence_target_quality_penalizes_poor_target_stop_results(self):
+        macro = self._macro('positive', confidence_score=72, data_quality_score=88)
+        basecalc = self._basecalc(
+            confidence_score=68,
+            data_quality_score=84,
+            allowed_direction='up',
+            validation_gate_status={
+                '1d': {
+                    'direction_allowed': True,
+                    'validation_level': 'confirmed',
+                    'target_t1_hit_rate': 0.24,
+                    'stop_hit_rate': 0.56,
+                    'avg_realized_rr': 0.72,
+                },
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.confidence_components['target_hit_rate'], 0.24)
+        self.assertEqual(decision.confidence_components['stop_hit_rate'], 0.56)
+        self.assertEqual(decision.confidence_components['avg_realized_rr'], 0.72)
+        self.assertLess(decision.confidence_components['target_quality'], 80)
+
     def test_soft_warning_direction_stop_does_not_become_hard_block(self):
         macro = self._macro('positive', confidence_score=91, confidence_grade='A')
         basecalc = self._basecalc(
@@ -384,6 +434,32 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertEqual(decision.decision_status, 'candidate_limited')
         self.assertGreaterEqual(decision.long_score, 60)
         self.assertFalse(decision.blocked_reasons)
+
+    def test_trade_decision_v2_keeps_sixty_range_limited_candidate_with_half_position(self):
+        macro = self._macro('positive', confidence_score=88, data_quality_score=90)
+        basecalc = self._basecalc(
+            confidence_score=88,
+            data_quality_score=90,
+            contract_status='limited',
+            confidence_calibrated=True,
+            validation_gate_status={
+                '1d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '3d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+                '5d': {'direction_allowed': True, 'validation_level': 'confirmed'},
+            },
+            us_index_available=True,
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'long')
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.entry_permission, 'limited_entry')
+        self.assertGreaterEqual(decision.confidence_score, 60)
+        self.assertLessEqual(decision.confidence_score, 69)
+        self.assertEqual(decision.position_size_pct, 50)
+        self.assertEqual(decision.position_size_cap, 'max_50_percent')
 
     def test_trade_decision_v2_no_trade_conflict_does_not_keep_reference_short_plan(self):
         macro = self._macro('neutral')
@@ -1205,13 +1281,47 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertNotIn('<span>R/R</span>', decision_card_html)
         self.assertIn('売買条件', top_html)
         self.assertIn('<span class="common-choice-card__score">70点</span>', top_html)
-        self.assertIn('売買不可 / 条件待ち', top_html)
+        self.assertIn('見送り / 条件未達', top_html)
+        self.assertNotIn('売買不可 / 条件待ち', top_html)
         self.assertNotIn('参考 72,376〜72,539円', top_html)
         self.assertNotIn('72,400円', top_html)
         self.assertNotIn('75,800円', top_html)
 
-    def test_explanation_template_top_card_is_three_line_decision_summary(self):
+    def test_explanation_template_trade_availability_names_blocked_state(self):
         snapshot = self._snapshot()
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['output_contract'] = {
+            'contract_status': 'error',
+            'directional_allowed': False,
+            'stop_reasons': ['現在値と計算基準価格が不一致'],
+        }
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_data_blocked',
+            'decision_status': 'blocked',
+            'entry_permission': 'no_entry',
+            'current_price': 72430,
+            'confidence_score': 35,
+            'confidence_grade': 'D',
+            'blocked_reasons': ['現在値と計算基準価格が不一致'],
+            'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+        })
+        context = snapshot_to_view(snapshot)
+        context['is_preview'] = False
+        context['refresh_status'] = {'needs_refresh': False}
+        context['can_precompute_explanation'] = False
+        context['trade_validation_summary'] = {'available': False}
+
+        html = render_to_string('explanation/index.html', context)
+
+        self.assertIn('判定停止', html)
+        self.assertNotIn('売買不可 / 条件待ち', html)
+
+    def test_explanation_template_top_card_includes_action_limits_and_next_conditions(self):
+        snapshot = self._snapshot()
+        snapshot.source_snapshots['basecalc']['raw']['world_model']['practical_lines'] = {
+            'upside_resistance': 72110,
+            'downside_support': 68800,
+        }
         snapshot.trade_decision.update({
             'selected_side': 'long',
             'decision_type': 'trend_follow',
@@ -1244,8 +1354,12 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         decision_card_html = html.split('</section>', 1)[0]
 
         self.assertIn('現在判断：限定ロング候補', decision_card_html)
-        self.assertIn('行動：条件付きで入る', decision_card_html)
+        self.assertIn('行動：押し目まで待つ。成行追撃は不可。建玉は通常の25%。', decision_card_html)
+        self.assertIn('信頼度：C+ / 55%', decision_card_html)
+        self.assertIn('建玉上限：通常の25%まで', decision_card_html)
+        self.assertIn('無効化：71,600円', decision_card_html)
         self.assertIn('理由：basecalcは上方向 / target/stop/R/Rは成立 / 局面別検証不足', decision_card_html)
+        self.assertIn('次の条件：上値抵抗 72,110円 を終値で突破 / 米国3指数が改善 / 下値支持 68,800円 を終値で割り込み', decision_card_html)
         self.assertNotIn('common-choice-card__score', decision_card_html)
         self.assertNotIn('エントリー', decision_card_html)
         self.assertNotIn('第1目標', decision_card_html)
@@ -1361,6 +1475,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         self.assertEqual(beginner['status'], 'buy_candidate')
         self.assertEqual(beginner['label'], '限定ロング候補')
+        self.assertEqual(beginner['plain_action'], '押し目まで待つ。成行追撃は不可。建玉は通常の25%。')
         self.assertTrue(beginner['candidate_visible'])
         self.assertFalse(beginner['position_allowed'])
         self.assertEqual(beginner['entry_permission'], 'limited_entry')
@@ -1396,6 +1511,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
                 'macro_alignment': 62,
                 'validation_quality': 35,
                 'target_quality': 80,
+                'target_hit_rate': 0.62,
+                'stop_hit_rate': 0.18,
+                'avg_realized_rr': 1.42,
                 'data_quality': 71,
                 'intermarket_confirmation': -5,
                 'event_penalty': 6,
@@ -1411,6 +1529,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn({'label': 'macro整合', 'value': '62'}, rows)
         self.assertIn({'label': '検証品質', 'value': '35'}, rows)
         self.assertIn({'label': 'target品質', 'value': '80'}, rows)
+        self.assertIn({'label': 'T1到達率', 'value': '62%'}, rows)
+        self.assertIn({'label': 'stop到達率', 'value': '18%'}, rows)
+        self.assertIn({'label': '実績R/R', 'value': '1.42'}, rows)
         self.assertIn({'label': '米国指数', 'value': '-5'}, rows)
         self.assertIn({'label': 'イベント', 'value': '-6'}, rows)
         self.assertIn({'label': '監査', 'value': '-4'}, rows)
@@ -1481,6 +1602,46 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('R/R不足', beginner['wait_reasons'])
         self.assertIn('信頼度不足', beginner['wait_reasons'])
         self.assertIn('ATR基準に届かないため、方向予測は参考表示にしています。', beginner['warnings'])
+
+    def test_beginner_decision_wait_reason_cards_include_unlock_conditions(self):
+        snapshot = self._snapshot()
+        snapshot.confidence_score = 41
+        snapshot.confidence_grade = 'C'
+        snapshot.source_snapshots['macro']['factor_vector'] = {'event_risk_score': 80}
+        snapshot.trade_decision.update({
+            'selected_side': 'no_trade',
+            'decision_type': 'no_trade_conflict',
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 72400, 'probability': 0.21},
+            'stop_price': 75800,
+            'reward_risk': 0.95,
+            'confidence_score': 41,
+            'confidence_grade': 'C',
+            'long_score': 45,
+            'short_score': 30,
+            'no_trade_score': 70,
+            'soft_warning_reasons': ['局面別検証不足'],
+            'blocked_reasons': ['R/R不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        cards = context['beginner_decision']['wait_reason_cards']
+
+        self.assertIn(
+            {'label': 'R/R不足', 'detail': '期待値が基準を下回っています', 'unlock_condition': '押し目・戻りを待つ'},
+            cards,
+        )
+        self.assertIn(
+            {'label': '検証不足', 'detail': '過去の確認件数がまだ足りません', 'unlock_condition': '方向は参考、限定候補扱い'},
+            cards,
+        )
+        self.assertIn(
+            {'label': 'イベント警戒', 'detail': '重要イベント前後で値動きが荒れやすい状態です', 'unlock_condition': '発表通過後に再判定'},
+            cards,
+        )
 
     def test_beginner_decision_hides_reference_candidate_when_no_trade_has_blocked_reasons(self):
         snapshot = self._snapshot()

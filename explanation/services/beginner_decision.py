@@ -43,10 +43,14 @@ class BeginnerDecision:
     stop_display: str
     invalidation_display: str
     reward_risk_display: str
+    trade_availability_display: str
     confidence_display: str
+    position_size_display: str
+    top_next_condition_summary: str
     confidence_component_rows: List[Dict[str, str]]
     data_state: str
     wait_reasons: List[str] = field(default_factory=list)
+    wait_reason_cards: List[Dict[str, str]] = field(default_factory=list)
     wait_reason_summary: str = ''
     reference_candidate: Dict[str, Any] = field(default_factory=dict)
     watch_levels: Dict[str, Any] = field(default_factory=dict)
@@ -182,7 +186,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     if reward_risk is not None and reward_risk < 1.2 and 'R/R不足' not in warnings:
         warnings.append('R/R不足')
     warnings = _limited(warnings)
-    plain_action = _plain_action(status, reward_risk, entry_permission)
+    plain_action = _plain_action(status, reward_risk, entry_permission, selected_side, position_size_pct)
     top_reasons = _top_reasons(reasons, warnings)
 
     entry_display = _entry_display(trade_decision) if candidate_visible else ('停止' if status == 'data_blocked' else 'なし')
@@ -204,6 +208,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         wait_reasons=wait_reasons,
     )
     watch_levels = _watch_levels(basecalc, world_model, snapshot, status, tradable)
+    next_triggers = _next_triggers(basecalc, world_model, reward_risk, directional_allowed)
 
     return BeginnerDecision(
         status=status,
@@ -226,16 +231,20 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         stop_display=stop_display,
         invalidation_display=invalidation_display,
         reward_risk_display=reward_risk_display,
+        trade_availability_display=_trade_availability_display(status, decision_status),
         confidence_display=_confidence_display(confidence_grade, confidence_score, manual_price, status),
+        position_size_display=_position_size_display(position_size_pct, entry_permission, status),
+        top_next_condition_summary=' / '.join(_top_next_conditions(next_triggers, selected_side)),
         confidence_component_rows=_confidence_component_rows(trade_decision.get('confidence_components') or {}),
         data_state=_data_state(snapshot.audit_level, manual_price, confidence_score),
         wait_reasons=wait_reasons,
+        wait_reason_cards=_wait_reason_cards(wait_reasons, warnings),
         wait_reason_summary=_wait_reason_summary(status, wait_reasons),
         reference_candidate=reference_candidate,
         watch_levels=watch_levels,
         reasons=reasons,
         warnings=warnings or ['条件がそろうまで待機。'],
-        next_triggers=_next_triggers(basecalc, world_model, reward_risk, directional_allowed),
+        next_triggers=next_triggers,
         macro_summary=_macro_summary(snapshot.macro_bias, macro),
         basecalc_summary=_basecalc_summary(snapshot.basecalc_bias, basecalc, contract_status, directional_allowed),
         audit_summary=_audit_summary(snapshot, blocking_reasons),
@@ -273,10 +282,17 @@ def _status(
     return 'no_trade'
 
 
-def _plain_action(status, reward_risk, entry_permission='no_entry'):
+def _plain_action(status, reward_risk, entry_permission='no_entry', selected_side='no_trade', position_size_pct=None):
     if status in {'buy_candidate', 'sell_candidate'}:
         if entry_permission == 'limited_entry':
-            return '条件付きで入る'
+            wait_label = '押し目' if selected_side == 'long' else '戻り' if selected_side == 'short' else '条件'
+            try:
+                pct = int(float(position_size_pct))
+            except (TypeError, ValueError):
+                pct = 0
+            if pct > 0:
+                return f'{wait_label}まで待つ。成行追撃は不可。建玉は通常の{pct}%。'
+            return f'{wait_label}まで待つ。成行追撃は不可。'
         if entry_permission == 'watch_only':
             return '監視のみ'
         if reward_risk is not None and reward_risk < 1.5:
@@ -326,6 +342,22 @@ def _top_reasons(reasons, warnings):
     return combined[:3]
 
 
+def _top_next_conditions(next_triggers, selected_side):
+    ordered_keys = ['wait', 'long', 'short']
+    if selected_side == 'long':
+        ordered_keys = ['long', 'short', 'wait']
+    elif selected_side == 'short':
+        ordered_keys = ['short', 'long', 'wait']
+    result = []
+    for key in ordered_keys:
+        for item in (next_triggers or {}).get(key) or []:
+            if item and item not in result:
+                result.append(item)
+            if len(result) >= 3:
+                return result
+    return result or ['条件変化を待つ']
+
+
 def _confidence_component_rows(components):
     if not isinstance(components, dict) or not components:
         return []
@@ -350,10 +382,28 @@ def _confidence_component_rows(components):
             continue
         display_value = int(numeric * sign) if float(numeric * sign).is_integer() else round(numeric * sign, 1)
         rows.append({'label': label, 'value': str(display_value)})
+    target_hit_rate = _rate_component_display(components.get('target_hit_rate'))
+    if target_hit_rate:
+        rows.append({'label': 'T1到達率', 'value': target_hit_rate})
+    stop_hit_rate = _rate_component_display(components.get('stop_hit_rate'))
+    if stop_hit_rate:
+        rows.append({'label': 'stop到達率', 'value': stop_hit_rate})
+    realized_rr = _number(components.get('avg_realized_rr'))
+    if realized_rr is not None:
+        rows.append({'label': '実績R/R', 'value': f'{realized_rr:.2f}'})
     cap_reason = components.get('confidence_cap_reason')
     if cap_reason:
         rows.append({'label': '上限理由', 'value': str(cap_reason)})
     return rows
+
+
+def _rate_component_display(value):
+    numeric = _number(value)
+    if numeric is None:
+        return ''
+    if numeric > 1:
+        numeric = numeric / 100
+    return f'{numeric * 100:.0f}%'
 
 
 def _reward_risk_display(value, tradable, status):
@@ -364,6 +414,34 @@ def _reward_risk_display(value, tradable, status):
     if value is not None and value < 1.2:
         return '不採用（1.2未満）'
     return '不採用'
+
+
+def _trade_availability_display(status, decision_status):
+    if status == 'data_blocked' or decision_status == 'blocked':
+        return '判定停止'
+    if status == 'no_trade':
+        return '見送り / 条件未達'
+    if status == 'wait' or decision_status == 'watch_only':
+        return '待機 / 条件待ち'
+    if decision_status == 'candidate_limited':
+        return '限定候補'
+    if decision_status == 'candidate_confirmed':
+        return '通常候補'
+    return STATUS_LABELS.get(status, '条件確認中')
+
+
+def _position_size_display(value, entry_permission, status):
+    if status == 'data_blocked':
+        return 'なし'
+    try:
+        pct = int(float(value))
+    except (TypeError, ValueError):
+        pct = 0
+    if entry_permission == 'full_entry' and pct >= 100:
+        return '通常サイズ'
+    if pct > 0:
+        return f'通常の{pct}%まで'
+    return 'なし'
 
 
 def _entry_display(decision):
@@ -423,6 +501,74 @@ def _wait_reason_summary(status, wait_reasons):
     if status not in {'wait', 'no_trade', 'data_blocked'} or not wait_reasons:
         return ''
     return f'{STATUS_LABELS[status]}：{" / ".join(wait_reasons)}'
+
+
+def _wait_reason_cards(wait_reasons, warnings):
+    cards = []
+    for reason in list(wait_reasons or []) + list(warnings or []):
+        card = _wait_reason_card(reason)
+        if not card:
+            continue
+        if not any(row['label'] == card['label'] for row in cards):
+            cards.append(card)
+    return cards or [_wait_reason_card('条件未達')]
+
+
+def _wait_reason_card(reason):
+    text = str(reason or '')
+    if 'データ品質不足' in text or 'target/stop' in text or '不整合' in text:
+        return {
+            'label': 'データ異常',
+            'detail': '価格やデータに確認が必要です',
+            'unlock_condition': 'データ更新後に再判定',
+        }
+    if text in {'方向予測停止', 'スコア不足', 'no_tradeより弱い', '条件未達'}:
+        return {
+            'label': '方向優位なし',
+            'detail': 'ロング・ショートの優位性がまだ弱い状態です',
+            'unlock_condition': '上方向または下方向の条件突破を待つ',
+        }
+    if 'R/R不足' in text:
+        return {
+            'label': 'R/R不足',
+            'detail': '期待値が基準を下回っています',
+            'unlock_condition': '押し目・戻りを待つ',
+        }
+    if '信頼度不足' in text:
+        return {
+            'label': '信頼度不足',
+            'detail': '信頼度が基準に届いていません',
+            'unlock_condition': '信頼度50以上まで待つ',
+        }
+    if '検証不足' in text or '検証件数' in text:
+        return {
+            'label': '検証不足',
+            'detail': '過去の確認件数がまだ足りません',
+            'unlock_condition': '方向は参考、限定候補扱い',
+        }
+    if '重要イベント' in text or 'イベント' in text:
+        return {
+            'label': 'イベント警戒',
+            'detail': '重要イベント前後で値動きが荒れやすい状態です',
+            'unlock_condition': '発表通過後に再判定',
+        }
+    if '高値追い禁止' in text:
+        return {
+            'label': '高値追い禁止',
+            'detail': '上方向でも現在値から追う条件ではありません',
+            'unlock_condition': '押し目形成後に再判定',
+        }
+    if '突っ込み売り禁止' in text:
+        return {
+            'label': '突っ込み売り禁止',
+            'detail': '下方向でも現在値から追う条件ではありません',
+            'unlock_condition': '戻り形成後に再判定',
+        }
+    return {
+        'label': text or '条件未達',
+        'detail': '条件がそろうまで待機します',
+        'unlock_condition': '条件変化後に再判定',
+    }
 
 
 def _reference_warnings(basecalc, output_contract, directional_allowed):
@@ -587,7 +733,7 @@ def _data_state(audit_level, manual_price, confidence_score):
 
 
 def _confidence_display(grade, score, manual_price, status):
-    suffix = '（参考）' if manual_price.get('active') or status in {'wait', 'no_trade'} or score < 60 else ''
+    suffix = '（参考）' if manual_price.get('active') or status in {'wait', 'no_trade'} else ''
     return f'{grade} / {score}%{suffix}'
 
 

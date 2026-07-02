@@ -39,7 +39,53 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertEqual(gate['1d']['validation_level'], 'low')
         self.assertEqual(gate['1d']['confidence_penalty'], 10)
         self.assertEqual(gate['1d']['reasons'], [])
+        self.assertEqual(gate['1d']['hard_reasons'], [])
         self.assertIn('押し目買いの上方向検証件数が不足しているため', gate['1d']['warnings'])
+        self.assertIn('押し目買いの上方向検証件数が不足しているため', gate['1d']['soft_reasons'])
+
+    def test_validation_gate_exposes_hard_and_soft_reason_fields(self):
+        from .validation_gate import build_validation_gate
+
+        gate = build_validation_gate(
+            {
+                'direction': 'up',
+                'state_key': 'dip_buy',
+                'state_label': '押し目買い',
+            },
+            validation_report={
+                'horizons': {
+                    '1d': {
+                        'state_direction_summaries': [
+                            {
+                                'state_key': 'dip_buy',
+                                'direction': 'up',
+                                'total_predictions': 40,
+                                'directional_accuracy': 0.42,
+                                'avg_return_pct': 0.03,
+                            },
+                        ],
+                    },
+                    '3d': {
+                        'state_direction_summaries': [
+                            {
+                                'state_key': 'dip_buy',
+                                'direction': 'up',
+                                'total_predictions': 8,
+                                'directional_accuracy': 0.48,
+                                'avg_return_pct': 0.03,
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        self.assertFalse(gate['1d']['direction_allowed'])
+        self.assertIn('押し目買いの上方向精度が基準未達のため', gate['1d']['hard_reasons'])
+        self.assertEqual(gate['1d']['soft_reasons'], [])
+        self.assertTrue(gate['3d']['direction_allowed'])
+        self.assertEqual(gate['3d']['hard_reasons'], [])
+        self.assertIn('押し目買いの上方向検証件数が不足しているため', gate['3d']['soft_reasons'])
 
     def test_contract_blocks_stale_targets_after_display_price_changes(self):
         from .output_contract import apply_output_contract
@@ -65,6 +111,7 @@ class BasecalcOutputContractTests(SimpleTestCase):
         contract = apply_output_contract(world_model, display_price=71620)
 
         self.assertEqual(contract['contract_status'], 'error')
+        self.assertEqual(contract['explanation_allowed'], 'blocked')
         self.assertFalse(contract['directional_allowed'])
         self.assertFalse(contract['target_display_allowed'])
         self.assertFalse(contract['probability_display_allowed'])
@@ -435,6 +482,7 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         self.assertEqual(contract['contract_status'], 'limited')
         self.assertEqual(contract['display_status'], 'limited_candidate')
+        self.assertEqual(contract['explanation_allowed'], 'limited')
         self.assertTrue(contract['directional_allowed'])
         self.assertTrue(contract['target_display_allowed'])
         self.assertFalse(contract['probability_display_allowed'])
@@ -492,9 +540,49 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         self.assertEqual(contract['contract_status'], 'confirmed')
         self.assertEqual(contract['display_status'], 'candidate_confirmed')
+        self.assertEqual(contract['explanation_allowed'], 'confirmed')
         self.assertEqual(contract['validation_warnings'], [])
         self.assertEqual(contract['confidence_cap_reason'], '')
         self.assertTrue(contract['directional_allowed'])
+
+    def test_output_contract_exposes_allowed_explanation_status_for_uncapped_candidate(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'neutral',
+            'direction_label': 'レンジ',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'confidence': 'High',
+            'confidence_score': 78,
+            'upside_targets': [],
+            'downside_targets': [],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'range', 'expected_return_pct': 0.0}},
+            'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'horizons': {
+                '1d': {
+                    'confidence_calibration_rows': [
+                        {'bucket': '50台', 'avg_return_pct': 0.1},
+                        {'bucket': '70台', 'avg_return_pct': 0.3},
+                    ],
+                },
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'ok')
+        self.assertEqual(contract['display_status'], 'watch_only')
+        self.assertEqual(contract['explanation_allowed'], 'allowed')
 
 
 class BasecalcOutputContractCommandTests(TestCase):
