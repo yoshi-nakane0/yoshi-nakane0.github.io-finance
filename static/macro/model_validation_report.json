@@ -2,35 +2,35 @@
   "freshness": {
     "age_days": 0,
     "is_stale": false,
-    "latest_evaluated_at": "2026-07-01T09:04:10.927871+00:00",
+    "latest_evaluated_at": "2026-07-02T08:32:25.957364+00:00",
     "stale_after_days": 30
   },
   "model_validation_report": [
     {
       "display_grade": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-07-01T09:04:10.927871+00:00",
+      "evaluated_at": "2026-07-02T08:32:25.957364+00:00",
       "event_count": null,
       "horizon": "3m",
       "metrics": {
         "baseline": "best_available_naive_baseline",
-        "baseline_mae": 5.955726013324677,
+        "baseline_mae": 5.947243438574024,
         "baseline_models": [
           "zero",
           "last_value",
           "moving_average"
         ],
-        "direction_accuracy": 0.6781609195402298,
+        "direction_accuracy": 0.6793893129770993,
         "live_settled_sample_count": 0,
-        "mae": 5.492083439640436,
+        "mae": 5.474520717615657,
         "model_refit_count": 0,
-        "rmse": 7.50008737931628,
-        "skill_score": 0.07784820400517733,
+        "rmse": 7.4859627797728745,
+        "skill_score": 0.07948602169069985,
         "validation_method": "rolling_mean_fallback",
         "validation_source": "historical_walk_forward"
       },
       "model_version": "return_lightgbm_v2",
-      "sample_count": 261,
+      "sample_count": 262,
       "target": "GSPC",
       "validation_method": "walk_forward",
       "warnings": [

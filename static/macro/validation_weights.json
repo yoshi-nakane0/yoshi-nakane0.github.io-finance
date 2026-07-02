@@ -1,36 +1,36 @@
 {
   "validation_weight_report": {
-    "generated_at": "2026-07-01T09:04:24.820758+00:00",
+    "generated_at": "2026-07-02T08:32:41.058866+00:00",
     "validation_weights": [
       {
         "display_grade": "show",
         "display_reason": "トップ表示可",
-        "evaluated_at": "2026-07-01T09:04:10.927871+00:00",
+        "evaluated_at": "2026-07-02T08:32:25.957364+00:00",
         "horizon": "3m",
         "metrics_used": {
           "baseline": "best_available_naive_baseline",
-          "baseline_mae": 5.955726013324677,
+          "baseline_mae": 5.947243438574024,
           "baseline_models": [
             "zero",
             "last_value",
             "moving_average"
           ],
-          "direction_accuracy": 0.6781609195402298,
+          "direction_accuracy": 0.6793893129770993,
           "live_settled_sample_count": 0,
-          "mae": 5.492083439640436,
+          "mae": 5.474520717615657,
           "model_refit_count": 0,
-          "rmse": 7.50008737931628,
-          "skill_score": 0.07784820400517733,
+          "rmse": 7.4859627797728745,
+          "skill_score": 0.07948602169069985,
           "validation_method": "rolling_mean_fallback",
           "validation_source": "historical_walk_forward"
         },
         "model_key": "return_lightgbm_v2:GSPC:3m",
         "model_version": "return_lightgbm_v2",
         "report_id": 1,
-        "sample_count": 261,
+        "sample_count": 262,
         "source": "model_validation_report",
         "target": "GSPC",
-        "validation_weight": 1.0225
+        "validation_weight": 1.0243
       },
       {
         "display_grade": "show",

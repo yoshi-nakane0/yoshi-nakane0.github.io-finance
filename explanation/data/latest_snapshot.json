@@ -1,6 +1,6 @@
 {
   "alignment_status": "aligned",
-  "as_of": "2026-07-02T05:38:40.978666+00:00",
+  "as_of": "2026-07-02T08:32:41.709709+00:00",
   "audit": {
     "items": [
       "米国3指数確認が不足",
@@ -26,8 +26,8 @@
     "stance": "neutral_wait",
     "status": "limited"
   },
-  "generated_at": "2026-07-02T05:38:40.987167+00:00",
-  "git_sha": "b8898845788e6c4d426e50563daa36f1e66e8144",
+  "generated_at": "2026-07-02T08:32:41.720274+00:00",
+  "git_sha": "4e18feb18ce1a0a2cc495f54eaf59072fe2bb69c",
   "macro": {
     "bias": "neutral_inflation_risk"
   },
@@ -64,7 +64,7 @@
     "confidence_cap": "B-",
     "macro_confidence": 91
   },
-  "snapshot_key": "9bbf56a56527fb3adc88a3a3f63c05855ee2ee9a22f256e03e2aebbb45e5517d",
+  "snapshot_key": "0343af708dedfbb241e5ecf72f6630a99c60075e80a748cf3bb75403d6761049",
   "source_snapshots": {
     "basecalc": {
       "allowed_direction": "stopped",
@@ -6566,7 +6566,7 @@
             "directional_allowed": false,
             "display_price": 69720.0,
             "explanation_allowed": false,
-            "generated_at": "2026-07-02T05:38:40.977912+00:00",
+            "generated_at": "2026-07-02T08:32:41.708940+00:00",
             "hard_block_reasons": [],
             "invalidated_targets": {
               "downside": [
@@ -6823,7 +6823,7 @@
             "probability_display_allowed": true,
             "range_calculated_from_price": 69720.0,
             "readiness_level": "ready",
-            "snapshot_id": "1e57e32f-6969-4652-858e-e2bb46144b3f",
+            "snapshot_id": "a64af5c8-9746-4431-846e-97cfa0c0a594",
             "soft_warning_reasons": [
               "現行モデルがATRベースラインを下回るため",
               "米国3指数確認が不足",
@@ -8285,13 +8285,13 @@
       ]
     },
     "macro": {
-      "as_of": "2026-07-01T09:04:18.734169+00:00",
+      "as_of": "2026-07-02T08:32:33.998206+00:00",
       "bias": "neutral_inflation_risk",
       "confidence_grade": "B",
       "confidence_score": 91,
       "data_quality_score": 100,
       "factor_vector": {
-        "credit_stress_score": 22,
+        "credit_stress_score": 20,
         "event_risk_score": 0,
         "fx_support_score": 50,
         "growth_score": 50,
@@ -8306,7 +8306,7 @@
       },
       "model_version": "",
       "raw": {
-        "as_of": "2026-07-01",
+        "as_of": "2026-07-02",
         "blocking_issues": [],
         "confidence_grade": "B",
         "confidence_limit_reasons": [
@@ -8314,7 +8314,7 @@
         ],
         "confidence_score": 91,
         "data_quality_report": {
-          "as_of": "2026-07-01",
+          "as_of": "2026-07-02",
           "blocking_issues": [],
           "confidence_cap": "A",
           "display_allowed": true,
@@ -8327,7 +8327,7 @@
         },
         "display_allowed": true,
         "display_status": "reference",
-        "generated_at": "2026-07-01T09:04:18.734169+00:00",
+        "generated_at": "2026-07-02T08:32:33.998206+00:00",
         "house_view": "景気判断は中立だが、物価再加速リスクが高く金利上昇に注意",
         "invalidation_status_notes": [
           {
@@ -8339,11 +8339,11 @@
             "label": "Core PCE"
           },
           {
-            "detail": "現状 4.38%（2026-06-29）。判断変更目安 4.50%以上、あと +0.12pt",
+            "detail": "現状 4.44%（2026-06-30）。判断変更目安 4.50%以上、あと +0.06pt",
             "label": "米10年金利"
           },
           {
-            "detail": "現状 2.80%（2026-06-29）。判断変更目安 5.00%以上、あと +2.20pt",
+            "detail": "現状 2.75%（2026-06-30）。判断変更目安 5.00%以上、あと +2.25pt",
             "label": "信用スプレッド"
           }
         ],
@@ -8374,7 +8374,7 @@
               {
                 "age_days": 1,
                 "label": "5年期待インフレ率",
-                "observation_date": "2026-06-30",
+                "observation_date": "2026-07-01",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T5YIE",
                 "source": "FRED",
@@ -8383,31 +8383,17 @@
               {
                 "age_days": 1,
                 "label": "10年期待インフレ率",
-                "observation_date": "2026-06-30",
+                "observation_date": "2026-07-01",
                 "proxy_type": "market_implied_inflation_expectation",
                 "series_id": "T10YIE",
                 "source": "FRED",
-                "value": 2.24
+                "value": 2.23
               }
             ],
             "reasons": [
               "重要指標の発表前後のため一段階下げます。"
             ],
             "upcoming_high_impact_events": [
-              {
-                "currency": "USD",
-                "date": "2026-07-01",
-                "event": "ADP非農業部門雇用者数変化",
-                "impact": "★★★",
-                "time": "21:15"
-              },
-              {
-                "currency": "USD",
-                "date": "2026-07-01",
-                "event": "ISM製造業景況感指数",
-                "impact": "★★★",
-                "time": "23:00"
-              },
               {
                 "currency": "USD",
                 "date": "2026-07-02",
@@ -8447,7 +8433,7 @@
         "probabilities": {
           "contraction": 0.02018798202221658,
           "expansion": 0.6568708855634098,
-          "financial_stress": 0.21703998993430185,
+          "financial_stress": 0.19678668522624077,
           "inflation_reacceleration": 0.8988551038774872,
           "recovery": 0.17495960104105565,
           "slowdown": 0.147981531373318
@@ -8455,20 +8441,6 @@
         "publish_status": "reference",
         "regime_label": "inflation_risk",
         "upcoming_high_impact_events": [
-          {
-            "currency": "USD",
-            "date": "2026-07-01",
-            "event": "ADP非農業部門雇用者数変化",
-            "impact": "★★★",
-            "time": "21:15"
-          },
-          {
-            "currency": "USD",
-            "date": "2026-07-01",
-            "event": "ISM製造業景況感指数",
-            "impact": "★★★",
-            "time": "23:00"
-          },
           {
             "currency": "USD",
             "date": "2026-07-02",
@@ -8544,5 +8516,5 @@
     "warnings": []
   },
   "version": "explanation_v2",
-  "workflow_run_id": "28568023791"
+  "workflow_run_id": "28576388943"
 }

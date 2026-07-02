@@ -13,12 +13,12 @@
     "explanation": "usable_with_warning",
     "macro": "current"
   },
-  "explanation_as_of": "2026-07-02T05:38:40.978666+00:00",
-  "explanation_generated_at": "2026-07-02T05:38:40.987167+00:00",
+  "explanation_as_of": "2026-07-02T08:32:41.709709+00:00",
+  "explanation_generated_at": "2026-07-02T08:32:41.720274+00:00",
   "explanation_status": "limited",
-  "generated_at": "2026-07-02T05:38:41.245255+00:00",
-  "git_sha": "b8898845788e6c4d426e50563daa36f1e66e8144",
-  "macro_as_of": "2026-07-01T09:04:18.734169+00:00",
+  "generated_at": "2026-07-02T08:32:42.015537+00:00",
+  "git_sha": "4e18feb18ce1a0a2cc495f54eaf59072fe2bb69c",
+  "macro_as_of": "2026-07-02T08:32:33.998206+00:00",
   "macro_status": "ok",
   "schema": "finance_data_manifest_v1",
   "source_versions": {
@@ -26,5 +26,5 @@
     "explanation": "explanation_v2",
     "macro": "regime_v2_score"
   },
-  "workflow_run_id": "28568023791"
+  "workflow_run_id": "28576388943"
 }

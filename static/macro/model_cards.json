@@ -5,24 +5,24 @@
       "display_label": "トップ表示可",
       "display_policy": "show",
       "display_reason": "トップ表示可",
-      "evaluated_at": "2026-07-01T09:04:10.927871+00:00",
+      "evaluated_at": "2026-07-02T08:32:25.957364+00:00",
       "event_count": null,
       "feature_set": [],
       "horizon": "3m",
       "key_metrics": {
-        "baseline_mae": 5.955726013324677,
+        "baseline_mae": 5.947243438574024,
         "brier_score": null,
-        "direction_accuracy": 0.6781609195402298,
-        "mae": 5.492083439640436,
+        "direction_accuracy": 0.6793893129770993,
+        "mae": 5.474520717615657,
         "pr_auc": null,
-        "rmse": 7.50008737931628,
+        "rmse": 7.4859627797728745,
         "roc_auc": null,
-        "skill_score": 0.07784820400517733
+        "skill_score": 0.07948602169069985
       },
       "known_weaknesses": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
       ],
-      "last_validated_at": "2026-07-01T09:04:10.927871+00:00",
+      "last_validated_at": "2026-07-02T08:32:25.957364+00:00",
       "leakage_check": "not_flagged",
       "limitations": [
         "LightGBM がないため、直近平均の参考検証に切り替えました: No module named 'lightgbm'"
@@ -30,7 +30,7 @@
       "model_version": "return_lightgbm_v2",
       "publication_lag_check": "not_flagged",
       "purpose": "GSPCの3m先を予測する",
-      "sample_count": 261,
+      "sample_count": 262,
       "target": "GSPC",
       "training_period": null,
       "validation_method": "walk_forward",
