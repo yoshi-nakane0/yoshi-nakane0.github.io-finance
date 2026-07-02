@@ -258,6 +258,11 @@ def _assert_trade_decision_status_contract(trade_decision, source):
             raise CommandError(f'{source} trade_decision entry_permission is not allowed: {entry_permission_value}')
     decision_status = trade_decision.get('decision_status') or ''
     entry_permission = trade_decision.get('entry_permission') or ''
+    selected_side = trade_decision.get('selected_side') or ''
+    if decision_status in {'watch_only', 'candidate_limited', 'candidate_confirmed'} and selected_side not in {'long', 'short'}:
+        raise CommandError(f'{source} trade_decision {decision_status} selected_side must be long or short')
+    if decision_status in {'wait', 'watch_only', 'candidate_limited', 'candidate_confirmed'} and trade_decision.get('hard_block_reasons'):
+        raise CommandError(f'{source} trade_decision {decision_status} hard_block_reasons must be empty')
     if decision_status == 'candidate_limited' and entry_permission != 'limited_entry':
         raise CommandError(f'{source} trade_decision candidate_limited entry_permission must be limited_entry')
     if decision_status == 'candidate_limited' and _int_value(trade_decision.get('position_size_pct')) not in {25, 50}:
@@ -274,10 +279,18 @@ def _assert_trade_decision_status_contract(trade_decision, source):
         raise CommandError(f'{source} trade_decision blocked entry_permission must be no_entry')
     if decision_status == 'blocked' and _int_value(trade_decision.get('position_size_pct')) != 0:
         raise CommandError(f'{source} trade_decision blocked position_size_pct must be 0')
+    if trade_decision.get('model_version') == 'explanation_v2' and decision_status == 'blocked':
+        if not _reason_list(trade_decision.get('hard_block_reasons') or []):
+            raise CommandError(f'{source} trade_decision blocked hard_block_reasons must not be empty')
     if decision_status == 'candidate_confirmed' and entry_permission != 'full_entry':
         raise CommandError(f'{source} trade_decision candidate_confirmed entry_permission must be full_entry')
     if decision_status == 'candidate_confirmed' and _int_value(trade_decision.get('position_size_pct')) != 100:
         raise CommandError(f'{source} trade_decision candidate_confirmed position_size_pct must be 100')
+    if trade_decision.get('model_version') == 'explanation_v2' and decision_status == 'candidate_confirmed':
+        if trade_decision.get('validation_level') != 'high':
+            raise CommandError(f'{source} trade_decision candidate_confirmed validation_level must be high')
+        if trade_decision.get('soft_warning_reasons'):
+            raise CommandError(f'{source} trade_decision candidate_confirmed soft_warning_reasons must be empty')
 
 
 def _int_value(value):
