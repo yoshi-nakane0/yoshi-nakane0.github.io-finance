@@ -79,14 +79,14 @@ class Command(BaseCommand):
                 if decision.get(key) is not None:
                     raise CommandError(f'no_trade decision must not include {key}')
 
-        _assert_score_bundle_contract(latest, 'latest_snapshot.json')
         _assert_status_names(latest, 'latest_snapshot.json')
+        _assert_score_bundle_contract(latest, 'latest_snapshot.json')
         for index, snapshot_row in enumerate(history.get('snapshots') or []):
             if not isinstance(snapshot_row, dict):
                 raise CommandError('snapshot_history.json snapshots must contain JSON objects')
             snapshot_key = snapshot_row.get('snapshot_key') or f'row {index + 1}'
-            _assert_score_bundle_contract(snapshot_row, f'snapshot_history.json {snapshot_key}')
             _assert_status_names(snapshot_row, f'snapshot_history.json {snapshot_key}')
+            _assert_score_bundle_contract(snapshot_row, f'snapshot_history.json {snapshot_key}')
 
         neutral_snapshot = ExplanationSnapshot(
             as_of=snapshot_from_payload(latest).as_of,
@@ -160,12 +160,84 @@ def _assert_score_bundle_contract(payload, source):
     score_bundle = payload.get('score_bundle') or {}
     if not score_bundle:
         return
+    for key in (
+        'system_quality_score',
+        'decision_confidence_score',
+        'validation_readiness_score',
+    ):
+        if key not in score_bundle:
+            raise CommandError(f'{source} score_bundle must include {key}')
+    if score_bundle.get('score') != score_bundle.get('validation_readiness_score'):
+        raise CommandError(f'{source} score_bundle score must match validation_readiness_score')
+    if score_bundle.get('system_quality_label') != _system_quality_label(score_bundle.get('system_quality_score')):
+        raise CommandError(f'{source} score_bundle system_quality_label must match system_quality_score')
+    if score_bundle.get('validation_readiness_label') != _validation_readiness_label(
+        score_bundle.get('validation_readiness_score')
+    ):
+        raise CommandError(f'{source} score_bundle validation_readiness_label must match validation_readiness_score')
+    if score_bundle.get('label') != score_bundle.get('validation_readiness_label'):
+        raise CommandError(f'{source} score_bundle label must match validation_readiness_label')
+    trade_decision = payload.get('trade_decision') or {}
+    expected_confidence = _int_value(trade_decision.get('confidence_score'))
+    if expected_confidence is not None:
+        if _score_bundle_decision_blocked(payload):
+            expected_confidence = min(expected_confidence, 39)
+        if _int_value(score_bundle.get('decision_confidence_score')) != expected_confidence:
+            raise CommandError(f'{source} score_bundle decision_confidence_score must match trade_decision')
+    expected_label = _score_bundle_decision_label(payload)
+    if score_bundle.get('decision_confidence_label') != expected_label:
+        raise CommandError(f'{source} score_bundle decision_confidence_label must match trade_decision')
     rows = score_bundle.get('system_quality_components') or []
     contract_row = next((row for row in rows if isinstance(row, dict) and row.get('label') == '判定契約'), None)
     if not contract_row:
         raise CommandError(f'{source} score_bundle must include 判定契約 row')
     if contract_row.get('status') != 'OK' or contract_row.get('value') != '20/20':
         raise CommandError(f'{source} score_bundle 判定契約 must be OK 20/20')
+
+
+def _score_bundle_decision_blocked(payload):
+    trade_decision = payload.get('trade_decision') or {}
+    return (
+        ((payload.get('audit') or {}).get('level') or '') == 'blocked'
+        or bool(trade_decision.get('hard_block_reasons'))
+        or trade_decision.get('decision_type') == 'no_trade_data_blocked'
+        or trade_decision.get('decision_status') == 'blocked'
+    )
+
+
+def _system_quality_label(score):
+    score = _int_value(score) or 0
+    if score >= 90:
+        return '実用表示可'
+    if score >= 70:
+        return '改善中'
+    if score >= 50:
+        return '参考表示'
+    return '要修正'
+
+
+def _validation_readiness_label(score):
+    score = _int_value(score) or 0
+    if score >= 90:
+        return '実績確認済み'
+    if score >= 70:
+        return '検証運用中'
+    if score >= 50:
+        return '検証参考'
+    return '検証不足'
+
+
+def _score_bundle_decision_label(payload):
+    if _score_bundle_decision_blocked(payload):
+        return '判定停止'
+    status = ((payload.get('trade_decision') or {}).get('decision_status') or '')
+    if status == 'candidate_confirmed':
+        return '通常候補'
+    if status == 'candidate_limited':
+        return '限定候補'
+    if status == 'watch_only':
+        return '監視候補'
+    return '待機'
 
 
 def _assert_status_names(payload, source):
