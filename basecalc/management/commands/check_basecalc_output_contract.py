@@ -92,6 +92,8 @@ def _assert_saved_contract_consistency(output_contract):
     if display_status and display_status != "blocked":
         raise CommandError("basecalc output contract failed: error contract display_status must be blocked")
     confidence_score = output_contract.get("confidence_score")
-    if confidence_score in (None, "", 0, 0.0):
-        return
-    raise CommandError("basecalc output contract failed: error contract confidence_score must be 0")
+    if confidence_score not in (None, "", 0, 0.0):
+        raise CommandError("basecalc output contract failed: error contract confidence_score must be 0")
+    confidence_label = output_contract.get("confidence_label")
+    if confidence_label and confidence_label != "D":
+        raise CommandError("basecalc output contract failed: error contract confidence_label must be D")

@@ -418,6 +418,8 @@ def _empty_contract(display_price):
         "contract_status": "error",
         "display_price": display_price,
         "model_price": None,
+        "confidence_score": 0,
+        "confidence_label": "D",
         "directional_allowed": False,
         "target_display_allowed": False,
         "probability_display_allowed": False,

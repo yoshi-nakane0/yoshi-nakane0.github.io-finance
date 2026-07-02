@@ -66,6 +66,15 @@ class Command(BaseCommand):
                 if decision.get(key) is not None:
                     raise CommandError(f'no_trade decision must not include {key}')
 
+        _assert_score_bundle_contract(latest, 'latest_snapshot.json')
+        _assert_status_names(latest, 'latest_snapshot.json')
+        for index, snapshot_row in enumerate(history.get('snapshots') or []):
+            if not isinstance(snapshot_row, dict):
+                raise CommandError('snapshot_history.json snapshots must contain JSON objects')
+            snapshot_key = snapshot_row.get('snapshot_key') or f'row {index + 1}'
+            _assert_score_bundle_contract(snapshot_row, f'snapshot_history.json {snapshot_key}')
+            _assert_status_names(snapshot_row, f'snapshot_history.json {snapshot_key}')
+
         neutral_snapshot = ExplanationSnapshot(
             as_of=snapshot_from_payload(latest).as_of,
             final_label='中立',
@@ -108,14 +117,6 @@ class Command(BaseCommand):
             for row in view.get('world_model_predictions') or []:
                 if row.get('bias') != '停止 / 参考' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
                     raise CommandError('world model predictions must be stopped when trade decision is no_trade')
-        _assert_score_bundle_contract(latest, 'latest_snapshot.json')
-        _assert_status_names(latest, 'latest_snapshot.json')
-        for index, snapshot_row in enumerate(history.get('snapshots') or []):
-            if not isinstance(snapshot_row, dict):
-                raise CommandError('snapshot_history.json snapshots must contain JSON objects')
-            snapshot_key = snapshot_row.get('snapshot_key') or f'row {index + 1}'
-            _assert_score_bundle_contract(snapshot_row, f'snapshot_history.json {snapshot_key}')
-            _assert_status_names(snapshot_row, f'snapshot_history.json {snapshot_key}')
 
         rendered = json.dumps(latest, ensure_ascii=False)
         if '。のため' in rendered or 'ます。のため' in rendered:
@@ -155,9 +156,11 @@ def _assert_score_bundle_contract(payload, source):
 
 
 def _assert_status_names(payload, source):
-    decision_status = ((payload.get('trade_decision') or {}).get('decision_status') or '')
+    trade_decision = payload.get('trade_decision') or {}
+    decision_status = (trade_decision.get('decision_status') or '')
     if decision_status and decision_status not in ALLOWED_DECISION_STATUSES:
         raise CommandError(f'{source} trade_decision decision_status is not allowed: {decision_status}')
+    _assert_trade_decision_status_contract(trade_decision, source)
     basecalc_raw = ((payload.get('source_snapshots') or {}).get('basecalc') or {}).get('raw') or {}
     world_model = basecalc_raw.get('world_model') or {}
     output_contract = world_model.get('output_contract') or {}
@@ -170,3 +173,40 @@ def _assert_status_names(payload, source):
         confidence_score = output_contract.get('confidence_score')
         if confidence_score not in (None, '', 0, 0.0):
             raise CommandError(f'{source} basecalc error contract confidence_score must be 0')
+        confidence_label = output_contract.get('confidence_label')
+        if confidence_label and confidence_label != 'D':
+            raise CommandError(f'{source} basecalc error contract confidence_label must be D')
+
+
+def _assert_trade_decision_status_contract(trade_decision, source):
+    if not isinstance(trade_decision, dict):
+        return
+    decision_status = trade_decision.get('decision_status') or ''
+    entry_permission = trade_decision.get('entry_permission') or ''
+    if decision_status == 'candidate_limited' and entry_permission != 'limited_entry':
+        raise CommandError(f'{source} trade_decision candidate_limited entry_permission must be limited_entry')
+    if decision_status == 'candidate_limited' and _int_value(trade_decision.get('position_size_pct')) not in {25, 50}:
+        raise CommandError(f'{source} trade_decision candidate_limited position_size_pct must be 25 or 50')
+    if decision_status == 'watch_only' and entry_permission != 'watch_only':
+        raise CommandError(f'{source} trade_decision watch_only entry_permission must be watch_only')
+    if decision_status == 'watch_only' and _int_value(trade_decision.get('position_size_pct')) != 0:
+        raise CommandError(f'{source} trade_decision watch_only position_size_pct must be 0')
+    if decision_status == 'wait' and entry_permission != 'no_entry':
+        raise CommandError(f'{source} trade_decision wait entry_permission must be no_entry')
+    if decision_status == 'wait' and _int_value(trade_decision.get('position_size_pct')) != 0:
+        raise CommandError(f'{source} trade_decision wait position_size_pct must be 0')
+    if decision_status == 'blocked' and entry_permission != 'no_entry':
+        raise CommandError(f'{source} trade_decision blocked entry_permission must be no_entry')
+    if decision_status == 'blocked' and _int_value(trade_decision.get('position_size_pct')) != 0:
+        raise CommandError(f'{source} trade_decision blocked position_size_pct must be 0')
+    if decision_status == 'candidate_confirmed' and entry_permission != 'full_entry':
+        raise CommandError(f'{source} trade_decision candidate_confirmed entry_permission must be full_entry')
+    if decision_status == 'candidate_confirmed' and _int_value(trade_decision.get('position_size_pct')) != 100:
+        raise CommandError(f'{source} trade_decision candidate_confirmed position_size_pct must be 100')
+
+
+def _int_value(value):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None

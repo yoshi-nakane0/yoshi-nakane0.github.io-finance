@@ -9,6 +9,16 @@ from .snapshot import write_basecalc_snapshot
 
 
 class BasecalcOutputContractTests(SimpleTestCase):
+    def test_empty_contract_exposes_blocked_confidence(self):
+        from .output_contract import apply_output_contract
+
+        contract = apply_output_contract(None, display_price=41000)
+
+        self.assertEqual(contract['contract_status'], 'error')
+        self.assertEqual(contract['display_status'], 'blocked')
+        self.assertEqual(contract['confidence_score'], 0)
+        self.assertEqual(contract['confidence_label'], 'D')
+
     def test_validation_gate_penalizes_low_sample_direction_evidence_by_ten_without_blocking(self):
         from .validation_gate import build_validation_gate
 
@@ -948,6 +958,44 @@ class BasecalcOutputContractCommandTests(TestCase):
             )
 
             with self.assertRaisesMessage(CommandError, 'error contract confidence_score must be 0'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_error_contract_with_non_d_confidence_label(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 78,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'error',
+                            'display_status': 'blocked',
+                            'confidence_score': 0,
+                            'confidence_label': 'Middle',
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'error contract confidence_label must be D'):
                 call_command('check_basecalc_output_contract', '--snapshot', str(path))
 
     def test_check_command_rejects_error_contract_with_candidate_display_status(self):
