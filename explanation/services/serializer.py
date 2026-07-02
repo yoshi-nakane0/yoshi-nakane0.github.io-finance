@@ -1,3 +1,4 @@
+from copy import copy
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -133,10 +134,10 @@ def _integrated_status(snapshot, trade_decision, manual_price):
         return '限定'
     if status == 'candidate_confirmed':
         return '通常'
-    if status == 'wait':
-        return '見送り'
     if manual_price.get('active') or _is_reference_decision(trade_decision):
         return '参考'
+    if status == 'wait':
+        return '見送り'
     return '判定可'
 
 
@@ -231,7 +232,7 @@ def snapshot_to_api(snapshot):
     trade_decision = _trade_decision(snapshot, _world_model_from_basecalc(basecalc))
     score_bundle = (snapshot.score_breakdown or {}).get('score_bundle')
     if not score_bundle:
-        score_bundle = build_readiness_score(snapshot, {'available': False})
+        score_bundle = build_readiness_score(_snapshot_with_trade_decision(snapshot, trade_decision), {'available': False})
     return {
         'as_of': snapshot.as_of.isoformat(),
         'version': snapshot.version,
@@ -644,9 +645,7 @@ def _first_target(targets):
 
 def _trade_decision(snapshot, world_model):
     decision = dict(snapshot.trade_decision or {})
-    if decision:
-        return decision
-    return {
+    defaults = {
         'selected_side': _legacy_selected_side(snapshot.final_stance),
         'decision_type': 'legacy_reference',
         'horizon': '3d',
@@ -674,7 +673,24 @@ def _trade_decision(snapshot, world_model):
         'blocked_reasons': [],
         'model_version': snapshot.version,
         'price_source': 'market_data',
+        'decision_status': 'wait',
+        'entry_permission': 'no_entry',
+        'validation_level': 'none',
+        'hard_block_reasons': [],
+        'soft_warning_reasons': [],
+        'confidence_components': {},
+        'position_size_pct': 0,
+        'position_size_cap': 'none',
     }
+    if decision:
+        return {**defaults, **decision}
+    return defaults
+
+
+def _snapshot_with_trade_decision(snapshot, trade_decision):
+    normalized = copy(snapshot)
+    normalized.trade_decision = trade_decision
+    return normalized
 
 
 def _legacy_selected_side(final_stance):
@@ -717,6 +733,7 @@ def _is_reference_decision(trade_decision):
     decision_type = trade_decision.get('decision_type') or ''
     return (
         trade_decision.get('selected_side') == 'no_trade'
+        or decision_type == 'legacy_reference'
         or decision_type.startswith('no_')
         or bool(trade_decision.get('blocked_reasons'))
     )

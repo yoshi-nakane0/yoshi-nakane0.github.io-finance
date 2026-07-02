@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta, timezone as dt_timezone
 from pathlib import Path
 from io import StringIO
@@ -1493,7 +1494,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('判定停止', html)
         self.assertNotIn('売買不可 / 条件待ち', html)
 
-    def test_explanation_template_top_card_is_three_line_decision_summary(self):
+    def test_explanation_template_top_card_exposes_complete_action_summary(self):
         snapshot = self._snapshot()
         snapshot.source_snapshots['basecalc']['raw']['world_model']['practical_lines'] = {
             'upside_resistance': 72110,
@@ -1531,13 +1532,12 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         decision_card_html = html.split('</section>', 1)[0]
 
         self.assertIn('現在判断：限定ロング候補', decision_card_html)
-        self.assertIn('行動：条件付きで入る', decision_card_html)
+        self.assertIn('行動：押し目まで待つ。成行追撃は不可。建玉は通常の25%。', decision_card_html)
         self.assertIn('理由：basecalcは上方向 / target/stop/R/Rは成立 / 局面別検証不足', decision_card_html)
-        self.assertNotIn('行動：押し目まで待つ。成行追撃は不可。建玉は通常の25%。', decision_card_html)
-        self.assertNotIn('信頼度：C+ / 55%', decision_card_html)
-        self.assertNotIn('建玉上限：通常の25%まで', decision_card_html)
-        self.assertNotIn('無効化：71,600円', decision_card_html)
-        self.assertNotIn('次の条件：上値抵抗 72,110円 を終値で突破 / 米国3指数が改善 / 下値支持 68,800円 を終値で割り込み', decision_card_html)
+        self.assertIn('信頼度：C+ / 55%', decision_card_html)
+        self.assertIn('建玉上限：通常の25%まで', decision_card_html)
+        self.assertIn('無効化：71,600円', decision_card_html)
+        self.assertIn('次の条件：上値抵抗 72,110円 を終値で突破 / 米国3指数が改善 / 下値支持 68,800円 を終値で割り込み', decision_card_html)
         self.assertNotIn('common-choice-card__score', decision_card_html)
         self.assertNotIn('エントリー', decision_card_html)
         self.assertNotIn('第1目標', decision_card_html)
@@ -1579,8 +1579,9 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         top_card_html = html.split('</section>', 1)[0]
         trade_condition_html = html.split('<h2 class="common-section-title">売買条件</h2>', 1)[1].split('</section>', 1)[0]
 
-        self.assertNotIn('建玉上限：通常の25%まで', top_card_html)
-        self.assertNotIn('無効化：71,600円', top_card_html)
+        self.assertIn('建玉上限：通常の25%まで', top_card_html)
+        self.assertIn('無効化：71,600円', top_card_html)
+        self.assertIn('次の条件：上値抵抗 72,110円 を終値で突破', top_card_html)
         self.assertIn('建玉上限', trade_condition_html)
         self.assertIn('通常の25%まで', trade_condition_html)
         self.assertIn('無効化', trade_condition_html)
@@ -2291,6 +2292,19 @@ class ExplanationViewCompositionTests(SimpleTestCase):
 
         self.assertEqual(context['decision_card']['confidence'], '参考判定（C / 49%）')
 
+    def test_decision_card_marks_legacy_reference_trade_as_reference(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision = {}
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(context['trade_decision']['decision_type'], 'legacy_reference')
+        self.assertEqual(
+            context['decision_card']['confidence'],
+            f'参考判定（{snapshot.confidence_grade} / {snapshot.confidence_score}%）',
+        )
+        self.assertEqual(context['integrated_decision']['judgment_state'], '参考')
+
     def test_contract_error_hides_trade_targets_and_marks_basecalc_stopped(self):
         snapshot = self._snapshot()
         raw = snapshot.source_snapshots['basecalc']['raw']
@@ -2345,6 +2359,48 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(payload['version'], 'explanation_v2')
         self.assertEqual(payload['trade_decision']['selected_side'], 'long')
         self.assertEqual(payload['trade_decision']['target_1']['price'], 71180)
+
+    def test_api_legacy_trade_decision_includes_extended_status_contract(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision = {}
+
+        payload = snapshot_to_api(snapshot)
+        decision = payload['trade_decision']
+
+        self.assertEqual(decision['decision_status'], 'wait')
+        self.assertEqual(decision['entry_permission'], 'no_entry')
+        self.assertEqual(decision['validation_level'], 'none')
+        self.assertEqual(decision['hard_block_reasons'], [])
+        self.assertEqual(decision['soft_warning_reasons'], [])
+        self.assertEqual(decision['confidence_components'], {})
+        self.assertEqual(decision['position_size_pct'], 0)
+        contract_row = next(row for row in payload['score_bundle']['system_quality_components'] if row['label'] == '判定契約')
+        self.assertEqual(contract_row['status'], 'OK')
+        self.assertEqual(contract_row['value'], '20/20')
+
+    def test_api_partial_legacy_trade_decision_backfills_extended_status_contract(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision = {
+            'selected_side': 'long',
+            'decision_type': 'legacy_reference',
+            'confidence_score': 52,
+            'confidence_grade': 'C+',
+        }
+
+        payload = snapshot_to_api(snapshot)
+        decision = payload['trade_decision']
+
+        self.assertEqual(decision['selected_side'], 'long')
+        self.assertEqual(decision['decision_status'], 'wait')
+        self.assertEqual(decision['entry_permission'], 'no_entry')
+        self.assertEqual(decision['validation_level'], 'none')
+        self.assertEqual(decision['hard_block_reasons'], [])
+        self.assertEqual(decision['soft_warning_reasons'], [])
+        self.assertEqual(decision['confidence_components'], {})
+        self.assertEqual(decision['position_size_pct'], 0)
+        contract_row = next(row for row in payload['score_bundle']['system_quality_components'] if row['label'] == '判定契約')
+        self.assertEqual(contract_row['status'], 'OK')
+        self.assertEqual(contract_row['value'], '20/20')
 
     def test_api_includes_separated_readiness_score_bundle(self):
         snapshot = self._snapshot()
@@ -2419,6 +2475,151 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(second['added'], True)
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[-1]['as_of'], repeated_snapshot.as_of.isoformat())
+
+    def test_static_snapshot_payload_normalizes_legacy_trade_decision_contract(self):
+        from .services.static_snapshot import write_static_explanation_snapshot
+
+        snapshot = self._snapshot()
+        snapshot.trade_decision = {}
+
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'latest_snapshot.json'
+            written_payload = write_static_explanation_snapshot(snapshot, output)
+
+        decision = written_payload['trade_decision']
+        self.assertEqual(decision['decision_status'], 'wait')
+        self.assertEqual(decision['entry_permission'], 'no_entry')
+        self.assertEqual(decision['validation_level'], 'none')
+        self.assertEqual(decision['hard_block_reasons'], [])
+        self.assertEqual(decision['soft_warning_reasons'], [])
+        self.assertEqual(decision['confidence_components'], {})
+        self.assertEqual(decision['position_size_pct'], 0)
+
+    def test_static_snapshot_payload_backfills_partial_legacy_trade_decision_contract(self):
+        from .services.static_snapshot import write_static_explanation_snapshot
+
+        snapshot = self._snapshot()
+        snapshot.trade_decision = {
+            'selected_side': 'long',
+            'decision_type': 'legacy_reference',
+            'confidence_score': 52,
+            'confidence_grade': 'C+',
+        }
+
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'latest_snapshot.json'
+            written_payload = write_static_explanation_snapshot(snapshot, output)
+
+        decision = written_payload['trade_decision']
+        self.assertEqual(decision['selected_side'], 'long')
+        self.assertEqual(decision['decision_status'], 'wait')
+        self.assertEqual(decision['entry_permission'], 'no_entry')
+        self.assertEqual(decision['validation_level'], 'none')
+        self.assertEqual(decision['hard_block_reasons'], [])
+        self.assertEqual(decision['soft_warning_reasons'], [])
+        self.assertEqual(decision['confidence_components'], {})
+        self.assertEqual(decision['position_size_pct'], 0)
+        contract_row = next(row for row in written_payload['score_bundle']['system_quality_components'] if row['label'] == '判定契約')
+        self.assertEqual(contract_row['status'], 'OK')
+        self.assertEqual(contract_row['value'], '20/20')
+
+    def test_static_snapshot_load_backfills_legacy_trade_decision_and_score_bundle(self):
+        from .services.static_snapshot import load_static_explanation_snapshot
+
+        snapshot = self._snapshot()
+        payload = {
+            'schema': 'explanation_snapshot_v1',
+            'as_of': snapshot.as_of.isoformat(),
+            'version': snapshot.version,
+            'final': {
+                'label': snapshot.final_label,
+                'stance': snapshot.final_stance,
+                'action_posture': snapshot.action_posture,
+                'confidence_score': snapshot.confidence_score,
+                'confidence_grade': snapshot.confidence_grade,
+            },
+            'macro': {'bias': snapshot.macro_bias},
+            'basecalc': {'bias': snapshot.basecalc_bias},
+            'alignment_status': snapshot.alignment_status,
+            'data_quality_score': snapshot.data_quality_score,
+            'audit': {'level': snapshot.audit_level, 'items': snapshot.audit_items},
+            'scenario': snapshot.scenario,
+            'trade_decision': {
+                'selected_side': 'long',
+                'decision_type': 'legacy_reference',
+                'confidence_score': 52,
+                'confidence_grade': 'C+',
+            },
+            'evidence': snapshot.evidence,
+            'source_snapshots': snapshot.source_snapshots,
+        }
+
+        with TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / 'latest_snapshot.json'
+            output.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+            loaded = load_static_explanation_snapshot(output)
+
+        self.assertEqual(loaded.trade_decision['decision_status'], 'wait')
+        self.assertEqual(loaded.trade_decision['entry_permission'], 'no_entry')
+        self.assertEqual(loaded.trade_decision['hard_block_reasons'], [])
+        score_bundle = loaded.score_breakdown['score_bundle']
+        contract_row = next(row for row in score_bundle['system_quality_components'] if row['label'] == '判定契約')
+        self.assertEqual(contract_row['status'], 'OK')
+        self.assertEqual(contract_row['value'], '20/20')
+
+    def test_static_snapshot_history_backfills_existing_legacy_rows_when_appending(self):
+        from .services.static_snapshot import append_static_explanation_history, load_static_snapshot_history
+
+        snapshot = self._snapshot()
+        old_payload = {
+            'snapshot_key': 'old-key',
+            'schema': 'explanation_snapshot_v1',
+            'as_of': (snapshot.as_of - timedelta(hours=1)).isoformat(),
+            'version': snapshot.version,
+            'final': {
+                'label': snapshot.final_label,
+                'stance': snapshot.final_stance,
+                'action_posture': snapshot.action_posture,
+                'confidence_score': snapshot.confidence_score,
+                'confidence_grade': snapshot.confidence_grade,
+            },
+            'macro': {'bias': snapshot.macro_bias},
+            'basecalc': {'bias': snapshot.basecalc_bias},
+            'alignment_status': snapshot.alignment_status,
+            'data_quality_score': snapshot.data_quality_score,
+            'audit': {'level': snapshot.audit_level, 'items': snapshot.audit_items},
+            'scenario': snapshot.scenario,
+            'trade_decision': {
+                'selected_side': 'long',
+                'decision_type': 'legacy_reference',
+                'confidence_score': 52,
+                'confidence_grade': 'C+',
+            },
+            'evidence': snapshot.evidence,
+            'source_snapshots': snapshot.source_snapshots,
+        }
+
+        with TemporaryDirectory() as tmpdir:
+            history = Path(tmpdir) / 'snapshot_history.json'
+            history.write_text(
+                json.dumps({
+                    'schema': 'explanation_snapshot_history_v1',
+                    'generated_at': None,
+                    'max_rows': 500,
+                    'snapshots': [old_payload],
+                }, ensure_ascii=False),
+                encoding='utf-8',
+            )
+
+            append_static_explanation_history(snapshot, history)
+            rows = load_static_snapshot_history(history)
+
+        old_row = rows[0]
+        self.assertEqual(old_row['trade_decision']['decision_status'], 'wait')
+        self.assertEqual(old_row['trade_decision']['entry_permission'], 'no_entry')
+        contract_row = next(row for row in old_row['score_bundle']['system_quality_components'] if row['label'] == '判定契約')
+        self.assertEqual(contract_row['status'], 'OK')
+        self.assertEqual(contract_row['value'], '20/20')
 
     def test_static_validation_summary_reads_requested_outcomes_path(self):
         with TemporaryDirectory() as tmpdir:
@@ -2971,6 +3172,88 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                 """,
                 encoding='utf-8',
             )
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaises(CommandError):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_stale_score_bundle_decision_contract_row(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 10,
+                            'max_score': 20,
+                            'value': '10/20',
+                            'status': '要確認',
+                            'message': '状態契約が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
             history.write_text(
                 '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
                 encoding='utf-8',

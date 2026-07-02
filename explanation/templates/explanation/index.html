@@ -46,11 +46,27 @@
               </div>
               <div class="common-row common-row--stack">
                 <span>行動</span>
-                <strong>行動：{{ beginner_decision.entry_permission_label }}</strong>
+                <strong>行動：{{ beginner_decision.plain_action }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>信頼度</span>
+                <strong>信頼度：{{ beginner_decision.confidence_display }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>建玉上限</span>
+                <strong>建玉上限：{{ beginner_decision.position_size_display }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>無効化</span>
+                <strong>無効化：{{ beginner_decision.invalidation_display }}</strong>
               </div>
               <div class="common-row common-row--stack">
                 <span>理由</span>
                 <strong>理由：{{ beginner_decision.top_reason_summary }}</strong>
+              </div>
+              <div class="common-row common-row--stack">
+                <span>次の条件</span>
+                <strong>次の条件：{{ beginner_decision.top_next_condition_summary }}</strong>
               </div>
             </div>
           </div>

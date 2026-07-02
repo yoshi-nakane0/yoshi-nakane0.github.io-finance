@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from ..models import ExplanationSnapshot, ExplanationTradeOutcome
 from .readiness_score import build_readiness_score
+from .serializer import _snapshot_with_trade_decision, _trade_decision, _world_model_from_basecalc
 
 
 DEFAULT_EXPLANATION_SNAPSHOT_PATH = Path('explanation/data/latest_snapshot.json')
@@ -29,7 +30,9 @@ def _path(path, default):
 
 def explanation_snapshot_payload(snapshot):
     snapshot_key = snapshot_key_for_snapshot(snapshot)
-    score_bundle = build_readiness_score(snapshot, {'available': False})
+    basecalc = (snapshot.source_snapshots or {}).get('basecalc') or {}
+    trade_decision = _trade_decision(snapshot, _world_model_from_basecalc(basecalc))
+    score_bundle = build_readiness_score(_snapshot_with_trade_decision(snapshot, trade_decision), {'available': False})
     return {
         'snapshot_key': snapshot_key,
         'schema': 'explanation_snapshot_v1',
@@ -59,7 +62,7 @@ def explanation_snapshot_payload(snapshot):
             'items': snapshot.audit_items or [],
         },
         'scenario': snapshot.scenario or {},
-        'trade_decision': snapshot.trade_decision or {},
+        'trade_decision': trade_decision,
         'evidence': snapshot.evidence or [],
         'source_snapshots': snapshot.source_snapshots or {},
         'score_bundle': score_bundle,
@@ -162,6 +165,17 @@ def snapshot_from_payload(payload):
         'workflow_run_id': payload.get('workflow_run_id') or '',
         'generated_at': payload.get('generated_at') or '',
     }
+    basecalc_source = (snapshot.source_snapshots or {}).get('basecalc') or {}
+    trade_decision = _trade_decision(snapshot, _world_model_from_basecalc(basecalc_source))
+    snapshot.trade_decision = trade_decision
+    if 'score_bundle' not in (snapshot.score_breakdown or {}):
+        snapshot.score_breakdown = {
+            **(snapshot.score_breakdown or {}),
+            'score_bundle': build_readiness_score(
+                _snapshot_with_trade_decision(snapshot, trade_decision),
+                {'available': False},
+            ),
+        }
     return snapshot
 
 
@@ -462,6 +476,11 @@ def _normalize_snapshot_history_payload(row):
     audit = dict(payload.get('audit') or {})
     audit['items'] = [_normalize_reason_text(item) for item in audit.get('items') or []]
     payload['audit'] = audit
+    snapshot = snapshot_from_payload(payload)
+    payload['trade_decision'] = snapshot.trade_decision or {}
+    score_bundle = (snapshot.score_breakdown or {}).get('score_bundle')
+    if score_bundle:
+        payload['score_bundle'] = score_bundle
     return payload
 
 

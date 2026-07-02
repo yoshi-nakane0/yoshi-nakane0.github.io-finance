@@ -104,6 +104,7 @@ class Command(BaseCommand):
             for row in view.get('world_model_predictions') or []:
                 if row.get('bias') != '停止 / 参考' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
                     raise CommandError('world model predictions must be stopped when trade decision is no_trade')
+        _assert_score_bundle_contract(latest)
 
         rendered = json.dumps(latest, ensure_ascii=False)
         if '。のため' in rendered or 'ます。のため' in rendered:
@@ -128,3 +129,15 @@ def _read_json(path):
 def _is_no_trade_decision(decision):
     decision_type = decision.get('decision_type') or ''
     return decision.get('selected_side') == 'no_trade' or decision_type.startswith('no_')
+
+
+def _assert_score_bundle_contract(payload):
+    score_bundle = payload.get('score_bundle') or {}
+    if not score_bundle:
+        return
+    rows = score_bundle.get('system_quality_components') or []
+    contract_row = next((row for row in rows if isinstance(row, dict) and row.get('label') == '判定契約'), None)
+    if not contract_row:
+        raise CommandError('score_bundle must include 判定契約 row')
+    if contract_row.get('status') != 'OK' or contract_row.get('value') != '20/20':
+        raise CommandError('score_bundle 判定契約 must be OK 20/20')
