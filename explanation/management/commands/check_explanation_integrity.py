@@ -174,7 +174,8 @@ def _assert_status_names(payload, source):
     if decision_status and decision_status not in ALLOWED_DECISION_STATUSES:
         raise CommandError(f'{source} trade_decision decision_status is not allowed: {decision_status}')
     _assert_trade_decision_status_contract(trade_decision, source)
-    basecalc_raw = ((payload.get('source_snapshots') or {}).get('basecalc') or {}).get('raw') or {}
+    basecalc_snapshot = (payload.get('source_snapshots') or {}).get('basecalc') or {}
+    basecalc_raw = basecalc_snapshot.get('raw') or {}
     world_model = basecalc_raw.get('world_model') or {}
     output_contract = world_model.get('output_contract') or {}
     display_status = output_contract.get('display_status') or world_model.get('display_status') or ''
@@ -185,6 +186,17 @@ def _assert_status_names(payload, source):
         raise CommandError(f'{source} basecalc explanation_allowed is not allowed: {explanation_allowed}')
     _assert_basecalc_contract_explanation_allowed_match(output_contract.get('contract_status') or '', explanation_allowed, source)
     _assert_basecalc_display_explanation_allowed_match(display_status, explanation_allowed, source)
+    hard_reasons = (
+        list(output_contract.get('hard_stop_reasons') or [])
+        + list(output_contract.get('hard_block_reasons') or [])
+    )
+    if hard_reasons and output_contract.get('contract_status') != 'error':
+        raise CommandError(f'{source} basecalc hard_stop_reasons require error contract_status')
+    for key in ('hard_stop_reasons', 'hard_block_reasons', 'soft_warning_reasons', 'validation_warnings'):
+        _assert_basecalc_reason_snapshot_match(basecalc_snapshot, output_contract, key, source)
+        _assert_basecalc_reason_snapshot_match(world_model, output_contract, key, source, prefix='world_model ')
+    _assert_basecalc_text_snapshot_match(basecalc_snapshot, output_contract, 'confidence_cap_reason', source)
+    _assert_basecalc_text_snapshot_match(world_model, output_contract, 'confidence_cap_reason', source, prefix='world_model ')
     if output_contract.get('contract_status') == 'error':
         if display_status and display_status != 'blocked':
             raise CommandError(f'{source} basecalc error contract display_status must be blocked')
@@ -196,6 +208,24 @@ def _assert_status_names(payload, source):
         confidence_label = output_contract.get('confidence_label')
         if confidence_label and confidence_label != 'D':
             raise CommandError(f'{source} basecalc error contract confidence_label must be D')
+
+
+def _assert_basecalc_reason_snapshot_match(basecalc_snapshot, output_contract, key, source, prefix=''):
+    if key not in basecalc_snapshot or key not in output_contract:
+        return
+    if _reason_list(basecalc_snapshot.get(key) or []) != _reason_list(output_contract.get(key) or []):
+        raise CommandError(f'{source} basecalc {prefix}{key} must match output_contract')
+
+
+def _assert_basecalc_text_snapshot_match(basecalc_snapshot, output_contract, key, source, prefix=''):
+    if key not in basecalc_snapshot or key not in output_contract:
+        return
+    if str(basecalc_snapshot.get(key) or '').strip() != str(output_contract.get(key) or '').strip():
+        raise CommandError(f'{source} basecalc {prefix}{key} must match output_contract')
+
+
+def _reason_list(items):
+    return [str(item or '').strip() for item in items or [] if str(item or '').strip()]
 
 
 def _assert_trade_decision_status_contract(trade_decision, source):

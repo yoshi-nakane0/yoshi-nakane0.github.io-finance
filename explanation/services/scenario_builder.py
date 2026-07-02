@@ -1,6 +1,6 @@
 def build_scenarios(macro, basecalc):
     if getattr(basecalc, 'contract_status', 'unchecked') == 'error':
-        reason = (getattr(basecalc, 'stop_reasons', None) or ['basecalcの出力整合性を確認中'])[0]
+        reason = (_basecalc_stop_reasons(basecalc) or ['basecalcの出力整合性を確認中'])[0]
         return {
             'baseline': {
                 'title': '基本シナリオ',
@@ -58,6 +58,15 @@ def build_scenarios(macro, basecalc):
         },
         'change_condition': change_condition,
     }
+
+
+def _basecalc_stop_reasons(basecalc):
+    reasons = []
+    for attr in ('hard_stop_reasons', 'hard_block_reasons', 'stop_reasons'):
+        for reason in getattr(basecalc, attr, None) or []:
+            if reason and reason not in reasons:
+                reasons.append(reason)
+    return reasons
 
 
 def _price_display(value):

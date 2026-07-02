@@ -453,7 +453,7 @@ def _trade_judgment(side, snapshot, world_model, trade_decision=None):
         }
     output_contract = world_model.get('output_contract') or {}
     if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
-        reason = (world_model.get('stop_reasons') or output_contract.get('stop_reasons') or ['出力整合性を確認中'])[0]
+        reason = (_basecalc_stop_reasons(world_model, output_contract) or ['出力整合性を確認中'])[0]
         return {
             'label': 'ロング判断' if side == 'long' else 'ショート判断',
             'stance': '停止',
@@ -531,9 +531,8 @@ def _world_model_gate_summary(world_model, trade_decision, snapshot):
         return {'available': False, 'stop_reason': '', 'restart_condition': ''}
     reasons = _dedupe_nonempty(
         _normalized_list(trade_decision.get('blocked_reasons') or [])
-        + _normalized_list(world_model.get('stop_reasons') or [])
-        + _normalized_list(output_contract.get('stop_reasons') or [])
-        + _normalized_list(getattr(snapshot, 'audit_items', []) or [])
+        + _basecalc_stop_reasons(world_model, output_contract)
+        + _blocking_audit_items(getattr(snapshot, 'audit_items', []) or [])
     )
     if not reasons:
         reasons = ['方向ゲート停止中']
@@ -554,11 +553,18 @@ def _restart_conditions_for_reasons(reasons):
         conditions.append('米国3指数確認')
     if '信頼度' in joined:
         conditions.append('信頼度回復')
-    if '鮮度' in joined or 'データ' in joined:
+    if '鮮度' in joined or 'データ' in joined or '不一致' in joined or '現在値' in joined or '価格' in joined:
         conditions.append('データ不足解消')
     if '重要指標' in joined:
         conditions.append('重要指標通過')
     return _dedupe_nonempty(conditions) or ['方向ゲート再開', 'データ不足解消', '信頼度回復']
+
+
+def _blocking_audit_items(items):
+    return [
+        item for item in _normalized_list(items)
+        if item != '監査では判断を止める問題は確認されていない。'
+    ]
 
 
 def _dedupe_nonempty(items):
@@ -631,9 +637,20 @@ def _expected_price_display(base_price, expected_return_pct):
 def _basecalc_summary(basecalc, world_model):
     output_contract = world_model.get('output_contract') or {}
     if world_model.get('contract_status') == 'error' or output_contract.get('contract_status') == 'error':
-        reason = (world_model.get('stop_reasons') or output_contract.get('stop_reasons') or ['出力整合性を確認中'])[0]
+        reason = (_basecalc_stop_reasons(world_model, output_contract) or ['出力整合性を確認中'])[0]
         return f'basecalcの方向判断は停止。理由：{reason}'
     return basecalc.get('summary') or ''
+
+
+def _basecalc_stop_reasons(world_model, output_contract):
+    return _dedupe_nonempty(
+        _normalized_list(world_model.get('hard_stop_reasons') or [])
+        + _normalized_list(output_contract.get('hard_stop_reasons') or [])
+        + _normalized_list(world_model.get('hard_block_reasons') or [])
+        + _normalized_list(output_contract.get('hard_block_reasons') or [])
+        + _normalized_list(world_model.get('stop_reasons') or [])
+        + _normalized_list(output_contract.get('stop_reasons') or [])
+    )
 
 
 def _first_target(targets):

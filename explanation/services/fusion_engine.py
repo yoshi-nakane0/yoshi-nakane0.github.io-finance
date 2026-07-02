@@ -714,7 +714,10 @@ def _validation_level(basecalc):
 
 
 def _reason_groups(basecalc):
-    hard_reasons = list(basecalc.hard_block_reasons or [])
+    hard_reasons = list(getattr(basecalc, 'hard_stop_reasons', None) or [])
+    for reason in basecalc.hard_block_reasons or []:
+        if reason not in hard_reasons:
+            hard_reasons.append(reason)
     soft_reasons = list(basecalc.soft_warning_reasons or [])
     if basecalc.contract_status == 'error' and not hard_reasons:
         hard_reasons = list(basecalc.stop_reasons or [])

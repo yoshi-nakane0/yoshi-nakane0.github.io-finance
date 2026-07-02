@@ -84,6 +84,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         or world_model.get('intermarket_technicals')
         or {}
     )
+    hard_stop_reasons = output_contract.get('hard_stop_reasons') or basecalc_signal.get('hard_stop_reasons') or []
     hard_block_reasons = output_contract.get('hard_block_reasons') or basecalc_signal.get('hard_block_reasons') or []
     soft_warning_reasons = output_contract.get('soft_warning_reasons') or basecalc_signal.get('soft_warning_reasons') or []
     validation_warnings = output_contract.get('validation_warnings') or basecalc_signal.get('validation_warnings') or []
@@ -163,6 +164,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         validated_targets=output_contract.get('validated_targets') or {},
         invalidated_targets=output_contract.get('invalidated_targets') or {},
         stop_reasons=output_contract.get('stop_reasons') or [],
+        hard_stop_reasons=hard_stop_reasons,
         hard_block_reasons=hard_block_reasons,
         soft_warning_reasons=soft_warning_reasons,
         validation_warnings=validation_warnings,

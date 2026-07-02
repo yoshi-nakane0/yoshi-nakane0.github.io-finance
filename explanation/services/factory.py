@@ -80,6 +80,7 @@ def build_explanation_snapshot(*, save=True, basecalc_price_override=None):
                 'validated_targets': basecalc.validated_targets,
                 'invalidated_targets': basecalc.invalidated_targets,
                 'stop_reasons': basecalc.stop_reasons,
+                'hard_stop_reasons': basecalc.hard_stop_reasons,
                 'hard_block_reasons': basecalc.hard_block_reasons,
                 'soft_warning_reasons': basecalc.soft_warning_reasons,
                 'validation_warnings': basecalc.validation_warnings,

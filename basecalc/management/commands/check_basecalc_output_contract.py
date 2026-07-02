@@ -69,6 +69,7 @@ class Command(BaseCommand):
         _assert_contract_explanation_allowed_match(output_contract.get("contract_status") or "", saved_explanation_allowed)
         _assert_display_explanation_allowed_match(saved_display_status, saved_explanation_allowed)
         _assert_saved_contract_consistency(output_contract)
+        _assert_world_model_contract_consistency(world_model, output_contract)
         contract = apply_output_contract(
             world_model,
             display_price=display_price,
@@ -106,6 +107,12 @@ class Command(BaseCommand):
 def _assert_saved_contract_consistency(output_contract):
     if not isinstance(output_contract, dict):
         return
+    hard_reasons = (
+        list(output_contract.get("hard_stop_reasons") or [])
+        + list(output_contract.get("hard_block_reasons") or [])
+    )
+    if hard_reasons and output_contract.get("contract_status") != "error":
+        raise CommandError("basecalc output contract failed: hard_stop_reasons require error contract_status")
     if output_contract.get("contract_status") != "error":
         return
     display_status = output_contract.get("display_status")
@@ -120,6 +127,32 @@ def _assert_saved_contract_consistency(output_contract):
     confidence_label = output_contract.get("confidence_label")
     if confidence_label and confidence_label != "D":
         raise CommandError("basecalc output contract failed: error contract confidence_label must be D")
+
+
+def _assert_world_model_contract_consistency(world_model, output_contract):
+    if not isinstance(world_model, dict) or not isinstance(output_contract, dict):
+        return
+    for key in ("hard_stop_reasons", "hard_block_reasons", "soft_warning_reasons", "validation_warnings"):
+        _assert_reason_match(world_model, output_contract, key)
+    _assert_text_match(world_model, output_contract, "confidence_cap_reason")
+
+
+def _assert_reason_match(world_model, output_contract, key):
+    if key not in world_model or key not in output_contract:
+        return
+    if _reason_list(world_model.get(key) or []) != _reason_list(output_contract.get(key) or []):
+        raise CommandError(f"basecalc output contract failed: {key} must match output_contract")
+
+
+def _assert_text_match(world_model, output_contract, key):
+    if key not in world_model or key not in output_contract:
+        return
+    if str(world_model.get(key) or "").strip() != str(output_contract.get(key) or "").strip():
+        raise CommandError(f"basecalc output contract failed: {key} must match output_contract")
+
+
+def _reason_list(items):
+    return [str(item or "").strip() for item in items or [] if str(item or "").strip()]
 
 
 def _contract_value(output_contract, world_model, key):

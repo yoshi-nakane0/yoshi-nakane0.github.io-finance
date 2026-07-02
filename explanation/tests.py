@@ -594,6 +594,23 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertIsNone(decision.probability)
         self.assertIn('現在値と計算基準価格が不一致', decision.blocked_reasons)
 
+    def test_trade_decision_v2_uses_hard_stop_reasons_when_hard_block_reasons_are_missing(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            contract_status='error',
+            stop_reasons=[],
+            hard_stop_reasons=['現在値と計算基準価格が不一致'],
+            hard_block_reasons=[],
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'no_trade')
+        self.assertEqual(decision.decision_status, 'blocked')
+        self.assertIn('現在値と計算基準価格が不一致', decision.blocked_reasons)
+        self.assertIn('現在値と計算基準価格が不一致', decision.hard_block_reasons)
+
     def test_target_selector_uses_side_specific_target_stop_and_rr(self):
         basecalc = self._basecalc()
 
@@ -795,6 +812,31 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
 
         self.assertIn('上値拡張は米国3指数確認まで表示停止', scenario['upside']['text'])
         self.assertEqual(scenario['levels']['resistance'], 71180)
+
+    def test_scenarios_use_hard_stop_reasons_when_stop_reasons_are_empty(self):
+        macro = MacroSignal(
+            bias='neutral',
+            summary='景気判断は中立。',
+            confidence_score=70,
+            confidence_grade='B',
+            data_quality_score=80,
+        )
+        basecalc = BasecalcSignal(
+            bias='bullish',
+            summary='日経先物は上昇優勢。',
+            confidence_score=0,
+            confidence_grade='D',
+            data_quality_score=96,
+            readiness_level='ready',
+            can_show_prediction=False,
+            contract_status='error',
+            stop_reasons=[],
+            hard_stop_reasons=['現在値と計算基準価格が不一致'],
+        )
+
+        scenario = build_scenarios(macro, basecalc)
+
+        self.assertIn('現在値と計算基準価格が不一致', scenario['baseline']['text'])
 
 
 class ExplanationBasecalcAdapterTests(SimpleTestCase):
@@ -1062,6 +1104,56 @@ class ExplanationBasecalcAdapterTests(SimpleTestCase):
             signal = load_basecalc_signal()
 
         self.assertEqual(signal.explanation_allowed, 'limited')
+
+    def test_load_basecalc_signal_exposes_output_contract_hard_stop_reasons(self):
+        snapshot = {
+            'generated_at': '2026-06-23T09:39:11+00:00',
+            'world_model': {
+                'direction': 'neutral',
+                'direction_label': '方向判断停止',
+                'price': 69770,
+                'confidence': 'Low',
+                'confidence_score': 38,
+                'data_quality': {'level': 'good', 'score': 90, 'fallback_used': False},
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'similar_summary': {'case_count': 30, 'is_statistically_valid': True},
+                'horizons': {'1d': {'main_bias': 'range', 'expected_return_pct': 0}},
+                'output_contract': {
+                    'contract_status': 'error',
+                    'display_status': 'blocked',
+                    'explanation_allowed': 'blocked',
+                    'display_price': 69770,
+                    'directional_allowed': False,
+                    'allowed_direction': 'stopped',
+                    'confidence_score': 0,
+                    'confidence_label': 'D',
+                    'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+                    'hard_block_reasons': [],
+                    'stop_reasons': [],
+                },
+            },
+            'decision': {
+                'confidence': 'Low',
+                'confidence_score': 38,
+                'data_quality_score': 90,
+                'readiness_level': 'ready',
+                'can_show_prediction': False,
+            },
+            'basecalc_status_rows': [],
+            'market_shock': {'has_data': False},
+            'backtest_performance_by_horizon': {},
+        }
+
+        with (
+            mock.patch('explanation.services.basecalc_adapter.load_basecalc_snapshot', return_value=snapshot),
+            mock.patch('explanation.services.basecalc_adapter.load_validation_report', return_value=None),
+            mock.patch('explanation.services.basecalc_adapter.apply_output_contract'),
+        ):
+            signal = load_basecalc_signal()
+
+        self.assertEqual(signal.hard_stop_reasons, ['現在値と計算基準価格が不一致'])
+        self.assertEqual(signal.hard_block_reasons, [])
 
     def test_load_basecalc_signal_keeps_zero_output_contract_confidence(self):
         snapshot = {
@@ -1414,6 +1506,33 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertIn('表示再開条件', world_model_html)
         self.assertIn('方向ゲート再開 / 米国3指数確認 / 信頼度回復', world_model_html)
         self.assertLess(world_model_html.index('停止理由'), world_model_html.index('1d / 停止 / 参考'))
+
+    def test_world_model_gate_summary_uses_hard_stop_reasons_when_stop_reasons_are_empty(self):
+        snapshot = self._snapshot()
+        raw = snapshot.source_snapshots['basecalc']['raw']
+        raw['world_model']['contract_status'] = 'error'
+        raw['world_model']['stop_reasons'] = []
+        raw['world_model']['hard_stop_reasons'] = ['現在値と計算基準価格が不一致']
+        raw['world_model']['output_contract'] = {
+            'contract_status': 'error',
+            'stop_reasons': [],
+            'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+            'hard_block_reasons': [],
+            'allowed_horizons': {},
+        }
+        snapshot.trade_decision = {}
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertTrue(context['world_model_gate']['available'])
+        self.assertEqual(
+            context['world_model_gate']['stop_reason'],
+            '現在値と計算基準価格が不一致',
+        )
+        self.assertEqual(
+            context['world_model_gate']['restart_condition'],
+            'データ不足解消',
+        )
 
     def test_reasons_are_normalized_before_display(self):
         snapshot = self._snapshot()
@@ -2479,6 +2598,30 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(context['long_judgment']['probability'], '表示停止')
         self.assertEqual(context['short_judgment']['stance'], '停止')
         self.assertEqual(context['basecalc']['summary'], 'basecalcの方向判断は停止。理由：現在値と計算基準価格が不一致')
+
+    def test_contract_error_summary_uses_hard_stop_reasons_when_stop_reasons_are_empty(self):
+        snapshot = self._snapshot()
+        raw = snapshot.source_snapshots['basecalc']['raw']
+        raw['world_model']['contract_status'] = 'error'
+        raw['world_model']['stop_reasons'] = []
+        raw['world_model']['hard_stop_reasons'] = ['現在値と計算基準価格が不一致']
+        raw['world_model']['output_contract'] = {
+            'contract_status': 'error',
+            'stop_reasons': [],
+            'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+            'hard_block_reasons': [],
+            'target_display_allowed': False,
+            'probability_display_allowed': False,
+            'allowed_horizons': {},
+        }
+        snapshot.trade_decision = {}
+
+        context = snapshot_to_view(snapshot)
+
+        self.assertEqual(
+            context['basecalc']['summary'],
+            'basecalcの方向判断は停止。理由：現在値と計算基準価格が不一致',
+        )
 
     def test_template_renders_priority_sections_before_details(self):
         context = snapshot_to_view(self._snapshot())
@@ -5157,6 +5300,520 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                     stdout=StringIO(),
                 )
 
+    def test_integrity_rejects_non_error_basecalc_contract_with_hard_stop_reasons(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'hard_stop_reasons': ['局面別成績が明確に悪いため'],
+                                    'hard_block_reasons': ['局面別成績が明確に悪いため'],
+                                    'soft_warning_reasons': [],
+                                    'stop_reasons': ['局面別成績が明確に悪いため'],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc hard_stop_reasons require error contract_status'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_basecalc_top_level_hard_stop_reason_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '判定停止',
+                    'stance': 'withhold',
+                    'action_posture': '停止',
+                    'confidence_score': 0,
+                    'confidence_grade': 'D',
+                    'status': 'blocked',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'range'},
+                'alignment_status': 'blocked',
+                'data_quality_score': 80,
+                'audit': {'level': 'blocked', 'items': ['現在値と計算基準価格が不一致']},
+                'trade_decision': {
+                    'selected_side': 'no_trade',
+                    'decision_type': 'no_trade_data_blocked',
+                    'confidence_score': 0,
+                    'confidence_grade': 'D',
+                    'decision_status': 'blocked',
+                    'entry_permission': 'no_entry',
+                    'position_size_pct': 0,
+                },
+                'evidence': ['Basecalcは停止。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'hard_stop_reasons': ['別の停止理由'],
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'contract_status': 'error',
+                                    'display_status': 'blocked',
+                                    'explanation_allowed': 'blocked',
+                                    'confidence_score': 0,
+                                    'confidence_label': 'D',
+                                    'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+                                    'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+                                    'soft_warning_reasons': [],
+                                    'stop_reasons': ['現在値と計算基準価格が不一致'],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc hard_stop_reasons must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_basecalc_raw_world_model_hard_stop_reason_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '判定停止',
+                    'stance': 'withhold',
+                    'action_posture': '停止',
+                    'confidence_score': 0,
+                    'confidence_grade': 'D',
+                    'status': 'blocked',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'range'},
+                'alignment_status': 'blocked',
+                'data_quality_score': 80,
+                'audit': {'level': 'blocked', 'items': ['現在値と計算基準価格が不一致']},
+                'trade_decision': {
+                    'selected_side': 'no_trade',
+                    'decision_type': 'no_trade_data_blocked',
+                    'confidence_score': 0,
+                    'confidence_grade': 'D',
+                    'decision_status': 'blocked',
+                    'entry_permission': 'no_entry',
+                    'position_size_pct': 0,
+                },
+                'evidence': ['Basecalcは停止。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+                        'raw': {
+                            'world_model': {
+                                'hard_stop_reasons': ['別の停止理由'],
+                                'output_contract': {
+                                    'contract_status': 'error',
+                                    'display_status': 'blocked',
+                                    'explanation_allowed': 'blocked',
+                                    'confidence_score': 0,
+                                    'confidence_label': 'D',
+                                    'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+                                    'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+                                    'soft_warning_reasons': [],
+                                    'validation_warnings': [],
+                                    'confidence_cap_reason': '',
+                                    'stop_reasons': ['現在値と計算基準価格が不一致'],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc world_model hard_stop_reasons must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_basecalc_top_level_soft_warning_reason_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'soft_warning_reasons': ['別の注意理由'],
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'confidence_score': 52,
+                                    'confidence_label': 'C+',
+                                    'hard_stop_reasons': [],
+                                    'hard_block_reasons': [],
+                                    'soft_warning_reasons': ['米国3指数確認が不足'],
+                                    'validation_warnings': ['局面別検証不足のため信頼度を限定'],
+                                    'stop_reasons': [],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc soft_warning_reasons must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_basecalc_top_level_confidence_cap_reason_mismatch(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'confidence_cap_reason': '別の制限理由',
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'contract_status': 'limited',
+                                    'display_status': 'candidate_limited',
+                                    'explanation_allowed': 'limited',
+                                    'confidence_score': 52,
+                                    'confidence_label': 'C+',
+                                    'hard_stop_reasons': [],
+                                    'hard_block_reasons': [],
+                                    'soft_warning_reasons': ['米国3指数確認が不足'],
+                                    'validation_warnings': ['局面別検証不足のため信頼度を限定'],
+                                    'confidence_cap_reason': '局面別検証不足のため信頼度を限定',
+                                    'stop_reasons': [],
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaisesMessage(CommandError, 'basecalc confidence_cap_reason must match output_contract'):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
 
 class ExplanationTradeOutcomeValidationTests(TestCase):
     def test_evaluate_trade_outcome_records_target_stop_direction_and_rr(self):
@@ -5349,6 +6006,44 @@ class ExplanationSnapshotFactoryPersistenceTests(TestCase):
             snapshot.source_snapshots['macro']['raw']['generated_on'],
             '2026-06-25',
         )
+
+    def test_build_snapshot_persists_basecalc_hard_stop_reasons(self):
+        from .services.contracts import BasecalcSignal, MacroSignal
+        from .services.factory import build_explanation_snapshot
+
+        macro = MacroSignal(
+            bias='positive',
+            summary='Macroは支援的。',
+            confidence_score=78,
+            confidence_grade='B',
+            data_quality_score=82,
+            as_of=timezone.now(),
+        )
+        basecalc = BasecalcSignal(
+            bias='bullish',
+            summary='日経先物は上昇優勢。',
+            confidence_score=0,
+            confidence_grade='D',
+            data_quality_score=86,
+            readiness_level='ready',
+            can_show_prediction=False,
+            contract_status='error',
+            hard_stop_reasons=['現在値と計算基準価格が不一致'],
+            hard_block_reasons=[],
+            stop_reasons=[],
+            source={'world_model': {'model_version': 'wm_test'}},
+            as_of=timezone.now(),
+        )
+
+        with (
+            mock.patch('explanation.services.factory.load_macro_signal', return_value=macro),
+            mock.patch('explanation.services.factory.load_basecalc_signal', return_value=basecalc),
+        ):
+            snapshot = build_explanation_snapshot(save=True)
+
+        saved_basecalc = snapshot.source_snapshots['basecalc']
+        self.assertEqual(saved_basecalc['hard_stop_reasons'], ['現在値と計算基準価格が不一致'])
+        self.assertEqual(saved_basecalc['hard_block_reasons'], [])
 
 
 class ExplanationMacroAdapterTests(SimpleTestCase):

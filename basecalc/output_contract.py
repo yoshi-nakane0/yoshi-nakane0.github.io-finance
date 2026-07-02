@@ -64,17 +64,19 @@ def apply_output_contract(
     if readiness_level != "ready":
         errors.append("判定可能なデータ状態ではありません")
 
-    hard_block_reasons = _dedupe(errors + gate_hard_reasons)
-    soft_warning_reasons = _dedupe(gate_soft_warnings + warnings)
-    status = "error" if errors else "limited" if soft_warning_reasons or gate_hard_reasons else "ok"
     direction = world_model.get("direction")
     model_horizon_keys = set((world_model.get("horizons") or {}).keys()) or set(allowed_horizons.keys())
     severe_direction_stop = "ATRベースラインに複数期間で大幅劣後" in gate_hard_reasons
-    directional_allowed = status != "error" and not severe_direction_stop and direction in {"up", "down"} and any(
+    horizon_direction_allowed = direction in {"up", "down"} and any(
         item.get("direction_allowed")
         for horizon, item in allowed_horizons.items()
         if horizon in model_horizon_keys
     )
+    contract_gate_hard_reasons = gate_hard_reasons if severe_direction_stop or not horizon_direction_allowed else []
+    hard_block_reasons = _dedupe(errors + contract_gate_hard_reasons)
+    soft_warning_reasons = _dedupe(gate_soft_warnings + warnings)
+    status = "error" if hard_block_reasons else "limited" if soft_warning_reasons else "ok"
+    directional_allowed = status != "error" and not severe_direction_stop and horizon_direction_allowed
     target_display_allowed = status != "error"
     probability_display_allowed = target_display_allowed and not _probability_display_restricted(world_model)
     available_display = "停止"

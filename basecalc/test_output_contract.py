@@ -413,11 +413,16 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
 
-        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertEqual(contract['contract_status'], 'error')
+        self.assertEqual(contract['display_status'], 'blocked')
+        self.assertEqual(contract['explanation_allowed'], 'blocked')
         self.assertFalse(contract['allowed_horizons']['1d']['direction_allowed'])
         self.assertFalse(contract['directional_allowed'])
         self.assertIn('押し目買いの上方向精度が基準未達のため', contract['hard_block_reasons'])
         self.assertIn('押し目買いの上方向平均損益が逆方向のため', contract['hard_block_reasons'])
+        self.assertIn('押し目買いの上方向精度が基準未達のため', contract['stop_reasons'])
+        self.assertEqual(contract['confidence_score'], 0)
+        self.assertEqual(contract['confidence_label'], 'D')
 
     def test_direction_gate_uses_state_direction_precision_when_available(self):
         from .output_contract import apply_output_contract
@@ -485,7 +490,8 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertTrue(contract['directional_allowed'])
         self.assertEqual(contract['allowed_direction'], 'up')
         self.assertEqual(contract['available_display'], '方向・目標・レンジ')
-        self.assertIn('押し目買いの上方向精度が基準未達のため', contract['stop_reasons'])
+        self.assertEqual(contract['stop_reasons'], [])
+        self.assertIn('押し目買いの上方向精度が基準未達のため', contract['allowed_horizons']['1d']['hard_reasons'])
 
     def test_validation_gate_hard_blocks_when_atr_baseline_beats_model_by_large_margin_on_multiple_horizons(self):
         from .output_contract import apply_output_contract
@@ -541,7 +547,9 @@ class BasecalcOutputContractTests(SimpleTestCase):
 
         contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
 
-        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertEqual(contract['contract_status'], 'error')
+        self.assertEqual(contract['display_status'], 'blocked')
+        self.assertEqual(contract['explanation_allowed'], 'blocked')
         self.assertFalse(contract['allowed_horizons']['1d']['direction_allowed'])
         self.assertFalse(contract['allowed_horizons']['3d']['direction_allowed'])
         self.assertTrue(contract['allowed_horizons']['5d']['direction_allowed'])
@@ -1182,4 +1190,89 @@ class BasecalcOutputContractCommandTests(TestCase):
             )
 
             with self.assertRaisesMessage(CommandError, 'error contract display_status must be blocked'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_non_error_contract_with_hard_stop_reasons(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 58,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'contract_status': 'limited',
+                            'display_status': 'candidate_limited',
+                            'explanation_allowed': 'limited',
+                            'hard_stop_reasons': ['局面別成績が明確に悪いため'],
+                            'hard_block_reasons': ['局面別成績が明確に悪いため'],
+                            'soft_warning_reasons': [],
+                            'stop_reasons': ['局面別成績が明確に悪いため'],
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'hard_stop_reasons require error contract_status'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_world_model_hard_stop_reason_mismatch(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 0,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'hard_stop_reasons': ['別の停止理由'],
+                        'output_contract': {
+                            'contract_status': 'error',
+                            'display_status': 'blocked',
+                            'explanation_allowed': 'blocked',
+                            'confidence_score': 0,
+                            'confidence_label': 'D',
+                            'hard_stop_reasons': ['現在値と計算基準価格が不一致'],
+                            'hard_block_reasons': ['現在値と計算基準価格が不一致'],
+                            'soft_warning_reasons': [],
+                            'stop_reasons': ['現在値と計算基準価格が不一致'],
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'hard_stop_reasons must match output_contract'):
                 call_command('check_basecalc_output_contract', '--snapshot', str(path))
