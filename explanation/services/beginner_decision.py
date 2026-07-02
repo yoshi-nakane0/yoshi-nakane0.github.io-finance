@@ -30,6 +30,10 @@ class BeginnerDecision:
     current_price: Optional[float]
     current_price_display: str
     tradable: bool
+    candidate_visible: bool
+    position_allowed: bool
+    entry_permission: str
+    position_size_pct: Optional[int]
     selected_side: str
     entry_display: str
     target_1_display: str
@@ -77,6 +81,9 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     reward_risk = _number(trade_decision.get('reward_risk'))
     confidence_score = _int_value(trade_decision.get('confidence_score'), snapshot.confidence_score)
     confidence_grade = trade_decision.get('confidence_grade') or snapshot.confidence_grade
+    decision_status = trade_decision.get('decision_status') or 'wait'
+    entry_permission = trade_decision.get('entry_permission') or 'no_entry'
+    position_size_pct = trade_decision.get('position_size_pct')
 
     output_contract = world_model.get('output_contract') or {}
     contract_status = (
@@ -96,6 +103,8 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     )
     warnings = _limited(
         list(trade_decision.get('blocked_reasons') or [])
+        + list(trade_decision.get('hard_block_reasons') or [])
+        + list(trade_decision.get('soft_warning_reasons') or [])
         + list(trade_decision.get('warnings') or [])
     )
 
@@ -141,6 +150,22 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
     )
     if status in {'wait', 'no_trade', 'data_blocked'}:
         tradable = False
+    candidate_visible = all([
+        selected_side in {'long', 'short'},
+        tradable or decision_status in {'watch_only', 'candidate_limited', 'candidate_confirmed'},
+        target_1_price is not None,
+        stop_price is not None,
+        reward_risk is not None and reward_risk >= 1.2,
+        contract_status != 'error',
+        direction_warning is None,
+    ])
+    if status == 'data_blocked':
+        candidate_visible = False
+    if candidate_visible and selected_side == 'long':
+        status = 'buy_candidate'
+    elif candidate_visible and selected_side == 'short':
+        status = 'sell_candidate'
+    position_allowed = entry_permission == 'full_entry' and tradable
 
     wait_reasons = _wait_reasons(
         directional_allowed=directional_allowed,
@@ -155,12 +180,12 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         warnings.append('R/R不足')
     warnings = _limited(warnings)
 
-    entry_display = _entry_display(trade_decision) if tradable else ('停止' if status == 'data_blocked' else 'なし')
-    target_1_display = _price_display(target_1_price) if tradable else '—'
-    target_2_display = _price_display(target_2_price) if tradable and target_2_price is not None else '—'
-    stop_display = _price_display(stop_price) if tradable else '—'
-    invalidation_display = _price_display(invalidation_price) if tradable and invalidation_price is not None else '—'
-    reward_risk_display = _reward_risk_display(reward_risk, tradable, status)
+    entry_display = _entry_display(trade_decision) if candidate_visible else ('停止' if status == 'data_blocked' else 'なし')
+    target_1_display = _price_display(target_1_price) if candidate_visible else '—'
+    target_2_display = _price_display(target_2_price) if candidate_visible and target_2_price is not None else '—'
+    stop_display = _price_display(stop_price) if candidate_visible else '—'
+    invalidation_display = _price_display(invalidation_price) if candidate_visible and invalidation_price is not None else '—'
+    reward_risk_display = _reward_risk_display(reward_risk, candidate_visible, status)
     reference_candidate = _reference_candidate(
         status=status,
         tradable=tradable,
@@ -177,12 +202,16 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
 
     return BeginnerDecision(
         status=status,
-        label=STATUS_LABELS[status],
+        label=_status_label(status, selected_side, decision_status),
         plain_action=_plain_action(status, reward_risk),
         headline=_headline(status, warnings, selected_side, contract_status, directional_allowed),
         current_price=current_price,
         current_price_display=_price_display(current_price),
         tradable=tradable,
+        candidate_visible=candidate_visible,
+        position_allowed=position_allowed,
+        entry_permission=entry_permission,
+        position_size_pct=position_size_pct,
         selected_side=selected_side,
         entry_display=entry_display,
         target_1_display=target_1_display,
@@ -244,6 +273,20 @@ def _plain_action(status, reward_risk):
     if status == 'data_blocked':
         return '停止'
     return '入らない'
+
+
+def _status_label(status, selected_side, decision_status):
+    if decision_status == 'candidate_limited' and selected_side == 'long':
+        return '限定買い候補'
+    if decision_status == 'candidate_limited' and selected_side == 'short':
+        return '限定売り候補'
+    if decision_status == 'watch_only':
+        return '監視のみ'
+    if decision_status == 'candidate_confirmed' and selected_side == 'long':
+        return '買い候補'
+    if decision_status == 'candidate_confirmed' and selected_side == 'short':
+        return '売り候補'
+    return STATUS_LABELS[status]
 
 
 def _headline(status, warnings, selected_side, contract_status, directional_allowed):

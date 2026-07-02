@@ -34,6 +34,12 @@ class TradeDecision:
     model_version: str = 'explanation_v2'
     price_source: str = 'market_data'
     decision_status: str = 'wait'
+    entry_permission: str = 'no_entry'
+    validation_level: str = 'none'
+    hard_block_reasons: List[str] = field(default_factory=list)
+    soft_warning_reasons: List[str] = field(default_factory=list)
+    confidence_components: Dict[str, Any] = field(default_factory=dict)
+    position_size_pct: Optional[int] = 0
     position_size_cap: str = 'none'
 
     def to_dict(self) -> Dict[str, Any]:
@@ -69,8 +75,15 @@ def no_trade_decision(
     probability: Optional[float] = None,
     expected_value: Optional[float] = None,
     decision_status: str = 'wait',
+    entry_permission: str = 'no_entry',
+    validation_level: str = 'none',
+    hard_block_reasons: Optional[List[str]] = None,
+    soft_warning_reasons: Optional[List[str]] = None,
+    confidence_components: Optional[Dict[str, Any]] = None,
+    position_size_pct: Optional[int] = 0,
     position_size_cap: str = 'none',
 ) -> TradeDecision:
+    hard_blocks = hard_block_reasons if hard_block_reasons is not None else blocked_reasons
     return TradeDecision(
         selected_side='no_trade',
         decision_type=decision_type,
@@ -101,5 +114,11 @@ def no_trade_decision(
         blocked_reasons=blocked_reasons or [],
         price_source=price_source,
         decision_status=decision_status,
+        entry_permission=entry_permission,
+        validation_level=validation_level,
+        hard_block_reasons=hard_blocks or [],
+        soft_warning_reasons=soft_warning_reasons or [],
+        confidence_components=confidence_components or {},
+        position_size_pct=position_size_pct,
         position_size_cap=position_size_cap,
     )

@@ -126,8 +126,8 @@ def _integrated_status(snapshot, trade_decision, manual_price):
         return '判定停止'
     if status == 'blocked':
         return '判定停止'
-    if status == 'candidate_unvalidated':
-        return '検証中'
+    if status == 'watch_only':
+        return '監視'
     if status == 'candidate_limited':
         return '限定'
     if status == 'candidate_confirmed':

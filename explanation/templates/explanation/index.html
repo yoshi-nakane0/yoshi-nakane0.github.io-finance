@@ -59,7 +59,7 @@
           <div class="common-choice-card{% if beginner_decision.status != 'buy_candidate' and beginner_decision.status != 'sell_candidate' %} is-active{% endif %}">
             <span class="common-status-icon common-status-icon--small common-status-icon--wait" aria-hidden="true">Ⅱ</span>
             <strong>
-              <span>{% if beginner_decision.status == 'buy_candidate' or beginner_decision.status == 'sell_candidate' %}待機{% else %}{{ beginner_decision.plain_action }}{% endif %}</span>
+              <span>{{ beginner_decision.plain_action }}</span>
               <span class="common-choice-card__score">{{ trade_decision.no_trade_score|default:"0" }}点</span>
             </strong>
           </div>
@@ -84,7 +84,7 @@
             <span>エントリー</span>
             <strong>{{ beginner_decision.entry_display }}</strong>
           </div>
-          {% if beginner_decision.tradable %}
+          {% if beginner_decision.candidate_visible %}
             <div class="common-row">
               <span>第1目標</span>
               <strong>{{ beginner_decision.target_1_display }}</strong>

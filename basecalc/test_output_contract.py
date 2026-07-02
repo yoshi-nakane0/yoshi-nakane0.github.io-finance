@@ -372,11 +372,67 @@ class BasecalcOutputContractTests(SimpleTestCase):
         contract = apply_output_contract(world_model, display_price=41000)
 
         self.assertEqual(contract['contract_status'], 'limited')
+        self.assertEqual(contract['display_status'], 'limited_candidate')
         self.assertTrue(contract['directional_allowed'])
         self.assertTrue(contract['target_display_allowed'])
         self.assertFalse(contract['probability_display_allowed'])
         self.assertEqual(contract['allowed_direction'], 'up')
         self.assertIn('類似事例不足のため信頼度を限定', contract['stop_reasons'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['confidence_cap_reason'])
+        self.assertIn('類似事例不足のため信頼度を限定', contract['validation_warnings'])
+        self.assertEqual(contract['hard_block_reasons'], [])
+
+    def test_output_contract_exposes_confirmed_display_status_when_no_limits_remain(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'confidence': 'High',
+            'confidence_score': 78,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+            'state_key': 'dip_buy',
+            'state_label': '押し目買い',
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+        validation_report = {
+            'schema': 'basecalc_validation_report_v1',
+            'horizons': {
+                '1d': {
+                    'state_direction_summaries': [
+                        {
+                            'state_key': 'dip_buy',
+                            'direction': 'up',
+                            'total_predictions': 40,
+                            'directional_accuracy': 0.68,
+                            'avg_return_pct': 0.41,
+                        },
+                    ],
+                    'confidence_calibration_rows': [
+                        {'bucket': '50台', 'avg_return_pct': 0.1},
+                        {'bucket': '70台', 'avg_return_pct': 0.3},
+                    ],
+                },
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report=validation_report)
+
+        self.assertEqual(contract['contract_status'], 'confirmed')
+        self.assertEqual(contract['display_status'], 'candidate_confirmed')
+        self.assertEqual(contract['validation_warnings'], [])
+        self.assertEqual(contract['confidence_cap_reason'], '')
+        self.assertTrue(contract['directional_allowed'])
 
 
 class BasecalcOutputContractCommandTests(TestCase):

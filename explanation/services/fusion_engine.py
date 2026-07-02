@@ -77,9 +77,20 @@ def build_trade_decision_v2(
     long_score, short_score, no_trade_score = _trade_scores(macro, basecalc, audit, long_plan, short_plan, reversal)
     trend_follow_score = _clamp((basecalc.continuation_score or 0) + _macro_trend_bonus(macro, basecalc))
     reversal_score = _clamp(reversal.get('score') or 0)
+    validation_level = _validation_level(basecalc)
+    hard_block_reasons, soft_warning_reasons = _reason_groups(basecalc)
+    confidence_components = _confidence_components(
+        macro,
+        basecalc,
+        audit,
+        confidence_score,
+        validation_level,
+        long_plan,
+        short_plan,
+    )
 
     if audit.status == 'blocked' or basecalc.contract_status == 'error':
-        reasons = list(basecalc.stop_reasons or audit.items or ['判定に必要なデータが不足'])
+        reasons = list(hard_block_reasons or basecalc.stop_reasons or audit.items or ['判定に必要なデータが不足'])
         return no_trade_decision(
             decision_type='no_trade_data_blocked',
             current_price=current_price,
@@ -96,10 +107,17 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='blocked',
+            entry_permission='no_entry',
+            validation_level='none',
+            hard_block_reasons=reasons,
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
-    if _direction_stopped(basecalc):
+    if _direction_stopped(basecalc, hard_block_reasons):
         stopped_score = min(confidence_score, 49)
+        reasons = list(hard_block_reasons or basecalc.stop_reasons or ['方向予測停止'])
         return no_trade_decision(
             decision_type='no_trade_direction_stopped',
             current_price=current_price,
@@ -111,16 +129,27 @@ def build_trade_decision_v2(
             trend_follow_score=trend_follow_score,
             reversal_score=reversal_score,
             reasons=['basecalcの方向予測が停止しているため、売買候補にしない。'],
-            blocked_reasons=list(basecalc.stop_reasons or ['方向予測停止']),
+            blocked_reasons=reasons,
             counter_scenario=basecalc.counter_bias,
             reversal_watch={},
             price_source=price_source,
             decision_status='blocked',
+            entry_permission='no_entry',
+            validation_level='none',
+            hard_block_reasons=reasons,
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
-    candidate_status = _candidate_status(basecalc)
+    candidate_status = _candidate_status(basecalc, confidence_score, validation_level)
     confidence_score = min(confidence_score, _candidate_confidence_cap(candidate_status))
     confidence_grade = _grade_from_score(confidence_score)
+    confidence_components = {
+        **confidence_components,
+        'final_score': confidence_score,
+        'decision_status': candidate_status,
+    }
 
     no_chase = _no_chase_decision_type(basecalc, reversal, long_plan, short_plan)
     if no_chase:
@@ -146,6 +175,12 @@ def build_trade_decision_v2(
             reversal_watch=reversal,
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
     likely_plan = long_plan if long_score >= short_score else short_plan
@@ -169,6 +204,12 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
     if likely_plan.reward_risk is not None and likely_plan.reward_risk < 1.2:
         return _no_trade_decision_with_plan(
@@ -189,10 +230,42 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
+        )
+    if _opposite_reversal_watch(likely_side, reversal):
+        return _no_trade_decision_with_plan(
+            likely_side,
+            likely_plan,
+            decision_type='no_trade_conflict',
+            current_price=current_price,
+            confidence_score=confidence_score,
+            confidence_grade=confidence_grade,
+            long_score=long_score,
+            short_score=short_score,
+            no_trade_score=max(no_trade_score, 80),
+            trend_follow_score=trend_follow_score,
+            reversal_score=reversal_score,
+            reasons=['反対方向の反転警戒が強いため、候補にはせず監視に回す。'],
+            blocked_reasons=['明確な反転警戒'],
+            counter_scenario=basecalc.counter_bias,
+            reversal_watch=reversal if reversal.get('status') != 'none' else {},
+            price_source=price_source,
+            decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
     selected_side, selected_score, runner_up = _select_side(long_score, short_score, no_trade_score)
-    if selected_side == 'no_trade' or selected_score < 65 or selected_score - runner_up < 8:
+    if selected_side == 'no_trade' or selected_score < 60 or selected_score - runner_up < 5:
         return _no_trade_decision_with_plan(
             likely_side,
             likely_plan,
@@ -211,6 +284,12 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
     plan = long_plan if selected_side == 'long' else short_plan
@@ -233,6 +312,12 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
     if plan.reward_risk is None or plan.reward_risk < 1.2:
         return _no_trade_decision_with_plan(
@@ -253,6 +338,12 @@ def build_trade_decision_v2(
             reversal_watch=reversal if reversal.get('status') != 'none' else {},
             price_source=price_source,
             decision_status='wait',
+            entry_permission='no_entry',
+            validation_level=validation_level,
+            hard_block_reasons=[],
+            soft_warning_reasons=soft_warning_reasons,
+            confidence_components=confidence_components,
+            position_size_pct=0,
         )
 
     decision_type = _decision_type(selected_side, basecalc, reversal)
@@ -287,7 +378,13 @@ def build_trade_decision_v2(
         blocked_reasons=[],
         price_source=price_source,
         decision_status=candidate_status,
-        position_size_cap=_position_size_cap(candidate_status),
+        entry_permission=_entry_permission(candidate_status),
+        validation_level=validation_level,
+        hard_block_reasons=[],
+        soft_warning_reasons=soft_warning_reasons,
+        confidence_components=confidence_components,
+        position_size_pct=_position_size_pct(candidate_status, confidence_score),
+        position_size_cap=_position_size_cap(candidate_status, confidence_score),
     )
 
 
@@ -500,40 +597,157 @@ def _no_chase_decision_type(basecalc, reversal, long_plan, short_plan):
     return ''
 
 
-def _direction_stopped(basecalc):
-    return basecalc.allowed_direction in {'stopped', 'none'}
+def _opposite_reversal_watch(side, reversal):
+    if not isinstance(reversal, dict):
+        return False
+    if reversal.get('status') != 'watch':
+        return False
+    if (reversal.get('score') or 0) < 75:
+        return False
+    return (
+        (side == 'long' and reversal.get('side') == 'short')
+        or (side == 'short' and reversal.get('side') == 'long')
+    )
 
 
-def _candidate_status(basecalc):
-    warnings = list(basecalc.stop_reasons or []) + list(basecalc.warnings or [])
+def _direction_stopped(basecalc, hard_block_reasons=None):
+    return basecalc.allowed_direction in {'stopped', 'none'} and bool(hard_block_reasons)
+
+
+def _candidate_status(basecalc, confidence_score, validation_level):
+    if confidence_score < 50:
+        return 'watch_only'
+    warnings = list(basecalc.soft_warning_reasons or []) + list(basecalc.warnings or [])
     gate_rows = (basecalc.validation_gate_status or {}).values()
     if any((row.get('validation_level') if isinstance(row, dict) else '') == 'low' for row in gate_rows):
-        return 'candidate_unvalidated'
+        return 'candidate_limited'
     if not basecalc.confidence_calibrated:
-        return 'candidate_unvalidated'
+        return 'candidate_limited'
     if any('検証不足' in reason or '検証件数が不足' in reason for reason in warnings):
-        return 'candidate_unvalidated'
-    if basecalc.contract_status == 'limited' or warnings:
+        return 'candidate_limited'
+    if confidence_score < 70:
+        return 'candidate_limited'
+    if basecalc.contract_status == 'limited' or validation_level != 'high' or warnings:
         return 'candidate_limited'
     return 'candidate_confirmed'
 
 
 def _candidate_confidence_cap(decision_status):
-    if decision_status == 'candidate_unvalidated':
+    if decision_status in {'watch_only', 'candidate_limited'}:
         return 59
-    if decision_status == 'candidate_limited':
-        return 64
     return 100
 
 
-def _position_size_cap(decision_status):
-    if decision_status == 'candidate_unvalidated':
+def _position_size_cap(decision_status, confidence_score=0):
+    if decision_status == 'watch_only':
         return 'max_25_percent'
     if decision_status == 'candidate_limited':
+        if confidence_score < 60:
+            return 'max_25_percent'
         return 'max_50_percent'
     if decision_status == 'candidate_confirmed':
         return 'normal'
     return 'none'
+
+
+def _entry_permission(decision_status):
+    if decision_status == 'candidate_confirmed':
+        return 'full_entry'
+    if decision_status == 'candidate_limited':
+        return 'limited_entry'
+    if decision_status == 'watch_only':
+        return 'watch_only'
+    return 'no_entry'
+
+
+def _position_size_pct(decision_status, confidence_score):
+    if decision_status == 'candidate_confirmed':
+        return 100
+    if decision_status == 'candidate_limited':
+        return 50 if confidence_score >= 60 else 25
+    return 0
+
+
+def _validation_level(basecalc):
+    rows = [
+        row for row in (basecalc.validation_gate_status or {}).values()
+        if isinstance(row, dict)
+    ]
+    levels = {row.get('validation_level') for row in rows}
+    if not rows:
+        return 'none'
+    if 'blocked' in levels:
+        return 'none'
+    if 'low' in levels:
+        return 'low'
+    if 'limited' in levels:
+        return 'medium'
+    if all(level == 'confirmed' for level in levels):
+        return 'high'
+    return 'medium'
+
+
+def _reason_groups(basecalc):
+    hard_reasons = list(basecalc.hard_block_reasons or [])
+    soft_reasons = list(basecalc.soft_warning_reasons or [])
+    if basecalc.contract_status == 'error' and not hard_reasons:
+        hard_reasons = list(basecalc.stop_reasons or [])
+    if basecalc.contract_status != 'error':
+        for reason in basecalc.stop_reasons or []:
+            if _looks_like_hard_stop(reason):
+                if reason not in hard_reasons:
+                    hard_reasons.append(reason)
+            elif reason not in soft_reasons:
+                soft_reasons.append(reason)
+    for reason in basecalc.warnings or []:
+        if reason and reason not in soft_reasons:
+            soft_reasons.append(reason)
+    for reason in basecalc.validation_warnings or []:
+        if reason and reason not in soft_reasons:
+            soft_reasons.append(reason)
+    return hard_reasons, soft_reasons
+
+
+def _looks_like_hard_stop(reason):
+    return any(
+        term in (reason or '')
+        for term in (
+            '不一致',
+            '逆方向',
+            '矛盾',
+            '判定可能なデータ状態ではありません',
+            '方向予測停止',
+            '現在値より下',
+            '現在値より上',
+        )
+    )
+
+
+def _confidence_components(macro, basecalc, audit, score, validation_level, long_plan, short_plan):
+    best_rr = max(
+        [value for value in (long_plan.reward_risk, short_plan.reward_risk) if value is not None],
+        default=0,
+    )
+    validation_quality = {
+        'none': 0,
+        'low': 35,
+        'medium': 65,
+        'high': 90,
+    }.get(validation_level, 50)
+    target_quality = 80 if best_rr >= 1.2 else 35
+    return {
+        'basecalc_direction': basecalc.confidence_score,
+        'macro_alignment': macro.confidence_score,
+        'validation_quality': validation_quality,
+        'target_quality': target_quality,
+        'risk_reward': round(best_rr, 2) if best_rr else 0,
+        'data_quality': min(macro.data_quality_score, basecalc.data_quality_score),
+        'intermarket_confirmation': 10 if basecalc.us_index_available else -5,
+        'event_penalty': int((_number((macro.factor_vector or {}).get('event_risk_score')) or 0) / 10),
+        'audit_penalty': audit.penalty,
+        'confidence_cap_reason': basecalc.confidence_cap_reason or audit.confidence_cap or '',
+        'raw_score': score,
+    }
 
 
 def _decision_type(selected_side, basecalc, reversal):

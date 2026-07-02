@@ -57,6 +57,11 @@ class BasecalcSignal:
     validated_targets: Dict[str, Any] = field(default_factory=dict)
     invalidated_targets: Dict[str, Any] = field(default_factory=dict)
     stop_reasons: List[str] = field(default_factory=list)
+    hard_block_reasons: List[str] = field(default_factory=list)
+    soft_warning_reasons: List[str] = field(default_factory=list)
+    validation_warnings: List[str] = field(default_factory=list)
+    confidence_cap_reason: str = ''
+    display_status: str = ''
     confidence_calibrated: bool = False
     validation_gate_status: Dict[str, Any] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)

@@ -119,11 +119,59 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
         self.assertEqual(decision.selected_side, 'long')
-        self.assertEqual(decision.decision_status, 'candidate_unvalidated')
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertEqual(decision.entry_permission, 'limited_entry')
+        self.assertEqual(decision.validation_level, 'low')
+        self.assertEqual(decision.position_size_pct, 25)
         self.assertEqual(decision.position_size_cap, 'max_25_percent')
+        self.assertIn('局面別検証不足', decision.soft_warning_reasons)
+        self.assertEqual(decision.hard_block_reasons, [])
+        self.assertIn('basecalc_direction', decision.confidence_components)
+        self.assertIn('validation_quality', decision.confidence_components)
         self.assertLessEqual(decision.confidence_score, 59)
         self.assertIn('局面別検証不足', decision.warnings)
         self.assertFalse(decision.blocked_reasons)
+
+    def test_trade_decision_confidence_components_include_basecalc_cap_reason(self):
+        macro = self._macro('positive')
+        basecalc = self._basecalc(
+            contract_status='limited',
+            allowed_direction='up',
+            confidence_cap_reason='類似事例不足のため信頼度を限定',
+            validation_warnings=['類似事例不足のため信頼度を限定'],
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(
+            decision.confidence_components['confidence_cap_reason'],
+            '類似事例不足のため信頼度を限定',
+        )
+        self.assertIn('類似事例不足のため信頼度を限定', decision.soft_warning_reasons)
+
+    def test_no_trade_decision_includes_extended_status_contract(self):
+        decision = build_trade_decision_v2(
+            self._macro('positive'),
+            self._basecalc(
+                contract_status='error',
+                stop_reasons=['現在値と計算基準価格が不一致'],
+            ),
+            evaluate_audit(
+                self._macro('positive'),
+                self._basecalc(
+                    contract_status='error',
+                    stop_reasons=['現在値と計算基準価格が不一致'],
+                ),
+            ),
+        )
+
+        self.assertEqual(decision.decision_status, 'blocked')
+        self.assertEqual(decision.entry_permission, 'no_entry')
+        self.assertEqual(decision.validation_level, 'none')
+        self.assertEqual(decision.position_size_pct, 0)
+        self.assertIn('現在値と計算基準価格が不一致', decision.hard_block_reasons)
+        self.assertIn('basecalc_direction', decision.confidence_components)
 
     def test_trade_decision_v2_ignores_stale_can_show_flag_when_contract_allows_direction(self):
         macro = self._macro('positive')
@@ -144,7 +192,7 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
         self.assertEqual(decision.selected_side, 'long')
-        self.assertEqual(decision.decision_status, 'candidate_unvalidated')
+        self.assertEqual(decision.decision_status, 'candidate_limited')
         self.assertEqual(decision.position_size_cap, 'max_25_percent')
         self.assertNotEqual(decision.decision_type, 'no_trade_direction_stopped')
 
@@ -169,10 +217,38 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
         self.assertEqual(decision.selected_side, 'long')
-        self.assertEqual(decision.decision_status, 'candidate_unvalidated')
+        self.assertEqual(decision.decision_status, 'watch_only')
+        self.assertEqual(decision.entry_permission, 'watch_only')
+        self.assertEqual(decision.position_size_pct, 0)
         self.assertEqual(decision.position_size_cap, 'max_25_percent')
         self.assertLess(decision.confidence_score, 50)
         self.assertFalse(decision.blocked_reasons)
+
+    def test_soft_warning_direction_stop_does_not_become_hard_block(self):
+        macro = self._macro('positive', confidence_score=91, confidence_grade='A')
+        basecalc = self._basecalc(
+            confidence_score=44,
+            confidence_grade='Low',
+            contract_status='limited',
+            allowed_direction='stopped',
+            stop_reasons=['現行モデルがATRベースラインを下回るため', '米国3指数確認が不足'],
+            hard_block_reasons=[],
+            soft_warning_reasons=['現行モデルがATRベースラインを下回るため', '米国3指数確認が不足'],
+            validation_gate_status={
+                '1d': {'direction_allowed': True, 'validation_level': 'limited'},
+                '3d': {'direction_allowed': True, 'validation_level': 'limited'},
+                '5d': {'direction_allowed': True, 'validation_level': 'limited'},
+            },
+            confidence_calibrated=False,
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertNotEqual(decision.decision_type, 'no_trade_direction_stopped')
+        self.assertEqual(decision.decision_status, 'watch_only')
+        self.assertEqual(decision.hard_block_reasons, [])
+        self.assertIn('米国3指数確認が不足', decision.soft_warning_reasons)
 
     def test_bullish_overheated_market_blocks_long_chasing_and_keeps_short_watch(self):
         macro = self._macro('negative')
@@ -254,6 +330,30 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertIsNone(decision.reward_risk)
         self.assertIn('R/R不足', decision.blocked_reasons)
 
+    def test_trade_decision_v2_allows_limited_candidate_at_sixty_score_boundary(self):
+        macro = self._macro('neutral', confidence_score=55)
+        basecalc = self._basecalc(
+            confidence_score=55,
+            confidence_calibrated=True,
+            continuation_score=0,
+            expected_return_1d=0,
+            expected_return_3d=0,
+            expected_return_5d=0,
+            horizons={
+                '1d': {'expected_return_pct': 0},
+                '3d': {'expected_return_pct': 0},
+                '5d': {'expected_return_pct': 0},
+            },
+        )
+        audit = evaluate_audit(macro, basecalc)
+
+        decision = build_trade_decision_v2(macro, basecalc, audit)
+
+        self.assertEqual(decision.selected_side, 'long')
+        self.assertEqual(decision.decision_status, 'candidate_limited')
+        self.assertGreaterEqual(decision.long_score, 60)
+        self.assertFalse(decision.blocked_reasons)
+
     def test_trade_decision_v2_no_trade_conflict_does_not_keep_reference_short_plan(self):
         macro = self._macro('neutral')
         basecalc = self._basecalc(
@@ -279,6 +379,8 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
         self.assertIsNone(decision.target_2)
         self.assertIsNone(decision.stop_price)
         self.assertIsNone(decision.reward_risk)
+        self.assertEqual(decision.hard_block_reasons, [])
+        self.assertIn('明確な反転警戒', decision.blocked_reasons)
 
     def test_trade_decision_v2_blocks_when_confidence_is_below_candidate_threshold(self):
         macro = self._macro('positive', confidence_score=49, confidence_grade='C')
@@ -287,9 +389,11 @@ class ExplanationDecisionEngineTests(SimpleTestCase):
 
         decision = build_trade_decision_v2(macro, basecalc, audit)
 
-        self.assertEqual(decision.selected_side, 'no_trade')
-        self.assertEqual(decision.decision_type, 'no_trade_conflict')
-        self.assertIn('信頼度不足', decision.blocked_reasons)
+        self.assertEqual(decision.selected_side, 'long')
+        self.assertEqual(decision.decision_status, 'watch_only')
+        self.assertEqual(decision.entry_permission, 'watch_only')
+        self.assertEqual(decision.position_size_pct, 0)
+        self.assertFalse(decision.blocked_reasons)
 
     def test_trade_decision_v2_blocks_when_basecalc_direction_is_stopped(self):
         macro = self._macro('positive')
@@ -1147,6 +1251,44 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         self.assertEqual(beginner['stop_display'], '—')
         self.assertEqual(beginner['reward_risk_display'], '不採用（1.2未満）')
         self.assertIn('R/R不足', beginner['warnings'])
+
+    def test_beginner_decision_shows_limited_candidate_plan(self):
+        snapshot = self._snapshot()
+        snapshot.trade_decision.update({
+            'selected_side': 'long',
+            'decision_type': 'trend_follow',
+            'decision_status': 'candidate_limited',
+            'entry_permission': 'limited_entry',
+            'position_size_pct': 25,
+            'current_price': 72430,
+            'entry_price': 72430,
+            'entry_zone_low': 72376,
+            'entry_zone_high': 72539,
+            'target_1': {'label': 'T1', 'price': 73800, 'probability': 0.62},
+            'stop_price': 71600,
+            'invalidation_price': 71600,
+            'reward_risk': 1.65,
+            'confidence_score': 55,
+            'confidence_grade': 'C+',
+            'long_score': 70,
+            'short_score': 30,
+            'no_trade_score': 45,
+            'soft_warning_reasons': ['局面別検証不足'],
+        })
+
+        context = snapshot_to_view(snapshot)
+        beginner = context['beginner_decision']
+
+        self.assertEqual(beginner['status'], 'buy_candidate')
+        self.assertEqual(beginner['label'], '限定買い候補')
+        self.assertTrue(beginner['candidate_visible'])
+        self.assertFalse(beginner['position_allowed'])
+        self.assertEqual(beginner['entry_permission'], 'limited_entry')
+        self.assertEqual(beginner['position_size_pct'], 25)
+        self.assertNotEqual(beginner['target_1_display'], '—')
+        self.assertNotEqual(beginner['stop_display'], '—')
+        self.assertEqual(beginner['reward_risk_display'], '1.65')
+        self.assertIn('局面別検証不足', beginner['warnings'])
 
     def test_beginner_decision_splits_wait_reasons_for_direction_rr_and_confidence(self):
         snapshot = self._snapshot()

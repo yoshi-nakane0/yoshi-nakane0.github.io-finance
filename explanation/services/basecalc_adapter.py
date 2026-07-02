@@ -63,8 +63,10 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         or world_model.get('intermarket_technicals')
         or {}
     )
+    hard_block_reasons = output_contract.get('hard_block_reasons') or []
+    soft_warning_reasons = output_contract.get('soft_warning_reasons') or []
     warnings = []
-    warnings.extend(output_contract.get('stop_reasons') or [])
+    warnings.extend(soft_warning_reasons or output_contract.get('stop_reasons') or [])
     warnings.extend(world_model.get('confidence_warnings') or [])
     warnings.extend(world_model.get('warnings') or [])
     warnings.extend((world_model.get('readiness') or {}).get('warnings') or [])
@@ -126,6 +128,11 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
         validated_targets=output_contract.get('validated_targets') or {},
         invalidated_targets=output_contract.get('invalidated_targets') or {},
         stop_reasons=output_contract.get('stop_reasons') or [],
+        hard_block_reasons=hard_block_reasons,
+        soft_warning_reasons=soft_warning_reasons,
+        validation_warnings=output_contract.get('validation_warnings') or [],
+        confidence_cap_reason=output_contract.get('confidence_cap_reason') or '',
+        display_status=output_contract.get('display_status') or '',
         confidence_calibrated=bool(output_contract.get('confidence_calibrated')),
         validation_gate_status=output_contract.get('validation_gate_status') or {},
         warnings=_dedupe(warnings),

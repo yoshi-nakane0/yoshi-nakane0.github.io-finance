@@ -34,6 +34,7 @@ def apply_output_contract(
     warnings = []
     gate_hard_reasons = []
     gate_soft_warnings = []
+    confidence_cap_reasons = []
     validation_gate = build_validation_gate(
         world_model,
         validation_report=validation_report,
@@ -57,7 +58,7 @@ def apply_output_contract(
     _audit_probability_samples(world_model, errors)
     confidence_calibrated = _audit_confidence(world_model, validation_report, warnings)
     us_index_status = _audit_us_indices(world_model, warnings)
-    _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, warnings)
+    _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, warnings, confidence_cap_reasons)
 
     readiness_level = world_model.get("readiness_level")
     if readiness_level != "ready":
@@ -78,6 +79,8 @@ def apply_output_contract(
     available_display = "停止"
     if status != "error":
         available_display = "方向・目標・レンジ" if directional_allowed else "ATRレンジ・支持抵抗・反転警戒"
+    if status == "ok" and _confirmed_contract(confidence_calibrated, validation_gate, us_index_status, directional_allowed):
+        status = "confirmed"
     contract = {
         "snapshot_id": world_model.get("snapshot_id") or str(uuid4()),
         "model_version": world_model.get("model_version") or BASECALC_MODEL_VERSION,
@@ -107,6 +110,9 @@ def apply_output_contract(
         "contract_status": status,
         "hard_block_reasons": hard_block_reasons,
         "soft_warning_reasons": soft_warning_reasons,
+        "validation_warnings": _dedupe(gate_soft_warnings + confidence_cap_reasons),
+        "confidence_cap_reason": " / ".join(_dedupe(confidence_cap_reasons)),
+        "display_status": _display_status(status, directional_allowed),
         "stop_reasons": _dedupe(hard_block_reasons + soft_warning_reasons),
         "target_display_allowed": target_display_allowed,
         "probability_display_allowed": probability_display_allowed,
@@ -246,20 +252,27 @@ def _audit_us_indices(world_model, warnings):
     return "confirmed"
 
 
-def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, warnings):
+def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, warnings, cap_reasons):
     cap = 100
     if not confidence_calibrated and _number(world_model.get("confidence_score")) is not None:
         cap = min(cap, 64)
+        cap_reasons.append("信頼度が未較正です")
     similar = world_model.get("similar_summary") or {}
     if int(similar.get("case_count") or 0) < LOW_SAMPLE_THRESHOLD:
         cap = min(cap, 59)
-        warnings.append("類似事例不足のため信頼度を限定")
+        reason = "類似事例不足のため信頼度を限定"
+        warnings.append(reason)
+        cap_reasons.append(reason)
     if _current_state_is_blocked(validation_gate):
         cap = min(cap, 49)
-        warnings.append("局面別成績が弱いため信頼度を50未満に制限")
+        reason = "局面別成績が弱いため信頼度を50未満に制限"
+        warnings.append(reason)
+        cap_reasons.append(reason)
     elif _current_state_is_limited(validation_gate):
         cap = min(cap, 59)
-        warnings.append("局面別検証不足のため信頼度を限定")
+        reason = "局面別検証不足のため信頼度を限定"
+        warnings.append(reason)
+        cap_reasons.append(reason)
     score = _number(world_model.get("confidence_score"))
     if score is None or score <= cap:
         return
@@ -289,6 +302,34 @@ def _current_state_is_limited(validation_gate):
         if (row.get("validation_level") or "") in {"low", "limited"}:
             return True
     return False
+
+
+def _confirmed_contract(confidence_calibrated, validation_gate, us_index_status, directional_allowed):
+    return all([
+        confidence_calibrated,
+        us_index_status == "confirmed",
+        directional_allowed,
+        _validation_is_confirmed(validation_gate),
+    ])
+
+
+def _validation_is_confirmed(validation_gate):
+    rows = [row for row in (validation_gate or {}).values() if isinstance(row, dict)]
+    if not rows:
+        return False
+    return all((row.get("validation_level") or "") == "confirmed" for row in rows)
+
+
+def _display_status(status, directional_allowed):
+    if status == "error":
+        return "blocked"
+    if not directional_allowed:
+        return "watch_only"
+    if status == "confirmed":
+        return "candidate_confirmed"
+    if status == "limited":
+        return "limited_candidate"
+    return "candidate_ok"
 
 
 def _confidence_label(score):
@@ -340,6 +381,9 @@ def _empty_contract(display_price):
         "probability_display_allowed": False,
         "hard_block_reasons": ["world model がありません"],
         "soft_warning_reasons": [],
+        "validation_warnings": [],
+        "confidence_cap_reason": "",
+        "display_status": "blocked",
         "stop_reasons": ["world model がありません"],
     }
 
