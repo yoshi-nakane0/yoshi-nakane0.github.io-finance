@@ -610,7 +610,7 @@ class BasecalcOutputContractTests(SimpleTestCase):
         contract = apply_output_contract(world_model, display_price=41000)
 
         self.assertEqual(contract['contract_status'], 'limited')
-        self.assertEqual(contract['display_status'], 'limited_candidate')
+        self.assertEqual(contract['display_status'], 'candidate_limited')
         self.assertEqual(contract['explanation_allowed'], 'limited')
         self.assertTrue(contract['directional_allowed'])
         self.assertTrue(contract['target_display_allowed'])
@@ -620,6 +620,39 @@ class BasecalcOutputContractTests(SimpleTestCase):
         self.assertIn('類似事例不足のため信頼度を限定', contract['soft_warning_reasons'])
         self.assertIn('類似事例不足のため信頼度を限定', contract['confidence_cap_reason'])
         self.assertIn('類似事例不足のため信頼度を限定', contract['validation_warnings'])
+        self.assertEqual(contract['hard_block_reasons'], [])
+
+    def test_uncalibrated_confidence_is_limited_candidate_not_candidate_ok(self):
+        from .output_contract import apply_output_contract
+
+        world_model = {
+            'price': 41000,
+            'direction': 'up',
+            'direction_label': '上昇優勢',
+            'readiness_level': 'ready',
+            'directional_allowed': True,
+            'confidence': 'High',
+            'confidence_score': 78,
+            'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+            'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+            'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+            'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+            'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+            'us_index_confirmation': {
+                'readiness': {'usable': True},
+                'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+            },
+        }
+
+        contract = apply_output_contract(world_model, display_price=41000, validation_report={'horizons': {'1d': {}}})
+
+        self.assertEqual(contract['contract_status'], 'limited')
+        self.assertEqual(contract['display_status'], 'candidate_limited')
+        self.assertNotEqual(contract['display_status'], 'candidate_ok')
+        self.assertTrue(contract['directional_allowed'])
+        self.assertTrue(contract['target_display_allowed'])
+        self.assertIn('信頼度が未較正です', contract['soft_warning_reasons'])
+        self.assertIn('信頼度が未較正です', contract['confidence_cap_reason'])
         self.assertEqual(contract['hard_block_reasons'], [])
 
     def test_precision_warning_cap_reason_names_accuracy_not_missing_validation(self):
@@ -811,4 +844,39 @@ class BasecalcOutputContractCommandTests(TestCase):
             path = Path(tmpdir) / 'missing.json'
 
             with self.assertRaisesMessage(CommandError, 'snapshot is missing'):
+                call_command('check_basecalc_output_contract', '--snapshot', str(path))
+
+    def test_check_command_rejects_legacy_display_status_name(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / 'latest_snapshot.json'
+            write_basecalc_snapshot(
+                {
+                    'world_model': {
+                        'price': 41000,
+                        'direction': 'up',
+                        'readiness_level': 'ready',
+                        'data_quality_score': 90,
+                        'confidence_score': 58,
+                        'upside_targets': [{'label': 'T1', 'price': 41800, 'probability': 0.62}],
+                        'downside_targets': [{'label': 'T1', 'price': 40400, 'probability': 0.45}],
+                        'target_ranges': [{'horizon': '1d', 'low': 40500, 'high': 41500}],
+                        'horizons': {'1d': {'main_bias': 'up', 'expected_return_pct': 0.4}},
+                        'similar_summary': {'case_count': 40, 'is_statistically_valid': True},
+                        'us_index_confirmation': {
+                            'readiness': {'usable': True},
+                            'components': {'nasdaq100': {}, 'sp500': {}, 'dow': {}},
+                        },
+                        'output_contract': {
+                            'display_status': 'limited_candidate',
+                            'display_price': 41000,
+                        },
+                    },
+                },
+                path=path,
+            )
+
+            with self.assertRaisesMessage(CommandError, 'display_status is not allowed'):
                 call_command('check_basecalc_output_contract', '--snapshot', str(path))

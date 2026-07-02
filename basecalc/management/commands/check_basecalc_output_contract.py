@@ -5,6 +5,14 @@ from basecalc.snapshot import load_basecalc_snapshot
 from basecalc.validation_report import load_validation_report
 
 
+ALLOWED_DISPLAY_STATUSES = {
+    "blocked",
+    "watch_only",
+    "candidate_limited",
+    "candidate_confirmed",
+}
+
+
 class Command(BaseCommand):
     help = "Fail when the saved basecalc snapshot contains contradictory display output."
 
@@ -34,6 +42,15 @@ class Command(BaseCommand):
             or world_model.get("display_price")
             or world_model.get("price")
         )
+        saved_display_status = (
+            (world_model.get("output_contract") or {}).get("display_status")
+            or world_model.get("display_status")
+            or ""
+        )
+        if saved_display_status and saved_display_status not in ALLOWED_DISPLAY_STATUSES:
+            raise CommandError(
+                f"basecalc output contract failed: display_status is not allowed: {saved_display_status}"
+            )
         contract = apply_output_contract(
             world_model,
             display_price=display_price,

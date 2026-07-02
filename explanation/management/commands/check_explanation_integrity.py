@@ -9,6 +9,10 @@ from explanation.services.static_snapshot import snapshot_from_payload
 from explanation.services.validation_engine import build_static_trade_validation_summary
 
 
+ALLOWED_DECISION_STATUSES = {'blocked', 'wait', 'watch_only', 'candidate_limited', 'candidate_confirmed'}
+ALLOWED_BASECALC_DISPLAY_STATUSES = {'blocked', 'watch_only', 'candidate_limited', 'candidate_confirmed'}
+
+
 class Command(BaseCommand):
     help = 'Explanation の静的JSONと表示整合性を検査する'
 
@@ -104,7 +108,14 @@ class Command(BaseCommand):
             for row in view.get('world_model_predictions') or []:
                 if row.get('bias') != '停止 / 参考' or row.get('expected_return') != 'N/A' or row.get('expected_price') != 'N/A':
                     raise CommandError('world model predictions must be stopped when trade decision is no_trade')
-        _assert_score_bundle_contract(latest)
+        _assert_score_bundle_contract(latest, 'latest_snapshot.json')
+        _assert_status_names(latest, 'latest_snapshot.json')
+        for index, snapshot_row in enumerate(history.get('snapshots') or []):
+            if not isinstance(snapshot_row, dict):
+                raise CommandError('snapshot_history.json snapshots must contain JSON objects')
+            snapshot_key = snapshot_row.get('snapshot_key') or f'row {index + 1}'
+            _assert_score_bundle_contract(snapshot_row, f'snapshot_history.json {snapshot_key}')
+            _assert_status_names(snapshot_row, f'snapshot_history.json {snapshot_key}')
 
         rendered = json.dumps(latest, ensure_ascii=False)
         if '。のため' in rendered or 'ます。のため' in rendered:
@@ -131,13 +142,24 @@ def _is_no_trade_decision(decision):
     return decision.get('selected_side') == 'no_trade' or decision_type.startswith('no_')
 
 
-def _assert_score_bundle_contract(payload):
+def _assert_score_bundle_contract(payload, source):
     score_bundle = payload.get('score_bundle') or {}
     if not score_bundle:
         return
     rows = score_bundle.get('system_quality_components') or []
     contract_row = next((row for row in rows if isinstance(row, dict) and row.get('label') == '判定契約'), None)
     if not contract_row:
-        raise CommandError('score_bundle must include 判定契約 row')
+        raise CommandError(f'{source} score_bundle must include 判定契約 row')
     if contract_row.get('status') != 'OK' or contract_row.get('value') != '20/20':
-        raise CommandError('score_bundle 判定契約 must be OK 20/20')
+        raise CommandError(f'{source} score_bundle 判定契約 must be OK 20/20')
+
+
+def _assert_status_names(payload, source):
+    decision_status = ((payload.get('trade_decision') or {}).get('decision_status') or '')
+    if decision_status and decision_status not in ALLOWED_DECISION_STATUSES:
+        raise CommandError(f'{source} trade_decision decision_status is not allowed: {decision_status}')
+    basecalc_raw = ((payload.get('source_snapshots') or {}).get('basecalc') or {}).get('raw') or {}
+    world_model = basecalc_raw.get('world_model') or {}
+    display_status = (world_model.get('output_contract') or {}).get('display_status') or world_model.get('display_status') or ''
+    if display_status and display_status not in ALLOWED_BASECALC_DISPLAY_STATUSES:
+        raise CommandError(f'{source} basecalc display_status is not allowed: {display_status}')

@@ -267,7 +267,9 @@ def _apply_confidence_cap(world_model, confidence_calibrated, validation_gate, w
     cap = 100
     if not confidence_calibrated and _number(world_model.get("confidence_score")) is not None:
         cap = min(cap, 64)
-        cap_reasons.append("信頼度が未較正です")
+        reason = "信頼度が未較正です"
+        warnings.append(reason)
+        cap_reasons.append(reason)
     similar = world_model.get("similar_summary") or {}
     if int(similar.get("case_count") or 0) < LOW_SAMPLE_THRESHOLD:
         cap = min(cap, 59)
@@ -349,8 +351,8 @@ def _display_status(status, directional_allowed):
     if status == "confirmed":
         return "candidate_confirmed"
     if status == "limited":
-        return "limited_candidate"
-    return "candidate_ok"
+        return "candidate_limited"
+    return "candidate_limited"
 
 
 def _explanation_allowed_status(status, directional_allowed):

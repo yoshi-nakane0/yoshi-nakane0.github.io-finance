@@ -1016,7 +1016,7 @@ class ExplanationBasecalcAdapterTests(SimpleTestCase):
         self.assertEqual(signal.soft_warning_reasons, ['米国3指数確認が不足'])
         self.assertEqual(signal.validation_warnings, ['局面別検証不足のため信頼度を限定'])
         self.assertEqual(signal.confidence_cap_reason, '局面別検証不足のため信頼度を限定')
-        self.assertEqual(signal.display_status, 'limited_candidate')
+        self.assertEqual(signal.display_status, 'candidate_limited')
         self.assertIn('米国3指数確認が不足', signal.warnings)
 
 
@@ -1861,6 +1861,7 @@ class ExplanationViewCompositionTests(SimpleTestCase):
         beginner = context['beginner_decision']
 
         self.assertEqual(beginner['status'], 'buy_candidate')
+        self.assertEqual(beginner['candidate_status'], 'candidate_limited')
         self.assertEqual(beginner['label'], '限定ロング候補')
         self.assertEqual(beginner['entry_permission_label'], '条件付きで入る')
         self.assertEqual(beginner['plain_action'], '押し目まで待つ。成行追撃は不可。建玉は通常の25%。')
@@ -3249,6 +3250,205 @@ class ExplanationIntegrityCommandTests(SimpleTestCase):
                             'value': '10/20',
                             'status': '要確認',
                             'message': '状態契約が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                '{"schema":"explanation_snapshot_history_v1","generated_at":null,"max_rows":500,"snapshots":[]}',
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaises(CommandError):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_stale_score_bundle_decision_contract_row_in_history(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {},
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
+                        },
+                    ],
+                },
+            }
+            stale_history_row = {
+                **latest_payload,
+                'snapshot_key': 'snapshot-old',
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 10,
+                            'max_score': 20,
+                            'value': '10/20',
+                            'status': '要確認',
+                            'message': '状態契約が不足',
+                        },
+                    ],
+                },
+            }
+            latest.write_text(json.dumps(latest_payload, ensure_ascii=False), encoding='utf-8')
+            history.write_text(
+                json.dumps(
+                    {
+                        'schema': 'explanation_snapshot_history_v1',
+                        'generated_at': None,
+                        'max_rows': 500,
+                        'snapshots': [stale_history_row],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding='utf-8',
+            )
+            outcomes.write_text(
+                '{"schema":"explanation_trade_outcomes_v1","generated_at":null,"summary":{},"outcomes":[]}',
+                encoding='utf-8',
+            )
+            manifest.write_text(
+                """
+                {
+                  "schema": "finance_data_manifest_v1",
+                  "explanation_as_of": "2026-06-25T01:15:00+00:00",
+                  "explanation_generated_at": "2026-06-25T01:16:00+00:00",
+                  "git_sha": "abcdef1234567890",
+                  "workflow_run_id": "12345"
+                }
+                """,
+                encoding='utf-8',
+            )
+
+            with self.assertRaises(CommandError):
+                call_command(
+                    'check_explanation_integrity',
+                    latest=str(latest),
+                    history=str(history),
+                    outcomes=str(outcomes),
+                    manifest=str(manifest),
+                    stdout=StringIO(),
+                )
+
+    def test_integrity_rejects_legacy_basecalc_display_status_name(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            latest = root / 'latest_snapshot.json'
+            history = root / 'snapshot_history.json'
+            outcomes = root / 'trade_outcomes.json'
+            manifest = root / 'finance_data_manifest.json'
+            latest_payload = {
+                'snapshot_key': 'snapshot-1',
+                'schema': 'explanation_snapshot_v1',
+                'generated_at': '2026-06-25T01:16:00+00:00',
+                'git_sha': 'abcdef1234567890',
+                'workflow_run_id': '12345',
+                'as_of': '2026-06-25T01:15:00+00:00',
+                'version': 'explanation_v2',
+                'final': {
+                    'label': '条件付き上昇優勢',
+                    'stance': 'conditional_bullish',
+                    'action_posture': '押し目待ち。',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                    'status': 'limited',
+                },
+                'macro': {'bias': 'positive'},
+                'basecalc': {'bias': 'bullish'},
+                'alignment_status': 'aligned',
+                'data_quality_score': 80,
+                'audit': {'level': 'valid', 'items': []},
+                'trade_decision': {
+                    'selected_side': 'long',
+                    'decision_type': 'legacy_reference',
+                    'confidence_score': 52,
+                    'confidence_grade': 'C+',
+                },
+                'evidence': ['Basecalcは上方向。'],
+                'source_snapshots': {
+                    'basecalc': {
+                        'raw': {
+                            'world_model': {
+                                'output_contract': {
+                                    'display_status': 'limited_candidate',
+                                },
+                            },
+                        },
+                    },
+                },
+                'score_bundle': {
+                    'score_type': 'score_bundle',
+                    'system_quality_components': [
+                        {
+                            'label': '判定契約',
+                            'score': 20,
+                            'max_score': 20,
+                            'value': '20/20',
+                            'status': 'OK',
+                            'message': '状態契約あり',
                         },
                     ],
                 },

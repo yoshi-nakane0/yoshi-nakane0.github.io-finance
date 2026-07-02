@@ -35,6 +35,7 @@ class BeginnerDecision:
     candidate_visible: bool
     execution_allowed: bool
     position_allowed: bool
+    candidate_status: str
     entry_permission: str
     position_size_pct: Optional[int]
     selected_side: str
@@ -228,6 +229,7 @@ def build_beginner_decision(snapshot, macro, basecalc, world_model, trade_decisi
         candidate_visible=candidate_visible,
         execution_allowed=execution_allowed,
         position_allowed=position_allowed,
+        candidate_status=decision_status,
         entry_permission=entry_permission,
         position_size_pct=position_size_pct,
         selected_side=selected_side,

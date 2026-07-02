@@ -80,7 +80,7 @@ def load_basecalc_signal(price_override=None) -> BasecalcSignal:
     soft_warning_reasons = output_contract.get('soft_warning_reasons') or basecalc_signal.get('soft_warning_reasons') or []
     validation_warnings = output_contract.get('validation_warnings') or basecalc_signal.get('validation_warnings') or []
     confidence_cap_reason = output_contract.get('confidence_cap_reason') or basecalc_signal.get('confidence_cap_reason') or ''
-    display_status = output_contract.get('display_status') or basecalc_signal.get('display_status') or ''
+    display_status = _normalize_display_status(output_contract.get('display_status') or basecalc_signal.get('display_status') or '')
     warnings = []
     warnings.extend(soft_warning_reasons or output_contract.get('stop_reasons') or [])
     warnings.extend(validation_warnings)
@@ -455,6 +455,14 @@ def _grade_from_score(score):
     if score >= 40:
         return 'C'
     return 'D'
+
+
+def _normalize_display_status(value):
+    return {
+        'limited_candidate': 'candidate_limited',
+        'confirmed_candidate': 'candidate_confirmed',
+        'watch_candidate': 'watch_only',
+    }.get(value or '', value or '')
 
 
 def _dedupe(items):
